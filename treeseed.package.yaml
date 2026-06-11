@@ -1,0 +1,14 @@
+id: "@treeseed/admin"
+name: TreeSeed Admin
+kind: node-typescript
+repository: treeseed-ai/admin
+publishTarget: npm
+verify:
+  fast: npm run verify
+  local: npm run verify:local
+  release: npm run release:verify
+artifacts:
+  - provider: npm
+    name: "@treeseed/admin"
+releaseGate:
+  workflow: deploy.yml

@@ -1,0 +1,15 @@
+{
+  "extends": "../core/tsconfigs/strict.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@treeseed/admin": ["src/index.ts"],
+      "@treeseed/admin/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
+}

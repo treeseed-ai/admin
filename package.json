@@ -1,0 +1,120 @@
+{
+  "name": "@treeseed/admin",
+  "version": "0.1.1-dev.staging.20260611T225124Z",
+  "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/treeseed-ai/admin.git",
+    "directory": "."
+  },
+  "homepage": "https://treeseed.ai",
+  "bugs": {
+    "url": "https://github.com/treeseed-ai/admin/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist",
+    "scripts/verify-driver.mjs"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "setup": "npm install",
+    "setup:ci": "npm ci",
+    "build": "npm run build:dist",
+    "build:dist": "node ./scripts/build-dist.mjs",
+    "prepare": "node ./scripts/prepare.mjs",
+    "prepack": "npm run build:dist",
+    "check": "npm run build:dist && tsc --noEmit",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --config ./vitest.config.ts",
+    "lint": "npm run check",
+    "verify:direct": "npm run release:verify",
+    "verify:local": "node --input-type=module -e \"process.env.TREESEED_VERIFY_DRIVER='direct'; await import('./scripts/verify-driver.mjs')\"",
+    "verify:action": "node --input-type=module -e \"process.env.TREESEED_VERIFY_DRIVER='act'; await import('./scripts/verify-driver.mjs')\"",
+    "verify": "node --input-type=module -e \"await import('./scripts/verify-driver.mjs')\"",
+    "release:setup": "npm run setup:ci",
+    "release:check-tag": "node ./scripts/assert-release-tag-version.mjs",
+    "release:verify": "npm run build:dist && npm run test:unit",
+    "release:publish": "node ./scripts/publish-package.mjs"
+  },
+  "dependencies": {
+    "@mdxeditor/editor": "^4.0.2",
+    "@react-email/render": "^2.0.8",
+    "@treeseed/core": "github:treeseed-ai/core#0.10.23-dev.staging.20260611T224309Z",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#0.10.29-dev.staging.20260611T223959Z",
+    "@treeseed/ui": "github:treeseed-ai/ui#0.1.9-dev.staging.20260611T223441Z",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.6"
+  },
+  "peerDependencies": {
+    "@treeseed/api": "github:treeseed-ai/api#a5f55afd8fe6",
+    "astro": "^5.0.0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@treeseed/api": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@treeseed/api": "github:treeseed-ai/api#a5f55afd8fe6",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.4.5",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./content-config": {
+      "types": "./dist/content-config.d.ts",
+      "default": "./dist/content-config.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware.d.ts",
+      "default": "./dist/middleware.js"
+    },
+    "./commerce": {
+      "types": "./dist/commerce.d.ts",
+      "default": "./dist/commerce.js"
+    },
+    "./secret-managers": {
+      "types": "./dist/secret-managers.d.ts",
+      "default": "./dist/secret-managers.js"
+    },
+    "./lib/*": {
+      "types": "./dist/lib/*.d.ts",
+      "default": "./dist/lib/*.js"
+    },
+    "./view-models/*": {
+      "types": "./dist/view-models/*.d.ts",
+      "default": "./dist/view-models/*.js"
+    },
+    "./layouts/TreeseedAppLayout.astro": "./dist/layouts/TreeseedAppLayout.astro",
+    "./layouts/TreeseedPublicLayout.astro": "./dist/layouts/TreeseedPublicLayout.astro"
+  }
+}
