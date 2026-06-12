@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../src/plugin';
+import type { TreeseedPluginSiteContext, TreeseedSiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
 import { ADMIN_ROUTES } from '../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../src/commerce';
 import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../src/secret-managers';
@@ -34,6 +35,17 @@ function exportTargets(value: unknown): string[] {
 	return Object.values(value as Record<string, unknown>).flatMap(exportTargets);
 }
 
+function resolveSiteHooks(): TreeseedSiteExtensionContribution {
+	const hooks = adminPlugin.siteHooks;
+	if (!hooks) return {};
+	if (typeof hooks !== 'function') return hooks;
+	return hooks({
+		projectRoot: process.cwd(),
+		tenantConfig: {} as TreeseedPluginSiteContext['tenantConfig'],
+		pluginConfig: {},
+	} satisfies TreeseedPluginSiteContext);
+}
+
 describe('@treeseed/admin package boundaries', () => {
 	it('registers the distributable admin route surfaces', () => {
 		expect(ADMIN_ROUTES).toEqual(expect.arrayContaining([
@@ -46,12 +58,13 @@ describe('@treeseed/admin package boundaries', () => {
 	});
 
 	it('contributes UI package styles from the admin plugin', () => {
-		const css = adminPlugin.siteHooks?.customCss ?? [];
+		const siteHooks = resolveSiteHooks();
+		const css = siteHooks.customCss ?? [];
 		expect(css).toContain('@treeseed/ui/styles/tokens.css');
 		expect(css).toContain('@treeseed/ui/styles/app-shell.css');
 		expect(css).toContain('@treeseed/ui/styles/market.css');
 		expect(ADMIN_CAPABILITIES.ecommerce.bundled).toBe(false);
-		expect(adminPlugin.siteHooks?.envSchema).toBe(ADMIN_ENV_SCHEMA);
+		expect(siteHooks.envSchema).toBe(ADMIN_ENV_SCHEMA);
 		expect(Object.keys(ADMIN_ENV_SCHEMA)).toEqual(expect.arrayContaining([
 			'TREESEED_BETTER_AUTH_SECRET',
 			'TREESEED_WEB_SERVICE_SECRET',
@@ -79,7 +92,7 @@ describe('@treeseed/admin package boundaries', () => {
 			.map(routePatternFromPage)
 			.sort();
 		const registeredRoutes = ADMIN_ROUTES.map((route) => route.pattern).sort();
-		const registeredResources = ADMIN_ROUTES.map((route) => route.resourcePath).sort();
+		const registeredResources = ADMIN_ROUTES.map((route) => route.resourcePath).filter((path): path is string => typeof path === 'string').sort();
 		const pageResources = filesUnder('src/pages')
 			.filter((path) => /\.(astro|ts)$/u.test(path))
 			.map((path) => path.replace(/^src\//u, ''))
