@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfigs/strict.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "types": ["node", "astro/client", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@treeseed/admin": ["src/index.ts"],
+      "@treeseed/admin/*": ["src/*"],
+      "@treeseed/ui/theme": ["src/internal/ui-theme.d.ts"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
+}
