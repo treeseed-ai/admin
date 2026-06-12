@@ -9,7 +9,8 @@
     "baseUrl": ".",
     "paths": {
       "@treeseed/admin": ["src/index.ts"],
-      "@treeseed/admin/*": ["src/*"]
+      "@treeseed/admin/*": ["src/*"],
+      "@treeseed/ui/theme": ["src/internal/ui-theme.d.ts"]
     }
   },
   "include": ["src/**/*", "test/**/*", "vitest.config.ts"]

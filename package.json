@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.1.1-dev.staging.20260612T004324Z",
+  "version": "0.1.1-dev.staging.20260612T011020Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,9 +48,9 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#0.10.23-dev.staging.20260611T224309Z",
+    "@treeseed/core": "github:treeseed-ai/core#0.10.23-dev.staging.20260612T010722Z",
     "@treeseed/sdk": "github:treeseed-ai/sdk#0.10.29-dev.staging.20260611T223959Z",
-    "@treeseed/ui": "github:treeseed-ai/ui#0.1.9-dev.staging.20260611T223441Z",
+    "@treeseed/ui": "github:treeseed-ai/ui#0.1.9-dev.staging.20260612T010035Z",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
