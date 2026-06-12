@@ -1,5 +1,9 @@
-import { createApiApp } from '@treeseed/api/api/app';
 import { resolveLocalSeedEnv } from './apply.js';
+
+async function createLocalApiApp(config, db) {
+	const { createApiApp } = await import('@treeseed/api/api/app');
+	return createApiApp({ config, ...(db ? { db } : {}) });
+}
 
 function localApiConfig(projectRoot, env = process.env) {
 	const localEnv = resolveLocalSeedEnv(projectRoot, env);
@@ -59,7 +63,7 @@ async function requestLocalSeedApi(input, endpoint) {
 	const db = input.db;
 	try {
 		const config = localApiConfig(input.projectRoot, localEnv);
-		const app = createApiApp({ config, ...(db ? { db } : {}) });
+		const app = await createLocalApiApp(config, db);
 		return await jsonRequest(app, `/v1/seeds/${encodeURIComponent(input.seedName)}/${endpoint}`, input, seedRequestBody(input));
 	} finally {
 		if (!input.db) db?.close?.();
@@ -71,7 +75,7 @@ async function requestLocalSeedExport(input) {
 	const db = input.db;
 	try {
 		const config = localApiConfig(input.projectRoot, localEnv);
-		const app = createApiApp({ config, ...(db ? { db } : {}) });
+		const app = await createLocalApiApp(config, db);
 		let teamId = input.team;
 		const teamsResponse = await app.request('/v1/teams', {
 			headers: {
