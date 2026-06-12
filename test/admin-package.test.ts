@@ -155,8 +155,8 @@ describe('@treeseed/admin package boundaries', () => {
 		expect(missingTargets).toEqual([]);
 		expect(packageJson.dependencies).not.toHaveProperty('@treeseed/api');
 		expect(packageJson.dependencies).not.toHaveProperty('@treeseed/agent');
-		expect(packageJson.peerDependencies).toHaveProperty('@treeseed/api');
-		expect(packageJson.peerDependenciesMeta?.['@treeseed/api']?.optional).toBe(true);
+		expect(packageJson.peerDependencies).not.toHaveProperty('@treeseed/api');
+		expect(packageJson.peerDependenciesMeta?.['@treeseed/api']).toBeUndefined();
 		expect(packageJson.devDependencies).not.toHaveProperty('@treeseed/api');
 		expect(packageJson.dependencies).toHaveProperty('@mdxeditor/editor');
 	});

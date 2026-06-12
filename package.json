@@ -55,13 +55,7 @@
     "react-dom": "^19.2.6"
   },
   "peerDependencies": {
-    "@treeseed/api": "^0.4.1",
     "astro": "^5.0.0 || ^6.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@treeseed/api": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
