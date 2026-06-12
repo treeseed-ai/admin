@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.1.1-dev.staging.20260612T003557Z",
+  "version": "0.1.1-dev.staging.20260612T004324Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -55,7 +55,7 @@
     "react-dom": "^19.2.6"
   },
   "peerDependencies": {
-    "@treeseed/api": "github:treeseed-ai/api#a5f55afd8fe6",
+    "@treeseed/api": "^0.4.1",
     "astro": "^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
