@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.1.1-dev.staging.20260612T000424Z",
+  "version": "0.1.1-dev.staging.20260612T002709Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -27,7 +27,7 @@
   },
   "scripts": {
     "setup": "npm install",
-    "setup:ci": "npm ci",
+    "setup:ci": "TREESEED_SKIP_PACKAGE_PREPARE=1 npm ci --workspaces=false",
     "build": "npm run build:dist",
     "build:dist": "node ./scripts/build-dist.mjs",
     "prepare": "node ./scripts/prepare.mjs",

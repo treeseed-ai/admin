@@ -35,7 +35,7 @@ jobs:
             done
             "$@"
           }
-          install_with_retry npm ci
+          install_with_retry npm run release:setup
 
       - name: Verify package
         run: npm run verify:direct

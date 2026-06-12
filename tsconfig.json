@@ -1,10 +1,11 @@
 {
-  "extends": "../core/tsconfigs/strict.json",
+  "extends": "./tsconfigs/strict.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "types": ["node", "vitest/globals"],
+    "types": ["node", "astro/client", "vitest/globals"],
     "baseUrl": ".",
     "paths": {
       "@treeseed/admin": ["src/index.ts"],
