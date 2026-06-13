@@ -1,8 +1,14 @@
 id: "@treeseed/admin"
 name: TreeSeed Admin
 kind: node-typescript
+type: node-library
 repository: treeseed-ai/admin
 publishTarget: npm
+workflowTemplateVersion: "1"
+githubEnvironments:
+  - production
+requiredSecrets:
+  - NPM_TOKEN
 verify:
   fast: npm run verify
   local: npm run verify:local

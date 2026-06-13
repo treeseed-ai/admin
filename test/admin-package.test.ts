@@ -128,11 +128,11 @@ describe('@treeseed/admin package boundaries', () => {
 
 		expect(packageManifest).toContain('workflow: deploy.yml');
 		expect(verifyWorkflow).toContain('npm run verify:direct');
-		expect(deployWorkflow).toContain('npm run verify:direct');
+		expect(deployWorkflow).toContain('npm run verify:local');
 		expect(deployWorkflow).not.toContain('trsd hosting apply');
 		expect(publishWorkflow).toContain("startsWith(github.ref, 'refs/tags/')");
 		expect(publishWorkflow).toContain("!contains(github.ref_name, '-')");
-		expect(publishWorkflow).toContain('npm run release:publish');
+		expect(publishWorkflow).toContain('npm publish --access public');
 		expect(publishWorkflow).toContain('gh release create "${GITHUB_REF_NAME}"');
 		expect(checkTagScript).toContain('^\\d+\\.\\d+\\.\\d+$');
 		expect(publishScript).toContain('Refusing to publish');

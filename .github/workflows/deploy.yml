@@ -1,46 +1,17 @@
-name: Release Gate
+name: Verify TreeSeed Admin
 
 on:
   push:
-    branches:
-      - staging
-      - main
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  release-gate:
-    if: github.event.repository.fork == false
+  verify:
     runs-on: ubuntu-latest
-    env:
-      CI: "true"
-    permissions:
-      contents: read
-    environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: |
-          install_with_retry() {
-            for attempt in 1 2 3; do
-              if "$@"; then
-                return 0
-              fi
-              echo "dependency install failed; retrying (${attempt}/3)."
-              sleep $((attempt * 5))
-            done
-            "$@"
-          }
-          install_with_retry npm run release:setup
-
-      - name: Verify package
-        run: npm run verify:direct
+      - run: npm ci || (echo "dependency install failed; retrying" && npm ci)
+      - run: bash -lc npm run verify:local
