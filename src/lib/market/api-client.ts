@@ -256,6 +256,87 @@ export class ApiClientFacade {
 		return this.request<any>('POST', `/v1/approval-requests/${encodeURIComponent(approvalRequestId)}/decide`, { body });
 	}
 
+	getCommonsSummary() {
+		return this.request<any>('GET', '/v1/commons/summary');
+	}
+
+	getCommonsParticipantMe() {
+		return this.request<any>('GET', '/v1/commons/participants/me');
+	}
+
+	listCommonsParticipants(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/participants${suffix}`);
+	}
+
+	backfillCommonsParticipants() {
+		return this.request<any>('POST', '/v1/commons/participants/backfill', { body: {} });
+	}
+
+	listCommonsQuestions(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/questions${suffix}`);
+	}
+
+	answerCommonsQuestion(questionId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commons/questions/${encodeURIComponent(questionId)}/answer`, { body });
+	}
+
+	createCommonsProposal(body: Record<string, unknown>) {
+		return this.request<any>('POST', '/v1/commons/proposals', { body });
+	}
+
+	listCommonsProposals(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/proposals${suffix}`);
+	}
+
+	getCommonsProposal(proposalId: string) {
+		return this.request<any>('GET', `/v1/commons/proposals/${encodeURIComponent(proposalId)}`);
+	}
+
+	reviewCommonsProposal(proposalId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/review`, { body });
+	}
+
+	startCommonsProposalVoting(proposalId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/start-voting`, { body });
+	}
+
+	stewardDecisionForCommonsProposal(proposalId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/steward-decision`, { body });
+	}
+
+	listCommonsDecisions(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/decisions${suffix}`);
+	}
+
+	listCommonsEvents(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/events${suffix}`);
+	}
+
 	deleteTeamInboxItemsByItemKey(_teamId: string, _itemKey: string) {
 		return Promise.resolve({ ok: true });
 	}

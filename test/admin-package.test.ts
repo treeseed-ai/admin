@@ -51,6 +51,9 @@ describe('@treeseed/admin package boundaries', () => {
 		expect(ADMIN_ROUTES).toEqual(expect.arrayContaining([
 			expect.objectContaining({ pattern: '/app' }),
 			expect.objectContaining({ pattern: '/auth/sign-in' }),
+			expect.objectContaining({ pattern: '/app/commons' }),
+			expect.objectContaining({ pattern: '/app/commons/participants' }),
+			expect.objectContaining({ pattern: '/app/commons/proposals/[proposalId]' }),
 			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce' }),
 			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/products' }),
 			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/products/[productId]/governance' }),
@@ -214,6 +217,10 @@ describe('@treeseed/admin package boundaries', () => {
 		expect(packageJson.peerDependencies).not.toHaveProperty('stripe');
 		expect(offenders).toEqual([]);
 		expect(apiClient).toContain('getCommerceVendorSalesSummary');
+		expect(apiClient).toContain('getCommonsSummary');
+		expect(apiClient).toContain('listCommonsProposals');
+		expect(apiClient).toContain('stewardDecisionForCommonsProposal');
+		expect(apiClient).toContain('backfillCommonsParticipants');
 		expect(apiClient).toContain('getCommerceVendorMonitoring');
 		expect(apiClient).toContain('listCommerceMarketplaceProducts');
 		expect(apiClient).toContain('getCommerceOwnershipWorkflow');
