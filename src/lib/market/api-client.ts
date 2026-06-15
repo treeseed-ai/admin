@@ -276,6 +276,22 @@ export class ApiClientFacade {
 		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/permissions`);
 	}
 
+	getTeamPortfolioAllocation(teamId: string) {
+		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-allocation`);
+	}
+
+	updateTeamPortfolioAllocation(teamId: string, body: Record<string, unknown>) {
+		return this.request<any>('PUT', `/v1/teams/${encodeURIComponent(teamId)}/capacity-allocation`, { body });
+	}
+
+	getProjectAgentClassAllocation(projectId: string) {
+		return this.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/capacity-allocation`);
+	}
+
+	updateProjectAgentClassAllocation(projectId: string, body: Record<string, unknown>) {
+		return this.request<any>('PUT', `/v1/projects/${encodeURIComponent(projectId)}/capacity-allocation`, { body });
+	}
+
 	evaluateTeamDeletionBlockers(teamId: string) {
 		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/deletion-blockers`);
 	}
