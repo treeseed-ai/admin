@@ -51,6 +51,14 @@ describe('@treeseed/admin package boundaries', () => {
 		expect(ADMIN_ROUTES).toEqual(expect.arrayContaining([
 			expect.objectContaining({ pattern: '/app' }),
 			expect.objectContaining({ pattern: '/auth/sign-in' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/products' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/products/[productId]/governance' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/sales' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/services' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/services/[requestId]' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/capacity' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/capacity/[listingId]' }),
 			expect.objectContaining({ pattern: '/market' }),
 			expect.objectContaining({ pattern: '/team-invites/[token]/accept' }),
 			expect.objectContaining({ pattern: '/v1/[...all]' }),
@@ -170,23 +178,59 @@ describe('@treeseed/admin package boundaries', () => {
 			'railway',
 		]));
 
-		const checkoutUrl = await DEFAULT_ADMIN_COMMERCE_PROVIDER.checkoutUrl?.({}, { mode: 'paid' });
-		const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { mode: 'free' });
+		const checkoutUrl = await DEFAULT_ADMIN_COMMERCE_PROVIDER.checkoutUrl?.({}, { mode: 'one_time' });
+		const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { offerMode: 'free' });
 		expect(checkoutUrl).toBeNull();
 		expect(entitlement?.allowed).toBe(true);
 	});
 
+	it('requires a host commerce provider for commercial offer modes', async () => {
+		for (const mode of ['one_time', 'one_time_current_version', 'subscription', 'subscription_updates', 'professional_hosting', 'scoped_contract'] as const) {
+			const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { offerMode: mode });
+			expect(entitlement?.allowed, mode).toBe(false);
+			expect(entitlement?.checkoutUrl, mode).toBeNull();
+			expect(entitlement?.reason, mode).toContain('commerce provider');
+		}
+	});
+
 	it('does not bundle payment ecommerce implementation', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+			dependencies?: Record<string, string>;
+			devDependencies?: Record<string, string>;
+			peerDependencies?: Record<string, string>;
+		};
 		const sources = filesUnder('src')
 			.filter((path) => /\.(astro|tsx?|jsx?|mjs|cjs)$/u.test(path))
 			.map((path) => [path, readFileSync(path, 'utf8')] as const);
-		const paymentTerms = /\b(stripe|checkout session|invoice|coupon|seller payout|payment provider|payment intent)\b/iu;
+		const paymentImplementationTerms = /\b(checkout session|payment intent|seller payout|application fee|webhook secret)\b/iu;
 		const offenders = sources
-			.filter(([path]) => path !== 'src/commerce.ts')
-			.filter(([, source]) => paymentTerms.test(source))
+			.filter(([, source]) => paymentImplementationTerms.test(source) || /from ['"](?:stripe|@stripe\/stripe-js)['"]/u.test(source))
 			.map(([path]) => path);
+		const apiClient = readFileSync('src/lib/market/api-client.ts', 'utf8');
 
+		expect(packageJson.dependencies).not.toHaveProperty('stripe');
+		expect(packageJson.dependencies).not.toHaveProperty('@stripe/stripe-js');
+		expect(packageJson.devDependencies).not.toHaveProperty('stripe');
+		expect(packageJson.peerDependencies).not.toHaveProperty('stripe');
 		expect(offenders).toEqual([]);
+		expect(apiClient).toContain('getCommerceVendorSalesSummary');
+		expect(apiClient).toContain('getCommerceVendorMonitoring');
+		expect(apiClient).toContain('listCommerceMarketplaceProducts');
+		expect(apiClient).toContain('getCommerceOwnershipWorkflow');
+		expect(apiClient).toContain('updateCommerceOwnershipRecord');
+		expect(apiClient).toContain('createCommerceSuccessionEvent');
+		expect(apiClient).toContain('createCommerceOrderRefund');
+		expect(apiClient).toContain('fulfillCommerceOrderItemArtifact');
+		expect(apiClient).toContain('listCommerceServiceRequests');
+		expect(apiClient).toContain('createCommerceServiceQuote');
+		expect(apiClient).not.toContain('checkoutCommerceServiceContract');
+		expect(apiClient).toContain('fulfillCommerceServiceContract');
+		expect(apiClient).toContain('listCommerceCapacityListings');
+		expect(apiClient).toContain('createCommerceCapacityListing');
+		expect(apiClient).toContain('submitCommerceCapacityListing');
+		expect(apiClient).toContain('approveCommerceCapacityListing');
+		expect(apiClient).toContain('listCommerceCapacityListingInquiries');
+		expect(apiClient).toContain('approveCommerceCapacityInquiryForScoping');
 		expect(DEFAULT_ADMIN_COMMERCE_PROVIDER.id).toBe('none');
 	});
 

@@ -1,0 +1,144 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import SellerCommerceMonitor from '@treeseed/ui/components/astro/commerce/SellerCommerceMonitor.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import '@treeseed/ui/styles/commerce.css';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { ApiClientFacade } from '../../../../lib/market/api-client';
+import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
+import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
+
+const teamId = String(Astro.params.teamId ?? '');
+if (!Astro.locals.auth?.principal) {
+	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+const context = await loadAppContext(Astro);
+const teamResolution = resolveAppTeam(context, teamId);
+const team = teamResolution.resource;
+if (teamResolution.team?.id && teamResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, teamResolution.team);
+
+const manageableRoles = new Set(['team_owner', 'project_lead']);
+const access = team && context.store && typeof context.store.getTeamAccessSummary === 'function'
+	? await context.store.getTeamAccessSummary(team.id, context.principal).catch(() => null)
+	: null;
+const canManageTeam = Boolean(access?.roles?.some((role: string) => manageableRoles.has(role)));
+if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 : 404;
+
+const api = new ApiClientFacade(Astro);
+let formError = '';
+let statusMessage = '';
+
+if (Astro.request.method === 'POST' && team && canManageTeam) {
+	const data = await Astro.request.formData();
+	const action = String(data.get('action') ?? '');
+	try {
+		if (action === 'request-vendor') {
+			await api.requestCommerceVendor(team.id, {
+				displayName: team.displayName ?? team.name ?? 'Commerce Vendor',
+				slug: team.slug ?? team.name ?? team.id,
+				reason: 'Team requested marketplace seller capability from Admin commerce settings.',
+			});
+			return Astro.redirect(`/app/teams/${encodeURIComponent(team.id)}/commerce?saved=vendor-requested`, 303);
+		}
+		if (action === 'connect-stripe') {
+			const result = await api.startCommerceVendorStripeOnboarding(team.id, {});
+			if (result?.onboardingUrl) return Astro.redirect(result.onboardingUrl, 303);
+			throw new Error('Stripe onboarding URL was not returned.');
+		}
+		if (action === 'open-dashboard') {
+			const result = await api.createCommerceVendorStripeLoginLink(team.id);
+			if (result?.loginUrl) return Astro.redirect(result.loginUrl, 303);
+			throw new Error('Stripe dashboard URL was not returned.');
+		}
+		if (action === 'refresh-status') {
+			await api.getCommerceVendorStripeStatus(team.id, true);
+			return Astro.redirect(`/app/teams/${encodeURIComponent(team.id)}/commerce?saved=status-refreshed`, 303);
+		}
+	} catch (error) {
+		formError = error instanceof Error ? error.message : 'Commerce settings action failed.';
+	}
+}
+
+if (team && canManageTeam && Astro.request.method === 'GET') {
+	const stripeMarker = Astro.url.searchParams.get('stripe');
+	if (stripeMarker === 'returned') {
+		await api.markCommerceVendorStripeReturn(team.id).catch((error) => {
+			formError = error instanceof Error ? error.message : 'Stripe return status could not be recorded.';
+		});
+		statusMessage = formError ? '' : 'Stripe onboarding return recorded. Status refreshed from Stripe when configured.';
+	} else if (stripeMarker === 'refresh') {
+		await api.getCommerceVendorStripeStatus(team.id, true).catch((error) => {
+			formError = error instanceof Error ? error.message : 'Stripe status could not be refreshed.';
+		});
+		statusMessage = formError ? '' : 'Stripe onboarding link refreshed. Continue onboarding from this page.';
+	}
+}
+
+const saved = Astro.url.searchParams.get('saved');
+if (saved === 'vendor-requested') statusMessage = 'Seller capability request submitted.';
+if (saved === 'status-refreshed') statusMessage = 'Stripe status refreshed.';
+
+const vendor = team ? await api.getCommerceVendor(team.id).catch(() => null) : null;
+const stripeAccount = team ? await api.getCommerceVendorStripeStatus(team.id).catch(() => null) : null;
+const commerceMonitor = team ? await api.getCommerceVendorMonitoring(team.id).catch(() => null) : null;
+
+function yesNo(value: unknown) {
+	return value ? 'yes' : 'no';
+}
+
+const stripeRows = stripeAccount ? [
+	{ id: 'account-status', field: 'Account status', value: esc(stripeAccount.accountStatus ?? 'pending') },
+	{ id: 'onboarding-status', field: 'Onboarding status', value: esc(stripeAccount.onboardingStatus ?? 'not_started') },
+	{ id: 'charges-enabled', field: 'Charges enabled', value: esc(yesNo(stripeAccount.chargesEnabled)) },
+	{ id: 'payouts-enabled', field: 'Payouts enabled', value: esc(yesNo(stripeAccount.payoutsEnabled)) },
+	{ id: 'details-submitted', field: 'Details submitted', value: esc(yesNo(stripeAccount.detailsSubmitted)) },
+	{ id: 'currently-due', field: 'Requirements currently due', value: esc(String(stripeAccount.requirementsCurrentlyDue?.length ?? 0)) },
+	{ id: 'past-due', field: 'Requirements past due', value: esc(String(stripeAccount.requirementsPastDue?.length ?? 0)) },
+	{ id: 'last-synced', field: 'Last synced', value: esc(stripeAccount.lastSyncedAt ?? 'not synced') },
+] : [];
+---
+
+<TreeseedAppLayout title={team ? `Commerce settings` : 'Team not found'} description="Manage seller readiness and marketplace governance." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
+	{team ? (
+		<section class="ts-control-page" aria-label="Commerce settings">
+			<Panel eyebrow="Commerce" title="Seller readiness" description="Seller approval, Stripe readiness, and cooperative ownership records are tracked separately. Checkout is not active from this page.">
+				{formError && <p class="ts-form-error" role="alert">{formError}</p>}
+				{statusMessage && !formError && <p class="ts-subtle" role="status">{statusMessage}</p>}
+				<div class="ts-form-stack">
+					<p class="ts-subtle">Vendor status: <strong>{vendor?.status ?? 'not requested'}</strong></p>
+					<p class="ts-subtle">Trust level: <strong>{vendor?.trustLevel ?? 'none'}</strong></p>
+					<p class="ts-subtle">Sales enabled: <strong>{yesNo(vendor?.salesEnabled)}</strong></p>
+				</div>
+				{stripeAccount ? (
+					<PlainTable columns={[
+						{ key: 'field', label: 'Field' },
+						{ key: 'value', label: 'Value' },
+					]} rows={stripeRows} emptyTitle="No Stripe status" emptyDescription="Connect Stripe after seller approval." />
+				) : (
+					<p class="ts-subtle">Stripe account: <strong>not linked</strong></p>
+				)}
+				{canManageTeam ? (
+					<form slot="actions" class="ts-inline-actions" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/commerce`}>
+						{!vendor ? (
+							<Button type="submit" name="action" value="request-vendor" size="sm">Request seller capability</Button>
+						) : vendor.status === 'approved' ? (
+							<>
+								<Button type="submit" name="action" value="connect-stripe" size="sm">{stripeAccount?.accountStatus === 'enabled' ? 'Update Stripe' : 'Connect Stripe'}</Button>
+								<Button type="submit" name="action" value="refresh-status" variant="secondary" size="sm">Refresh status</Button>
+								{stripeAccount ? <Button type="submit" name="action" value="open-dashboard" variant="secondary" size="sm">Open Stripe dashboard</Button> : null}
+							</>
+						) : (
+							<Button href="/app/teams" variant="secondary" size="sm">Back to teams</Button>
+						)}
+					</form>
+				) : null}
+			</Panel>
+			<SellerCommerceMonitor monitor={commerceMonitor} />
+		</section>
+	) : (
+		<EmptyState title="Team not found" description="This team is not available." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+	)}
+</TreeseedAppLayout>

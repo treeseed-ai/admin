@@ -1,0 +1,116 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import TreeseedAppLayout from '../../../../../../layouts/TreeseedAppLayout.astro';
+import { ApiClientFacade } from '../../../../../../lib/market/api-client';
+import { escapeHtml as esc } from '../../../../../../lib/market/control-ui.js';
+import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../../../view-models/app-access.js';
+
+const teamId = String(Astro.params.teamId ?? '');
+const listingId = String(Astro.params.listingId ?? '');
+if (!Astro.locals.auth?.principal) {
+	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+const context = await loadAppContext(Astro);
+const teamResolution = resolveAppTeam(context, teamId);
+const team = teamResolution.resource;
+if (teamResolution.team?.id && teamResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, teamResolution.team);
+if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 : 404;
+
+const api = new ApiClientFacade(Astro);
+let formError: string | null = null;
+
+if (team && Astro.request.method === 'POST') {
+	const data = await Astro.request.formData();
+	const action = String(data.get('action') ?? '');
+	try {
+		if (action === 'update') {
+			await api.updateCommerceCapacityListing(listingId, {
+				accessLevel: String(data.get('accessLevel') ?? 'public_summary'),
+				runtimeIsolationLevel: String(data.get('runtimeIsolationLevel') ?? 'none'),
+				humanInvolvementLevel: String(data.get('humanInvolvementLevel') ?? 'none'),
+				aiInvolvementLevel: String(data.get('aiInvolvementLevel') ?? 'none'),
+				dataAccessLevel: String(data.get('dataAccessLevel') ?? 'none'),
+				secretAccessLevel: String(data.get('secretAccessLevel') ?? 'none'),
+				buyerVisibleRiskSummary: String(data.get('buyerVisibleRiskSummary') ?? ''),
+				supportPolicy: String(data.get('supportPolicy') ?? ''),
+				availabilitySummary: String(data.get('availabilitySummary') ?? ''),
+			});
+		}
+		if (action === 'submit') await api.submitCommerceCapacityListing(listingId);
+		if (action === 'archive') await api.archiveCommerceCapacityListing(listingId);
+		if (action === 'approve') await api.approveCommerceCapacityListing(listingId);
+		if (action === 'reject') await api.rejectCommerceCapacityListing(listingId);
+		if (action === 'suspend') await api.suspendCommerceCapacityListing(listingId);
+		if (action.startsWith('review:')) await api.reviewCommerceCapacityInquiry(action.slice('review:'.length));
+		if (action.startsWith('approve-inquiry:')) await api.approveCommerceCapacityInquiryForScoping(action.slice('approve-inquiry:'.length));
+		if (action.startsWith('decline-inquiry:')) await api.declineCommerceCapacityInquiry(action.slice('decline-inquiry:'.length));
+		return Astro.redirect(`/app/teams/${encodeURIComponent(team.id)}/commerce/capacity/${encodeURIComponent(listingId)}?saved=1`, 303);
+	} catch (error) {
+		formError = error instanceof Error ? error.message : 'Capacity listing action failed.';
+	}
+}
+
+const listing = team ? await api.getCommerceCapacityListing(listingId).catch(() => null) : null;
+if (team && !listing) Astro.response.status = 404;
+const inquiries = listing ? await api.listCommerceCapacityListingInquiries({ listingId: listing.id }).catch(() => []) : [];
+
+const inquiryRows = inquiries.map((inquiry: any) => ({
+	id: inquiry.id,
+	inquiry: esc(inquiry.id),
+	status: esc(inquiry.status),
+	buyer: esc(inquiry.buyerTeamId ?? inquiry.buyerUserId ?? 'redacted'),
+	service: esc(inquiry.requestedServiceType ?? ''),
+	scope: esc(inquiry.requestedScope ?? ''),
+	actions: `<form method="post" class="ts-inline-actions"><button name="action" value="review:${esc(inquiry.id)}">Review</button><button name="action" value="approve-inquiry:${esc(inquiry.id)}">Approve for scoping</button><button name="action" value="decline-inquiry:${esc(inquiry.id)}">Decline</button></form>`,
+}));
+---
+
+<TreeseedAppLayout title={listing ? 'Capacity listing' : 'Capacity listing not found'} description="Review capacity listing trust, transparency, and inquiry state." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
+	{team && listing ? (
+		<section class="ts-control-page" aria-label="Capacity listing">
+			<Panel eyebrow="Commerce" title={`Listing ${listing.id}`} description="Provider and lane references are disclosure metadata only. This page does not create execution, reservations, grants, billing, or routing.">
+				{formError ? <p class="ts-error">{formError}</p> : null}
+				<p class="ts-subtle">Status: <strong>{listing.status}</strong> · Product: <strong>{listing.productId}</strong> · Provider: <strong>{listing.capacityProviderId ?? 'not linked'}</strong> · Lane: <strong>{listing.capacityProviderLaneId ?? 'not linked'}</strong></p>
+				<div slot="actions" class="ts-inline-actions">
+					<Button href={`/app/teams/${encodeURIComponent(team.id)}/commerce/capacity`} variant="secondary" size="sm">Capacity listings</Button>
+					<form method="post" class="ts-inline-actions">
+						<button name="action" value="submit">Submit</button>
+						<button name="action" value="archive">Archive</button>
+						<button name="action" value="approve">Approve</button>
+						<button name="action" value="reject">Reject</button>
+						<button name="action" value="suspend">Suspend</button>
+					</form>
+				</div>
+				<form method="post" class="ts-form-grid">
+					<input type="hidden" name="action" value="update" />
+					<label><span>Access level</span><input name="accessLevel" value={listing.accessLevel} /></label>
+					<label><span>Runtime isolation</span><input name="runtimeIsolationLevel" value={listing.runtimeIsolationLevel} /></label>
+					<label><span>Human involvement</span><input name="humanInvolvementLevel" value={listing.humanInvolvementLevel} /></label>
+					<label><span>AI involvement</span><input name="aiInvolvementLevel" value={listing.aiInvolvementLevel} /></label>
+					<label><span>Data access</span><input name="dataAccessLevel" value={listing.dataAccessLevel} /></label>
+					<label><span>Secret access</span><input name="secretAccessLevel" value={listing.secretAccessLevel} /></label>
+					<label><span>Risk summary</span><textarea name="buyerVisibleRiskSummary">{listing.buyerVisibleRiskSummary ?? ''}</textarea></label>
+					<label><span>Support policy</span><textarea name="supportPolicy">{listing.supportPolicy ?? ''}</textarea></label>
+					<label><span>Availability</span><textarea name="availabilitySummary">{listing.availabilitySummary ?? ''}</textarea></label>
+					<button type="submit">Save listing metadata</button>
+				</form>
+			</Panel>
+			<Panel eyebrow="Inquiries" title="Buyer inquiries" description="Approving an inquiry only approves a scoping conversation. It does not create a service request, quote, checkout, entitlement, grant, reservation, or execution.">
+				<PlainTable columns={[
+					{ key: 'inquiry', label: 'Inquiry' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'buyer', label: 'Buyer' },
+					{ key: 'service', label: 'Service type' },
+					{ key: 'scope', label: 'Scope' },
+					{ key: 'actions', label: 'Actions' },
+				]} rows={inquiryRows} emptyTitle="No inquiries" emptyDescription="Buyer inquiries appear here after approved listings receive interest." />
+			</Panel>
+		</section>
+	) : (
+		<EmptyState title="Capacity listing not found" description="This listing is not available." actions={[{ label: 'Back to capacity', href: team ? `/app/teams/${encodeURIComponent(team.id)}/commerce/capacity` : '/app/teams' }]} />
+	)}
+</TreeseedAppLayout>
