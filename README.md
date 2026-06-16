@@ -10,6 +10,7 @@ Use this package when you want a Treeseed-compatible admin portal without taking
 - Host and credential management surfaces
 - Knowledge and work management screens
 - Operational status and deployment control surfaces
+- Agent capacity allocation, provider session, assignment, mode-run, and usage views over API contracts
 - Catalog/profile browsing without payment processing
 - Admin integrations that can be layered into a host Treeseed site
 
@@ -99,6 +100,12 @@ import type { TreeseedSecretManagerProvider } from '@treeseed/admin/secret-manag
 ```
 
 Provider mutation, secure read/write adapters, import/adopt/reconcile behavior, and target-specific sync belong in SDK/API primitives.
+
+## Agent Capacity Surfaces
+
+Admin may expose allocation-set editing, project/agent-class capacity views, planning/acting splits, provider registration, provider availability sessions, assignment status, mode-run timelines, usage summaries, and blocker diagnostics.
+
+Admin does not own scheduling, assignment selection, provider runtime internals, or ledger settlement. Those belong to API, agent runtime, and SDK contracts as described in the root [Agent Capacity Operator Surfaces](../../docs/agent-capacity-operator-surfaces.md) guide.
 
 ## Catalog Without Ecommerce
 
