@@ -105,6 +105,12 @@ Provider mutation, secure read/write adapters, import/adopt/reconcile behavior, 
 
 Admin may expose allocation-set editing, project/agent-class capacity views, planning/acting splits, provider registration, provider availability sessions, assignment status, mode-run timelines, usage summaries, and blocker diagnostics.
 
+The current capacity operator surfaces are:
+
+- `/app/capacity/allocation` for portfolio and project agent-class allocation.
+- `/app/capacity/providers` for provider registration, native capacity, grants, and lifecycle overview.
+- `/app/capacity/runtime` for read-only allocation-set versions, project agent classes, provider sessions, accepted capacity plans, synthesized or explicit assignments, assignment source/explanation metadata, and mode-run telemetry. The API facade also exposes decision readiness, execution inputs, capacity plans, and workday settlement summaries for focused operator drill-downs.
+
 Admin does not own scheduling, assignment selection, provider runtime internals, or ledger settlement. Those belong to API, agent runtime, and SDK contracts as described in the root [Agent Capacity Operator Surfaces](../../docs/agent-capacity-operator-surfaces.md) guide.
 
 ## Catalog Without Ecommerce

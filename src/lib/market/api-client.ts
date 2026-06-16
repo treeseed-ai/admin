@@ -412,6 +412,62 @@ export class ApiClientFacade {
 		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}/deployments`);
 	}
 
+	listCapacityAllocationSets(teamId: string) {
+		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/allocation-sets`);
+	}
+
+	listProviderAvailabilitySessions(teamId: string, filters: { providerId?: string | null; status?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.providerId) query.set('providerId', filters.providerId);
+		if (filters.status) query.set('status', filters.status);
+		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/provider-sessions${query.toString() ? `?${query}` : ''}`);
+	}
+
+	listProviderAssignments(teamId: string, filters: { projectId?: string | null; providerId?: string | null; status?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.projectId) query.set('projectId', filters.projectId);
+		if (filters.providerId) query.set('providerId', filters.providerId);
+		if (filters.status) query.set('status', filters.status);
+		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments${query.toString() ? `?${query}` : ''}`);
+	}
+
+	listProjectAgentClasses(projectId: string) {
+		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-classes`);
+	}
+
+	listProjectAgentModeRuns(projectId: string, filters: { mode?: string | null; assignmentId?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.mode) query.set('mode', filters.mode);
+		if (filters.assignmentId) query.set('assignmentId', filters.assignmentId);
+		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-mode-runs${query.toString() ? `?${query}` : ''}`);
+	}
+
+	getProviderAssignmentExplanation(teamId: string, assignmentId: string) {
+		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments/${encodeURIComponent(assignmentId)}/explanation`);
+	}
+
+	getDecisionPlanningStatus(decisionId: string) {
+		return this.request<any>('GET', `/v1/decisions/${encodeURIComponent(decisionId)}/planning-status`);
+	}
+
+	listDecisionExecutionInputs(decisionId: string) {
+		return this.request<any[]>('GET', `/v1/decisions/${encodeURIComponent(decisionId)}/execution-inputs`);
+	}
+
+	listDecisionCapacityPlans(decisionId: string, filters: { status?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.status) query.set('status', filters.status);
+		return this.request<any[]>('GET', `/v1/decisions/${encodeURIComponent(decisionId)}/capacity-plans${query.toString() ? `?${query}` : ''}`);
+	}
+
+	getCapacityPlan(capacityPlanId: string) {
+		return this.request<any>('GET', `/v1/capacity-plans/${encodeURIComponent(capacityPlanId)}`);
+	}
+
+	getWorkdayCapacitySummary(workdayId: string) {
+		return this.request<any>('GET', `/v1/workdays/${encodeURIComponent(workdayId)}/summary`);
+	}
+
 	listCapacityLedgerEntries(projectId: string, workdayId: string) {
 		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/capacity/ledger?workdayId=${encodeURIComponent(workdayId)}`);
 	}

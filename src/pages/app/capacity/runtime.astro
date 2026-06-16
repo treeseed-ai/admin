@@ -1,0 +1,268 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
+import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import { escapeHtml as esc } from '../../../lib/market/control-ui.js';
+import { createApiFacade } from '../../../lib/market/api-client';
+import { loadAppContext } from '../../../view-models/app-access.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/capacity/runtime')}`);
+
+const context = await loadAppContext(Astro);
+const team = context.activeTeam;
+const api = createApiFacade(Astro);
+const selectedProjectId = Astro.url.searchParams.get('projectId') ?? context.projects?.[0]?.id ?? '';
+const selectedDecisionId = Astro.url.searchParams.get('decisionId') ?? '';
+const selectedProject = context.projects?.find((project: any) => project.id === selectedProjectId) ?? context.projects?.[0] ?? null;
+const [
+	allocationSets,
+	providerSessions,
+	assignments,
+	agentClasses,
+	modeRuns,
+	capacityPlans,
+] = team ? await Promise.all([
+	api.listCapacityAllocationSets(team.id).catch(() => []),
+	api.listProviderAvailabilitySessions(team.id).catch(() => []),
+	api.listProviderAssignments(team.id).catch(() => []),
+	selectedProject ? api.listProjectAgentClasses(selectedProject.id).catch(() => []) : Promise.resolve([]),
+	selectedProject ? api.listProjectAgentModeRuns(selectedProject.id).catch(() => []) : Promise.resolve([]),
+	selectedDecisionId ? api.listDecisionCapacityPlans(selectedDecisionId).catch(() => []) : Promise.resolve([]),
+]) : [[], [], [], [], [], []];
+const projectOptions = (context.projects ?? []).map((project: any) => ({
+	id: project.id,
+	label: project.name ?? project.slug ?? project.id,
+	href: `/app/capacity/runtime?projectId=${encodeURIComponent(project.id)}`,
+	active: project.id === selectedProject?.id,
+}));
+
+function text(value: unknown, fallback = 'n/a') {
+	if (value === null || value === undefined || value === '') return fallback;
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
+function time(value: unknown) {
+	return text(value, 'never');
+}
+
+function modeOf(record: any) {
+	return record.mode ?? record.selectedMode ?? record.kernelMode ?? 'n/a';
+}
+
+function statusOf(record: any) {
+	return record.status ?? record.state ?? record.leaseState ?? 'n/a';
+}
+
+function usageSummary(record: any) {
+	const usage = record.usageSnapshot ?? record.usageSummary ?? record.lifecycleOutput?.usage ?? record.metadata?.usage ?? null;
+	if (!usage || typeof usage !== 'object') return 'not reported';
+	const credits = usage.credits ?? usage.creditAmount ?? usage.creditsUsed ?? null;
+	const native = usage.nativeUsage ?? usage.nativeAmount ?? usage.nativeUnits ?? null;
+	const unit = usage.nativeUnit ?? usage.unit ?? 'native';
+	return [
+		credits != null ? `${credits} credits` : null,
+		native != null ? `${native} ${unit}` : null,
+	].filter(Boolean).join(' · ') || 'reported';
+}
+
+const allocationRows = allocationSets.map((set: any) => ({
+	id: `allocation-${esc(set.id)}`,
+	name: `<strong>${esc(set.name ?? set.id)}</strong><span>${esc(`version ${set.version ?? 'n/a'}`)}</span>`,
+	status: esc(statusOf(set)),
+	scope: esc(`team=${set.teamId ?? team?.id ?? 'n/a'}`),
+	summary: esc(text(set.description ?? set.intent ?? set.metadata?.summary, 'No summary recorded')),
+	updated: esc(time(set.updatedAt ?? set.createdAt)),
+}));
+
+const classRows = agentClasses.map((agentClass: any) => ({
+	id: `agent-class-${esc(agentClass.id)}`,
+	name: `<strong>${esc(agentClass.name ?? agentClass.id)}</strong><span>${esc(agentClass.handlerRef ?? agentClass.handler ?? 'handler pending')}</span>`,
+	mode: esc(text(agentClass.defaultMode ?? agentClass.mode ?? agentClass.profile?.defaultMode, 'policy-defined')),
+	status: esc(statusOf(agentClass)),
+	summary: esc(text(agentClass.description ?? agentClass.policy?.summary ?? agentClass.metadata?.summary, 'No summary recorded')),
+	updated: esc(time(agentClass.updatedAt ?? agentClass.createdAt)),
+}));
+
+const sessionRows = providerSessions.map((session: any) => ({
+	id: `session-${esc(session.id)}`,
+	name: `<strong>${esc(session.providerId ?? session.id)}</strong><span>${esc(session.environment ?? 'environment n/a')}</span>`,
+	status: esc(statusOf(session)),
+	capacity: esc(text(session.capacityEnvelope?.summary ?? session.capacityEnvelope?.kind ?? session.availability?.summary ?? session.pressure?.state, 'generic capacity reported')),
+	pressure: esc(text(session.runnerPressure?.status ?? session.pressure?.status ?? session.pressure?.state, 'not reported')),
+	updated: esc(time(session.checkedInAt ?? session.updatedAt ?? session.createdAt)),
+}));
+
+const assignmentRows = assignments.map((assignment: any) => ({
+	id: `assignment-${esc(assignment.id)}`,
+	name: `<strong>${esc(assignment.id)}</strong><span>${esc(assignment.agentClassId ?? assignment.projectAgentClassId ?? 'agent class n/a')}</span>`,
+	status: esc(statusOf(assignment)),
+	mode: esc(modeOf(assignment)),
+	source: esc(text(assignment.synthesizedFrom ?? assignment.explanation?.source, 'explicit')),
+	scope: esc(`project=${assignment.projectId ?? 'n/a'} · provider=${assignment.providerId ?? 'n/a'}`),
+	lease: esc(`${assignment.leaseState ?? 'unleased'} · expires ${time(assignment.leaseExpiresAt)}`),
+	updated: esc(time(assignment.updatedAt ?? assignment.assignedAt ?? assignment.createdAt)),
+}));
+
+const capacityPlanRows = capacityPlans.map((plan: any) => ({
+	id: `capacity-plan-${esc(plan.id)}`,
+	name: `<strong>${esc(plan.id)}</strong><span>${esc(plan.decisionId ?? 'decision n/a')}</span>`,
+	status: esc(statusOf(plan)),
+	scope: esc(`project=${plan.projectId ?? 'n/a'} · workday=${plan.workDayId ?? 'none'}`),
+	credits: esc(`${text(plan.expectedCredits, '0')} expected · ${text(plan.highCredits, '0')} high`),
+	units: esc(text(Array.isArray(plan.workUnits) ? plan.workUnits.length : 0, '0')),
+	updated: esc(time(plan.updatedAt ?? plan.createdAt)),
+}));
+
+const modeRunRows = modeRuns.map((run: any) => ({
+	id: `mode-run-${esc(run.id)}`,
+	name: `<strong>${esc(run.id)}</strong><span>${esc(run.assignmentId ?? 'assignment n/a')}</span>`,
+	status: esc(statusOf(run)),
+	mode: esc(modeOf(run)),
+	usage: esc(usageSummary(run)),
+	trace: esc(text(run.agentRunTraceId ?? run.traceId ?? run.metadata?.agentRunTraceId, 'not linked')),
+	updated: esc(time(run.completedAt ?? run.updatedAt ?? run.startedAt ?? run.createdAt)),
+}));
+---
+
+<TreeseedAppLayout title="Capacity runtime" description="Inspect agent-capacity coordination records without changing scheduling policy." currentPath="/app/capacity/runtime" teams={context.teams} activeTeam={team}>
+	{team ? (
+		<section class="ts-control-page" aria-label="Capacity runtime">
+			<Panel eyebrow="Capacity" title="Operator surfaces" description="Configuration, live observation, durable runtime records, and reconciler-backed provider lifecycle stay separate.">
+				<FormActions slot="actions" align="end">
+					<Button href="/app/capacity/allocation" variant="secondary" size="sm">Allocation</Button>
+					<Button href="/app/capacity/providers" variant="secondary" size="sm">Providers</Button>
+				</FormActions>
+				<div class="ts-runtime-boundaries">
+					<div><span>Configuration</span><strong>{allocationSets.length} allocation sets</strong></div>
+					<div><span>Project agents</span><strong>{agentClasses.length} classes</strong></div>
+					<div><span>Live observation</span><strong>{providerSessions.length} sessions</strong></div>
+					<div><span>Runtime records</span><strong>{assignments.length} assignments</strong></div>
+					<div><span>Plan gate</span><strong>{capacityPlans.length} capacity plans</strong></div>
+				</div>
+			</Panel>
+
+			<Panel eyebrow="Configuration" title="Allocation set versions" description="Team-owned policy versions describe intent; they do not run provider scheduling from the Admin UI.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Allocation set' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'scope', label: 'Scope' },
+					{ key: 'summary', label: 'Summary' },
+					{ key: 'updated', label: 'Updated' },
+				]} rows={allocationRows} emptyTitle="No allocation sets" emptyDescription="Allocation set records appear after capacity policy versions are written through the API." interactive={true} pageSize={8} searchLabel="Filter allocation sets" controlMode="filter" filterColumns={['status']} />
+			</Panel>
+
+			<Panel eyebrow="Project agents" title={selectedProject ? `${selectedProject.name ?? selectedProject.slug} agent classes` : 'Project agent classes'} description="Project-owned agent classes define specific handlers and mode policy.">
+				{projectOptions.length > 1 ? (
+					<div slot="actions" class="ts-runtime-tabs">
+						{projectOptions.map((project: any) => <a class={project.active ? 'is-active' : ''} href={project.href}>{project.label}</a>)}
+					</div>
+				) : null}
+				{selectedProject ? (
+					<PlainTable columns={[
+						{ key: 'name', label: 'Agent class' },
+						{ key: 'mode', label: 'Mode' },
+						{ key: 'status', label: 'Status' },
+						{ key: 'summary', label: 'Policy' },
+						{ key: 'updated', label: 'Updated' },
+					]} rows={classRows} emptyTitle="No agent classes" emptyDescription="Project agent classes appear after project-owned handler policy is registered." interactive={true} pageSize={8} searchLabel="Filter agent classes" controlMode="filter" filterColumns={['mode', 'status']} />
+				) : (
+					<EmptyState title="No project selected" description="Create or select a project before inspecting project agent classes." actions={[{ label: 'Open Projects', href: '/app/projects' }]} />
+				)}
+			</Panel>
+
+			<Panel eyebrow="Live observation" title="Provider availability sessions" description="Provider check-ins report generic capacity, capabilities, pressure, and availability snapshots.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Provider' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'capacity', label: 'Capacity' },
+					{ key: 'pressure', label: 'Pressure' },
+					{ key: 'updated', label: 'Checked in' },
+				]} rows={sessionRows} emptyTitle="No provider sessions" emptyDescription="Sessions appear when provider managers check in with the API." interactive={true} pageSize={8} searchLabel="Filter sessions" controlMode="filter" filterColumns={['status', 'pressure']} />
+			</Panel>
+
+			<Panel eyebrow="Runtime records" title="Provider assignments" description="Assignments are durable coordination records leased by provider runners; Admin observes but does not select work.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Assignment' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'mode', label: 'Mode' },
+					{ key: 'source', label: 'Source' },
+					{ key: 'scope', label: 'Scope' },
+					{ key: 'lease', label: 'Lease' },
+					{ key: 'updated', label: 'Updated' },
+				]} rows={assignmentRows} emptyTitle="No assignments" emptyDescription="Assignments appear after controlled API creation and provider lifecycle activity." interactive={true} pageSize={8} searchLabel="Filter assignments" controlMode="filter" filterColumns={['status', 'mode']} />
+			</Panel>
+
+			<Panel eyebrow="Plan gate" title="Capacity plans" description="Accepted capacity plans are the acting gate between decision execution inputs and synthesized provider assignments.">
+				{selectedDecisionId ? (
+					<PlainTable columns={[
+						{ key: 'name', label: 'Plan' },
+						{ key: 'status', label: 'Status' },
+						{ key: 'scope', label: 'Scope' },
+						{ key: 'credits', label: 'Credits' },
+						{ key: 'units', label: 'Work units' },
+						{ key: 'updated', label: 'Updated' },
+					]} rows={capacityPlanRows} emptyTitle="No capacity plans" emptyDescription="Capacity plans appear after accepted decision execution inputs are aggregated through the API." interactive={true} pageSize={8} searchLabel="Filter capacity plans" controlMode="filter" filterColumns={['status']} />
+				) : (
+					<EmptyState title="Select a decision" description="Add decisionId to the URL to inspect accepted capacity plans for a decision." />
+				)}
+			</Panel>
+
+			<Panel eyebrow="Telemetry" title="Agent mode runs" description="Mode runs summarize kernel planning or acting attempts and can link to lower-level AgentRunTrace details.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Mode run' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'mode', label: 'Mode' },
+					{ key: 'usage', label: 'Usage' },
+					{ key: 'trace', label: 'Trace' },
+					{ key: 'updated', label: 'Updated' },
+				]} rows={modeRunRows} emptyTitle="No mode runs" emptyDescription="Mode-run telemetry appears after a provider runner executes an assignment." interactive={true} pageSize={8} searchLabel="Filter mode runs" controlMode="filter" filterColumns={['status', 'mode']} />
+			</Panel>
+		</section>
+	) : (
+		<EmptyState title="No active team" description="Create or switch to a team before inspecting capacity runtime records." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
+	)}
+</TreeseedAppLayout>
+
+<style>
+	.ts-runtime-boundaries {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+		gap: 0.75rem;
+	}
+	.ts-runtime-boundaries div {
+		border: 1px solid var(--ts-color-border, #d8dee8);
+		border-radius: 8px;
+		padding: 0.875rem;
+	}
+	.ts-runtime-boundaries span {
+		display: block;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0;
+		color: var(--ts-color-text-muted, #667085);
+	}
+	.ts-runtime-boundaries strong {
+		display: block;
+		margin-top: 0.25rem;
+	}
+	.ts-runtime-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.ts-runtime-tabs a {
+		border: 1px solid var(--ts-color-border, #d8dee8);
+		border-radius: 8px;
+		color: inherit;
+		padding: 0.375rem 0.625rem;
+		text-decoration: none;
+	}
+	.ts-runtime-tabs a.is-active {
+		border-color: var(--ts-color-accent, #2563eb);
+		box-shadow: inset 0 0 0 1px var(--ts-color-accent, #2563eb);
+	}
+</style>

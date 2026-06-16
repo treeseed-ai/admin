@@ -1,5 +1,6 @@
 ---
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
@@ -114,7 +115,10 @@ const rows = providers.map((provider: any) => ({
 <TreeseedAppLayout title="Capacity providers" description="Manage provider lifecycle and runtime state." currentPath="/app/capacity/providers" teams={context.teams} activeTeam={team}>
 	<section class="ts-control-page" aria-label="Capacity providers">
 		<Panel eyebrow="Capacity" title="Providers" description={team ? 'Create providers from native limits, then review derived availability and portfolio allocation.' : 'Create a team before adding capacity.'}>
-			<Button slot="actions" href="/app/capacity/providers/new" size="sm">New provider</Button>
+			<FormActions slot="actions" align="end">
+				<Button href="/app/capacity/runtime" variant="secondary" size="sm">Runtime</Button>
+				<Button href="/app/capacity/providers/new" size="sm">New provider</Button>
+			</FormActions>
 			{team ? (
 				<PlainTable columns={[
 					{ key: 'name', label: 'Provider' },
