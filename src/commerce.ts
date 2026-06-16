@@ -1,7 +1,9 @@
+import type { CatalogItemOfferMode } from '@treeseed/sdk';
+
 export interface AdminOffer {
   id: string;
   itemId: string;
-  mode: 'free' | 'private' | 'contact' | 'paid' | 'one_time_current_version' | 'subscription_updates' | (string & {});
+  mode: CatalogItemOfferMode;
   label?: string;
   metadata?: Record<string, unknown>;
 }
@@ -28,9 +30,17 @@ export const DEFAULT_ADMIN_COMMERCE_PROVIDER: AdminCommerceProvider = {
       : typeof (item as Record<string, any> | null)?.offer?.priceModel === 'string'
         ? String((item as Record<string, any>).offer.priceModel)
         : 'free';
+    const blockedModes = new Set<string>([
+      'one_time',
+      'one_time_current_version',
+      'subscription',
+      'subscription_updates',
+      'professional_hosting',
+      'scoped_contract',
+    ]);
     return {
-      allowed: !['paid', 'one_time_current_version', 'subscription_updates'].includes(offerMode),
-      reason: ['paid', 'one_time_current_version', 'subscription_updates'].includes(offerMode)
+      allowed: !blockedModes.has(offerMode),
+      reason: blockedModes.has(offerMode)
         ? 'This offer requires a commerce provider registered by the hosting tenant.'
         : undefined,
       checkoutUrl: null,

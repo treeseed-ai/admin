@@ -1,0 +1,44 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import CommonsWeightBreakdown from '@treeseed/ui/components/astro/governance/CommonsWeightBreakdown.astro';
+import '@treeseed/ui/styles/governance.css';
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import { ApiClientFacade } from '../../../lib/market/api-client';
+import { loadAppContext } from '../../../view-models/app-access.js';
+
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const participants = await api.listCommonsParticipants({ limit: 100 }).catch(() => []);
+const current = await api.getCommonsParticipantMe().catch(() => null);
+---
+
+<TreeseedAppLayout title="Commons participants" description="Review participant governance identities and transparent voting weights." currentPath="/app/commons" teams={context.teams} activeTeam={context.activeTeam}>
+	<section class="ts-governance-page">
+		<div class="ts-governance-inner">
+			<header class="ts-governance-hero">
+				<p class="ts-governance-eyebrow">Commons participants</p>
+				<h1 class="ts-governance-title">Participation, not legal membership</h1>
+				<p class="ts-governance-lede">Registration creates a TreeSeed Commons identity and viewer membership. Higher authority remains scoped, earned, transparent, and steward-reviewed.</p>
+				<Button href="/app/commons" variant="secondary" size="sm">Commons overview</Button>
+			</header>
+			<div class="ts-governance-two-column">
+				<Panel eyebrow="Participants" title="Active records" description="Weights are advisory signal for bounded Commons decisions.">
+					<PlainTable columns={[
+						{ key: 'displayName', label: 'Participant' },
+						{ key: 'status', label: 'Status' },
+						{ key: 'weight', label: 'Weight' },
+						{ key: 'verified', label: 'Verified' },
+					]} rows={participants.map((participant: any) => ({
+						displayName: participant.displayName ?? participant.userId,
+						status: participant.status,
+						weight: participant.totalWeight,
+						verified: participant.verifiedEmail ? 'yes' : 'no',
+					}))} emptyTitle="No participants" emptyDescription="Use backfill after users register." />
+				</Panel>
+				<CommonsWeightBreakdown participant={current} />
+			</div>
+		</div>
+	</section>
+</TreeseedAppLayout>

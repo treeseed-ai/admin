@@ -1,0 +1,78 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import CommonsDecisionTimeline from '@treeseed/ui/components/astro/governance/CommonsDecisionTimeline.astro';
+import CommonsProposalPipeline from '@treeseed/ui/components/astro/governance/CommonsProposalPipeline.astro';
+import CommonsVoteSummary from '@treeseed/ui/components/astro/governance/CommonsVoteSummary.astro';
+import '@treeseed/ui/styles/governance.css';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { ApiClientFacade } from '../../../../lib/market/api-client';
+import { loadAppContext } from '../../../../view-models/app-access.js';
+
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const proposalId = String(Astro.params.proposalId ?? '');
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const action = String(form.get('action') ?? '');
+	const body = {
+		status: String(form.get('status') ?? 'accepted'),
+		reason: String(form.get('reason') ?? ''),
+		capacityBudget: String(form.get('capacityBudget') ?? ''),
+	};
+	if (action === 'review') await api.reviewCommonsProposal(proposalId, body);
+	if (action === 'start-voting') await api.startCommonsProposalVoting(proposalId, body);
+	if (action === 'decision') await api.stewardDecisionForCommonsProposal(proposalId, body);
+	return Astro.redirect(`/app/commons/proposals/${encodeURIComponent(proposalId)}?saved=${encodeURIComponent(action)}`, 303);
+}
+
+const proposal = await api.getCommonsProposal(proposalId).catch(() => null);
+---
+
+<TreeseedAppLayout title={proposal ? proposal.title : 'Commons proposal'} description="Review proposal state, participant signal, and steward decisions." currentPath="/app/commons" teams={context.teams} activeTeam={context.activeTeam}>
+	<section class="ts-governance-page">
+		<div class="ts-governance-inner">
+			<header class="ts-governance-hero">
+				<p class="ts-governance-eyebrow">Commons proposal</p>
+				<h1 class="ts-governance-title">{proposal?.title ?? 'Proposal not found'}</h1>
+				<p class="ts-governance-lede">{proposal?.summary ?? 'This proposal is unavailable.'}</p>
+				<Button href="/app/commons" variant="secondary" size="sm">Commons overview</Button>
+			</header>
+			{proposal ? (
+				<div class="ts-governance-two-column">
+					<div class="ts-governance-grid">
+						<Panel eyebrow="Proposal" title="Body" description={proposal.body} />
+						<Panel eyebrow="Steward actions" title="Bounded decision controls" description="These actions create governance evidence; they do not directly create legal membership, payout rights, or unbounded roadmap promises.">
+							<form class="ts-governance-actions" method="POST">
+								<Button type="submit" name="action" value="review" size="sm">Start review</Button>
+								<Button type="submit" name="action" value="start-voting" size="sm">Start voting</Button>
+								<select name="status">
+									<option value="accepted">Accepted</option>
+									<option value="rejected">Rejected</option>
+									<option value="deferred">Deferred</option>
+								</select>
+								<input name="capacityBudget" placeholder="capacity budget" />
+								<input name="reason" placeholder="steward reason" />
+								<Button type="submit" name="action" value="decision" size="sm">Record decision</Button>
+							</form>
+						</Panel>
+						<Panel eyebrow="Votes" title="Participant votes" description="One vote per participant; weights are snapshotted when votes are cast.">
+							<PlainTable columns={[
+								{ key: 'vote', label: 'Vote' },
+								{ key: 'weight', label: 'Weight' },
+								{ key: 'reason', label: 'Reason' },
+							]} rows={(proposal.votes ?? []).map((vote: any) => ({ vote: vote.vote, weight: vote.weight, reason: vote.reason ?? '' }))} emptyTitle="No votes" emptyDescription="Votes appear after voting opens." />
+						</Panel>
+					</div>
+					<div class="ts-governance-grid">
+						<CommonsProposalPipeline status={proposal.status} />
+						<CommonsVoteSummary support={proposal.voteSupportWeight} object={proposal.voteObjectWeight} abstain={proposal.voteAbstainWeight} backers={proposal.backingCount} />
+						<CommonsDecisionTimeline events={proposal.events ?? []} />
+					</div>
+				</div>
+			) : null}
+		</div>
+	</section>
+</TreeseedAppLayout>
