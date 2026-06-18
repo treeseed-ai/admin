@@ -1,4 +1,4 @@
-import { encryptHostConfig } from '../host-crypto.ts';
+import { encryptHostConfig, hostEncryptedPayloadToClientEscrowEnvelope, type HostEncryptedPayload } from '../host-crypto.ts';
 import { bindAdministrativeForm, submitAdministrativeJson } from './admin-form-client.ts';
 
 type HostFormPageData = {
@@ -165,6 +165,62 @@ function endpointFor(pageData: HostFormPageData, method: 'POST' | 'PUT') {
 	return method === 'PUT' ? `${base}/${encodeURIComponent(String(pageData.hostId ?? ''))}` : base;
 }
 
+function hostCredentialSecretId(pageData: HostFormPageData) {
+	return [
+		'host',
+		pageData.hostType ?? 'unknown',
+		pageData.hostId ?? 'draft',
+		'credentials',
+	].join(':');
+}
+
+function hostCredentialCiphertextRef(pageData: HostFormPageData) {
+	const teamId = pageData.teamId ?? 'team';
+	const hostType = pageData.hostType ?? 'host';
+	const hostId = pageData.hostId ?? 'draft';
+	return `admin://teams/${encodeURIComponent(teamId)}/hosts/${encodeURIComponent(hostType)}/${encodeURIComponent(hostId)}/credentials`;
+}
+
+function hostCredentialDeploymentIntent(pageData: HostFormPageData) {
+	if (pageData.hostType === 'repository') {
+		return { targetMode: 'github_actions_secret_enclave' as const, metadata: { hostType: pageData.hostType } };
+	}
+	if (pageData.hostType === 'web' || pageData.hostType === 'capacity-provider' || pageData.hostType === 'email' || pageData.hostType === 'ai') {
+		return { targetMode: 'host_env_injection' as const, hostKind: pageData.hostType, hostId: pageData.hostId ?? null };
+	}
+	return { targetMode: 'metadata_only_reentry' as const };
+}
+
+function hostCredentialSecretCapability(pageData: HostFormPageData, encryptedPayload: HostEncryptedPayload) {
+	const envelope = hostEncryptedPayloadToClientEscrowEnvelope(encryptedPayload, {
+		id: `${hostCredentialSecretId(pageData)}:escrow`,
+		secretId: hostCredentialSecretId(pageData),
+		teamId: pageData.teamId ?? null,
+		ciphertextRef: hostCredentialCiphertextRef(pageData),
+		wrappingKeyId: 'admin-sensitive-unlock-passphrase',
+		deploymentIntent: hostCredentialDeploymentIntent(pageData),
+		metadata: { hostType: pageData.hostType ?? null, provider: pageData.provider ?? null },
+	});
+	return {
+		custodyMode: 'client_encrypted_escrow',
+		status: 'escrowed',
+		secretId: envelope.secretId,
+		ciphertextRef: envelope.ciphertextRef,
+		algorithm: envelope.algorithm,
+		kdf: envelope.kdf,
+		kdfParams: envelope.kdfParams,
+		wrappingKeyId: envelope.wrappingKeyId,
+		encryptionVersion: envelope.encryptionVersion,
+		deploymentIntent: envelope.deploymentIntent,
+		recoveryPolicy: 'reentry_required',
+		warnings: [
+			'Admin browser encryption depends on hosted JavaScript integrity.',
+			...(pageData.hostType === 'repository' ? ['Repository credentials should migrate to GitHub App backed operations whenever possible.'] : []),
+			...(pageData.hostType === 'capacity-provider' ? ['Capacity provider hosts must not receive customer project secrets by delegation.'] : []),
+		],
+	};
+}
+
 function bindCredentialSubmitGate(
 	form: HTMLFormElement,
 	status: HTMLElement | null,
@@ -205,9 +261,10 @@ function bindCredentialSubmitGate(
 			);
 			if (status) status.textContent = mode === 'edit' ? 'Encrypting replacement credentials...' : 'Encrypting...';
 			const encryptedPayload = await encryptHostConfig(hostCredentialConfig(formData, pageData.hostType), passphrase);
+			const secretCapability = hostCredentialSecretCapability(pageData, encryptedPayload);
 			const body = mode === 'edit'
-				? { ...editBody(pageData, form, formData), encryptedPayload }
-				: createBody(pageData, formData, encryptedPayload);
+				? { ...editBody(pageData, form, formData), encryptedPayload, secretCapability }
+				: createBody(pageData, formData, encryptedPayload, secretCapability);
 			const method = mode === 'edit' ? 'PUT' : 'POST';
 			const result = await submitAdministrativeJson(endpointFor(pageData, method), method, body);
 			if (status) status.textContent = mode === 'edit' ? 'Saved.' : 'Created.';
@@ -230,7 +287,7 @@ function bindCredentialSubmitGate(
 	}, true);
 }
 
-function createBody(pageData: HostFormPageData, formData: FormData, encryptedPayload: unknown) {
+function createBody(pageData: HostFormPageData, formData: FormData, encryptedPayload: unknown, secretCapability?: unknown) {
 	if (pageData.hostType === 'repository') {
 		return {
 			name: value(formData, 'name'),
@@ -245,6 +302,7 @@ function createBody(pageData: HostFormPageData, formData: FormData, encryptedPay
 			status: 'active',
 			ownership: 'team_owned',
 			encryptedPayload,
+			secretCapability,
 		};
 	}
 	return {
@@ -266,6 +324,7 @@ function createBody(pageData: HostFormPageData, formData: FormData, encryptedPay
 			} : {}),
 		},
 		encryptedPayload,
+		secretCapability,
 	};
 }
 
@@ -329,10 +388,11 @@ export function bindHostCreateCredentialForm(pageData: HostFormPageData): HostFo
 			validateHostCredentialValues(formData, pageData.hostType ?? '', 'Enter all required credential values before saving this host.');
 			setStatus('Encrypting...');
 			const encryptedPayload = await encryptHostConfig(hostCredentialConfig(formData, pageData.hostType ?? ''), String(passphrase));
+			const secretCapability = hostCredentialSecretCapability(pageData, encryptedPayload);
 			const endpoint = pageData.hostType === 'repository'
 				? `/v1/teams/${encodeURIComponent(String(pageData.teamId))}/repository-hosts`
 				: `/v1/teams/${encodeURIComponent(String(pageData.teamId))}/hosts`;
-			return submitAdministrativeJson(endpoint, 'POST', createBody(pageData, formData, encryptedPayload));
+			return submitAdministrativeJson(endpoint, 'POST', createBody(pageData, formData, encryptedPayload, secretCapability));
 		},
 		onSuccess() {
 			window.location.href = '/app/hosts';
@@ -365,6 +425,7 @@ export function bindHostEditCredentialForm(pageData: HostFormPageData, onSuccess
 				validateHostCredentialValues(formData, pageData.hostType, 'Enter all required replacement credential values, or leave every credential field blank to keep the saved credentials.');
 				setStatus('Encrypting replacement credentials...');
 				body.encryptedPayload = await encryptHostConfig(hostCredentialConfig(formData, pageData.hostType), String(passphrase));
+				body.secretCapability = hostCredentialSecretCapability(pageData, body.encryptedPayload as HostEncryptedPayload);
 			}
 			const endpoint = pageData.hostType === 'repository'
 				? `/v1/teams/${encodeURIComponent(pageData.teamId)}/repository-hosts/${encodeURIComponent(pageData.hostId)}`

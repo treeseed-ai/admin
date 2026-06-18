@@ -104,6 +104,11 @@ const pageJson = JSON.stringify({
 					<strong>{template?.title ?? sourceRef}</strong>
 					<span>{hostView.summary.total} requirements · {hostView.summary.warnings} warnings · {hostView.summary.blocked} blocked</span>
 				</div>
+				<ul class="ts-host-diagnostics">
+					<li>Secret-bearing operations use client-encrypted escrow, GitHub Actions secret targets, explicit host env injection, or metadata-only re-entry states.</li>
+					<li>Admin never sends the unlock passphrase to project host operations; re-enter or migrate the selected host secret before rotate/resync when a server-side unlock would be required.</li>
+					<li>GitHub-backed secret use requires GitHub App grants, protected refs, protected environments, and allowlisted workflow operations.</li>
+				</ul>
 				<div class="ts-host-setup-grid" data-project-host-bindings>
 					{hostView.requirements.map((requirement) => {
 						const choices = (requirementChoicesByKey.get(requirement.requirementKey) ?? [])
@@ -155,6 +160,10 @@ const pageJson = JSON.stringify({
 									<div>
 										<strong>Secrets</strong>
 										<span>{requirement.secretTargets.length > 0 ? requirement.secretTargets.map((item) => `${item.env} -> ${item.targets.join(', ')}`).join(' · ') : 'No secret targets declared'}</span>
+									</div>
+									<div>
+										<strong>Boundary</strong>
+										<span>{requirement.secretTargets.length > 0 ? 'client-encrypted escrow -> GitHub Actions or explicit host injection' : 'metadata-only'}</span>
 									</div>
 								</div>
 								{requirement.audit.diagnostics.length > 0 ? (
@@ -247,19 +256,18 @@ const pageJson = JSON.stringify({
 				selectedBy: isNone ? 'user' : isManaged ? 'managed-default' : 'user',
 			};
 		}
-		async function maybePassphrase(action: string, card: HTMLElement) {
+		function hostOperationWouldNeedServerUnlock(action: string, card: HTMLElement) {
 			const choice = selectedChoice(card);
-			const needsUnlock = action === 'rotate' || choice.mode === 'team_owned';
-			if (!needsUnlock) return null;
-			const unlock = (window as any).treeseedSensitiveUnlock;
-			return (await unlock?.promptPassphrase?.()) ?? null;
+			return action === 'rotate' || action === 'resync' || choice.mode === 'team_owned';
 		}
 		async function submit(card: HTMLElement, action: string) {
 			const key = card.dataset.requirementKey ?? '';
-			const passphrase = await maybePassphrase(action, card);
+			if (hostOperationWouldNeedServerUnlock(action, card)) {
+				setStatus(`${action} for ${key} needs secret re-entry or migration first. Admin no longer sends unlock passphrases to project host operations.`);
+				return;
+			}
 			const body: any = {};
 			if (action === 'replace') body.hostBinding = bindingForCard(card);
-			if (passphrase) body.sensitivePassphrase = passphrase;
 			setStatus(`${action} queued for ${key}...`);
 			const url = action === 'audit'
 				? `/v1/projects/${encodeURIComponent(pageData.projectId)}/hosts/audit`

@@ -931,10 +931,15 @@ const launchJson = JSON.stringify({
 			const hostBindings = buildHostBindings(hostIdOverrides);
 			const publicWebBinding = hostBindings.publicWeb;
 			const transactionalEmailBinding = hostBindings.transactionalEmail;
+			const sourceRepositoryBinding = hostBindings.sourceRepository;
+			const repositoryHostMode = bindingHostMode(sourceRepositoryBinding);
 			cloudflareHostMode = bindingHostMode(publicWebBinding);
 			cloudflareHostId = cloudflareHostMode === 'team_owned' ? publicWebBinding?.hostId ?? cloudflareHostId : null;
 			emailHostMode = bindingHostMode(transactionalEmailBinding);
 			emailHostId = emailHostMode === 'team_owned' ? transactionalEmailBinding?.hostId ?? emailHostId : null;
+			if (repositoryHostMode === 'team_owned' || cloudflareHostMode === 'team_owned' || emailHostMode === 'team_owned') {
+				throw new Error('Project launch no longer sends unlock passphrases to the API. Save the encrypted host, migrate or re-enter its secret into an approved target, then launch again.');
+			}
 			const launchRequest = {
 				action: `/v1/teams/${encodeURIComponent(pageData.teamId)}/projects/launch`,
 				method: 'POST',
@@ -958,7 +963,6 @@ const launchJson = JSON.stringify({
 					emailHostMode,
 					emailHostId,
 					hostBindings,
-					sensitivePassphrase: passphrase,
 					domains: {
 						productionDomain: value(formData, 'productionDomain'),
 						stagingDomain: value(formData, 'stagingDomain'),

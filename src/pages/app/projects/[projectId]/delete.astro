@@ -83,28 +83,6 @@ const confirmation = project ? `DELETE ${project.slug}` : '';
 		event.preventDefault();
 		syncDeleteSubmitState();
 		if (submitButton?.disabled) return;
-		const confirmation = currentConfirmation();
-		const unlock = window.treeseedSensitiveUnlock;
-		let sensitivePassphrase = unlock?.getPassphrase?.() ?? null;
-		if (!sensitivePassphrase) {
-			if (status) status.textContent = 'Unlock sensitive data to start deletion.';
-			sensitivePassphrase = await unlock?.promptPassphrase?.();
-		}
-		if (!sensitivePassphrase) {
-			if (status) status.textContent = 'Deletion was not started.';
-			return;
-		}
-		if (status) status.textContent = 'Starting deletion...';
-		const response = await fetch(`/v1/projects/${encodeURIComponent(projectId)}`, {
-			method: 'DELETE',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ confirmation, sensitivePassphrase }),
-		});
-		const payload = await response.json().catch(() => null);
-		if (!response.ok || payload?.ok === false) {
-			if (status) status.textContent = payload?.error ?? 'Project could not be deleted.';
-			return;
-		}
-		window.location.href = payload?.deploymentHref ?? '/app/projects';
+		if (status) status.textContent = 'Project deletion needs secret re-entry or migration first. Admin no longer sends unlock passphrases to the API.';
 	});
 </script>

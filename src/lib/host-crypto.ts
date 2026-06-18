@@ -1,3 +1,8 @@
+import {
+	buildTreeseedClientEncryptedEscrowEnvelope,
+	type TreeseedClientEncryptedEscrowEnvelopeInput,
+} from '@treeseed/sdk/secrets-capability';
+
 const TEXT_ENCODER = new TextEncoder();
 const TEXT_DECODER = new TextDecoder();
 
@@ -43,6 +48,19 @@ export type HostCredentialConfig = Record<string, unknown>;
 export type HostCryptoOptions = {
 	opsLimit?: number;
 	memLimit?: number;
+};
+
+export type HostEscrowEnvelopeOptions = {
+	id: string;
+	secretId: string;
+	ciphertextRef: string;
+	wrappingKeyId: string;
+	teamId?: string | null;
+	projectId?: string | null;
+	createdByClientId?: string | null;
+	expiresAt?: string | null;
+	deploymentIntent?: TreeseedClientEncryptedEscrowEnvelopeInput['deploymentIntent'];
+	metadata?: Record<string, unknown>;
 };
 
 async function loadSodium(): Promise<Sodium> {
@@ -144,4 +162,36 @@ export async function decryptHostConfig(envelope: HostEncryptedPayload | TestHos
 		throw new Error('Unable to decrypt host config. Check the passphrase.');
 	}
 	return JSON.parse(TEXT_DECODER.decode(plaintext)) as HostCredentialConfig;
+}
+
+export function hostEncryptedPayloadToClientEscrowEnvelope(
+	payload: HostEncryptedPayload,
+	options: HostEscrowEnvelopeOptions,
+): TreeseedClientEncryptedEscrowEnvelopeInput {
+	return buildTreeseedClientEncryptedEscrowEnvelope({
+		id: options.id,
+		secretId: options.secretId,
+		teamId: options.teamId,
+		projectId: options.projectId,
+		ciphertext: payload.ciphertext,
+		ciphertextRef: options.ciphertextRef,
+		algorithm: payload.algorithm,
+		nonce: payload.nonce,
+		salt: payload.salt,
+		kdf: payload.kdf.algorithm,
+		kdfParams: {
+			opsLimit: payload.kdf.opsLimit,
+			memLimit: payload.kdf.memLimit,
+		},
+		wrappingKeyId: options.wrappingKeyId,
+		encryptionVersion: `host-payload-v${payload.version}`,
+		createdByClientId: options.createdByClientId,
+		expiresAt: options.expiresAt,
+		deploymentIntent: options.deploymentIntent ?? { targetMode: 'metadata_only_reentry' },
+		metadata: {
+			source: 'admin_host_credential_form',
+			...(options.metadata ?? {}),
+		},
+		status: 'active',
+	});
 }

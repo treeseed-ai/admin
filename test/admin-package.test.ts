@@ -5,7 +5,14 @@ import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../src/plugin
 import type { TreeseedPluginSiteContext, TreeseedSiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
 import { ADMIN_ROUTES } from '../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../src/commerce';
-import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../src/secret-managers';
+import {
+	buildAdminGitHubActionsSecretDeploymentBody,
+	buildAdminClientEncryptedEscrowBody,
+	DEFAULT_SECRET_MANAGER_PROVIDERS,
+	describeAdminSecretCapabilityState,
+	describeAdminClientEncryptedEscrowStatus,
+} from '../src/secret-managers';
+import { hostEncryptedPayloadToClientEscrowEnvelope } from '../src/lib/host-crypto';
 
 function filesUnder(root: string): string[] {
 	const resolved = resolve(root);
@@ -174,6 +181,102 @@ describe('@treeseed/admin package boundaries', () => {
 		const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { mode: 'free' });
 		expect(checkoutUrl).toBeNull();
 		expect(entitlement?.allowed).toBe(true);
+	});
+
+	it('builds client-encrypted escrow payloads and safe status labels', () => {
+		const body = buildAdminClientEncryptedEscrowBody({
+			id: 'escrow-1',
+			secretId: 'secret-1',
+			name: 'TREESEED_PROJECT_SECRET',
+			secretClass: 'customer_project_secret',
+			ciphertext: 'base64-ciphertext',
+			ciphertextRef: 'api://projects/project-1/secrets/escrow/escrow-1',
+			algorithm: 'xchacha20-poly1305',
+			nonce: 'base64-nonce',
+			salt: 'base64-salt',
+			kdf: 'argon2id',
+			kdfParams: { memoryKiB: 65536, iterations: 3, parallelism: 1 },
+			wrappingKeyId: 'client-key-1',
+			encryptionVersion: 'v1',
+			deploymentIntent: { targetMode: 'github_actions_secret_enclave' },
+		});
+
+		expect(body).toMatchObject({
+			ciphertext: 'base64-ciphertext',
+			recoveryPolicy: 'reentry_required',
+		});
+		expect(JSON.stringify(body)).not.toContain('passphrase');
+		expect(() => buildAdminClientEncryptedEscrowBody({
+			...body,
+			passphrase: 'do-not-send',
+		} as any)).toThrow();
+		expect(describeAdminClientEncryptedEscrowStatus({
+			...body,
+			status: 'migrated',
+			migratedTo: 'github_actions_secret_enclave',
+		})).toMatchObject({
+			label: 'migrated',
+			escrowed: false,
+			migrated: true,
+		});
+		expect(buildAdminGitHubActionsSecretDeploymentBody({
+			repository: 'owner/repo',
+			scope: 'environment',
+			environment: 'production',
+			secretName: 'TREESEED_SECRET',
+			encryptedValue: 'github-encrypted-value',
+			keyId: 'key-1',
+		})).toMatchObject({
+			custodyMode: 'github_actions_secret_enclave',
+			encryptedValue: 'github-encrypted-value',
+		});
+		expect(() => buildAdminGitHubActionsSecretDeploymentBody({
+			repository: 'owner/repo',
+			scope: 'environment',
+			environment: 'production',
+			secretName: 'TREESEED_SECRET',
+			encryptedValue: 'github-encrypted-value',
+			keyId: 'key-1',
+			rawSecret: 'do-not-send',
+		} as any)).toThrow();
+		expect(describeAdminSecretCapabilityState({
+			custodyMode: 'host_env_injection',
+		})).toMatchObject({
+			label: 'host-injected',
+			hostInjected: true,
+		});
+		expect(describeAdminSecretCapabilityState({
+			custodyMode: 'client_encrypted_escrow',
+			id: 'escrow-1',
+			secretId: 'secret-1',
+			ciphertextRef: 'api://projects/project-1/secrets/escrow/escrow-1',
+			algorithm: 'xchacha20-poly1305',
+			wrappingKeyId: 'client-key-1',
+			expiresAt: '2000-01-01T00:00:00.000Z',
+		})).toMatchObject({
+			label: 're-entry required',
+			reentryRequired: true,
+		});
+		const hostEnvelope = hostEncryptedPayloadToClientEscrowEnvelope({
+			version: 1,
+			algorithm: 'secretbox',
+			kdf: { algorithm: 'argon2id', opsLimit: 2, memLimit: 8192 },
+			salt: 'base64-salt',
+			nonce: 'base64-nonce',
+			ciphertext: 'base64-ciphertext',
+		}, {
+			id: 'host-escrow-1',
+			secretId: 'host-secret-1',
+			ciphertextRef: 'admin://teams/team-1/hosts/web/draft/credentials',
+			wrappingKeyId: 'admin-sensitive-unlock-passphrase',
+			deploymentIntent: { targetMode: 'host_env_injection' },
+		});
+		expect(hostEnvelope).toMatchObject({
+			ciphertext: 'base64-ciphertext',
+			kdf: 'argon2id',
+			deploymentIntent: { targetMode: 'host_env_injection' },
+		});
+		expect(JSON.stringify(hostEnvelope)).not.toContain('passphrase-value');
 	});
 
 	it('does not bundle payment ecommerce implementation', () => {

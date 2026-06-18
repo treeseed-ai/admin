@@ -207,12 +207,8 @@ const historyRows = vm?.historyRows.map((row) => ({
 													action={action.url}
 													data-launch-recovery-action
 												>
-													<label class="ts-deploy-action__field">
-														<span>Host passphrase</span>
-														<input type="password" name="sensitivePassphrase" autocomplete="current-password" placeholder="Required for team-owned hosts" />
-													</label>
 													<Button type="submit" size="sm" variant="secondary">{action.label}</Button>
-													<p class="ts-deploy-action__message">{action.description}</p>
+													<p class="ts-deploy-action__message">{action.description} Secret-bearing recovery requires client-side re-entry or migration first; Admin does not submit unlock passphrases to the API.</p>
 												</form>
 											))}
 										</div>
@@ -417,7 +413,7 @@ const historyRows = vm?.historyRows.map((row) => ({
 </TreeseedAppLayout>
 
 <script>
-	import { submitDeploymentActionForm, submitLaunchRecoveryForm, watchDeploymentState } from '@treeseed/ui/lib/app/deployment-action-status';
+	import { submitDeploymentActionForm, watchDeploymentState } from '@treeseed/ui/lib/app/deployment-action-status';
 
 	function initializeProjectDeployPage() {
 	const page = document.querySelector('[data-deploy-page]') as HTMLElement | null;
@@ -482,11 +478,7 @@ const historyRows = vm?.historyRows.map((row) => ({
 			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
 				try {
-					await submitLaunchRecoveryForm({
-						form,
-						statusElement: status,
-						fallbackHref: `${window.location.pathname}?launch=${Date.now()}`,
-					});
+					if (status) status.textContent = 'Launch recovery needs secret re-entry or migration first. Admin no longer sends unlock passphrases to the API.';
 				} catch (error) {
 					if (status) status.textContent = error instanceof Error ? error.message : 'Launch recovery could not be queued.';
 				}

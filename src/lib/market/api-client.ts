@@ -442,6 +442,21 @@ export class ApiClientFacade {
 		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-mode-runs${query.toString() ? `?${query}` : ''}`);
 	}
 
+	listProjectAgentFallbackOutputs(projectId: string, filters: { mode?: string | null; status?: string | null; assignmentId?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.mode) query.set('mode', filters.mode);
+		if (filters.status) query.set('status', filters.status);
+		if (filters.assignmentId) query.set('assignmentId', filters.assignmentId);
+		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-fallback-outputs${query.toString() ? `?${query}` : ''}`);
+	}
+
+	listProjectTreeDxProxyAudit(projectId: string, filters: { assignmentId?: string | null; actorType?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.assignmentId) query.set('assignmentId', filters.assignmentId);
+		if (filters.actorType) query.set('actorType', filters.actorType);
+		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/treedx-proxy-audit${query.toString() ? `?${query}` : ''}`);
+	}
+
 	getProviderAssignmentExplanation(teamId: string, assignmentId: string) {
 		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments/${encodeURIComponent(assignmentId)}/explanation`);
 	}

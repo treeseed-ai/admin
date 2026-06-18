@@ -24,6 +24,8 @@ const [
 	agentClasses,
 	modeRuns,
 	capacityPlans,
+	fallbackOutputs,
+	treeDxProxyAudit,
 ] = team ? await Promise.all([
 	api.listCapacityAllocationSets(team.id).catch(() => []),
 	api.listProviderAvailabilitySessions(team.id).catch(() => []),
@@ -31,7 +33,9 @@ const [
 	selectedProject ? api.listProjectAgentClasses(selectedProject.id).catch(() => []) : Promise.resolve([]),
 	selectedProject ? api.listProjectAgentModeRuns(selectedProject.id).catch(() => []) : Promise.resolve([]),
 	selectedDecisionId ? api.listDecisionCapacityPlans(selectedDecisionId).catch(() => []) : Promise.resolve([]),
-]) : [[], [], [], [], [], []];
+	selectedProject ? api.listProjectAgentFallbackOutputs(selectedProject.id).catch(() => []) : Promise.resolve([]),
+	selectedProject ? api.listProjectTreeDxProxyAudit(selectedProject.id).catch(() => []) : Promise.resolve([]),
+]) : [[], [], [], [], [], [], [], []];
 const projectOptions = (context.projects ?? []).map((project: any) => ({
 	id: project.id,
 	label: project.name ?? project.slug ?? project.id,
@@ -126,6 +130,25 @@ const modeRunRows = modeRuns.map((run: any) => ({
 	trace: esc(text(run.agentRunTraceId ?? run.traceId ?? run.metadata?.agentRunTraceId, 'not linked')),
 	updated: esc(time(run.completedAt ?? run.updatedAt ?? run.startedAt ?? run.createdAt)),
 }));
+
+const fallbackRows = fallbackOutputs.map((output: any) => ({
+	id: `fallback-${esc(output.id)}`,
+	name: `<strong>${esc(output.id)}</strong><span>${esc(output.assignmentId ?? 'assignment n/a')}</span>`,
+	status: esc(statusOf(output)),
+	mode: esc(modeOf(output)),
+	code: esc(text(output.code, 'fallback')),
+	provenance: esc(text(output.provenance?.source ?? output.metadata?.source, 'not linked')),
+	updated: esc(time(output.createdAt)),
+}));
+
+const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
+	id: `treedx-audit-${esc(audit.id)}`,
+	name: `<strong>${esc(audit.method ?? 'GET')} ${esc(audit.path ?? '/')}</strong><span>${esc(audit.assignmentId ?? 'user scoped')}</span>`,
+	actor: esc(`${audit.actorType ?? 'user'} · ${audit.actorId ?? 'n/a'}`),
+	status: esc(statusOf({ status: audit.resultStatus })),
+	handle: esc(text(audit.handle?.id ?? audit.handle?.assignmentId, 'not recorded')),
+	updated: esc(time(audit.createdAt)),
+}));
 ---
 
 <TreeseedAppLayout title="Capacity runtime" description="Inspect agent-capacity coordination records without changing scheduling policy." currentPath="/app/capacity/runtime" teams={context.teams} activeTeam={team}>
@@ -142,6 +165,8 @@ const modeRunRows = modeRuns.map((run: any) => ({
 					<div><span>Live observation</span><strong>{providerSessions.length} sessions</strong></div>
 					<div><span>Runtime records</span><strong>{assignments.length} assignments</strong></div>
 					<div><span>Plan gate</span><strong>{capacityPlans.length} capacity plans</strong></div>
+					<div><span>Fallbacks</span><strong>{fallbackOutputs.length} outputs</strong></div>
+					<div><span>TreeDX audit</span><strong>{treeDxProxyAudit.length} proxy calls</strong></div>
 				</div>
 			</Panel>
 
@@ -220,6 +245,27 @@ const modeRunRows = modeRuns.map((run: any) => ({
 					{ key: 'trace', label: 'Trace' },
 					{ key: 'updated', label: 'Updated' },
 				]} rows={modeRunRows} emptyTitle="No mode runs" emptyDescription="Mode-run telemetry appears after a provider runner executes an assignment." interactive={true} pageSize={8} searchLabel="Filter mode runs" controlMode="filter" filterColumns={['status', 'mode']} />
+			</Panel>
+
+			<Panel eyebrow="Fallbacks" title="Agent fallback outputs" description="Fallback outputs are bounded project records; Admin observes drafts and emitted outputs without scheduling them.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Fallback' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'mode', label: 'Mode' },
+					{ key: 'code', label: 'Code' },
+					{ key: 'provenance', label: 'Provenance' },
+					{ key: 'updated', label: 'Created' },
+				]} rows={fallbackRows} emptyTitle="No fallback outputs" emptyDescription="Fallback outputs appear when kernel fallback behavior records bounded project artifacts." interactive={true} pageSize={8} searchLabel="Filter fallback outputs" controlMode="filter" filterColumns={['status', 'mode', 'code']} />
+			</Panel>
+
+			<Panel eyebrow="TreeDX" title="Project proxy audit" description="Provider TreeDX calls are assignment-scoped and audited through API proxy records; raw TreeDX credentials are not surfaced here.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Request' },
+					{ key: 'actor', label: 'Actor' },
+					{ key: 'status', label: 'Result' },
+					{ key: 'handle', label: 'Handle' },
+					{ key: 'updated', label: 'Observed' },
+				]} rows={treeDxAuditRows} emptyTitle="No TreeDX proxy audit" emptyDescription="Audit rows appear after user or provider calls pass through the project TreeDX proxy." interactive={true} pageSize={8} searchLabel="Filter TreeDX audit" controlMode="filter" filterColumns={['actor', 'status']} />
 			</Panel>
 		</section>
 	) : (
