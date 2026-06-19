@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { build } from 'esbuild';
@@ -8,6 +8,9 @@ import { build } from 'esbuild';
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const srcRoot = resolve(packageRoot, 'src');
 const distRoot = resolve(packageRoot, 'dist');
+const workspaceCoreDistRoot = resolve(packageRoot, '..', 'core', 'dist');
+const workspaceSdkDistRoot = resolve(packageRoot, '..', 'sdk', 'dist');
+const workspaceUiDistRoot = resolve(packageRoot, '..', 'ui', 'dist');
 
 const COMPILE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const COPY_EXTENSIONS = new Set(['.astro', '.css', '.d.ts', '.js', '.json', '.yaml', '.yml']);
@@ -70,16 +73,76 @@ function writeDeclaration(relativePath, source) {
   writeFileSync(filePath, source, 'utf8');
 }
 
+function relativePathForTsconfig(targetPath) {
+	return relative(packageRoot, targetPath).replaceAll('\\', '/');
+}
+
+function existingWorkspaceDeclarationPaths() {
+	const paths = {};
+	if (existsSync(resolve(workspaceCoreDistRoot, 'index.d.ts'))) {
+		Object.assign(paths, {
+			'@treeseed/core': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, 'index.d.ts'))],
+			'@treeseed/core/middleware/editorial-preview': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, 'middleware', 'editorial-preview.d.ts'))],
+			'@treeseed/core/*/index': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, '*', 'index.d.ts'))],
+			'@treeseed/core/*': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, '*.d.ts'))],
+		});
+	}
+	if (existsSync(resolve(workspaceSdkDistRoot, 'index.d.ts'))) {
+		Object.assign(paths, {
+			'@treeseed/sdk': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'index.d.ts'))],
+			'@treeseed/sdk/platform/plugin': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'platform', 'plugin.d.ts'))],
+			'@treeseed/sdk/types': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'sdk-types.d.ts'))],
+			'@treeseed/sdk/types/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'types', '*.d.ts'))],
+			'@treeseed/sdk/*/index': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*', 'index.d.ts'))],
+			'@treeseed/sdk/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*.d.ts'))],
+		});
+	}
+	if (existsSync(resolve(workspaceUiDistRoot, 'index.d.ts'))) {
+		Object.assign(paths, {
+			'@treeseed/ui': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'index.d.ts'))],
+			'@treeseed/ui/*/index': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*', 'index.d.ts'))],
+			'@treeseed/ui/*': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*.d.ts'))],
+		});
+	}
+	return paths;
+}
+
+function writeDeclarationTsconfig() {
+	const baseConfig = JSON.parse(readFileSync(resolve(packageRoot, 'tsconfig.build.json'), 'utf8'));
+	const baseCompilerOptions = baseConfig.compilerOptions && typeof baseConfig.compilerOptions === 'object'
+		? baseConfig.compilerOptions
+		: {};
+	const tsconfigPath = resolve(packageRoot, '.treeseed-tsconfig.build.generated.json');
+	const mergedPaths = {
+		...(baseCompilerOptions.paths ?? {}),
+		...existingWorkspaceDeclarationPaths(),
+	};
+	writeFileSync(tsconfigPath, `${JSON.stringify({
+		extends: './tsconfig.build.json',
+		compilerOptions: {
+			...baseCompilerOptions,
+			paths: mergedPaths,
+		},
+		include: baseConfig.include ?? ['src/**/*'],
+	}, null, 2)}\n`, 'utf8');
+	return tsconfigPath;
+}
+
 function emitDeclarations() {
-	const result = spawnSync('npx', [
-		'tsc',
-		'-p',
-		resolve(packageRoot, 'tsconfig.build.json'),
-	], {
+	const tsconfigPath = writeDeclarationTsconfig();
+	const localTsc = resolve(packageRoot, 'node_modules', 'typescript', 'bin', 'tsc');
+	const command = existsSync(localTsc) ? process.execPath : 'npx';
+	const args = existsSync(localTsc) ? [localTsc, '-p', tsconfigPath] : ['--yes', '--package', 'typescript', 'tsc', '-p', tsconfigPath];
+	const result = spawnSync(command, args, {
 		cwd: packageRoot,
 		stdio: 'inherit',
 		shell: process.platform === 'win32',
 	});
+	try {
+		unlinkSync(tsconfigPath);
+	} catch {
+		// Best effort cleanup for interrupted declaration builds.
+	}
 	if (result.status !== 0) {
 		process.exit(result.status ?? 1);
 	}
