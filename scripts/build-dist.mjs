@@ -3,9 +3,11 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { build } from 'esbuild';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
+const requireFromPackage = createRequire(resolve(packageRoot, 'package.json'));
 const srcRoot = resolve(packageRoot, 'src');
 const distRoot = resolve(packageRoot, 'dist');
 const workspaceCoreDistRoot = resolve(packageRoot, '..', 'core', 'dist');
@@ -109,6 +111,16 @@ function existingWorkspaceDeclarationPaths() {
 	return paths;
 }
 
+function ignoreDeprecationsForInstalledTypescript() {
+	try {
+		const typescriptPackageJson = JSON.parse(readFileSync(requireFromPackage.resolve('typescript/package.json'), 'utf8'));
+		const major = Number.parseInt(String(typescriptPackageJson.version ?? '').split('.')[0] ?? '', 10);
+		return Number.isFinite(major) && major >= 6 ? '6.0' : '5.0';
+	} catch {
+		return '5.0';
+	}
+}
+
 function writeDeclarationTsconfig() {
 	const inheritedConfig = JSON.parse(readFileSync(resolve(packageRoot, 'tsconfig.json'), 'utf8'));
 	const baseConfig = JSON.parse(readFileSync(resolve(packageRoot, 'tsconfig.build.json'), 'utf8'));
@@ -128,6 +140,7 @@ function writeDeclarationTsconfig() {
 		extends: './tsconfig.build.json',
 		compilerOptions: {
 			...baseCompilerOptions,
+			ignoreDeprecations: baseCompilerOptions.ignoreDeprecations ?? ignoreDeprecationsForInstalledTypescript(),
 			paths: mergedPaths,
 		},
 		include: baseConfig.include ?? ['src/**/*'],
@@ -137,7 +150,12 @@ function writeDeclarationTsconfig() {
 
 function emitDeclarations() {
 	const tsconfigPath = writeDeclarationTsconfig();
-	const localTsc = resolve(packageRoot, 'node_modules', 'typescript', 'bin', 'tsc');
+	let localTsc = null;
+	try {
+		localTsc = requireFromPackage.resolve('typescript/bin/tsc');
+	} catch {
+		localTsc = resolve(packageRoot, 'node_modules', 'typescript', 'bin', 'tsc');
+	}
 	const command = existsSync(localTsc) ? process.execPath : 'npx';
 	const args = existsSync(localTsc) ? [localTsc, '-p', tsconfigPath] : ['--yes', '--package', 'typescript', 'tsc', '-p', tsconfigPath];
 	const result = spawnSync(command, args, {
