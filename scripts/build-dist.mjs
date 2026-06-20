@@ -100,6 +100,8 @@ function existingWorkspaceDeclarationPaths() {
 	if (existsSync(resolve(workspaceUiDistRoot, 'index.d.ts'))) {
 		Object.assign(paths, {
 			'@treeseed/ui': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'index.d.ts'))],
+			'@treeseed/ui/react': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'react.d.ts'))],
+			'@treeseed/ui/theme': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'theme', 'index.d.ts'))],
 			'@treeseed/ui/*/index': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*', 'index.d.ts'))],
 			'@treeseed/ui/*': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*.d.ts'))],
 		});
@@ -108,12 +110,17 @@ function existingWorkspaceDeclarationPaths() {
 }
 
 function writeDeclarationTsconfig() {
+	const inheritedConfig = JSON.parse(readFileSync(resolve(packageRoot, 'tsconfig.json'), 'utf8'));
 	const baseConfig = JSON.parse(readFileSync(resolve(packageRoot, 'tsconfig.build.json'), 'utf8'));
+	const inheritedCompilerOptions = inheritedConfig.compilerOptions && typeof inheritedConfig.compilerOptions === 'object'
+		? inheritedConfig.compilerOptions
+		: {};
 	const baseCompilerOptions = baseConfig.compilerOptions && typeof baseConfig.compilerOptions === 'object'
 		? baseConfig.compilerOptions
 		: {};
 	const tsconfigPath = resolve(packageRoot, '.treeseed-tsconfig.build.generated.json');
 	const mergedPaths = {
+		...(inheritedCompilerOptions.paths ?? {}),
 		...(baseCompilerOptions.paths ?? {}),
 		...existingWorkspaceDeclarationPaths(),
 	};
