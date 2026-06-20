@@ -804,6 +804,10 @@ export class ApiClientFacade {
 		return this.request<any>('POST', `/v1/team-invites/${encodeURIComponent(token)}/accept`, { body: {} });
 	}
 
+	getTeamInvite(token: string) {
+		return this.request<any>('GET', `/v1/team-invites/${encodeURIComponent(token)}`);
+	}
+
 	loadTeamProfileByName(name: string) {
 		return this.request<any>('GET', `/v1/teams/by-name/${encodeURIComponent(name)}/profile`).catch(() => null);
 	}

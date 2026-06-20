@@ -19,9 +19,11 @@ function envValue(context: any, name: string) {
 
 function applyLocalDevResetCookieBoundary(context: any) {
 	const resetId = envValue(context, 'TREESEED_DEV_RESET_ID');
-	if (!resetId) return false;
-	if (context.cookies.get(DEV_RESET_COOKIE)?.value === resetId) return false;
-	clearApiAccessTokenCookie(context);
+	if (!resetId) return { changed: false, clearedAuth: false };
+	const existingResetId = context.cookies.get(DEV_RESET_COOKIE)?.value;
+	if (existingResetId === resetId) return { changed: false, clearedAuth: false };
+	const clearedAuth = Boolean(existingResetId);
+	if (clearedAuth) clearApiAccessTokenCookie(context);
 	context.cookies.set(DEV_RESET_COOKIE, resetId, {
 		httpOnly: true,
 		path: '/',
@@ -29,7 +31,7 @@ function applyLocalDevResetCookieBoundary(context: any) {
 		secure: context.url.protocol === 'https:',
 		maxAge: 30 * 24 * 60 * 60,
 	});
-	return true;
+	return { changed: true, clearedAuth };
 }
 
 async function loadApiBackedWebSession(context: any) {
@@ -58,18 +60,18 @@ async function loadApiBackedWebSession(context: any) {
 export const onRequest = defineMiddleware(async (context, next) => {
 	await ensureLocalCloudflareRuntime(context.locals);
 	const config = getSiteAuthConfig(context);
-	const resetClearedAuthCookie = applyLocalDevResetCookieBoundary(context);
+	const resetCookieBoundary = applyLocalDevResetCookieBoundary(context);
 	const canonicalLocalUrl = localAuthCanonicalRedirectUrl(context.url, config.siteBaseUrl);
 	if (canonicalLocalUrl && ['GET', 'HEAD'].includes(context.request.method.toUpperCase())) {
 		const response = context.redirect(canonicalLocalUrl.toString(), 308);
-		if (resetClearedAuthCookie) {
+		if (resetCookieBoundary.changed) {
 			for (const cookie of context.cookies.headers()) {
 				response.headers.append('set-cookie', cookie);
 			}
 		}
 		return response;
 	}
-	const webSession = resetClearedAuthCookie ? null : await loadApiBackedWebSession(context);
+	const webSession = resetCookieBoundary.clearedAuth ? null : await loadApiBackedWebSession(context);
 	context.locals.auth = webSession
 		? {
 			session: webSession,
@@ -78,7 +80,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		: null;
 	resolveEditorialPreview(context);
 	const response = await next();
-	if (resetClearedAuthCookie) {
+	if (resetCookieBoundary.changed) {
 		for (const cookie of context.cookies.headers()) {
 			response.headers.append('set-cookie', cookie);
 		}

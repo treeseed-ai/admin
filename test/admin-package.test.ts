@@ -1,11 +1,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../src/plugin';
 import type { TreeseedPluginSiteContext, TreeseedSiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
 import { ADMIN_ROUTES } from '../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../src/commerce';
 import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../src/secret-managers';
+
+const require = createRequire(import.meta.url);
 
 function filesUnder(root: string): string[] {
 	const resolved = resolve(root);
@@ -44,6 +47,10 @@ function resolveSiteHooks(): TreeseedSiteExtensionContribution {
 		tenantConfig: {} as TreeseedPluginSiteContext['tenantConfig'],
 		pluginConfig: {},
 	} satisfies TreeseedPluginSiteContext);
+}
+
+function readUiExportedFile(specifier: string) {
+	return readFileSync(require.resolve(specifier), 'utf8');
 }
 
 describe('@treeseed/admin package boundaries', () => {
@@ -94,6 +101,56 @@ describe('@treeseed/admin package boundaries', () => {
 			expect(source, path).not.toMatch(/from ['"]src\//u);
 			expect(source, path).not.toMatch(/packages\/(?:ui|core|sdk|api)\/src/u);
 			expect(source, path).not.toMatch(/(?:from|import)\s*['"](?:\.\.\/){3,}src\//u);
+		}
+	});
+
+	it('loads complete UI style bundles in public and app layouts', () => {
+		const appLayout = readFileSync('src/layouts/TreeseedAppLayout.astro', 'utf8');
+		for (const style of [
+			'@treeseed/ui/styles/tokens.css',
+			'@treeseed/ui/styles/theme.css',
+			'@treeseed/ui/styles/ui.css',
+			'@treeseed/ui/styles/forms.css',
+			'@treeseed/ui/styles/app-shell.css',
+			'@treeseed/ui/styles/app-controls.css',
+			'@treeseed/ui/styles/auth.css',
+			'@treeseed/ui/styles/operations.css',
+		]) {
+			expect(appLayout).toContain(style);
+		}
+
+		const publicLayout = readFileSync('src/layouts/TreeseedPublicLayout.astro', 'utf8');
+		for (const style of [
+			'@treeseed/ui/styles/tokens.css',
+			'@treeseed/ui/styles/theme.css',
+			'@treeseed/ui/styles/ui.css',
+			'@treeseed/ui/styles/forms.css',
+			'@treeseed/ui/styles/app-shell.css',
+			'@treeseed/ui/styles/site.css',
+			'@treeseed/ui/styles/market.css',
+		]) {
+			expect(publicLayout).toContain(style);
+		}
+	});
+
+	it('uses UI-owned app controls and rich markdown editor on project pages', () => {
+		const appControls = readUiExportedFile('@treeseed/ui/styles/app-controls.css');
+		const forms = readUiExportedFile('@treeseed/ui/styles/forms.css');
+		const projectCreate = readFileSync('src/pages/app/projects/new.astro', 'utf8');
+		const projectSettings = readFileSync('src/pages/app/projects/[projectId]/settings.astro', 'utf8');
+		const appLayout = readFileSync('src/layouts/TreeseedAppLayout.astro', 'utf8');
+
+		for (const marker of ['.ts-icon-button', '.ts-link-button', '.ts-default-label', '.ts-project-lineage-card']) {
+			expect(appControls).toContain(marker);
+		}
+		expect(forms).toContain('.ts-rich-markdown-editor');
+		expect(appLayout).toContain('class="ts-icon-button"');
+		for (const page of [projectCreate, projectSettings]) {
+			expect(page).toContain('data-rich-markdown-editor');
+			expect(page).toContain('initializeRichMarkdownEditors');
+			expect(page).toContain("@treeseed/ui/react");
+			expect(page).not.toContain('core-objective-mdx-editor.tsx');
+			expect(page).not.toContain('ts-core-objective-editor');
 		}
 	});
 

@@ -5,11 +5,23 @@ import { resolveApiStore } from '../../../lib/market/store.js';
 export const prerender = false;
 
 const token = String(Astro.params.token ?? '');
+const store = resolveApiStore(Astro);
+const preview: any = store
+	? await store.getTeamInvite(token).catch((error: any) => ({ ok: false, message: error?.message ?? 'Invite link is invalid or expired.' }))
+	: { ok: false, message: 'Market storage is unavailable.' };
+const inviteEmail = String(preview?.invite?.email ?? '').trim().toLowerCase();
+const signedInEmail = String(Astro.locals.auth?.session?.email ?? Astro.locals.auth?.principal?.metadata?.email ?? '').trim().toLowerCase();
+
 if (!Astro.locals.auth?.principal) {
-	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`, 302);
+	const email = preview?.invite?.email ?? '';
+	const target = `/auth/register?returnTo=${encodeURIComponent(Astro.url.pathname)}${email ? `&email=${encodeURIComponent(email)}` : ''}&inviteToken=${encodeURIComponent(token)}`;
+	return Astro.redirect(target, 302);
 }
 
-const store = resolveApiStore(Astro);
+if (inviteEmail && signedInEmail && inviteEmail !== signedInEmail) {
+	return Astro.redirect(`/v1/auth/logout?returnTo=${encodeURIComponent(Astro.url.pathname)}`, 302);
+}
+
 const result: any = store
 	? await store.acceptTeamInvite(token, Astro.locals.auth.principal.id)
 	: { ok: false, message: 'Market storage is unavailable.' };

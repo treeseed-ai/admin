@@ -21,6 +21,7 @@ const teamAccess = new Map(await Promise.all(context.teams.map(async (team: any)
 })));
 const rows = context.teams.map((team: any) => ({
 	id: `team-${esc(team.id)}`,
+	sceneId: `team.card.${team.name ?? team.slug ?? team.id}`,
 	name: `<strong>${esc(team.displayName ?? team.name)}</strong><span>${esc(team.profileSummary ?? team.slug ?? team.id)}</span>`,
 	state: team.id === context.activeTeam?.id ? 'Active' : 'Available',
 	actions: [
