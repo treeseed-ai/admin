@@ -4,6 +4,7 @@ import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import { summarizeExecutionProviderVisibility } from '@treeseed/sdk/agent-capacity';
 import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
 import { escapeHtml as esc } from '../../../lib/market/control-ui.js';
 import { createApiFacade } from '../../../lib/market/api-client';
@@ -73,6 +74,45 @@ function usageSummary(record: any) {
 	].filter(Boolean).join(' · ') || 'reported';
 }
 
+function executionVisibilityForAssignment(assignment: any) {
+	return summarizeExecutionProviderVisibility({
+		assignment,
+		explanation: assignment?.explanation ?? null,
+	});
+}
+
+function executionVisibilityForModeRun(run: any) {
+	return summarizeExecutionProviderVisibility({ modeRun: run });
+}
+
+function executionCell(visibility: ReturnType<typeof summarizeExecutionProviderVisibility>) {
+	const provider = visibility.executionProviderKind ?? visibility.executionProviderId ?? 'provider n/a';
+	const status = visibility.adapterStatus ?? 'status n/a';
+	return `<strong>${esc(provider)}</strong><span>${esc(status)}</span>`;
+}
+
+function externalCell(visibility: ReturnType<typeof summarizeExecutionProviderVisibility>) {
+	if (visibility.externalRef && visibility.externalUrl) {
+		return `<a href="${esc(visibility.externalUrl)}" target="_blank" rel="noreferrer">${esc(visibility.externalRef)}</a>`;
+	}
+	return esc(visibility.externalRef ?? 'not linked');
+}
+
+function capabilitiesCell(visibility: ReturnType<typeof summarizeExecutionProviderVisibility>) {
+	const required = visibility.requiredCapabilities.length;
+	const available = visibility.availableCapabilities.length + visibility.aliasCapabilities.length;
+	if (visibility.missingCapabilities.length) {
+		return `<strong>${esc(`missing ${visibility.missingCapabilities.join(', ')}`)}</strong><span>${esc(`${available}/${required} covered`)}</span>`;
+	}
+	return `<strong>${esc(required ? 'covered' : 'not declared')}</strong><span>${esc(`${available}/${required} available`)}</span>`;
+}
+
+function artifactsCell(visibility: ReturnType<typeof summarizeExecutionProviderVisibility>) {
+	const first = visibility.artifacts[0] as any;
+	const label = first?.name ?? first?.kind ?? null;
+	return `<strong>${esc(`${visibility.artifacts.length} artifact${visibility.artifacts.length === 1 ? '' : 's'}`)}</strong><span>${esc(text(label, 'none linked'))}</span>`;
+}
+
 const allocationRows = allocationSets.map((set: any) => ({
 	id: `allocation-${esc(set.id)}`,
 	name: `<strong>${esc(set.name ?? set.id)}</strong><span>${esc(`version ${set.version ?? 'n/a'}`)}</span>`,
@@ -100,16 +140,22 @@ const sessionRows = providerSessions.map((session: any) => ({
 	updated: esc(time(session.checkedInAt ?? session.updatedAt ?? session.createdAt)),
 }));
 
-const assignmentRows = assignments.map((assignment: any) => ({
-	id: `assignment-${esc(assignment.id)}`,
-	name: `<strong>${esc(assignment.id)}</strong><span>${esc(assignment.agentClassId ?? assignment.projectAgentClassId ?? 'agent class n/a')}</span>`,
-	status: esc(statusOf(assignment)),
-	mode: esc(modeOf(assignment)),
-	source: esc(text(assignment.synthesizedFrom ?? assignment.explanation?.source, 'explicit')),
-	scope: esc(`project=${assignment.projectId ?? 'n/a'} · provider=${assignment.providerId ?? 'n/a'}`),
-	lease: esc(`${assignment.leaseState ?? 'unleased'} · expires ${time(assignment.leaseExpiresAt)}`),
-	updated: esc(time(assignment.updatedAt ?? assignment.assignedAt ?? assignment.createdAt)),
-}));
+const assignmentRows = assignments.map((assignment: any) => {
+	const visibility = executionVisibilityForAssignment(assignment);
+	return {
+		id: `assignment-${esc(assignment.id)}`,
+		name: `<strong>${esc(assignment.id)}</strong><span>${esc(assignment.agentClassId ?? assignment.projectAgentClassId ?? 'agent class n/a')}</span>`,
+		status: esc(statusOf(assignment)),
+		mode: esc(modeOf(assignment)),
+		source: esc(text(assignment.synthesizedFrom ?? assignment.explanation?.source, 'explicit')),
+		scope: esc(`project=${assignment.projectId ?? 'n/a'} · provider=${assignment.providerId ?? 'n/a'}`),
+		execution: executionCell(visibility),
+		external: externalCell(visibility),
+		capabilities: capabilitiesCell(visibility),
+		lease: esc(`${assignment.leaseState ?? 'unleased'} · expires ${time(assignment.leaseExpiresAt)}`),
+		updated: esc(time(assignment.updatedAt ?? assignment.assignedAt ?? assignment.createdAt)),
+	};
+});
 
 const capacityPlanRows = capacityPlans.map((plan: any) => ({
 	id: `capacity-plan-${esc(plan.id)}`,
@@ -121,15 +167,21 @@ const capacityPlanRows = capacityPlans.map((plan: any) => ({
 	updated: esc(time(plan.updatedAt ?? plan.createdAt)),
 }));
 
-const modeRunRows = modeRuns.map((run: any) => ({
-	id: `mode-run-${esc(run.id)}`,
-	name: `<strong>${esc(run.id)}</strong><span>${esc(run.assignmentId ?? 'assignment n/a')}</span>`,
-	status: esc(statusOf(run)),
-	mode: esc(modeOf(run)),
-	usage: esc(usageSummary(run)),
-	trace: esc(text(run.agentRunTraceId ?? run.traceId ?? run.metadata?.agentRunTraceId, 'not linked')),
-	updated: esc(time(run.completedAt ?? run.updatedAt ?? run.startedAt ?? run.createdAt)),
-}));
+const modeRunRows = modeRuns.map((run: any) => {
+	const visibility = executionVisibilityForModeRun(run);
+	return {
+		id: `mode-run-${esc(run.id)}`,
+		name: `<strong>${esc(run.id)}</strong><span>${esc(run.assignmentId ?? 'assignment n/a')}</span>`,
+		status: esc(statusOf(run)),
+		mode: esc(modeOf(run)),
+		execution: executionCell(visibility),
+		external: externalCell(visibility),
+		usage: esc(visibility.usage.length ? `${visibility.usage.length} usage record${visibility.usage.length === 1 ? '' : 's'}` : usageSummary(run)),
+		artifacts: artifactsCell(visibility),
+		trace: esc(text(run.agentRunTraceId ?? run.traceId ?? run.metadata?.agentRunTraceId, 'not linked')),
+		updated: esc(time(run.completedAt ?? run.updatedAt ?? run.startedAt ?? run.createdAt)),
+	};
+});
 
 const fallbackRows = fallbackOutputs.map((output: any) => ({
 	id: `fallback-${esc(output.id)}`,
@@ -154,7 +206,7 @@ const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
 <TreeseedAppLayout title="Capacity runtime" description="Inspect agent-capacity coordination records without changing scheduling policy." currentPath="/app/capacity/runtime" teams={context.teams} activeTeam={team}>
 	{team ? (
 		<section class="ts-control-page" aria-label="Capacity runtime">
-			<Panel eyebrow="Capacity" title="Operator surfaces" description="Configuration, live observation, durable runtime records, and reconciler-backed provider lifecycle stay separate.">
+			<Panel eyebrow="Capacity" title="Operator surfaces" description="Configuration, live observation, durable runtime records, execution provider refs, artifacts, usage, and capability explanations stay observable without scheduling work from Admin.">
 				<FormActions slot="actions" align="end">
 					<Button href="/app/capacity/allocation" variant="secondary" size="sm">Allocation</Button>
 					<Button href="/app/capacity/providers" variant="secondary" size="sm">Providers</Button>
@@ -209,13 +261,16 @@ const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
 				]} rows={sessionRows} emptyTitle="No provider sessions" emptyDescription="Sessions appear when provider managers check in with the API." interactive={true} pageSize={8} searchLabel="Filter sessions" controlMode="filter" filterColumns={['status', 'pressure']} />
 			</Panel>
 
-			<Panel eyebrow="Runtime records" title="Provider assignments" description="Assignments are durable coordination records leased by provider runners; Admin observes but does not select work.">
+			<Panel eyebrow="Runtime records" title="Provider assignments" description="Assignments are durable coordination records leased by provider runners; Admin observes execution providers, capability coverage, and external refs but does not select, retry, cancel, or reroute work.">
 				<PlainTable columns={[
 					{ key: 'name', label: 'Assignment' },
 					{ key: 'status', label: 'Status' },
 					{ key: 'mode', label: 'Mode' },
 					{ key: 'source', label: 'Source' },
 					{ key: 'scope', label: 'Scope' },
+					{ key: 'execution', label: 'Execution' },
+					{ key: 'external', label: 'External' },
+					{ key: 'capabilities', label: 'Capabilities' },
 					{ key: 'lease', label: 'Lease' },
 					{ key: 'updated', label: 'Updated' },
 				]} rows={assignmentRows} emptyTitle="No assignments" emptyDescription="Assignments appear after controlled API creation and provider lifecycle activity." interactive={true} pageSize={8} searchLabel="Filter assignments" controlMode="filter" filterColumns={['status', 'mode']} />
@@ -236,12 +291,15 @@ const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
 				)}
 			</Panel>
 
-			<Panel eyebrow="Telemetry" title="Agent mode runs" description="Mode runs summarize kernel planning or acting attempts and can link to lower-level AgentRunTrace details.">
+			<Panel eyebrow="Telemetry" title="Agent mode runs" description="Mode runs summarize kernel planning or acting attempts, adapter status, external refs, artifacts, usage, and lower-level AgentRunTrace details.">
 				<PlainTable columns={[
 					{ key: 'name', label: 'Mode run' },
 					{ key: 'status', label: 'Status' },
 					{ key: 'mode', label: 'Mode' },
+					{ key: 'execution', label: 'Execution' },
+					{ key: 'external', label: 'External' },
 					{ key: 'usage', label: 'Usage' },
+					{ key: 'artifacts', label: 'Artifacts' },
 					{ key: 'trace', label: 'Trace' },
 					{ key: 'updated', label: 'Updated' },
 				]} rows={modeRunRows} emptyTitle="No mode runs" emptyDescription="Mode-run telemetry appears after a provider runner executes an assignment." interactive={true} pageSize={8} searchLabel="Filter mode runs" controlMode="filter" filterColumns={['status', 'mode']} />

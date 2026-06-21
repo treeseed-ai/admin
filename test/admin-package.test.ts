@@ -112,6 +112,18 @@ describe('@treeseed/admin package boundaries', () => {
 		}
 	});
 
+	it('renders capacity runtime execution visibility through SDK projections only', () => {
+		const runtimePage = readFileSync('src/pages/app/capacity/runtime.astro', 'utf8');
+		expect(runtimePage).toContain('@treeseed/sdk/agent-capacity');
+		expect(runtimePage).toContain('summarizeExecutionProviderVisibility');
+		expect(runtimePage).toContain("label: 'Execution'");
+		expect(runtimePage).toContain("label: 'External'");
+		expect(runtimePage).toContain("label: 'Capabilities'");
+		expect(runtimePage).toContain("label: 'Artifacts'");
+		expect(runtimePage).not.toContain('packages/api');
+		expect(runtimePage).not.toContain('provider/runner');
+	});
+
 	it('builds declarations for every exported JavaScript module', () => {
 		const distFiles = filesUnder('dist');
 		const javascriptModules = distFiles

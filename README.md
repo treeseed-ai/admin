@@ -52,14 +52,14 @@ export { onRequest } from '@treeseed/admin/middleware';
 
 The host app must provide:
 
-- one real `treeseed.site.yaml`
+- a host-owned `treeseed.site.yaml` when the app owns a deployable runtime surface
 - tenant config and environment values
 - public content and page overrides
 - deployment target and hosting workflow
 - API base URL or `/v1/*` proxy path
 - any tenant-specific branding or marketplace policy
 
-`@treeseed/admin` does not ship a package-local `treeseed.site.yaml` and does not own hosting.
+`@treeseed/admin` does not ship a package-local `treeseed.site.yaml` and does not own hosting. The root Market app owns the Treeseed web tenant in this workspace; other packages may own package-local manifests only when they operate independently released runtime surfaces.
 
 ## Routes And Capabilities
 

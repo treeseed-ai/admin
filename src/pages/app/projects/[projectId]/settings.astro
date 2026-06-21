@@ -44,6 +44,15 @@ const domainLabel = metadata.domains?.productionDomain && metadata.domains?.stag
 	? `${metadata.domains.productionDomain} / ${metadata.domains.stagingDomain}`
 	: metadata.domains?.productionDomain ?? metadata.domains?.stagingDomain ?? 'Not recorded';
 const repository = details?.latestLaunch?.intent?.repository ?? details?.repositories?.find((entry: any) => entry.role === 'software') ?? null;
+const architecture = details?.architecture && typeof details.architecture === 'object'
+	? details.architecture as Record<string, any>
+	: metadata.architecture && typeof metadata.architecture === 'object'
+		? metadata.architecture as Record<string, any>
+		: null;
+const contentPublishTarget = architecture?.contentPublishTarget && typeof architecture.contentPublishTarget === 'object'
+	? architecture.contentPublishTarget as Record<string, any>
+	: null;
+const docsReadiness = metadata.docsSiteReadiness ?? metadata.projectArchitectureReadiness ?? null;
 const launchContextRows = [
 	{
 		label: 'Template',
@@ -66,6 +75,33 @@ const launchContextRows = [
 		description: metadata.emailHost?.targetEnvironments ? `Used for ${metadata.emailHost.targetEnvironments.join(', ')}` : 'Selected during project launch.',
 	},
 ];
+const architectureRows = architecture ? [
+	{
+		label: 'Topology',
+		value: architecture.topology ?? 'unknown',
+		description: `rootPath ${architecture.rootPath ?? '.'}`,
+	},
+	{
+		label: 'Site path',
+		value: architecture.sitePath ?? '.',
+		description: docsReadiness ? `docs readiness: ${docsReadiness}` : 'Site implementation path inside the repository.',
+	},
+	{
+		label: 'Content path',
+		value: architecture.contentPath ?? 'Not configured',
+		description: `runtime source: ${architecture.contentRuntimeSource ?? 'unknown'}`,
+	},
+	{
+		label: 'Local content',
+		value: architecture.localContentMaterialization ?? 'none',
+		description: 'Local materialization is opt-in for preview/editing and not required for hosted deploy.',
+	},
+	{
+		label: 'Publish target',
+		value: contentPublishTarget?.kind ?? 'Not configured',
+		description: contentPublishTarget?.prefix ? `prefix ${contentPublishTarget.prefix}` : 'Content publish remains independent from software deploy.',
+	},
+] : [];
 ---
 
 <TreeseedAppLayout title={project ? `Project settings` : 'Project not found'} description="Edit project identity and objective." currentPath="/app/projects" teams={context.teams} activeTeam={layoutActiveTeam}>
@@ -118,6 +154,22 @@ const launchContextRows = [
 						</article>
 					))}
 				</div>
+			</Panel>
+
+			<Panel eyebrow="Project architecture" title="Repository, site, and content model" description="Projects are imported or templated as repository bindings with logical paths, so existing repositories do not need restructuring.">
+				{architectureRows.length > 0 ? (
+					<div class="ts-project-lineage-grid">
+						{architectureRows.map((row) => (
+							<article class="ts-project-lineage-card">
+								<span>{row.label}</span>
+								<strong>{row.value}</strong>
+								<p>{row.description}</p>
+							</article>
+						))}
+					</div>
+				) : (
+					<p class="ts-subtle">No canonical project architecture is recorded yet. Import or seed the project with topology, rootPath, sitePath, contentPath, contentRuntimeSource, and localContentMaterialization.</p>
+				)}
 			</Panel>
 		</section>
 	) : (
