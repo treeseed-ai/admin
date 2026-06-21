@@ -457,6 +457,11 @@ export class ApiClientFacade {
 		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/treedx-proxy-audit${query.toString() ? `?${query}` : ''}`);
 	}
 
+	getProjectCapacityRuntimeDiagnostics(projectId: string, teamId: string) {
+		const query = new URLSearchParams({ teamId });
+		return this.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/capacity-runtime-diagnostics?${query}`);
+	}
+
 	getProviderAssignmentExplanation(teamId: string, assignmentId: string) {
 		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments/${encodeURIComponent(assignmentId)}/explanation`);
 	}

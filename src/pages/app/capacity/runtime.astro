@@ -4,11 +4,12 @@ import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import { summarizeExecutionProviderVisibility } from '@treeseed/sdk/agent-capacity';
+import { summarizeCapacityRuntimeDiagnostics, summarizeExecutionProviderVisibility } from '@treeseed/sdk/agent-capacity';
 import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
 import { escapeHtml as esc } from '../../../lib/market/control-ui.js';
 import { createApiFacade } from '../../../lib/market/api-client';
 import { loadAppContext } from '../../../view-models/app-access.js';
+import { buildCapacityRuntimeDiagnosticVm } from '../../../view-models/capacity-runtime.vm';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/capacity/runtime')}`);
 
@@ -37,6 +38,23 @@ const [
 	selectedProject ? api.listProjectAgentFallbackOutputs(selectedProject.id).catch(() => []) : Promise.resolve([]),
 	selectedProject ? api.listProjectTreeDxProxyAudit(selectedProject.id).catch(() => []) : Promise.resolve([]),
 ]) : [[], [], [], [], [], [], [], []];
+const runtimeDiagnosticsResponse = team && selectedProject
+	? await api.getProjectCapacityRuntimeDiagnostics(selectedProject.id, team.id).catch(() => summarizeCapacityRuntimeDiagnostics({
+		projectId: selectedProject.id,
+		teamId: team.id,
+		assignments,
+		explanations: assignments.map((assignment: any) => assignment.explanation).filter(Boolean),
+		modeRuns,
+		treeDxProxyAudit,
+		ledgerEntries: [],
+		fallbackOutputs,
+	}))
+	: null;
+const runtimeVm = runtimeDiagnosticsResponse ? buildCapacityRuntimeDiagnosticVm(runtimeDiagnosticsResponse, Astro.url.searchParams.get('assignmentId')) : null;
+const runtimeSummary = runtimeVm ? {
+	...runtimeVm.summary,
+	openSessions: providerSessions.filter((session: any) => statusOf(session) === 'open').length,
+} : null;
 const projectOptions = (context.projects ?? []).map((project: any) => ({
 	id: project.id,
 	label: project.name ?? project.slug ?? project.id,
@@ -201,6 +219,23 @@ const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
 	handle: esc(text(audit.handle?.id ?? audit.handle?.assignmentId, 'not recorded')),
 	updated: esc(time(audit.createdAt)),
 }));
+const blockerRows = (runtimeVm?.blockers ?? []).map((blocker: any, index: number) => ({
+	id: `blocker-${index}-${esc(blocker.code)}`,
+	code: `<strong>${esc(blocker.title ?? blocker.code)}</strong><span>${esc(blocker.code)}</span>`,
+	severity: esc(blocker.severity ?? 'warning'),
+	owner: esc(blocker.owner ?? 'system'),
+	scope: esc(`assignment=${blocker.assignmentId ?? 'n/a'} · provider=${blocker.providerId ?? 'n/a'}`),
+	message: esc(blocker.message ?? ''),
+	nextAction: esc(blocker.nextAction ?? 'Inspect the assignment explanation.'),
+}));
+const settlementRows = (runtimeVm?.settlement.ledgerEntries ?? []).map((entry: any) => ({
+	id: `ledger-${esc(entry.id)}`,
+	name: `<strong>${esc(entry.phase ?? 'ledger')}</strong><span>${esc(entry.assignmentId ?? 'assignment n/a')}</span>`,
+	credits: esc(text(entry.credits, '0')),
+	reservation: esc(text(entry.reservationId, 'none')),
+	source: esc(text(entry.source, 'unknown')),
+	updated: esc(time(entry.createdAt)),
+}));
 ---
 
 <TreeseedAppLayout title="Capacity runtime" description="Inspect agent-capacity coordination records without changing scheduling policy." currentPath="/app/capacity/runtime" teams={context.teams} activeTeam={team}>
@@ -219,7 +254,34 @@ const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
 					<div><span>Plan gate</span><strong>{capacityPlans.length} capacity plans</strong></div>
 					<div><span>Fallbacks</span><strong>{fallbackOutputs.length} outputs</strong></div>
 					<div><span>TreeDX audit</span><strong>{treeDxProxyAudit.length} proxy calls</strong></div>
+					<div><span>Health</span><strong>{runtimeSummary?.health ?? 'unknown'}</strong></div>
 				</div>
+			</Panel>
+
+			<Panel eyebrow="Runtime overview" title="Operational diagnostics" description="Assignments, explanations, mode runs, TreeDX audit, fallback outputs, and ledger state are normalized into actionable runtime signals.">
+				<div class="ts-runtime-boundaries">
+					<div><span>Open sessions</span><strong>{runtimeSummary?.openSessions ?? 0}</strong></div>
+					<div><span>Leased assignments</span><strong>{runtimeSummary?.leasedAssignments ?? 0}</strong></div>
+					<div><span>Blocked signals</span><strong>{runtimeSummary?.blockedAssignments ?? 0}</strong></div>
+					<div><span>Failed assignments</span><strong>{runtimeSummary?.failedAssignments ?? 0}</strong></div>
+					<div><span>Unsettled</span><strong>{runtimeSummary?.unsettledAssignments ?? 0}</strong></div>
+					<div><span>Missing TreeDX audit</span><strong>{runtimeSummary?.missingTreeDxAuditCount ?? 0}</strong></div>
+				</div>
+			</Panel>
+
+			<Panel eyebrow="Blocked work" title="Eligibility and readiness explanations" description="Stable reason codes identify likely ownership and next actions without moving scheduling decisions into Admin.">
+				{blockerRows.length ? (
+					<PlainTable columns={[
+						{ key: 'code', label: 'Reason' },
+						{ key: 'severity', label: 'Severity' },
+						{ key: 'owner', label: 'Owner' },
+						{ key: 'scope', label: 'Scope' },
+						{ key: 'message', label: 'Explanation' },
+						{ key: 'nextAction', label: 'Next action' },
+					]} rows={blockerRows} interactive={true} pageSize={8} searchLabel="Filter blockers" controlMode="filter" filterColumns={['severity', 'owner']} />
+				) : (
+					<EmptyState title="No runtime blockers" description="The current runtime projection has no blocked, failed, unsettled, or missing-audit signals." />
+				)}
 			</Panel>
 
 			<Panel eyebrow="Configuration" title="Allocation set versions" description="Team-owned policy versions describe intent; they do not run provider scheduling from the Admin UI.">
@@ -314,6 +376,16 @@ const treeDxAuditRows = treeDxProxyAudit.map((audit: any) => ({
 					{ key: 'provenance', label: 'Provenance' },
 					{ key: 'updated', label: 'Created' },
 				]} rows={fallbackRows} emptyTitle="No fallback outputs" emptyDescription="Fallback outputs appear when kernel fallback behavior records bounded project artifacts." interactive={true} pageSize={8} searchLabel="Filter fallback outputs" controlMode="filter" filterColumns={['status', 'mode', 'code']} />
+			</Panel>
+
+			<Panel eyebrow="Settlement" title="Capacity ledger evidence" description="Terminal assignment lifecycle events should settle reservations exactly once and link back to assignments, mode runs, and usage actuals where available.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Ledger entry' },
+					{ key: 'credits', label: 'Credits' },
+					{ key: 'reservation', label: 'Reservation' },
+					{ key: 'source', label: 'Source' },
+					{ key: 'updated', label: 'Created' },
+				]} rows={settlementRows} emptyTitle="No ledger entries" emptyDescription="Capacity ledger entries appear after reservations, starts, completions, returns, failures, or overrun holds are recorded." interactive={true} pageSize={8} searchLabel="Filter ledger entries" controlMode="filter" filterColumns={['source']} />
 			</Panel>
 
 			<Panel eyebrow="TreeDX" title="Project proxy audit" description="Provider TreeDX calls are assignment-scoped and audited through API proxy records; raw TreeDX credentials are not surfaced here.">
