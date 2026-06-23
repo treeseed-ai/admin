@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { build } from 'esbuild';
@@ -11,6 +11,29 @@ const distRoot = resolve(packageRoot, 'dist');
 
 const COMPILE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const COPY_EXTENSIONS = new Set(['.astro', '.css', '.d.ts', '.js', '.json', '.yaml', '.yml']);
+
+function runtimeDependencyNames() {
+	const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8')) as {
+		dependencies?: Record<string, string>;
+	};
+	return Object.keys(packageJson.dependencies ?? {});
+}
+
+function ensureWorkspaceRuntimePackageLinks() {
+	for (const packageName of runtimeDependencyNames()) {
+		if (!packageName.startsWith('@treeseed/')) {
+			continue;
+		}
+		const runtimePackageRoot = resolve(packageRoot, '..', packageName.slice('@treeseed/'.length));
+		if (!existsSync(resolve(runtimePackageRoot, 'package.json'))) {
+			continue;
+		}
+		const linkPath = resolve(packageRoot, 'node_modules', ...packageName.split('/'));
+		rmSync(linkPath, { recursive: true, force: true });
+		mkdirSync(dirname(linkPath), { recursive: true });
+		symlinkSync(runtimePackageRoot, linkPath, 'dir');
+	}
+}
 
 function walkFiles(root) {
   const files = [];
@@ -86,6 +109,7 @@ function emitDeclarations() {
 }
 
 async function main() {
+  ensureWorkspaceRuntimePackageLinks();
   rmSync(distRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
 
