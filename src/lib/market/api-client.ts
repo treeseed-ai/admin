@@ -431,6 +431,18 @@ export class ApiClientFacade {
 		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments${query.toString() ? `?${query}` : ''}`);
 	}
 
+	listExecutionRuns(teamId: string, filters: { projectId?: string | null; providerId?: string | null; status?: string | null; mode?: string | null; assignmentId?: string | null; workdayId?: string | null; limit?: number | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.projectId) query.set('projectId', filters.projectId);
+		if (filters.providerId) query.set('providerId', filters.providerId);
+		if (filters.status) query.set('status', filters.status);
+		if (filters.mode) query.set('mode', filters.mode);
+		if (filters.assignmentId) query.set('assignmentId', filters.assignmentId);
+		if (filters.workdayId) query.set('workdayId', filters.workdayId);
+		if (filters.limit) query.set('limit', String(filters.limit));
+		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/execution-runs${query.toString() ? `?${query}` : ''}`);
+	}
+
 	listProjectAgentClasses(projectId: string) {
 		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-classes`);
 	}
@@ -486,6 +498,21 @@ export class ApiClientFacade {
 
 	getWorkdayCapacitySummary(workdayId: string) {
 		return this.request<any>('GET', `/v1/workdays/${encodeURIComponent(workdayId)}/summary`);
+	}
+
+	listWorkdayTestRuns(teamId: string, filters: { status?: string | null; providerId?: string | null } = {}) {
+		const query = new URLSearchParams();
+		if (filters.status) query.set('status', filters.status);
+		if (filters.providerId) query.set('providerId', filters.providerId);
+		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/workday-tests${query.toString() ? `?${query}` : ''}`);
+	}
+
+	createWorkdayTestRun(teamId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/teams/${encodeURIComponent(teamId)}/workday-tests`, { body });
+	}
+
+	getWorkdayTestRun(teamId: string, runId: string) {
+		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/workday-tests/${encodeURIComponent(runId)}`);
 	}
 
 	listCapacityLedgerEntries(projectId: string, workdayId: string) {

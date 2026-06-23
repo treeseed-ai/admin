@@ -7,6 +7,8 @@ export const ADMIN_ROUTES: TreeseedSiteRouteContribution[] = [
   { pattern: '/app/capacity', resourcePath: 'pages/app/capacity/index.astro' },
   { pattern: '/app/capacity/allocation', resourcePath: 'pages/app/capacity/allocation.astro' },
   { pattern: '/app/capacity/runtime', resourcePath: 'pages/app/capacity/runtime.astro' },
+  { pattern: '/app/capacity/workday-tests', resourcePath: 'pages/app/capacity/workday-tests/index.astro' },
+  { pattern: '/app/capacity/workday-tests/[runId]', resourcePath: 'pages/app/capacity/workday-tests/[runId].astro' },
   { pattern: '/app/capacity/providers', resourcePath: 'pages/app/capacity/providers/index.astro' },
   { pattern: '/app/capacity/providers/new', resourcePath: 'pages/app/capacity/providers/new.astro' },
   { pattern: '/app/capacity/providers/[providerId]/edit', resourcePath: 'pages/app/capacity/providers/[providerId]/edit.astro' },

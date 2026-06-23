@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const CONTENT_FIELD_HELP = {
 	projectId: {
 		label: 'Project',

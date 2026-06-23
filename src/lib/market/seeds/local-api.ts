@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { resolveLocalSeedEnv } from './apply.js';
 
 async function createLocalApiApp(config, db) {

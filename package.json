@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.11.1-dev.demo.20260621T224507Z",
+  "version": "0.11.1-dev.demo.20260623T000158Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -20,7 +20,7 @@
   "files": [
     "README.md",
     "dist",
-    "scripts/verify-driver.mjs"
+    "scripts/verify-driver.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -29,28 +29,28 @@
     "setup": "npm install",
     "setup:ci": "npm ci --workspaces=false",
     "build": "npm run build:dist",
-    "build:dist": "node ./scripts/build-dist.mjs",
-    "prepare": "node ./scripts/prepare.mjs",
+    "build:dist": "tsx ./scripts/build-dist.ts",
+    "prepare": "tsx ./scripts/prepare.ts",
     "prepack": "npm run build:dist",
     "check": "npm run build:dist && tsc --noEmit",
     "test": "npm run test:unit",
     "test:unit": "vitest run --config ./vitest.config.ts",
     "lint": "npm run check",
     "verify:direct": "npm run release:verify",
-    "verify:local": "node --input-type=module -e \"process.env.TREESEED_VERIFY_DRIVER='direct'; await import('./scripts/verify-driver.mjs')\"",
-    "verify:action": "node --input-type=module -e \"process.env.TREESEED_VERIFY_DRIVER='act'; await import('./scripts/verify-driver.mjs')\"",
-    "verify": "node --input-type=module -e \"await import('./scripts/verify-driver.mjs')\"",
+    "verify:local": "TREESEED_VERIFY_DRIVER=direct tsx ./scripts/verify-driver.ts",
+    "verify:action": "TREESEED_VERIFY_DRIVER=act tsx ./scripts/verify-driver.ts",
+    "verify": "tsx ./scripts/verify-driver.ts",
     "release:setup": "npm run setup:ci",
-    "release:check-tag": "node ./scripts/assert-release-tag-version.mjs",
+    "release:check-tag": "tsx ./scripts/assert-release-tag-version.ts",
     "release:verify": "npm run build:dist && npm run test:unit",
-    "release:publish": "node ./scripts/publish-package.mjs"
+    "release:publish": "tsx ./scripts/publish-package.ts"
   },
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#0.11.1-dev.demo.20260621T224422Z",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#0.11.1-dev.demo.20260621T224355Z",
-    "@treeseed/ui": "github:treeseed-ai/ui#0.11.1-dev.demo.20260621T211118Z",
+    "@treeseed/core": "github:treeseed-ai/core#0.11.1-dev.demo.20260623T000050Z",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#0.11.1-dev.demo.20260622T235935Z",
+    "@treeseed/ui": "github:treeseed-ai/ui#0.11.1-dev.demo.20260622T235800Z",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
@@ -63,6 +63,7 @@
     "@types/react-dom": "^19.2.3",
     "astro": "^6.4.5",
     "esbuild": "^0.28.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.2"
   },

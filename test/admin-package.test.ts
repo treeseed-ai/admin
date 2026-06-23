@@ -142,8 +142,8 @@ describe('@treeseed/admin package boundaries', () => {
 		const deployWorkflow = readFileSync('.github/workflows/deploy.yml', 'utf8');
 		const publishWorkflow = readFileSync('.github/workflows/publish.yml', 'utf8');
 		const packageManifest = readFileSync('treeseed.package.yaml', 'utf8');
-		const checkTagScript = readFileSync('scripts/assert-release-tag-version.mjs', 'utf8');
-		const publishScript = readFileSync('scripts/publish-package.mjs', 'utf8');
+		const checkTagScript = readFileSync('scripts/assert-release-tag-version.ts', 'utf8');
+		const publishScript = readFileSync('scripts/publish-package.ts', 'utf8');
 
 		expect(packageManifest).toContain('workflow: deploy.yml');
 		expect(verifyWorkflow).toContain('npm run verify:direct');

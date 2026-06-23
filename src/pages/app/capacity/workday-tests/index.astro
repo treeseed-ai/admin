@@ -1,0 +1,131 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
+import Field from '@treeseed/ui/components/astro/forms/Field.astro';
+import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
+import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
+import { createApiFacade } from '../../../../lib/market/api-client';
+import { loadAppContext } from '../../../../view-models/app-access.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/capacity/workday-tests')}`);
+
+const context = await loadAppContext(Astro);
+const team = context.activeTeam;
+const api = createApiFacade(Astro);
+const runs = team ? await api.listWorkdayTestRuns(team.id).catch(() => []) : [];
+
+function text(value: unknown, fallback = 'n/a') {
+	if (value === null || value === undefined || value === '') return fallback;
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
+function tone(status: unknown) {
+	const value = String(status ?? '').toLowerCase();
+	if (value === 'completed') return 'success';
+	if (value === 'failed') return 'danger';
+	if (value === 'degraded') return 'warning';
+	return 'muted';
+}
+
+const rows = runs.map((run: any) => ({
+	id: `run-${esc(run.id)}`,
+	name: `<strong>${esc(run.id)}</strong><span>${esc(run.scenarioId ?? 'portfolio-local')}</span>`,
+	status: `<span class="ts-status-pill ts-status-pill--${esc(tone(run.status))}">${esc(run.status ?? 'unknown')}</span>`,
+	score: esc(text(run.summary?.score ?? run.metrics?.score, 'learning')),
+	coverage: esc(`${run.summary?.projectCount ?? run.actual?.projects?.length ?? 0} projects · ${run.summary?.blockerCount ?? run.metrics?.blockers?.length ?? 0} blockers`),
+	provider: esc(run.capacityProviderId ?? run.parameters?.providerId ?? 'local'),
+	updated: esc(run.completedAt ?? run.updatedAt ?? run.createdAt ?? 'never'),
+	action: `<a class="ts-link-button" href="/app/capacity/workday-tests/${encodeURIComponent(run.id)}">Open</a>`,
+}));
+---
+
+<TreeseedAppLayout title="Workday tests" description="Run and inspect portfolio-wide local workday tests." currentPath="/app/capacity/workday-tests" teams={context.teams} activeTeam={team}>
+	{team ? (
+		<section class="ts-control-page" aria-label="Workday tests">
+			<Panel eyebrow="Capacity" title="Workday tester" description="Launch a portfolio test request, then inspect provider readiness, project coverage, mode runs, outputs, and audit evidence from persisted records.">
+				<FormActions slot="actions" align="end">
+					<Button href="/app/capacity/runtime" variant="secondary" size="sm">Runtime</Button>
+					<Button href="/app/capacity/providers" variant="secondary" size="sm">Providers</Button>
+				</FormActions>
+				<form class="ts-grid-form" data-workday-test-form data-team-id={team.id}>
+					<Field label="Projects" name="projects" help="Use all for Market plus package projects, or a comma-separated slug list.">
+						<TextInput name="projects" value="all" autocomplete="off" />
+					</Field>
+					<Field label="Provider" name="providerId">
+						<TextInput name="providerId" value="local" autocomplete="off" />
+					</Field>
+					<Field label="Workdays" name="workdays">
+						<TextInput name="workdays" value="1" inputmode="numeric" autocomplete="off" />
+					</Field>
+					<Field label="Max assignments" name="maxAssignments">
+						<TextInput name="maxAssignments" value="81" inputmode="numeric" autocomplete="off" />
+					</Field>
+					<Field label="Planning only" name="planningOnly">
+						<input type="checkbox" name="planningOnly" />
+					</Field>
+					<FormActions align="start">
+						<Button type="submit" variant="primary">Create test run</Button>
+					</FormActions>
+					<p class="ts-form-status" data-workday-test-status></p>
+				</form>
+			</Panel>
+
+			<Panel eyebrow="History" title="Test runs" description="Each run preserves parameters, expected outcomes, measured results, report references, and an ordered audit trail.">
+				<PlainTable columns={[
+					{ key: 'name', label: 'Run' },
+					{ key: 'status', label: 'Status' },
+					{ key: 'score', label: 'Score' },
+					{ key: 'coverage', label: 'Coverage' },
+					{ key: 'provider', label: 'Provider' },
+					{ key: 'updated', label: 'Updated' },
+					{ key: 'action', label: 'Action' },
+				]} rows={rows} emptyTitle="No workday tests" emptyDescription="Create a test run here or run `trsd capacity workday-test` locally." interactive={true} pageSize={10} searchLabel="Filter test runs" controlMode="filter" filterColumns={['status', 'provider']} />
+			</Panel>
+		</section>
+	) : (
+		<EmptyState title="No active team" description="Create or switch to a team before running workday tests." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
+	)}
+</TreeseedAppLayout>
+
+<script>
+	document.querySelectorAll('[data-workday-test-form]').forEach((form) => {
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const element = form as HTMLFormElement;
+			const status = element.querySelector<HTMLElement>('[data-workday-test-status]');
+			const data = new FormData(element);
+			const teamId = element.dataset.teamId || '';
+			if (status) status.textContent = 'Creating test run...';
+			const response = await fetch(`/v1/teams/${encodeURIComponent(teamId)}/workday-tests`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					capacityProviderId: String(data.get('providerId') || 'local'),
+					scenarioId: 'portfolio-local',
+					status: 'queued',
+					environment: 'local',
+					parameters: {
+						projects: String(data.get('projects') || 'all'),
+						providerId: String(data.get('providerId') || 'local'),
+						workdays: Number(data.get('workdays') || 1),
+						maxAssignments: Number(data.get('maxAssignments') || 81),
+						planningOnly: data.get('planningOnly') === 'on',
+					},
+				}),
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				if (status) status.textContent = payload?.error ?? 'Test run could not be created.';
+				return;
+			}
+			const runId = payload?.payload?.id;
+			if (status) status.textContent = 'Test run created.';
+			if (runId) window.location.href = `/app/capacity/workday-tests/${encodeURIComponent(runId)}`;
+		});
+	});
+</script>

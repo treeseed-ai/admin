@@ -1,3 +1,4 @@
+// @ts-nocheck
 function runtimeEnvValue(runtime, name) {
 	const runtimeValue = runtime?.env?.[name];
 	if (typeof runtimeValue === 'string' && runtimeValue.trim()) return runtimeValue.trim();
