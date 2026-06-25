@@ -264,6 +264,87 @@ export class ApiClientFacade {
 		return this.request<any>('POST', `/v1/approval-requests/${encodeURIComponent(approvalRequestId)}/decide`, { body });
 	}
 
+	getCommonsSummary() {
+		return this.request<any>('GET', '/v1/commons/summary');
+	}
+
+	getCommonsParticipantMe() {
+		return this.request<any>('GET', '/v1/commons/participants/me');
+	}
+
+	listCommonsParticipants(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/participants${suffix}`);
+	}
+
+	backfillCommonsParticipants() {
+		return this.request<any>('POST', '/v1/commons/participants/backfill', { body: {} });
+	}
+
+	listCommonsQuestions(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/questions${suffix}`);
+	}
+
+	answerCommonsQuestion(questionId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commons/questions/${encodeURIComponent(questionId)}/answer`, { body });
+	}
+
+	createCommonsProposal(body: Record<string, unknown>) {
+		return this.request<any>('POST', '/v1/commons/proposals', { body });
+	}
+
+	listCommonsProposals(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/proposals${suffix}`);
+	}
+
+	getCommonsProposal(proposalId: string) {
+		return this.request<any>('GET', `/v1/commons/proposals/${encodeURIComponent(proposalId)}`);
+	}
+
+	reviewCommonsProposal(proposalId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/review`, { body });
+	}
+
+	startCommonsProposalVoting(proposalId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/start-voting`, { body });
+	}
+
+	stewardDecisionForCommonsProposal(proposalId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/steward-decision`, { body });
+	}
+
+	listCommonsDecisions(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/decisions${suffix}`);
+	}
+
+	listCommonsEvents(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams();
+		for (const [key, value] of Object.entries(filters)) {
+			if (value != null && value !== '') query.set(key, String(value));
+		}
+		const suffix = query.toString() ? `?${query}` : '';
+		return this.request<any[]>('GET', `/v1/commons/events${suffix}`);
+	}
+
 	deleteTeamInboxItemsByItemKey(_teamId: string, _itemKey: string) {
 		return Promise.resolve({ ok: true });
 	}
@@ -298,6 +379,297 @@ export class ApiClientFacade {
 
 	updateProjectAgentClassAllocation(projectId: string, body: Record<string, unknown>) {
 		return this.request<any>('PUT', `/v1/projects/${encodeURIComponent(projectId)}/capacity-allocation`, { body });
+	}
+
+	getCommerceVendor(teamId: string) {
+		return this.request<any>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}`);
+	}
+
+	requestCommerceVendor(teamId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/request`, { body });
+	}
+
+	getCommerceVendorStripeStatus(teamId: string, refresh = false) {
+		const query = refresh ? '?refresh=1' : '';
+		return this.request<any>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/stripe/status${query}`);
+	}
+
+	startCommerceVendorStripeOnboarding(teamId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/stripe/onboarding`, { body });
+	}
+
+	markCommerceVendorStripeReturn(teamId: string) {
+		return this.request<any>('POST', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/stripe/return`, { body: {} });
+	}
+
+	createCommerceVendorStripeLoginLink(teamId: string) {
+		return this.request<any>('POST', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/stripe/login-link`, { body: {} });
+	}
+
+	listCommerceProducts(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/products${suffix}`);
+	}
+
+	getCommerceProduct(productId: string) {
+		return this.request<any>('GET', `/v1/commerce/products/${encodeURIComponent(productId)}`);
+	}
+
+	getCommerceOwnershipWorkflow(productId: string) {
+		return this.request<any>('GET', `/v1/commerce/products/${encodeURIComponent(productId)}/ownership-workflow`);
+	}
+
+	updateCommerceOwnershipRecord(productId: string, ownershipRecordId: string, body: Record<string, unknown>) {
+		return this.request<any>('PATCH', `/v1/commerce/products/${encodeURIComponent(productId)}/ownership/${encodeURIComponent(ownershipRecordId)}`, { body });
+	}
+
+	updateCommerceStewardshipAssignment(productId: string, assignmentId: string, body: Record<string, unknown>) {
+		return this.request<any>('PATCH', `/v1/commerce/products/${encodeURIComponent(productId)}/stewards/${encodeURIComponent(assignmentId)}`, { body });
+	}
+
+	endCommerceStewardshipAssignment(productId: string, assignmentId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/stewards/${encodeURIComponent(assignmentId)}/end`, { body });
+	}
+
+	updateCommerceContribution(productId: string, contributionId: string, body: Record<string, unknown>) {
+		return this.request<any>('PATCH', `/v1/commerce/products/${encodeURIComponent(productId)}/contributions/${encodeURIComponent(contributionId)}`, { body });
+	}
+
+	updateCommerceGovernancePolicy(productId: string, policyId: string, body: Record<string, unknown>) {
+		return this.request<any>('PATCH', `/v1/commerce/products/${encodeURIComponent(productId)}/governance-policy/${encodeURIComponent(policyId)}`, { body });
+	}
+
+	submitCommerceOwnershipTransfer(productId: string, transferId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/ownership-transfer/${encodeURIComponent(transferId)}/submit`, { body });
+	}
+
+	approveCommerceOwnershipTransfer(productId: string, transferId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/ownership-transfer/${encodeURIComponent(transferId)}/approve`, { body });
+	}
+
+	rejectCommerceOwnershipTransfer(productId: string, transferId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/ownership-transfer/${encodeURIComponent(transferId)}/reject`, { body });
+	}
+
+	cancelCommerceOwnershipTransfer(productId: string, transferId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/ownership-transfer/${encodeURIComponent(transferId)}/cancel`, { body });
+	}
+
+	createCommerceSuccessionEvent(productId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/succession-events`, { body });
+	}
+
+	listCommerceSuccessionEvents(productId: string) {
+		return this.request<any[]>('GET', `/v1/commerce/products/${encodeURIComponent(productId)}/succession-events`);
+	}
+
+	getCommerceVendorSalesSummary(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/sales/summary${suffix}`);
+	}
+
+	getCommerceVendorMonitoring(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/monitoring${suffix}`);
+	}
+
+	listCommerceMarketplaceProducts(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any>('GET', `/v1/commerce/marketplace${suffix}`);
+	}
+
+	getCommerceMarketplaceProduct(productId: string) {
+		return this.request<any>('GET', `/v1/commerce/marketplace/products/${encodeURIComponent(productId)}`);
+	}
+
+	listCommerceVendorSalesOrders(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/sales/orders${suffix}`);
+	}
+
+	listCommerceVendorSalesSubscriptions(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/sales/subscriptions${suffix}`);
+	}
+
+	listCommerceVendorSalesEntitlements(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/sales/entitlements${suffix}`);
+	}
+
+	listCommerceVendorSalesRefunds(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/sales/refunds${suffix}`);
+	}
+
+	listCommerceVendorFulfillmentEvents(teamId: string, filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/vendors/${encodeURIComponent(teamId)}/sales/fulfillment-events${suffix}`);
+	}
+
+	createCommerceOrderRefund(orderId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/orders/${encodeURIComponent(orderId)}/refunds`, { body });
+	}
+
+	fulfillCommerceOrderItemArtifact(orderItemId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/order-items/${encodeURIComponent(orderItemId)}/fulfillment/artifact`, { body });
+	}
+
+	revokeCommerceEntitlement(entitlementId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/entitlements/${encodeURIComponent(entitlementId)}/revoke`, { body });
+	}
+
+	createCommerceServiceRequest(body: Record<string, unknown>) {
+		return this.request<any>('POST', '/v1/commerce/services/requests', { body });
+	}
+
+	listCommerceServiceRequests(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/services/requests${suffix}`);
+	}
+
+	getCommerceServiceRequest(requestId: string) {
+		return this.request<any>('GET', `/v1/commerce/services/requests/${encodeURIComponent(requestId)}`);
+	}
+
+	startCommerceServiceScoping(requestId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/requests/${encodeURIComponent(requestId)}/scoping`, { body });
+	}
+
+	updateCommerceServiceRequest(requestId: string, body: Record<string, unknown>) {
+		return this.request<any>('PATCH', `/v1/commerce/services/requests/${encodeURIComponent(requestId)}`, { body });
+	}
+
+	cancelCommerceServiceRequest(requestId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/requests/${encodeURIComponent(requestId)}/cancel`, { body });
+	}
+
+	createCommerceServiceQuote(requestId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/services/requests/${encodeURIComponent(requestId)}/quotes`, { body });
+	}
+
+	listCommerceServiceQuotes(requestId: string) {
+		return this.request<any[]>('GET', `/v1/commerce/services/requests/${encodeURIComponent(requestId)}/quotes`);
+	}
+
+	submitCommerceServiceQuote(quoteId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/quotes/${encodeURIComponent(quoteId)}/submit`, { body });
+	}
+
+	buyerApproveCommerceServiceQuote(quoteId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/quotes/${encodeURIComponent(quoteId)}/buyer-approve`, { body });
+	}
+
+	vendorApproveCommerceServiceQuote(quoteId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/quotes/${encodeURIComponent(quoteId)}/vendor-approve`, { body });
+	}
+
+	rejectCommerceServiceQuote(quoteId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/quotes/${encodeURIComponent(quoteId)}/reject`, { body });
+	}
+
+	getCommerceServiceContract(contractId: string) {
+		return this.request<any>('GET', `/v1/commerce/services/contracts/${encodeURIComponent(contractId)}`);
+	}
+
+	linkCommerceServiceContractWork(contractId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/services/contracts/${encodeURIComponent(contractId)}/link-work`, { body });
+	}
+
+	fulfillCommerceServiceContract(contractId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/services/contracts/${encodeURIComponent(contractId)}/fulfill`, { body });
+	}
+
+	cancelCommerceServiceContract(contractId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/services/contracts/${encodeURIComponent(contractId)}/cancel`, { body });
+	}
+
+	listCommerceServiceEvents(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/services/events${suffix}`);
+	}
+
+	listCommerceCapacityListings(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/capacity-listings${suffix}`);
+	}
+
+	getCommerceCapacityListing(listingId: string) {
+		return this.request<any>('GET', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}`);
+	}
+
+	getCommerceCapacityListingForProduct(productId: string) {
+		return this.request<any>('GET', `/v1/commerce/products/${encodeURIComponent(productId)}/capacity-listing`);
+	}
+
+	createCommerceCapacityListing(productId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/products/${encodeURIComponent(productId)}/capacity-listing`, { body });
+	}
+
+	updateCommerceCapacityListing(listingId: string, body: Record<string, unknown>) {
+		return this.request<any>('PATCH', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}`, { body });
+	}
+
+	submitCommerceCapacityListing(listingId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}/submit`, { body });
+	}
+
+	approveCommerceCapacityListing(listingId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}/approve`, { body });
+	}
+
+	rejectCommerceCapacityListing(listingId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}/reject`, { body });
+	}
+
+	suspendCommerceCapacityListing(listingId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}/suspend`, { body });
+	}
+
+	archiveCommerceCapacityListing(listingId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}/archive`, { body });
+	}
+
+	createCommerceCapacityListingInquiry(listingId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listings/${encodeURIComponent(listingId)}/inquiries`, { body });
+	}
+
+	listCommerceCapacityListingInquiries(filters: Record<string, unknown> = {}) {
+		const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]));
+		const suffix = query.toString() ? `?${query.toString()}` : '';
+		return this.request<any[]>('GET', `/v1/commerce/capacity-listing-inquiries${suffix}`);
+	}
+
+	getCommerceCapacityListingInquiry(inquiryId: string) {
+		return this.request<any>('GET', `/v1/commerce/capacity-listing-inquiries/${encodeURIComponent(inquiryId)}`);
+	}
+
+	reviewCommerceCapacityInquiry(inquiryId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listing-inquiries/${encodeURIComponent(inquiryId)}/review`, { body });
+	}
+
+	approveCommerceCapacityInquiryForScoping(inquiryId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listing-inquiries/${encodeURIComponent(inquiryId)}/approve-for-scoping`, { body });
+	}
+
+	declineCommerceCapacityInquiry(inquiryId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listing-inquiries/${encodeURIComponent(inquiryId)}/decline`, { body });
+	}
+
+	cancelCommerceCapacityInquiry(inquiryId: string, body: Record<string, unknown> = {}) {
+		return this.request<any>('POST', `/v1/commerce/capacity-listing-inquiries/${encodeURIComponent(inquiryId)}/cancel`, { body });
 	}
 
 	evaluateTeamDeletionBlockers(teamId: string) {
@@ -557,6 +929,10 @@ export class ApiClientFacade {
 
 	acceptTeamInvite(token: string, _principalId: string) {
 		return this.request<any>('POST', `/v1/team-invites/${encodeURIComponent(token)}/accept`, { body: {} });
+	}
+
+	getTeamInvite(token: string) {
+		return this.request<any>('GET', `/v1/team-invites/${encodeURIComponent(token)}`);
 	}
 
 	loadTeamProfileByName(name: string) {

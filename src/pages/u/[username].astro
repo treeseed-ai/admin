@@ -51,8 +51,8 @@ const visibleCount = profile.activity.teams.length
 			</div>
 			<div>
 				<p class="ts-section__eyebrow">User profile</p>
-				<h1>{displayName}</h1>
-				<p class="ts-user-profile__handle">@{profile.user.username}</p>
+				<h1 data-scene={`profile.display-name.${profile.user.username}`}>{displayName}</h1>
+				<p class="ts-user-profile__handle" data-scene={`profile.username.${profile.user.username}`}>@{profile.user.username}</p>
 				<p class="ts-user-profile__meta">Joined {joinedDate}</p>
 			</div>
 		</section>
@@ -65,7 +65,7 @@ const visibleCount = profile.activity.teams.length
 				</div>
 				<div class="ts-list">
 					{profile.activity.teams.length > 0 ? profile.activity.teams.map((team) => (
-						<a class="ts-list-item" href={`/t/${team.slug}`}>
+						<a class="ts-list-item" href={`/t/${team.slug}`} data-scene={`profile.team.${team.slug}`}>
 							<strong>{team.name}</strong><br />
 							<span>{team.slug}</span>
 						</a>

@@ -2,7 +2,7 @@
 
 `@treeseed/admin` is the distributable Treeseed administration portal for organizations. It gives a Treeseed site the authenticated admin surfaces for teams, projects, hosts, work, knowledge, catalog browsing, operational status, and secret-manager workflows.
 
-Use this package when you want a Treeseed-compatible admin portal without taking on the Treeseed market site's public messaging or future ecommerce stack.
+Use this package when you want a Treeseed-compatible admin portal without taking on the Treeseed market site's public messaging, buyer checkout, or backend ecommerce implementation.
 
 ## What You Can Build With Admin
 
@@ -11,7 +11,8 @@ Use this package when you want a Treeseed-compatible admin portal without taking
 - Knowledge and work management screens
 - Operational status and deployment control surfaces
 - Agent capacity allocation, provider session, assignment, mode-run, and usage views over API contracts
-- Catalog/profile browsing without payment processing
+- Catalog/profile browsing and seller commerce operations without buyer payment processing
+- Seller readiness, ecommerce monitoring, product governance, scoped-service operations, capacity listing review, and Commons steward operations through API facades
 - Admin integrations that can be layered into a host Treeseed site
 
 Admin is not a UI component library. Reusable layout-down components and styles live in `@treeseed/ui`.
@@ -113,9 +114,9 @@ The current capacity operator surfaces are:
 
 Admin does not own scheduling, assignment selection, provider runtime internals, or ledger settlement. Those belong to API, agent runtime, and SDK contracts as described in the root [Agent Capacity Operator Surfaces](../../docs/agent-capacity-operator-surfaces.md) guide.
 
-## Catalog Without Ecommerce
+## Commerce Operations Without Buyer Checkout
 
-Admin can display free, private, contact, catalog, paid, and subscription offer metadata, but paid/subscription offers are display-only unless a commerce provider is registered.
+Admin can display and operate seller-side commerce records through API client facades: vendor readiness, product registry state, offer/price review, sales summaries, refunds, fulfillment, cooperative ownership workflows, scoped service requests, capacity listing inquiries, seller monitoring, and Commons steward decisions.
 
 The extension contract is exported from:
 
@@ -123,7 +124,7 @@ The extension contract is exported from:
 import type { AdminCommerceProvider } from '@treeseed/admin/commerce';
 ```
 
-Admin does not implement Stripe, checkout, invoices, subscriptions, coupons, billing, seller payouts, license grants, or commercial support packaging. Those belong in the root market site or a future market-commerce plugin layered above admin.
+Admin does not implement Stripe Elements, checkout confirmation, Stripe Checkout Sessions, PaymentIntent creation, webhooks, invoices, buyer subscriptions UI, seller payouts, commissions, application fees, revenue splits, benefit payout allocation, capacity billing, provider execution, marketplace grants/reservations, or routing decisions. Buyer checkout and participant marketplace flows belong in the root market app. Backend state and Stripe server calls belong in `@treeseed/api`.
 
 ## Extension Points
 
@@ -148,7 +149,7 @@ Use package exports only. Do not import from `packages/admin/src` in host applic
 - generic Astro/Starlight runtime; use `@treeseed/core`
 - backend API implementation, PostgreSQL, migrations, or operations runner; use `@treeseed/api`
 - capacity provider runtime; use `@treeseed/agent`
-- checkout, billing, licensing, seller payouts, or ecommerce policy; use root market/future commerce plugin
+- buyer checkout, Stripe Elements, payout/commission logic, capacity execution, or backend ecommerce policy; use root market for buyer pages and `@treeseed/api` for backend state
 - TreeDX repository service internals
 - host app deployment manifest
 

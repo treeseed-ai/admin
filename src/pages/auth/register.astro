@@ -19,13 +19,15 @@ if (authenticatedRedirect) {
 }
 
 const returnTo = normalizeReturnTo(Astro);
+const inviteToken = Astro.url.searchParams.get('inviteToken') ?? '';
+const invitedEmail = Astro.url.searchParams.get('email') ?? '';
 const capabilities = authProviderCapabilities(Astro);
 let error = Astro.url.searchParams.get('error') ?? '';
 let appearance = resolveAnonymousThemePreference(Astro);
 let submittedFirstName = '';
 let submittedLastName = '';
 let submittedUsername = '';
-let submittedEmail = '';
+let submittedEmail = invitedEmail;
 
 if (!capabilities.internal.signupEnabled) {
 	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}&error=${encodeURIComponent('Registration is not open in this environment.')}`, 302);
@@ -41,6 +43,7 @@ if (Astro.request.method === 'POST') {
 	const email = String(form.get('email') ?? '').trim();
 	const password = String(form.get('password') ?? '');
 	const confirmPassword = String(form.get('confirmPassword') ?? '');
+	const submittedInviteToken = String(form.get('inviteToken') ?? inviteToken).trim();
 	submittedFirstName = firstName;
 	submittedLastName = lastName;
 	submittedUsername = username;
@@ -63,6 +66,7 @@ if (Astro.request.method === 'POST') {
 			username: usernameValidation.username,
 			email,
 			password,
+			...(submittedInviteToken ? { inviteToken: submittedInviteToken } : {}),
 			appearance,
 			rememberMe: true,
 			returnTo,
@@ -94,9 +98,10 @@ if (Astro.request.method === 'POST') {
 		<Fragment slot="sidebarLinks">
 			<a href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a>
 		</Fragment>
-		<form class="auth-form" method="POST" action={`/auth/register?returnTo=${encodeURIComponent(returnTo)}`}>
+		<form class="auth-form" method="POST" action={`/auth/register?returnTo=${encodeURIComponent(returnTo)}${inviteToken ? `&inviteToken=${encodeURIComponent(inviteToken)}` : ''}${invitedEmail ? `&email=${encodeURIComponent(invitedEmail)}` : ''}`}>
 			<input type="hidden" name="colorScheme" value={appearance.scheme} data-auth-theme-scheme-field />
 			<input type="hidden" name="themeMode" value={appearance.mode} data-auth-theme-mode-field />
+			{inviteToken && <input type="hidden" name="inviteToken" value={inviteToken} />}
 			<div class="auth-form-grid">
 				<Field label="First name" name="firstName" required>
 					<TextInput name="firstName" type="text" autocomplete="given-name" value={submittedFirstName} required />
@@ -121,7 +126,7 @@ if (Astro.request.method === 'POST') {
 				<span id="username-status" data-username-status class="auth-field-help">Username is public and cannot be changed after registration.</span>
 			</Field>
 			<Field label="Email" name="email" required>
-				<TextInput name="email" type="email" autocomplete="email" value={submittedEmail} required />
+				<TextInput name="email" type="email" autocomplete="email" value={submittedEmail} required readonly={Boolean(inviteToken && invitedEmail)} />
 			</Field>
 			<Field label="Password" name="password" required>
 				<TextInput id="registerPassword" data-password-input name="password" type="password" autocomplete="new-password" required minlength={12} />

@@ -40,6 +40,7 @@ function roleSelectOptions(roleKey: string) {
 }
 const rows = members.map((member: any) => ({
 	id: `member-${esc(member.id ?? member.userId)}`,
+	sceneId: `team.member.${member.email ?? member.userId ?? member.id ?? 'unknown'}`,
 	name: `<strong>${esc(member.displayName ?? member.email ?? member.userId ?? 'Member')}</strong><span>${esc(member.email ?? member.userId ?? '')}</span>`,
 	role: esc(roleOptions.find((option) => option.value === (member.roleKey ?? member.role))?.label ?? member.roleKey ?? member.role ?? 'member'),
 	actions: `<form class="ts-inline-form" data-member-form="${esc(member.id)}"><select class="ts-control" name="roleKey">${roleSelectOptions(String(member.roleKey ?? member.role ?? 'contributor'))}</select><button class="ts-link-button" type="submit">Save</button><button class="ts-link-button" type="button" data-remove-member="${esc(member.id)}">Remove</button></form>`,
@@ -69,7 +70,7 @@ const rows = members.map((member: any) => ({
 					<FormActions align="start">
 						<Button type="submit">Invite member</Button>
 						<Button href="/app/teams" variant="secondary">Back</Button>
-						<span class="ts-subtle" id="member-status" role="status"></span>
+						<span class="ts-subtle" id="member-status" role="status" data-scene="team.member.invite-status"></span>
 					</FormActions>
 				</form>
 			</Panel>
@@ -100,13 +101,14 @@ const rows = members.map((member: any) => ({
 	inviteForm?.addEventListener('submit', async (event) => {
 		event.preventDefault();
 		const form = new FormData(inviteForm);
+		const email = String(form.get('email') ?? '').trim();
 		if (status) status.textContent = 'Inviting...';
 		try {
 			await send(`/v1/teams/${encodeURIComponent(teamId)}/invites`, 'POST', {
-				email: String(form.get('email') ?? '').trim(),
+				email,
 				roleKey: String(form.get('roleKey') ?? 'contributor'),
 			});
-			window.location.href = `${window.location.pathname}?updated=${Date.now()}`;
+			if (status) status.textContent = `Invite sent to ${email}.`;
 		} catch (error) {
 			if (status) status.textContent = error instanceof Error ? error.message : 'Invite failed.';
 		}

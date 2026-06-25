@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../src/plugin';
 import type { TreeseedPluginSiteContext, TreeseedSiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
@@ -13,6 +14,8 @@ import {
 	describeAdminClientEncryptedEscrowStatus,
 } from '../src/secret-managers';
 import { hostEncryptedPayloadToClientEscrowEnvelope } from '../src/lib/host-crypto';
+
+const require = createRequire(import.meta.url);
 
 function filesUnder(root: string): string[] {
 	const resolved = resolve(root);
@@ -53,11 +56,26 @@ function resolveSiteHooks(): TreeseedSiteExtensionContribution {
 	} satisfies TreeseedPluginSiteContext);
 }
 
+function readUiExportedFile(specifier: string) {
+	return readFileSync(require.resolve(specifier), 'utf8');
+}
+
 describe('@treeseed/admin package boundaries', () => {
 	it('registers the distributable admin route surfaces', () => {
 		expect(ADMIN_ROUTES).toEqual(expect.arrayContaining([
 			expect.objectContaining({ pattern: '/app' }),
 			expect.objectContaining({ pattern: '/auth/sign-in' }),
+			expect.objectContaining({ pattern: '/app/commons' }),
+			expect.objectContaining({ pattern: '/app/commons/participants' }),
+			expect.objectContaining({ pattern: '/app/commons/proposals/[proposalId]' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/products' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/products/[productId]/governance' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/sales' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/services' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/services/[requestId]' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/capacity' }),
+			expect.objectContaining({ pattern: '/app/teams/[teamId]/commerce/capacity/[listingId]' }),
 			expect.objectContaining({ pattern: '/market' }),
 			expect.objectContaining({ pattern: '/team-invites/[token]/accept' }),
 			expect.objectContaining({ pattern: '/v1/[...all]' }),
@@ -90,6 +108,56 @@ describe('@treeseed/admin package boundaries', () => {
 			expect(source, path).not.toMatch(/from ['"]src\//u);
 			expect(source, path).not.toMatch(/packages\/(?:ui|core|sdk|api)\/src/u);
 			expect(source, path).not.toMatch(/(?:from|import)\s*['"](?:\.\.\/){3,}src\//u);
+		}
+	});
+
+	it('loads complete UI style bundles in public and app layouts', () => {
+		const appLayout = readFileSync('src/layouts/TreeseedAppLayout.astro', 'utf8');
+		for (const style of [
+			'@treeseed/ui/styles/tokens.css',
+			'@treeseed/ui/styles/theme.css',
+			'@treeseed/ui/styles/ui.css',
+			'@treeseed/ui/styles/forms.css',
+			'@treeseed/ui/styles/app-shell.css',
+			'@treeseed/ui/styles/app-controls.css',
+			'@treeseed/ui/styles/auth.css',
+			'@treeseed/ui/styles/operations.css',
+		]) {
+			expect(appLayout).toContain(style);
+		}
+
+		const publicLayout = readFileSync('src/layouts/TreeseedPublicLayout.astro', 'utf8');
+		for (const style of [
+			'@treeseed/ui/styles/tokens.css',
+			'@treeseed/ui/styles/theme.css',
+			'@treeseed/ui/styles/ui.css',
+			'@treeseed/ui/styles/forms.css',
+			'@treeseed/ui/styles/app-shell.css',
+			'@treeseed/ui/styles/site.css',
+			'@treeseed/ui/styles/market.css',
+		]) {
+			expect(publicLayout).toContain(style);
+		}
+	});
+
+	it('uses UI-owned app controls and rich markdown editor on project pages', () => {
+		const appControls = readUiExportedFile('@treeseed/ui/styles/app-controls.css');
+		const forms = readUiExportedFile('@treeseed/ui/styles/forms.css');
+		const projectCreate = readFileSync('src/pages/app/projects/new.astro', 'utf8');
+		const projectSettings = readFileSync('src/pages/app/projects/[projectId]/settings.astro', 'utf8');
+		const appLayout = readFileSync('src/layouts/TreeseedAppLayout.astro', 'utf8');
+
+		for (const marker of ['.ts-icon-button', '.ts-link-button', '.ts-default-label', '.ts-project-lineage-card']) {
+			expect(appControls).toContain(marker);
+		}
+		expect(forms).toContain('.ts-rich-markdown-editor');
+		expect(appLayout).toContain('class="ts-icon-button"');
+		for (const page of [projectCreate, projectSettings]) {
+			expect(page).toContain('data-rich-markdown-editor');
+			expect(page).toContain('initializeRichMarkdownEditors');
+			expect(page).toContain("@treeseed/ui/react");
+			expect(page).not.toContain('core-objective-mdx-editor.tsx');
+			expect(page).not.toContain('ts-core-objective-editor');
 		}
 	});
 
@@ -189,8 +257,8 @@ describe('@treeseed/admin package boundaries', () => {
 			'railway',
 		]));
 
-		const checkoutUrl = await DEFAULT_ADMIN_COMMERCE_PROVIDER.checkoutUrl?.({}, { mode: 'paid' });
-		const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { mode: 'free' });
+		const checkoutUrl = await DEFAULT_ADMIN_COMMERCE_PROVIDER.checkoutUrl?.({}, { mode: 'one_time' });
+		const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { offerMode: 'free' });
 		expect(checkoutUrl).toBeNull();
 		expect(entitlement?.allowed).toBe(true);
 	});
@@ -291,17 +359,57 @@ describe('@treeseed/admin package boundaries', () => {
 		expect(JSON.stringify(hostEnvelope)).not.toContain('passphrase-value');
 	});
 
+	it('requires a host commerce provider for commercial offer modes', async () => {
+		for (const mode of ['one_time', 'one_time_current_version', 'subscription', 'subscription_updates', 'professional_hosting', 'scoped_contract'] as const) {
+			const entitlement = await DEFAULT_ADMIN_COMMERCE_PROVIDER.resolveEntitlement?.({}, { offerMode: mode });
+			expect(entitlement?.allowed, mode).toBe(false);
+			expect(entitlement?.checkoutUrl, mode).toBeNull();
+			expect(entitlement?.reason, mode).toContain('commerce provider');
+		}
+	});
+
 	it('does not bundle payment ecommerce implementation', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+			dependencies?: Record<string, string>;
+			devDependencies?: Record<string, string>;
+			peerDependencies?: Record<string, string>;
+		};
 		const sources = filesUnder('src')
 			.filter((path) => /\.(astro|tsx?|jsx?|mjs|cjs)$/u.test(path))
 			.map((path) => [path, readFileSync(path, 'utf8')] as const);
-		const paymentTerms = /\b(stripe|checkout session|invoice|coupon|seller payout|payment provider|payment intent)\b/iu;
+		const paymentImplementationTerms = /\b(checkout session|payment intent|seller payout|application fee|webhook secret)\b/iu;
 		const offenders = sources
-			.filter(([path]) => path !== 'src/commerce.ts')
-			.filter(([, source]) => paymentTerms.test(source))
+			.filter(([, source]) => paymentImplementationTerms.test(source) || /from ['"](?:stripe|@stripe\/stripe-js)['"]/u.test(source))
 			.map(([path]) => path);
+		const apiClient = readFileSync('src/lib/market/api-client.ts', 'utf8');
 
+		expect(packageJson.dependencies).not.toHaveProperty('stripe');
+		expect(packageJson.dependencies).not.toHaveProperty('@stripe/stripe-js');
+		expect(packageJson.devDependencies).not.toHaveProperty('stripe');
+		expect(packageJson.peerDependencies).not.toHaveProperty('stripe');
 		expect(offenders).toEqual([]);
+		expect(apiClient).toContain('getCommerceVendorSalesSummary');
+		expect(apiClient).toContain('getCommonsSummary');
+		expect(apiClient).toContain('listCommonsProposals');
+		expect(apiClient).toContain('stewardDecisionForCommonsProposal');
+		expect(apiClient).toContain('backfillCommonsParticipants');
+		expect(apiClient).toContain('getCommerceVendorMonitoring');
+		expect(apiClient).toContain('listCommerceMarketplaceProducts');
+		expect(apiClient).toContain('getCommerceOwnershipWorkflow');
+		expect(apiClient).toContain('updateCommerceOwnershipRecord');
+		expect(apiClient).toContain('createCommerceSuccessionEvent');
+		expect(apiClient).toContain('createCommerceOrderRefund');
+		expect(apiClient).toContain('fulfillCommerceOrderItemArtifact');
+		expect(apiClient).toContain('listCommerceServiceRequests');
+		expect(apiClient).toContain('createCommerceServiceQuote');
+		expect(apiClient).not.toContain('checkoutCommerceServiceContract');
+		expect(apiClient).toContain('fulfillCommerceServiceContract');
+		expect(apiClient).toContain('listCommerceCapacityListings');
+		expect(apiClient).toContain('createCommerceCapacityListing');
+		expect(apiClient).toContain('submitCommerceCapacityListing');
+		expect(apiClient).toContain('approveCommerceCapacityListing');
+		expect(apiClient).toContain('listCommerceCapacityListingInquiries');
+		expect(apiClient).toContain('approveCommerceCapacityInquiryForScoping');
 		expect(DEFAULT_ADMIN_COMMERCE_PROVIDER.id).toBe('none');
 	});
 

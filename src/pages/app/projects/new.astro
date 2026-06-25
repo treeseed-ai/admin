@@ -144,7 +144,7 @@ const serviceBundle = team
 						</div>
 						<input type="hidden" name="manageDns" value="true" />
 					</div>
-					<div class="ts-core-objective-field ts-field--full">
+					<div class="ts-rich-markdown-field ts-field--full">
 						<div class="ts-markdown-field__title">
 							<label class="ts-field__label" for="coreObjective">
 								<span>Core objective</span>
@@ -152,18 +152,18 @@ const serviceBundle = team
 							</label>
 							<p class="ts-field__help" id="coreObjective-help">This becomes the project repository's <code>src/content/objectives/core.md</code> file and is loaded into AI agent context everywhere.</p>
 						</div>
-						<div class="ts-core-objective-editor" data-core-objective-editor>
+						<div class="ts-rich-markdown-editor" data-rich-markdown-editor>
 							<textarea
-								class="ts-core-objective-editor__textarea"
+								class="ts-rich-markdown-editor__textarea"
 								id="coreObjective"
 								name="coreObjective"
 								required
 								rows="10"
 								aria-describedby="coreObjective-help"
-								data-core-objective-input
+								data-rich-markdown-input
 							>{defaultCoreObjective}</textarea>
-							<div class="ts-core-objective-editor__mount" data-core-objective-mount></div>
-							<p class="ts-markdown-field__error" hidden data-core-objective-error>Core objective is required.</p>
+							<div class="ts-rich-markdown-editor__mount" data-rich-markdown-mount></div>
+							<p class="ts-markdown-field__error" hidden data-rich-markdown-error>Core objective is required.</p>
 						</div>
 					</div>
 				</Panel>
@@ -335,8 +335,8 @@ const serviceBundle = team
 		}
 		async function safeInitializeCoreObjectiveEditors() {
 			try {
-				const editor = await import('../../../lib/market/core-objective-mdx-editor.tsx');
-				editor.initializeCoreObjectiveEditors?.();
+				const editor = await import('@treeseed/ui/react');
+				editor.initializeRichMarkdownEditors?.();
 			} catch (error) {
 				console.error('Core objective editor failed to load.', error);
 			}
