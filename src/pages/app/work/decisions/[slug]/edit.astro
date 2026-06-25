@@ -1,0 +1,22 @@
+---
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import DirectionContentForm from '../../../../../components/work/DirectionContentForm.astro';
+import TreeseedAppLayout from '../../../../../layouts/TreeseedAppLayout.astro';
+import { loadDirectionDetail } from '../../../../../view-models/operating-loop.vm.js';
+
+const slug = String(Astro.params.slug ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const vm = await loadDirectionDetail(Astro, 'decisions', slug, Astro.url);
+if (!vm.entry) Astro.response.status = 404;
+---
+
+<TreeseedAppLayout title={`Edit ${vm.form?.title ?? 'decision'}`} description="Edit decision direction content." currentPath="/app/work/decisions" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	{vm.form ? (
+		<SettingsTemplate title={`Edit ${vm.form.title}`} description="Save changes through the local content operation queue." actions={vm.actions}>
+			<DirectionContentForm collection="decisions" mode="edit" projectOptions={vm.context.projects.map((project: any) => ({ label: project.name ?? project.slug, value: project.id }))} selectedProjectId={vm.form.projectId} initialData={vm.form.data} body={vm.form.body} slug={vm.form.slug} fallbackHref={`/app/work/decisions/${encodeURIComponent(vm.form.slug)}`} />
+		</SettingsTemplate>
+	) : (
+		<EmptyState title="Decision not found" description="The requested decision is not available." actions={[{ label: 'Back to decisions', href: '/app/work/decisions' }]} />
+	)}
+</TreeseedAppLayout>

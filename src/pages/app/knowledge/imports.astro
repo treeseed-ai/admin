@@ -1,0 +1,17 @@
+---
+import CollectionTemplate from '@treeseed/ui/components/astro/templates/CollectionTemplate.astro';
+import DistributionSummary from '@treeseed/ui/components/astro/distribution/DistributionSummary.astro';
+import OverlayStatus from '@treeseed/ui/components/astro/distribution/OverlayStatus.astro';
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import { loadKnowledgeDistributionCollection } from '../../../view-models/knowledge-distribution.vm.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/knowledge/imports')}`);
+const vm = await loadKnowledgeDistributionCollection(Astro, 'imports');
+---
+
+<TreeseedAppLayout title={vm.collection.title} description={vm.collection.description} currentPath="/app/knowledge" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	<CollectionTemplate viewModel={vm.collection} actions={vm.actions}>
+		<DistributionSummary viewModel={vm.distribution} />
+		<OverlayStatus viewModel={vm.overlayStatus} />
+	</CollectionTemplate>
+</TreeseedAppLayout>

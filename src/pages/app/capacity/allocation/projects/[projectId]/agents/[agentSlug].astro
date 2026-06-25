@@ -1,0 +1,17 @@
+---
+import DetailTemplate from '@treeseed/ui/components/astro/templates/DetailTemplate.astro';
+import AllocationPanel from '@treeseed/ui/components/astro/operating/AllocationPanel.astro';
+import TreeseedAppLayout from '../../../../../../../layouts/TreeseedAppLayout.astro';
+import { loadAllocationDashboard } from '../../../../../../../view-models/operating-loop.vm.js';
+
+const projectId = String(Astro.params.projectId ?? '');
+const agentSlug = String(Astro.params.agentSlug ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const vm = await loadAllocationDashboard(Astro, Astro.url, projectId);
+---
+
+<TreeseedAppLayout title={`${agentSlug} allocation`} description="Agent allocation drilldown." currentPath="/app/capacity/allocation" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	<DetailTemplate title={`${agentSlug} allocation`} description="Inherited limit, explicit override, scheduled reservations, assignments, and actual usage." eyebrow="Allocation" actions={vm.actions} metadata={[{ key: 'Project', value: projectId }, { key: 'Agent', value: agentSlug }]}>
+		<AllocationPanel viewModel={vm.allocation} />
+	</DetailTemplate>
+</TreeseedAppLayout>

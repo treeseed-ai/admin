@@ -1,0 +1,30 @@
+---
+import DashboardTemplate from '@treeseed/ui/components/astro/templates/DashboardTemplate.astro';
+import ReadinessSummary from '@treeseed/ui/components/astro/service/ReadinessSummary.astro';
+import TreeseedAppLayout from '../../layouts/TreeseedAppLayout.astro';
+import { loadAppContext } from '../../view-models/app-access.js';
+import { buildServicesDashboard, loadServiceInventory } from '../../view-models/service-readiness.vm.js';
+
+if (!Astro.locals.auth?.principal) {
+	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/services')}`);
+}
+
+const context = await loadAppContext(Astro);
+const runtime = (Astro.locals as any).runtime ?? Astro.locals;
+const inventory = await loadServiceInventory(context, runtime);
+const services = buildServicesDashboard(context, inventory, Astro.url);
+---
+
+<TreeseedAppLayout
+	title={services.dashboard.title}
+	description={services.dashboard.description}
+	currentPath={Astro.url.pathname}
+	teams={context.teams}
+	activeTeam={context.activeTeam}
+	helpContext={services.helpContext}
+	feedbackContext={services.feedbackContext}
+>
+	<DashboardTemplate viewModel={services.dashboard} actions={services.actions}>
+		<ReadinessSummary viewModel={services.readiness} />
+	</DashboardTemplate>
+</TreeseedAppLayout>

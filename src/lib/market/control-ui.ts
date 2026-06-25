@@ -175,8 +175,8 @@ export function hostActionHref(host: any, type?: string): string {
 	const hostType = type ?? hostTypeFor(host);
 	if (!host?.id || host?.ownership === 'treeseed_managed' || host?.teamId == null) return '';
 	return hostType === 'repository'
-		? `/app/hosts/repository/${encodeURIComponent(host.id)}/edit`
-		: `/app/hosts/${encodeURIComponent(hostType)}/${encodeURIComponent(host.id)}/edit`;
+		? `/app/hosts/repository/${encodeURIComponent(host.id)}`
+		: `/app/hosts/${encodeURIComponent(hostType)}/${encodeURIComponent(host.id)}`;
 }
 
 export function hostRecordNameHtml(host: any, type?: string): string {

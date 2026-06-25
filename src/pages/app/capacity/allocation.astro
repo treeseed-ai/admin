@@ -3,132 +3,43 @@ import Button from '@treeseed/ui/components/astro/forms/Button.astro';
 import Field from '@treeseed/ui/components/astro/forms/Field.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import Select from '@treeseed/ui/components/astro/forms/Select.astro';
-import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import DashboardTemplate from '@treeseed/ui/components/astro/templates/DashboardTemplate.astro';
+import AllocationPanel from '@treeseed/ui/components/astro/operating/AllocationPanel.astro';
 import { DynamicPieAllocationInput } from '@treeseed/ui/react';
 import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
-import { loadAppContext } from '../../../view-models/app-access.js';
+import { loadAllocationDashboard } from '../../../view-models/operating-loop.vm.js';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/capacity/allocation')}`);
-
-const context = await loadAppContext(Astro);
-const team = context.activeTeam;
-const selectedProjectId = Astro.url.searchParams.get('projectId') ?? '';
-const manageableRoles = new Set(['owner', 'team_owner', 'project_lead']);
-const access = team && context.store ? await context.store.getTeamAccessSummary(team.id).catch(() => null) : null;
-const canManage = Boolean(access?.roles?.some((role: string) => manageableRoles.has(role)));
-const portfolio = team && context.store ? await context.store.getTeamPortfolioAllocation(team.id).catch(() => null) : null;
-const projects = portfolio?.projects ?? context.projects ?? [];
-const providers = portfolio?.providers ?? [];
-const providerOptions = providers.map((provider: any) => ({
-	label: provider.name ?? provider.id,
-	value: provider.id,
-}));
-const defaultProviderId = providerOptions[0]?.value ?? '';
-const selectedProject = projects.find((project: any) => project.id === selectedProjectId) ?? null;
-const projectAllocation = selectedProject && context.store
-	? await context.store.getProjectAgentClassAllocation(selectedProject.id).catch(() => null)
-	: null;
-const portfolioSlices = portfolio?.slices?.length ? portfolio.slices : projects.map((project: any) => ({
-	id: project.id,
-	name: project.name ?? project.slug,
-	percentage: projects.length ? Math.round((100 / projects.length) * 10) / 10 : 100,
-}));
-const agentSlices = projectAllocation?.slices ?? [];
-const pageJson = JSON.stringify({
-	teamId: team?.id ?? null,
-	projectId: selectedProject?.id ?? null,
-	canManage,
-	defaultProviderId,
-}).replace(/</gu, '\\u003c');
+const vm = await loadAllocationDashboard(Astro, Astro.url);
+const projects = vm.portfolio?.projects ?? vm.context.projects ?? [];
+const providers = vm.portfolio?.providers ?? [];
+const providerOptions = providers.map((provider: any) => ({ label: provider.name ?? provider.id, value: provider.id }));
+const slices = vm.portfolio?.slices?.length ? vm.portfolio.slices : projects.map((project: any) => ({ id: project.id, name: project.name ?? project.slug, percentage: projects.length ? Math.round((100 / projects.length) * 10) / 10 : 100 }));
+const pageJson = JSON.stringify({ teamId: vm.context.activeTeam?.id ?? null, canManage: vm.canManage, defaultProviderId: providerOptions[0]?.value ?? '' }).replace(/</gu, '\\u003c');
 ---
 
-<TreeseedAppLayout title="Capacity allocation" description="Balance provider capacity across team projects and project agent classes." currentPath="/app/capacity/allocation" teams={context.teams} activeTeam={team}>
-	{team ? (
-		<section class="ts-control-page" aria-label="Capacity allocation">
-			<Panel eyebrow="Capacity" title="Allocation tree" description="Start at the team portfolio, descend into project agent classes, and return to the top in one click.">
-				<FormActions slot="actions" align="end">
-					<Button href="/app/capacity/runtime" variant="secondary" size="sm">Runtime</Button>
-					<Button href="/app/capacity/providers" variant="secondary" size="sm">Providers</Button>
-					<Button href="/app/capacity/providers/new" size="sm">New provider</Button>
-				</FormActions>
-				<div class="ts-allocation-rail">
-					<a class={`ts-allocation-node ${selectedProject ? '' : 'is-active'}`} href="/app/capacity/allocation">
-						<span>Portfolio</span>
-						<strong>{team.displayName ?? team.name}</strong>
-					</a>
-					{projects.map((project: any) => (
-						<a class={`ts-allocation-node ${selectedProject?.id === project.id ? 'is-active' : ''}`} href={`/app/capacity/allocation?projectId=${encodeURIComponent(project.id)}`}>
-							<span>Project</span>
-							<strong>{project.name ?? project.slug}</strong>
-						</a>
-					))}
-				</div>
-				{!canManage ? <p class="ts-subtle">You can view this allocation tree. Team admins can update it.</p> : null}
-			</Panel>
-
-			{selectedProject ? (
-				<Panel eyebrow="Project" title={`${selectedProject.name ?? selectedProject.slug} agent classes`} description="Allocate this project's capacity across the agent classes that perform planning, research, implementation, review, release, reporting, and knowledge work.">
-					<FormActions slot="actions" align="end">
-						<Button href="/app/capacity/allocation" variant="secondary" size="sm">Back to portfolio</Button>
-						<Button href={`/app/projects/${encodeURIComponent(selectedProject.id)}/workdays`} variant="secondary" size="sm">Workdays</Button>
-					</FormActions>
-					<form id="project-allocation-form" class="ts-form-stack" data-allocation-form="project">
-						<DynamicPieAllocationInput
-							client:load
-							name="allocations"
-							initialValue={agentSlices}
-							minSlicePercentage={0}
-							precision={1}
-							disabled={!canManage}
-							ariaLabel="Project agent class capacity allocation"
-						/>
-						<FormActions align="start">
-							<Button type="submit" disabled={!canManage}>Save agent allocation</Button>
-							<span class="ts-subtle" data-allocation-status="project" role="status"></span>
-						</FormActions>
-					</form>
-				</Panel>
+<TreeseedAppLayout title={vm.dashboard.title} description={vm.dashboard.description} currentPath="/app/capacity/allocation" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	{vm.context.activeTeam ? (
+		<DashboardTemplate viewModel={vm.dashboard} actions={vm.actions}>
+			<AllocationPanel viewModel={vm.allocation} />
+			{providers.length === 0 ? (
+				<EmptyState title="No capacity provider" description="Create a provider before saving portfolio allocation." actions={[{ label: 'Create provider', href: '/app/capacity/providers/new' }]} />
+			) : projects.length === 0 ? (
+				<EmptyState title="No projects" description="Create projects from starters before allocating provider capacity." actions={[{ label: 'Create project', href: '/app/projects/new' }]} />
 			) : (
-				<Panel eyebrow="Portfolio" title="Project portfolio allocation" description="Allocate the selected capacity provider across the private team's projects. Percentages must total 100%.">
-					{providers.length === 0 ? (
-						<EmptyState title="No capacity provider" description="Create a provider before saving portfolio allocation." actions={[{ label: 'Create provider', href: '/app/capacity/providers/new' }]} />
-					) : projects.length === 0 ? (
-						<EmptyState title="No projects" description="Create projects from starters before allocating provider capacity." actions={[{ label: 'Create project', href: '/app/projects/new' }]} />
-					) : (
-						<form id="portfolio-allocation-form" class="ts-form-stack" data-allocation-form="portfolio">
-							<Field label="Capacity provider" name="capacityProviderId">
-								<Select name="capacityProviderId" options={providerOptions} disabled={!canManage} />
-							</Field>
-							<DynamicPieAllocationInput
-								client:load
-								name="allocations"
-								initialValue={portfolioSlices}
-								minSlicePercentage={0}
-								precision={1}
-								disabled={!canManage}
-								ariaLabel="Team project portfolio capacity allocation"
-							/>
-							<FormActions align="start">
-								<Button type="submit" disabled={!canManage}>Save portfolio allocation</Button>
-								<span class="ts-subtle" data-allocation-status="portfolio" role="status"></span>
-							</FormActions>
-						</form>
-					)}
-				</Panel>
+				<form class="ts-form-stack" data-allocation-form="portfolio">
+					<Field label="Capacity provider" name="capacityProviderId">
+						<Select name="capacityProviderId" options={providerOptions} disabled={!vm.canManage} />
+					</Field>
+					<DynamicPieAllocationInput client:load name="allocations" initialValue={slices} minSlicePercentage={0} precision={1} disabled={!vm.canManage} ariaLabel="Team project portfolio capacity allocation" />
+					<FormActions align="start">
+						<Button type="submit" disabled={!vm.canManage}>Save portfolio allocation</Button>
+						<span class="ts-subtle" data-allocation-status role="status"></span>
+					</FormActions>
+				</form>
 			)}
-
-			<Panel eyebrow="Policy" title="Native limits remain provider-shaped" description="Provider creators configure native execution-provider units; TreeSeed derives scheduling policy internally.">
-				<div class="ts-allocation-policy-grid">
-					<div><span>Codex demo cap</span><strong>30% daily native usage</strong></div>
-					<div><span>Portfolio level</span><strong>Project percentages</strong></div>
-					<div><span>Project level</span><strong>Agent class percentages</strong></div>
-					<div><span>Private teams</span><strong>Private TreeDX by default</strong></div>
-				</div>
-				<Badge tone={canManage ? 'success' : 'default'}>{canManage ? 'Admin editable' : 'Read only'}</Badge>
-			</Panel>
-		</section>
+		</DashboardTemplate>
 	) : (
 		<EmptyState title="No active team" description="Create or switch to a team before allocating capacity." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
 	)}
@@ -136,88 +47,7 @@ const pageJson = JSON.stringify({
 </TreeseedAppLayout>
 
 <script>
-	const dataElement = document.getElementById('allocation-page-data');
-	const pageData = dataElement?.textContent ? JSON.parse(dataElement.textContent) : {};
-	function allocationSlices(form: HTMLFormElement) {
-		const raw = String(new FormData(form).get('allocations') ?? '[]');
-		return JSON.parse(raw);
-	}
-	async function submitAllocation(form: HTMLFormElement, status: HTMLElement | null) {
-		const mode = form.dataset.allocationForm;
-		if (!pageData.canManage) return;
-		if (status) status.textContent = 'Saving allocation...';
-		const body: any = { allocations: allocationSlices(form) };
-		let url = '';
-		if (mode === 'portfolio') {
-			body.capacityProviderId = String(new FormData(form).get('capacityProviderId') ?? pageData.defaultProviderId ?? '');
-			body.environment = 'local';
-			url = `/v1/teams/${encodeURIComponent(pageData.teamId)}/capacity-allocation`;
-		} else {
-			url = `/v1/projects/${encodeURIComponent(pageData.projectId)}/capacity-allocation`;
-		}
-		try {
-			const response = await fetch(url, {
-				method: 'PUT',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(body),
-			});
-			const payload = await response.json().catch(() => null);
-			if (!response.ok || payload?.ok === false) throw new Error(payload?.error ?? 'Allocation could not be saved.');
-			if (status) status.textContent = 'Allocation saved.';
-		} catch (error) {
-			if (status) status.textContent = error instanceof Error ? error.message : 'Allocation could not be saved.';
-		}
-	}
-	for (const form of document.querySelectorAll<HTMLFormElement>('[data-allocation-form]')) {
-		form.addEventListener('submit', (event) => {
-			event.preventDefault();
-			void submitAllocation(form, form.querySelector<HTMLElement>('[data-allocation-status]'));
-		});
-	}
-</script>
+	import { bindAllocationForm } from '../../../lib/market/operating-loop-client';
 
-<style>
-	.ts-allocation-rail {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-		gap: 0.75rem;
-	}
-	.ts-allocation-node {
-		border: 1px solid var(--ts-color-border, #d8dee8);
-		border-radius: 8px;
-		padding: 0.875rem;
-		text-decoration: none;
-		color: inherit;
-		background: var(--ts-color-surface, #fff);
-	}
-	.ts-allocation-node span,
-	.ts-allocation-policy-grid span {
-		display: block;
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0;
-		color: var(--ts-color-text-muted, #667085);
-	}
-	.ts-allocation-node strong {
-		display: block;
-		margin-top: 0.25rem;
-	}
-	.ts-allocation-node.is-active {
-		border-color: var(--ts-color-accent, #2563eb);
-		box-shadow: inset 0 0 0 1px var(--ts-color-accent, #2563eb);
-	}
-	.ts-allocation-policy-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-		gap: 0.75rem;
-	}
-	.ts-allocation-policy-grid div {
-		border: 1px solid var(--ts-color-border, #d8dee8);
-		border-radius: 8px;
-		padding: 0.875rem;
-	}
-	.ts-allocation-policy-grid strong {
-		display: block;
-		margin-top: 0.25rem;
-	}
-</style>
+	bindAllocationForm({ dataId: 'allocation-page-data' });
+</script>

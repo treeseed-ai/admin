@@ -1,37 +1,14 @@
 ---
-import type { TemplateSiteCard } from '@treeseed/core/templates';
+import CollectionTemplate from '@treeseed/ui/components/astro/templates/CollectionTemplate.astro';
+import DistributionSummary from '@treeseed/ui/components/astro/distribution/DistributionSummary.astro';
 import TreeseedPublicLayout from '../../../layouts/TreeseedPublicLayout.astro';
-import MarketProductCard from '@treeseed/ui/components/astro/market/ProductCard.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import { listMarketplaceSiteTemplates } from '../../../lib/market/public-access.js';
+import { loadPublicMarketplaceCollection } from '../../../view-models/knowledge-distribution.vm.js';
 
-const templateListing = await listMarketplaceSiteTemplates(Astro);
+const vm = await loadPublicMarketplaceCollection(Astro, 'templates');
 ---
 
-<TreeseedPublicLayout
-	title="TreeSeed Workflow Imports"
-	description="Reusable workflow foundations for operational TreeSeed contexts."
-	currentPath={Astro.url.pathname}
->
-	<Panel
-		eyebrow="Workflow Imports"
-		title="Start with a working operational foundation"
-		description="Workflow imports define project structure, deployment defaults, compatibility ranges, and operational packaging posture."
-	/>
-
-	<section class="ts-market-grid ts-stack-top">
-		{templateListing.items.map((entry: TemplateSiteCard) => (
-			<MarketProductCard
-				href={`/market/templates/${entry.slug}/`}
-				slug={entry.slug}
-				title={entry.title}
-				summary={entry.summary}
-				category={entry.category}
-				featured={entry.featured}
-				publisherName={entry.publisherName}
-				templateVersion={entry.templateVersion}
-				priceModel={entry.priceModel}
-			/>
-		))}
-	</section>
+<TreeseedPublicLayout title="TreeSeed Workflow Imports" description="Reusable workflow foundations for operational TreeSeed contexts." currentPath={Astro.url.pathname} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	<CollectionTemplate viewModel={vm.collection} actions={vm.actions} mode="cards">
+		<DistributionSummary viewModel={vm.distribution} />
+	</CollectionTemplate>
 </TreeseedPublicLayout>

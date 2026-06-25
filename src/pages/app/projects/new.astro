@@ -9,6 +9,7 @@ import LaunchRequirementSummary from '@treeseed/ui/components/astro/app/controls
 import TemplateHostRequirementPicker from '@treeseed/ui/components/astro/app/controls/TemplateHostRequirementPicker.astro';
 import TemplateResourceRequirementPicker from '@treeseed/ui/components/astro/app/controls/TemplateResourceRequirementPicker.astro';
 import TemplateSecretRequirementPanel from '@treeseed/ui/components/astro/app/controls/TemplateSecretRequirementPanel.astro';
+import ReadinessSummary from '@treeseed/ui/components/astro/service/ReadinessSummary.astro';
 import type { TemplateSiteCard } from '@treeseed/core/templates';
 import { deriveProjectLaunchRequirementsViewModel } from '@treeseed/sdk/template-launch-ui';
 import type { ProjectLaunchHostRequirementViewModel } from '@treeseed/sdk/template-launch-ui';
@@ -19,6 +20,7 @@ import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
 import { listTreeseedManagedHostsFromConfig } from '../../../lib/market/managed-hosts.js';
 import { hostPurposeFor } from '../../../lib/market/control-ui.js';
 import { loadAppContext } from '../../../view-models/app-access.js';
+import { buildServicesDashboard, loadServiceInventory } from '../../../view-models/service-readiness.vm.js';
 import { listMarketplaceSiteTemplates } from '../../../lib/market/public-access.js';
 
 if (!Astro.locals.auth?.principal) {
@@ -122,11 +124,15 @@ const launchJson = JSON.stringify({
 	repositoryHosts,
 	defaultHosts,
 }).replace(/</gu, '\\u003c');
+const serviceBundle = team
+	? await loadServiceInventory(context, runtime).then((inventory) => buildServicesDashboard(context, inventory, Astro.url)).catch(() => null)
+	: null;
 ---
 
 <TreeseedAppLayout title="New project" description="Create one hosted project." currentPath="/app/projects" teams={context.teams} activeTeam={team}>
 	{team ? (
 		<section class="ts-control-page" aria-label="New project">
+			{serviceBundle ? <ReadinessSummary viewModel={serviceBundle.readiness} showAdvanced={false} /> : null}
 			<form id="project-launch-form" class="ts-form-stack">
 				<Panel eyebrow="Projects" title="Create hosted project" description="Start with the project, then choose the hosts it needs. TreeSeed managed hosts are preselected.">
 					<div class="ts-form-grid">

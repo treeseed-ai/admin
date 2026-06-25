@@ -216,7 +216,7 @@ function providerItem(provider: any): InfrastructureItem {
 		category: 'infrastructure',
 		state: compact(provider?.status, 'configured'),
 		tone: toneForState(provider?.status ?? 'active'),
-		href: provider?.id ? `/app/capacity/providers/${encodeURIComponent(provider.id)}/edit` : '/app/capacity/providers',
+		href: provider?.id ? `/app/capacity/providers/${encodeURIComponent(provider.id)}` : '/app/capacity/providers',
 		meta: compact(provider?.provider, compact(provider?.kind, 'capacity')),
 		details: {
 			billingScope: compact(provider?.billingScope, 'team'),
@@ -259,7 +259,7 @@ function providerDetailItems(detail: any): InfrastructureItem[] {
 			category: 'infrastructure' as const,
 			state: compact(lane?.state, compact(lane?.status, 'available')),
 			tone: toneForState(lane?.state ?? lane?.status ?? 'active'),
-			href: `/app/capacity/providers/${encodeURIComponent(anchorPart(providerId))}/edit`,
+			href: `/app/capacity/providers/${encodeURIComponent(anchorPart(providerId))}`,
 			meta: 'capacity lane',
 		})),
 		{
@@ -269,7 +269,7 @@ function providerDetailItems(detail: any): InfrastructureItem[] {
 			category: 'infrastructure',
 			state: safeArray(detail.apiKeys).length ? 'configured' : 'missing',
 			tone: safeArray(detail.apiKeys).length ? 'success' : 'warning',
-			href: `/app/capacity/providers/${encodeURIComponent(anchorPart(providerId))}/edit`,
+			href: `/app/capacity/providers/${encodeURIComponent(anchorPart(providerId))}`,
 			meta: 'credentials',
 		},
 	];
@@ -316,7 +316,7 @@ function routingDecisionItem(bundle: InfrastructureBundle, decision: any): Infra
 		category: 'execution',
 		state: compact(decision?.decision, 'recorded'),
 		tone: toneForState(decision?.decision === 'selected' ? 'active' : decision?.decision),
-		href: '/app/work/objectives',
+		href: '/app/work',
 		meta: compact(decision?.environment, 'routing'),
 		timestamp: latestDate(decision?.createdAt, decision?.updatedAt),
 		projectId: compact(bundle.project?.id, '') || null,

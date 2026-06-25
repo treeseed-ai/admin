@@ -1,0 +1,30 @@
+---
+import DetailTemplate from '@treeseed/ui/components/astro/templates/DetailTemplate.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import GovernanceDecisionPanel from '@treeseed/ui/components/astro/app/operations/GovernanceDecisionPanel.astro';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { loadDecisionDetail, loadDirectionDetail } from '../../../../view-models/operating-loop.vm.js';
+
+const slug = String(Astro.params.slug ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const approvalVm = await loadDecisionDetail(Astro, slug, Astro.url).catch(() => null);
+const decisionVm = await loadDirectionDetail(Astro, 'decisions', slug, Astro.url).catch(() => null);
+const vm = decisionVm ?? approvalVm;
+const data = decisionVm?.entry?.data ?? {};
+if (!decisionVm?.entry && !approvalVm?.detail) Astro.response.status = 404;
+---
+
+<TreeseedAppLayout title={data.title ?? approvalVm?.detail?.proposal.title ?? 'Decision not found'} description={data.description ?? approvalVm?.detail?.proposal.description ?? ''} currentPath="/app/work/decisions" teams={vm?.context.teams ?? []} activeTeam={vm?.context.activeTeam} helpContext={vm?.helpContext} feedbackContext={vm?.feedbackContext}>
+	{decisionVm?.entry ? (
+		<DetailTemplate title={data.title} description={data.description ?? data.summary} eyebrow="Decision" actions={decisionVm.actions} metadata={decisionVm.metadata}>
+			{data.summary ? <p>{data.summary}</p> : null}
+			{decisionVm.form?.body ? <pre class="ts-preformatted-content">{decisionVm.form.body}</pre> : null}
+		</DetailTemplate>
+	) : approvalVm?.detail ? (
+		<DetailTemplate title={approvalVm.detail.proposal.title} description={approvalVm.detail.proposal.description} eyebrow="Decision review" actions={approvalVm.actions}>
+			<GovernanceDecisionPanel projection={approvalVm.detail} />
+		</DetailTemplate>
+	) : (
+		<EmptyState title="Decision not found" description="The requested decision is not available." actions={[{ label: 'Back to decisions', href: '/app/work/decisions' }]} />
+	)}
+</TreeseedAppLayout>

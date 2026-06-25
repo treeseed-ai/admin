@@ -1,0 +1,59 @@
+---
+import { getCollection } from 'astro:content';
+import PermissionBoundary from '@treeseed/ui/components/astro/patterns/PermissionBoundary.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import WorkContentNav from '@treeseed/ui/components/astro/app/controls/WorkContentNav.astro';
+import QuestionForm from '../../../../../components/work/QuestionForm.astro';
+import TreeseedAppLayout from '../../../../../layouts/TreeseedAppLayout.astro';
+import { loadAppContext } from '../../../../../view-models/app-access.js';
+import { buildQuestionFormViewModel, normalizeQuestionEntry } from '../../../../../view-models/ui-foundation/questions.vm.js';
+
+const slug = String(Astro.params.slug ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro);
+const entries = await getCollection('questions' as any, ({ data }: any) => !data?.draft).catch(() => []);
+const entry = entries.find((candidate: any) => {
+	const id = String(candidate.id ?? '').replace(/\.(mdx|md)$/u, '');
+	const dataId = String(candidate.data?.id ?? '');
+	return id === slug || dataId === slug || dataId.replace(/^[^:]+:/u, '') === slug;
+}) ?? null;
+const pageViewModel = buildQuestionFormViewModel({
+	context,
+	question: normalizeQuestionEntry(entry, slug),
+	url: Astro.url,
+	mode: 'edit',
+});
+if (pageViewModel.notFound) Astro.response.status = 404;
+---
+
+<TreeseedAppLayout
+	title={pageViewModel.title}
+	description={pageViewModel.description}
+	currentPath="/app/work/questions"
+	teams={context.teams}
+	activeTeam={context.activeTeam}
+	helpContext={pageViewModel.help}
+	feedbackContext={pageViewModel.feedback}
+>
+	<section class="ts-control-page" aria-label="Edit question">
+		<WorkContentNav current="questions" />
+		<PermissionBoundary
+			state={pageViewModel.permissions['question.edit'] ?? 'requiresSetup'}
+			title="Question editing unavailable"
+			description="This question cannot be edited with the current permissions."
+			remediation={pageViewModel.policy.remediation}
+		>
+			{pageViewModel.question ? (
+				<SettingsTemplate title={`Edit ${pageViewModel.question.title}`} description={pageViewModel.description} actions={pageViewModel.actions}>
+					<Panel eyebrow="Work content" title="Question fields" description="Edit the canonical local question content file.">
+						<QuestionForm viewModel={pageViewModel} />
+					</Panel>
+				</SettingsTemplate>
+			) : (
+				<EmptyState title="Question not found" description="This question record is not available." actions={[{ label: 'Back to questions', href: '/app/work/questions' }]} />
+			)}
+		</PermissionBoundary>
+	</section>
+</TreeseedAppLayout>

@@ -1,0 +1,19 @@
+---
+import DashboardTemplate from '@treeseed/ui/components/astro/templates/DashboardTemplate.astro';
+import ActivityTimeline from '@treeseed/ui/components/astro/operating/ActivityTimeline.astro';
+import WorkQueueSummary from '@treeseed/ui/components/astro/operating/WorkQueueSummary.astro';
+import TreeseedAppLayout from '../../layouts/TreeseedAppLayout.astro';
+import { loadWorkDashboard } from '../../view-models/operating-loop.vm.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/work')}`);
+const vm = await loadWorkDashboard(Astro, Astro.url);
+---
+
+<TreeseedAppLayout title={vm.dashboard.title} description={vm.dashboard.description} currentPath="/app/work" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	<DashboardTemplate viewModel={vm.dashboard} actions={vm.actions}>
+		<div class="ts-workspace-grid">
+			<WorkQueueSummary viewModel={vm.queue} />
+			<ActivityTimeline viewModel={vm.timeline} />
+		</div>
+	</DashboardTemplate>
+</TreeseedAppLayout>

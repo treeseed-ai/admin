@@ -1,0 +1,71 @@
+---
+import DetailTemplate from '@treeseed/ui/components/astro/templates/DetailTemplate.astro';
+import ReadinessSummary from '@treeseed/ui/components/astro/service/ReadinessSummary.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { hostPurposeFor, hostTypeFor, hostTypeLabel } from '../../../../lib/market/control-ui.js';
+import { loadAppContext, persistActiveTeamSelection, resolveAppHost } from '../../../../view-models/app-access.js';
+import { hostMetadata } from '../../../../view-models/service-readiness.vm.js';
+
+const requestedHostType = String(Astro.params.hostType ?? '');
+const hostId = String(Astro.params.hostId ?? '');
+const validTypes = new Set(['repository', 'web', 'capacity-provider', 'email', 'ai']);
+function normalizeRequestedHostType(type: string) {
+	const normalized = String(type ?? '').trim();
+	if (normalized === 'cloudflare' || normalized === 'web_host') return 'web';
+	if (normalized === 'smtp' || normalized === 'email_host') return 'email';
+	if (normalized === 'capacity_provider' || normalized === 'capacity_provider_host' || normalized === 'processing') return 'capacity-provider';
+	if (normalized === 'ai_host') return 'ai';
+	return normalized;
+}
+function routeHostTypeFor(host: any, requested: string) {
+	if (requested === 'repository') return 'repository';
+	const inferred = hostTypeFor(host);
+	if (validTypes.has(inferred)) return inferred;
+	if (requested === 'capacity-provider' && (inferred === 'processing' || host?.provider === 'railway')) return 'capacity-provider';
+	return validTypes.has(requested) ? requested : inferred;
+}
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+
+const lookupHostType = normalizeRequestedHostType(requestedHostType);
+const context = await loadAppContext(Astro);
+const hostResolution = validTypes.has(lookupHostType)
+	? await resolveAppHost(context, lookupHostType, hostId)
+	: { resource: null, team: null, status: 'not_found' };
+const team = hostResolution.team ?? context.activeTeam;
+const host = hostResolution.resource;
+if (hostResolution.team?.id && hostResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, hostResolution.team);
+if (!host) Astro.response.status = hostResolution.status === 'forbidden' ? 403 : 404;
+const hostType = host ? routeHostTypeFor(host, lookupHostType) : lookupHostType;
+const title = host?.name ?? `${hostTypeLabel(hostType)} host`;
+const readiness = {
+	title: 'Host readiness',
+	description: 'Policy-safe service state for this host.',
+	items: [{
+		id: 'host-readiness',
+		label: hostTypeLabel(hostType),
+		status: host?.status === 'active' ? 'ready' : host?.status === 'paused' ? 'warning' : 'unknown',
+		message: hostPurposeFor(hostType),
+		href: `/app/hosts/${encodeURIComponent(hostType)}/${encodeURIComponent(hostId)}/settings`,
+	}],
+} as const;
+const actions = [
+	{ id: 'host.settings', label: 'Settings', state: 'allowed', href: `/app/hosts/${encodeURIComponent(hostType)}/${encodeURIComponent(hostId)}/settings` },
+	{ id: 'services.open', label: 'Services', state: 'allowed', href: '/app/services' },
+] as const;
+---
+
+<TreeseedAppLayout title={host ? title : 'Host not found'} description="Host readiness and service details." currentPath="/app/hosts" teams={context.teams} activeTeam={team}>
+	{host ? (
+		<DetailTemplate title={title} description={hostPurposeFor(hostType)} eyebrow="Host" actions={actions} metadata={hostMetadata(host)}>
+			<ReadinessSummary viewModel={readiness} showAdvanced />
+			<Panel title="Service purpose" description={hostPurposeFor(hostType)}>
+				<p>This host is a reusable team service resource. Sensitive provider values are edited only in settings and are never rendered on the detail page.</p>
+			</Panel>
+		</DetailTemplate>
+	) : (
+		<EmptyState title="Host not found" description="This host is not available to the active team." actions={[{ label: 'Back to hosts', href: '/app/hosts' }]} />
+	)}
+</TreeseedAppLayout>

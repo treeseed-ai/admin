@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
+import DataTable from '@treeseed/ui/components/astro/data/DataTable.astro';
+import PermissionBoundary from '@treeseed/ui/components/astro/patterns/PermissionBoundary.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import DetailTemplate from '@treeseed/ui/components/astro/templates/DetailTemplate.astro';
+import WorkContentNav from '@treeseed/ui/components/astro/app/controls/WorkContentNav.astro';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { loadAppContext } from '../../../../view-models/app-access.js';
+import { buildQuestionDetailViewModel, normalizeQuestionEntry } from '../../../../view-models/ui-foundation/questions.vm.js';
+
+const slug = String(Astro.params.slug ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro);
+const entries = await getCollection('questions' as any, ({ data }: any) => !data?.draft).catch(() => []);
+const entry = entries.find((candidate: any) => {
+	const id = String(candidate.id ?? '').replace(/\.(mdx|md)$/u, '');
+	const dataId = String(candidate.data?.id ?? '');
+	return id === slug || dataId === slug || dataId.replace(/^[^:]+:/u, '') === slug;
+}) ?? null;
+const pageViewModel = buildQuestionDetailViewModel({
+	context,
+	question: normalizeQuestionEntry(entry, slug),
+	url: Astro.url,
+});
+if (pageViewModel.notFound) Astro.response.status = 404;
+---
+
+<TreeseedAppLayout
+	title={pageViewModel.title}
+	description={pageViewModel.description}
+	currentPath="/app/work/questions"
+	teams={context.teams}
+	activeTeam={context.activeTeam}
+	helpContext={pageViewModel.help}
+	feedbackContext={pageViewModel.feedback}
+>
+	<section class="ts-control-page" aria-label="Question detail">
+		<WorkContentNav current="questions" />
+		<PermissionBoundary
+			state={pageViewModel.permissions['question.read'] ?? 'requiresSetup'}
+			title="Question unavailable"
+			description="This question is not available with the current permissions."
+			remediation={pageViewModel.policy.remediation}
+		>
+			{pageViewModel.question ? (
+				<DetailTemplate
+					eyebrow="Question"
+					title={pageViewModel.question.title}
+					description={pageViewModel.question.description}
+					actions={pageViewModel.actions}
+					metadata={pageViewModel.metadata}
+				>
+					<Panel eyebrow="Direction" title="Summary" description={pageViewModel.question.summary}>
+						<Badge slot="actions" tone={pageViewModel.question.draft ? 'warning' : 'success'}>{pageViewModel.question.draft ? 'draft' : 'published'}</Badge>
+						<p>{pageViewModel.question.motivation}</p>
+					</Panel>
+					<Panel eyebrow="Question body" title="Working notes">
+						<div class="ts-prose">
+							{pageViewModel.question.body ? <pre>{pageViewModel.question.body}</pre> : <p>No body recorded yet.</p>}
+						</div>
+					</Panel>
+					<Panel slot="aside" eyebrow="Graph" title="Related records" description="References that anchor this question in the project graph.">
+						<DataTable
+							columns={[{ key: 'kind', label: 'Kind' }, { key: 'reference', label: 'Reference' }]}
+							rows={pageViewModel.relatedRows}
+							emptyLabel="No related objectives or books recorded."
+						/>
+					</Panel>
+				</DetailTemplate>
+			) : (
+				<EmptyState title="Question not found" description="This question record is not available." actions={[{ label: 'Back to questions', href: '/app/work/questions' }]} />
+			)}
+		</PermissionBoundary>
+	</section>
+</TreeseedAppLayout>

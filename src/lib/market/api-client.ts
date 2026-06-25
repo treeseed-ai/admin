@@ -173,6 +173,14 @@ export class ApiClientFacade {
 		return this.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}`);
 	}
 
+	validatePrivateKnowledgeAccess(projectId: string, body: { slug?: string; route?: string } = {}) {
+		return this.request<any>('POST', `/v1/projects/${encodeURIComponent(projectId)}/private-knowledge/access`, { body });
+	}
+
+	recordPrivateKnowledgeOutcome(projectId: string, body: { slug?: string; route?: string; outcome: 'read' | 'not_found' }) {
+		return this.request<any>('POST', `/v1/projects/${encodeURIComponent(projectId)}/private-knowledge/access`, { body });
+	}
+
 	getProjectDeployment(deploymentId: string, options: { limit?: number | string | null } = {}) {
 		const query = new URLSearchParams();
 		if (options.limit != null) query.set('limit', String(options.limit));

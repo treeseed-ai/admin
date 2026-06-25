@@ -1,0 +1,21 @@
+---
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import DirectionContentForm from '../../../../components/work/DirectionContentForm.astro';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { loadDirectionCollection } from '../../../../view-models/operating-loop.vm.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/work/decisions/new')}`);
+const vm = await loadDirectionCollection(Astro, 'decisions', Astro.url);
+const selectedProjectId = String(Astro.url.searchParams.get('projectId') ?? vm.context.projects[0]?.id ?? '');
+---
+
+<TreeseedAppLayout title="New decision" description="Record one project decision." currentPath="/app/work/decisions" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	{vm.context.projects.length ? (
+		<SettingsTemplate title="New decision" description="Record a decision through the local content operation queue." actions={vm.actions}>
+			<DirectionContentForm collection="decisions" mode="create" projectOptions={vm.context.projects.map((project: any) => ({ label: project.name ?? project.slug, value: project.id }))} selectedProjectId={selectedProjectId} fallbackHref="/app/work/decisions" />
+		</SettingsTemplate>
+	) : (
+		<EmptyState title="No projects" description="Create a project before recording decisions." actions={[{ label: 'New project', href: '/app/projects/new' }]} />
+	)}
+</TreeseedAppLayout>

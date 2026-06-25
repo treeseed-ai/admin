@@ -1,162 +1,18 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
-import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
-import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import WorkspaceTemplate from '@treeseed/ui/components/astro/templates/WorkspaceTemplate.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
-import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
-import { createApiFacade } from '../../../../lib/market/api-client';
-import { loadAppContext } from '../../../../view-models/app-access.js';
+import { loadWorkdayRunWorkspace } from '../../../../view-models/operating-loop.vm.js';
 
 const runId = String(Astro.params.runId ?? '');
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
-
-const context = await loadAppContext(Astro);
-const team = context.activeTeam;
-const api = createApiFacade(Astro);
-const payload = team ? await api.getWorkdayRun(team.id, runId).catch(() => null) : null;
-const run = payload?.run ?? null;
-const events = payload?.events ?? [];
-const workdayIds = Array.isArray(run?.actual?.projects)
-	? run.actual.projects.map((project: any) => project.workdayId).filter(Boolean)
-	: [];
-const executionRuns = team && workdayIds.length
-	? (await Promise.all(workdayIds.map((workdayId: string) => api.listExecutionRuns(team.id, { workdayId, limit: 100 }).catch(() => [])))).flat()
-	: [];
-if (!run) Astro.response.status = 404;
-
-function text(value: unknown, fallback = 'n/a') {
-	if (value === null || value === undefined || value === '') return fallback;
-	if (typeof value === 'object') return JSON.stringify(value);
-	return String(value);
-}
-
-const projectRows = (run?.actual?.projects ?? []).map((project: any) => ({
-	id: `project-${esc(project.projectId ?? project.slug)}`,
-	name: `<strong>${esc(project.slug ?? project.projectId)}</strong><span>${esc(project.projectId ?? '')}</span>`,
-	status: esc(project.status ?? 'unknown'),
-	agents: esc(project.agentCount ?? 0),
-	assignments: esc(project.assignments ?? 0),
-	planning: esc(project.planningRuns ?? 0),
-	acting: esc(project.actingRuns ?? 0),
-	blockers: esc(Array.isArray(project.blockers) && project.blockers.length ? project.blockers.join(', ') : 'none'),
-	workday: project.workdayId ? `<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.projectId)}/workdays/${encodeURIComponent(project.workdayId)}">Open</a>` : '',
-}));
-
-const checkRows = (run?.metrics?.checks ?? []).map((check: any) => ({
-	id: `check-${esc(check.name)}`,
-	name: `<strong>${esc(check.name)}</strong>`,
-	actual: esc(check.actual ?? 0),
-	expected: esc(check.expected ?? 0),
-	score: esc(check.score ?? 0),
-}));
-
-const eventRows = events.map((event: any) => ({
-	id: `event-${esc(event.id)}`,
-	name: `<strong>${esc(event.title ?? event.eventType)}</strong><span>${esc(event.message ?? event.eventType ?? '')}</span>`,
-	status: esc(event.status ?? ''),
-	scope: esc([event.projectId ? `project=${event.projectId}` : null, event.workdayId ? `workday=${event.workdayId}` : null, event.assignmentId ? `assignment=${event.assignmentId}` : null].filter(Boolean).join(' · ') || 'run'),
-	context: esc(text(event.context ?? event.refs, 'none')),
-	created: esc(event.createdAt ?? ''),
-}));
-
-const executionRows = executionRuns.map((entry: any) => ({
-	id: `execution-${esc(entry.id)}`,
-	run: `<strong>${esc(entry.id)}</strong><span>${esc(entry.assignment?.id ?? '')}</span>`,
-	status: esc(entry.status ?? 'unknown'),
-	project: esc(entry.agent?.projectSlug ?? entry.agent?.projectId ?? 'n/a'),
-	agent: esc(entry.agent?.agentId ?? 'n/a'),
-	duration: esc(entry.timing?.durationMs == null ? 'n/a' : `${Math.round(Number(entry.timing.durationMs) / 1000)}s`),
-	tokens: esc(entry.executionProvider?.hasTokenCounts ? JSON.stringify(entry.executionProvider.tokenCounts) : 'n/a'),
-	artifacts: esc(Array.isArray(entry.contentArtifactRefs) ? entry.contentArtifactRefs.length : 0),
-	started: esc(entry.timing?.startedAt ?? entry.timing?.createdAt ?? ''),
-}));
-
-const artifactRows = executionRuns.flatMap((entry: any) => (Array.isArray(entry.contentArtifactRefs) ? entry.contentArtifactRefs : []).map((artifact: any, index: number) => ({
-	id: `artifact-${esc(entry.id)}-${index}`,
-	path: `<strong>${esc(artifact.contentPath ?? 'artifact')}</strong><span>${esc(artifact.artifactKind ?? '')}</span>`,
-	agent: esc(artifact.producedByAgent ?? entry.agent?.agentId ?? 'n/a'),
-	subject: esc(artifact.subjectId ?? 'none'),
-	assignment: esc(artifact.sourceAssignmentId ?? entry.assignment?.id ?? 'n/a'),
-})));
+const vm = await loadWorkdayRunWorkspace(Astro, runId, Astro.url);
+if (!vm.workspace) Astro.response.status = 404;
 ---
 
-<TreeseedAppLayout title="Workday run" description="Inspect a portfolio workday run." currentPath="/app/capacity/workday-runs" teams={context.teams} activeTeam={team}>
-	{run ? (
-		<section class="ts-control-page" aria-label="Workday run detail">
-			<Panel eyebrow="Workday run" title={run.id} description={run.scenarioId ?? 'portfolio planning'}>
-				<FormActions slot="actions" align="end">
-					<Button href="/app/capacity/workday-runs" variant="secondary" size="sm">All runs</Button>
-					<Button href="/app/capacity/runtime" variant="secondary" size="sm">Runtime</Button>
-				</FormActions>
-				<KeyValueList items={[
-					{ key: 'Status', value: run.status ?? 'unknown' },
-					{ key: 'Score', value: String(run.summary?.score ?? run.metrics?.score ?? 'learning') },
-					{ key: 'Provider', value: run.capacityProviderId ?? run.parameters?.providerId ?? 'local' },
-					{ key: 'Environment', value: run.environment ?? 'local' },
-					{ key: 'Started', value: run.startedAt ?? 'not started' },
-					{ key: 'Completed', value: run.completedAt ?? 'not completed' },
-					{ key: 'JSON report', value: run.reportRefs?.jsonPath ?? 'not written' },
-					{ key: 'Markdown report', value: run.reportRefs?.markdownPath ?? 'not written' },
-				]} />
-			</Panel>
-
-			<Panel eyebrow="Expected vs actual" title="Effectiveness checks" description="Coverage, provider health, and audit completeness are scored from persisted run evidence.">
-				<PlainTable columns={[
-					{ key: 'name', label: 'Check' },
-					{ key: 'actual', label: 'Actual' },
-					{ key: 'expected', label: 'Expected' },
-					{ key: 'score', label: 'Score' },
-				]} rows={checkRows} emptyTitle="No checks" emptyDescription="Checks appear after the CLI or runner completes this workday." />
-			</Panel>
-
-			<Panel eyebrow="Projects" title="Portfolio coverage" description="Each project should have its knowledge hub, agent classes, assignments, planning evidence, and output evidence.">
-				<PlainTable columns={[
-					{ key: 'name', label: 'Project' },
-					{ key: 'status', label: 'Status' },
-					{ key: 'agents', label: 'Agents' },
-					{ key: 'assignments', label: 'Assignments' },
-					{ key: 'planning', label: 'Planning runs' },
-					{ key: 'acting', label: 'Acting runs' },
-					{ key: 'blockers', label: 'Blockers' },
-					{ key: 'workday', label: 'Workday' },
-				]} rows={projectRows} emptyTitle="No project evidence" emptyDescription="Project evidence appears after a workday runs." interactive={true} pageSize={10} searchLabel="Filter projects" controlMode="filter" filterColumns={['status']} />
-			</Panel>
-
-			<Panel eyebrow="Execution provider" title="Agent execution timeline" description="Provider-backed agent runs with timing, diagnostics, and content outputs.">
-				<PlainTable columns={[
-					{ key: 'run', label: 'Run' },
-					{ key: 'status', label: 'Status' },
-					{ key: 'project', label: 'Project' },
-					{ key: 'agent', label: 'Agent' },
-					{ key: 'duration', label: 'Duration' },
-					{ key: 'tokens', label: 'Tokens' },
-					{ key: 'artifacts', label: 'Artifacts' },
-					{ key: 'started', label: 'Started' },
-				]} rows={executionRows} emptyTitle="No execution runs" emptyDescription="Execution runs appear when provider assignments invoke an execution provider." interactive={true} pageSize={20} searchLabel="Filter execution runs" controlMode="filter" filterColumns={['status', 'project', 'agent']} />
-			</Panel>
-
-			<Panel eyebrow="Content artifacts" title="Generated linked notes" description="Agent outputs that were persisted as Knowledge Hub content files.">
-				<PlainTable columns={[
-					{ key: 'path', label: 'Content path' },
-					{ key: 'agent', label: 'Agent' },
-					{ key: 'subject', label: 'Subject' },
-					{ key: 'assignment', label: 'Assignment' },
-				]} rows={artifactRows} emptyTitle="No content artifacts" emptyDescription="Productive workdays should leave linked MDX notes or explicit no-change notes." interactive={true} pageSize={20} searchLabel="Filter artifacts" controlMode="filter" filterColumns={['agent']} />
-			</Panel>
-
-			<Panel eyebrow="Audit trail" title="Execution events" description="Ordered events preserve parameters, context, refs, and outcomes for troubleshooting.">
-				<PlainTable columns={[
-					{ key: 'name', label: 'Event' },
-					{ key: 'status', label: 'Status' },
-					{ key: 'scope', label: 'Scope' },
-					{ key: 'context', label: 'Context' },
-					{ key: 'created', label: 'Created' },
-				]} rows={eventRows} emptyTitle="No audit events" emptyDescription="Events appear as the runner records command, API, provider, workday, assignment, and report steps." interactive={true} pageSize={20} searchLabel="Filter events" controlMode="filter" filterColumns={['status']} />
-			</Panel>
-		</section>
+<TreeseedAppLayout title={vm.workspace?.title ?? 'Workday run'} description={vm.workspace?.description} currentPath="/app/capacity/workday-runs" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	{vm.workspace ? (
+		<WorkspaceTemplate viewModel={vm.workspace} actions={vm.actions} />
 	) : (
 		<EmptyState title="Workday run not found" description="This workday run is not available for the selected team." actions={[{ label: 'Back to runs', href: '/app/capacity/workday-runs' }]} />
 	)}

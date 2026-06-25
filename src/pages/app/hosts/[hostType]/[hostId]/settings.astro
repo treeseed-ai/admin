@@ -7,6 +7,7 @@ import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
 import HostCredentialPermissionNote from '@treeseed/ui/components/astro/app/controls/HostCredentialPermissionNote.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
 import TreeseedAppLayout from '../../../../../layouts/TreeseedAppLayout.astro';
 import { hostProviderFor, hostTypeFor, hostTypeLabel } from '../../../../../lib/market/control-ui.js';
 import { loadAppContext, persistActiveTeamSelection, resolveAppHost } from '../../../../../view-models/app-access.js';
@@ -44,7 +45,7 @@ if (!host) Astro.response.status = hostResolution.status === 'forbidden' ? 403 :
 const hostType = host ? routeHostTypeFor(host, lookupHostType) : lookupHostType;
 const provider = host?.provider ?? hostProviderFor(hostType);
 const hostTypeName = hostTypeLabel(hostType);
-const editTitle = `Edit ${hostTypeName} host`;
+const editTitle = `${hostTypeName} host settings`;
 const hasSavedCredentials = Boolean(host?.encryptedPayload);
 const smtpSettings = host?.metadata?.smtp && typeof host.metadata.smtp === 'object' ? host.metadata.smtp : {};
 const savedValuePlaceholder = hasSavedCredentials ? 'Saved value configured. Type a new value to replace it.' : '';
@@ -63,9 +64,14 @@ const data = JSON.stringify({
 
 <TreeseedAppLayout title={host ? editTitle : 'Host not found'} description="Edit one host configuration." currentPath="/app/hosts" teams={context.teams} activeTeam={team}>
 	{host ? (
+		<SettingsTemplate
+			title={editTitle}
+			description="Leave credential fields blank unless you are replacing sensitive values."
+			actions={[{ id: 'host.detail', label: 'Back to host', state: 'allowed', href: `/app/hosts/${encodeURIComponent(hostType)}/${encodeURIComponent(hostId)}` }]}
+			sections={[{ label: 'General', href: '#host-edit-form', current: true }, { label: 'Credentials', href: '#host-edit-form' }]}
+		>
 		<section class="ts-control-page" aria-label={editTitle}>
 			<Panel eyebrow="Hosts" title={editTitle} description="Leave credential fields blank unless you are replacing sensitive values.">
-				<Button slot="actions" href="/app/hosts" variant="secondary" size="sm">Back to hosts</Button>
 				<form id="host-edit-form" class="ts-form-stack" autocomplete="off" data-admin-preserve-values>
 					<div class="ts-form-grid">
 						<Field label="Host display name" name="name" required help="A friendly name shown in TreeSeed when people choose this host."><TextInput id={`host-${hostId}-display-name`} name="name" required value={host.name ?? ''} autocomplete="off" /></Field>
@@ -138,6 +144,7 @@ const data = JSON.stringify({
 				</form>
 			</Panel>
 		</section>
+		</SettingsTemplate>
 	) : (
 		<EmptyState title="Host not found" description="This host is not available to the active team." actions={[{ label: 'Back to hosts', href: '/app/hosts' }]} />
 	)}

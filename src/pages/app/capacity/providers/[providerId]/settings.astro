@@ -7,6 +7,7 @@ import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
 import TreeseedAppLayout from '../../../../../layouts/TreeseedAppLayout.astro';
 import { escapeHtml as esc } from '../../../../../lib/market/control-ui.js';
 import { createApiFacade } from '../../../../../lib/market/api-client';
@@ -99,8 +100,19 @@ const grantRows = capacityGrants.map((grant: any) => {
 });
 ---
 
-<TreeseedAppLayout title={provider ? `Edit ${provider.name}` : 'Provider not found'} description="Edit one capacity provider." currentPath="/app/capacity/providers" teams={context.teams} activeTeam={team}>
+<TreeseedAppLayout title={provider ? `${provider.name} settings` : 'Provider not found'} description="Edit one capacity provider." currentPath="/app/capacity/providers" teams={context.teams} activeTeam={team}>
 	{provider ? (
+		<SettingsTemplate
+			title={`${provider.name} settings`}
+			description="Edit provider settings, native capacity facts, allocation, and launch records."
+			actions={[{ id: 'provider.detail', label: 'Back to provider', state: 'allowed', href: `/app/capacity/providers/${encodeURIComponent(provider.id)}` }]}
+			sections={[
+				{ label: 'General', href: '#provider-form', current: true },
+				{ label: 'Native capacity', href: '#native-capacity-form' },
+				{ label: 'Allocation', href: '#allocation-form' },
+				{ label: 'Deploy', href: '#provider-deploy-form' },
+			]}
+		>
 		<section class="ts-control-page" aria-label="Edit provider">
 			<Panel eyebrow="Capacity" title="Edit provider" description="Rename this capacity provider. Runtime settings are reported by the provider.">
 				<form id="provider-form" class="ts-form-stack">
@@ -263,6 +275,7 @@ const grantRows = capacityGrants.map((grant: any) => {
 				<pre id="self-hosting-display" class="ts-code-block">Loading self-host instructions...</pre>
 			</Panel>
 		</section>
+		</SettingsTemplate>
 	) : (
 		<EmptyState title="Provider not found" description="This capacity provider is not available." actions={[{ label: 'Back to Capacity', href: '/app/capacity/providers' }]} />
 	)}

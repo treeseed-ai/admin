@@ -1,46 +1,20 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
+import CollectionTemplate from '@treeseed/ui/components/astro/templates/CollectionTemplate.astro';
+import DistributionSummary from '@treeseed/ui/components/astro/distribution/DistributionSummary.astro';
+import OverlayStatus from '@treeseed/ui/components/astro/distribution/OverlayStatus.astro';
+import PermissionBoundary from '@treeseed/ui/components/astro/patterns/PermissionBoundary.astro';
 import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
-import { escapeHtml as esc } from '../../../lib/market/control-ui.js';
-import { loadKnowledgeViewModel } from '../../../view-models/knowledge.vm.js';
+import { loadKnowledgeDistributionCollection } from '../../../view-models/knowledge-distribution.vm.js';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/knowledge/artifacts')}`);
-const vm = await loadKnowledgeViewModel(Astro);
-const rows = vm.artifacts.map((artifact: any) => ({
-	id: `artifact-${esc(artifact.id ?? artifact.slug)}`,
-	name: `<strong>${esc(artifact.title)}</strong><span>${esc(artifact.description ?? artifact.type ?? '')}</span>`,
-	project: esc(artifact.metadata?.projectName ?? artifact.originatingProject?.name ?? 'Project'),
-	state: esc(artifact.state ?? 'generated'),
-	action: `<a class="ts-link-button" href="${esc(artifact.href ?? '/app/knowledge/artifacts')}">Review</a>`,
-}));
+const vm = await loadKnowledgeDistributionCollection(Astro, 'artifacts');
 ---
 
-<TreeseedAppLayout title="Artifacts" description="Review generated knowledge artifacts." currentPath="/app/knowledge/artifacts" teams={vm.context.teams} activeTeam={vm.context.activeTeam}>
-	<section class="ts-control-page" aria-label="Artifacts">
-		<Panel eyebrow="Knowledge" title="Artifacts" description="Filter, review, and open generated artifacts.">
-			<Button slot="actions" href="/app/knowledge/publish" size="sm">Publish</Button>
-			<form class="ts-inline-form" role="search" aria-label="Filter artifacts">
-				<label class="ts-field"><span class="ts-field__label">Filter</span><input class="ts-control" type="search" data-knowledge-filter /></label>
-			</form>
-			{rows.length > 0 ? (
-				<PlainTable columns={[{ key: 'name', label: 'Artifact' }, { key: 'project', label: 'Project' }, { key: 'state', label: 'State' }, { key: 'action', label: 'Action' }]} rows={rows} />
-			) : (
-				<EmptyState title="No artifacts yet" description="Artifacts appear after project work, releases, or documentation generation." />
-			)}
-		</Panel>
-	</section>
+<TreeseedAppLayout title={vm.collection.title} description={vm.collection.description} currentPath="/app/knowledge" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	<PermissionBoundary state={vm.context.activeTeam ? 'allowed' : 'requiresSetup'} title="Team required" remediation="Select or create a team before reviewing knowledge artifacts.">
+		<CollectionTemplate viewModel={vm.collection} actions={vm.actions}>
+			<DistributionSummary viewModel={vm.distribution} />
+			<OverlayStatus viewModel={vm.overlayStatus} />
+		</CollectionTemplate>
+	</PermissionBoundary>
 </TreeseedAppLayout>
-
-<script>
-	const filter = document.querySelector('[data-knowledge-filter]') as HTMLInputElement | null;
-	filter?.addEventListener('input', () => {
-		const needle = filter.value.trim().toLowerCase();
-		document.querySelectorAll('.ts-plain-table tbody tr').forEach((row) => {
-			const text = row.textContent?.toLowerCase() ?? '';
-			(row as HTMLTableRowElement).hidden = Boolean(needle && !text.includes(needle));
-		});
-	});
-</script>

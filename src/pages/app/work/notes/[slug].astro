@@ -1,0 +1,23 @@
+---
+import DetailTemplate from '@treeseed/ui/components/astro/templates/DetailTemplate.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import { loadDirectionDetail } from '../../../../view-models/operating-loop.vm.js';
+
+const slug = String(Astro.params.slug ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const vm = await loadDirectionDetail(Astro, 'notes', slug, Astro.url);
+if (!vm.entry) Astro.response.status = 404;
+const data = vm.entry?.data ?? {};
+---
+
+<TreeseedAppLayout title={data.title ?? 'Note not found'} description={data.description ?? ''} currentPath="/app/work/notes" teams={vm.context.teams} activeTeam={vm.context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	{vm.entry ? (
+		<DetailTemplate title={data.title} description={data.description ?? data.summary} eyebrow="Note" actions={vm.actions} metadata={vm.metadata}>
+			{data.summary ? <p>{data.summary}</p> : null}
+			{vm.form?.body ? <pre class="ts-preformatted-content">{vm.form.body}</pre> : null}
+		</DetailTemplate>
+	) : (
+		<EmptyState title="Note not found" description="The requested note is not available." actions={[{ label: 'Back to notes', href: '/app/work/notes' }]} />
+	)}
+</TreeseedAppLayout>
