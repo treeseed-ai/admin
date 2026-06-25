@@ -11,12 +11,12 @@ import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
 import { createApiFacade } from '../../../../lib/market/api-client';
 import { loadAppContext } from '../../../../view-models/app-access.js';
 
-if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/capacity/workday-tests')}`);
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/capacity/workday-runs')}`);
 
 const context = await loadAppContext(Astro);
 const team = context.activeTeam;
 const api = createApiFacade(Astro);
-const runs = team ? await api.listWorkdayTestRuns(team.id).catch(() => []) : [];
+const runs = team ? await api.listWorkdayRuns(team.id).catch(() => []) : [];
 
 function text(value: unknown, fallback = 'n/a') {
 	if (value === null || value === undefined || value === '') return fallback;
@@ -34,25 +34,25 @@ function tone(status: unknown) {
 
 const rows = runs.map((run: any) => ({
 	id: `run-${esc(run.id)}`,
-	name: `<strong>${esc(run.id)}</strong><span>${esc(run.scenarioId ?? 'portfolio-local')}</span>`,
+	name: `<strong>${esc(run.id)}</strong><span>${esc(run.scenarioId ?? 'portfolio planning')}</span>`,
 	status: `<span class="ts-status-pill ts-status-pill--${esc(tone(run.status))}">${esc(run.status ?? 'unknown')}</span>`,
 	score: esc(text(run.summary?.score ?? run.metrics?.score, 'learning')),
 	coverage: esc(`${run.summary?.projectCount ?? run.actual?.projects?.length ?? 0} projects · ${run.summary?.blockerCount ?? run.metrics?.blockers?.length ?? 0} blockers`),
 	provider: esc(run.capacityProviderId ?? run.parameters?.providerId ?? 'local'),
 	updated: esc(run.completedAt ?? run.updatedAt ?? run.createdAt ?? 'never'),
-	action: `<a class="ts-link-button" href="/app/capacity/workday-tests/${encodeURIComponent(run.id)}">Open</a>`,
+	action: `<a class="ts-link-button" href="/app/capacity/workday-runs/${encodeURIComponent(run.id)}">Open</a>`,
 }));
 ---
 
-<TreeseedAppLayout title="Workday tests" description="Run and inspect portfolio-wide local workday tests." currentPath="/app/capacity/workday-tests" teams={context.teams} activeTeam={team}>
+<TreeseedAppLayout title="Workday runs" description="Run and inspect portfolio-wide local workdays." currentPath="/app/capacity/workday-runs" teams={context.teams} activeTeam={team}>
 	{team ? (
-		<section class="ts-control-page" aria-label="Workday tests">
-			<Panel eyebrow="Capacity" title="Workday tester" description="Launch a portfolio test request, then inspect provider readiness, project coverage, mode runs, outputs, and audit evidence from persisted records.">
+		<section class="ts-control-page" aria-label="Workday runs">
+			<Panel eyebrow="Capacity" title="Workday runner" description="Launch a portfolio workday, then inspect provider readiness, project coverage, mode runs, outputs, and audit evidence from persisted records.">
 				<FormActions slot="actions" align="end">
 					<Button href="/app/capacity/runtime" variant="secondary" size="sm">Runtime</Button>
 					<Button href="/app/capacity/providers" variant="secondary" size="sm">Providers</Button>
 				</FormActions>
-				<form class="ts-grid-form" data-workday-test-form data-team-id={team.id}>
+				<form class="ts-grid-form" data-workday-run-form data-team-id={team.id}>
 					<Field label="Projects" name="projects" help="Use all for Market plus package projects, or a comma-separated slug list.">
 						<TextInput name="projects" value="all" autocomplete="off" />
 					</Field>
@@ -62,20 +62,23 @@ const rows = runs.map((run: any) => ({
 					<Field label="Workdays" name="workdays">
 						<TextInput name="workdays" value="1" inputmode="numeric" autocomplete="off" />
 					</Field>
+					<Field label="Duration seconds" name="durationSeconds">
+						<TextInput name="durationSeconds" value="900" inputmode="numeric" autocomplete="off" />
+					</Field>
 					<Field label="Max assignments" name="maxAssignments">
-						<TextInput name="maxAssignments" value="81" inputmode="numeric" autocomplete="off" />
+						<TextInput name="maxAssignments" value="162" inputmode="numeric" autocomplete="off" />
 					</Field>
 					<Field label="Planning only" name="planningOnly">
 						<input type="checkbox" name="planningOnly" />
 					</Field>
 					<FormActions align="start">
-						<Button type="submit" variant="primary">Create test run</Button>
+						<Button type="submit" variant="primary">Create workday run</Button>
 					</FormActions>
-					<p class="ts-form-status" data-workday-test-status></p>
+					<p class="ts-form-status" data-workday-run-status></p>
 				</form>
 			</Panel>
 
-			<Panel eyebrow="History" title="Test runs" description="Each run preserves parameters, expected outcomes, measured results, report references, and an ordered audit trail.">
+			<Panel eyebrow="History" title="Workday runs" description="Each run preserves parameters, expected outcomes, measured results, report references, and an ordered audit trail.">
 				<PlainTable columns={[
 					{ key: 'name', label: 'Run' },
 					{ key: 'status', label: 'Status' },
@@ -84,48 +87,49 @@ const rows = runs.map((run: any) => ({
 					{ key: 'provider', label: 'Provider' },
 					{ key: 'updated', label: 'Updated' },
 					{ key: 'action', label: 'Action' },
-				]} rows={rows} emptyTitle="No workday tests" emptyDescription="Create a test run here or run `trsd capacity workday-test` locally." interactive={true} pageSize={10} searchLabel="Filter test runs" controlMode="filter" filterColumns={['status', 'provider']} />
+				]} rows={rows} emptyTitle="No workday runs" emptyDescription="Create a workday run here or run `trsd capacity workday-run` locally." interactive={true} pageSize={10} searchLabel="Filter workday runs" controlMode="filter" filterColumns={['status', 'provider']} />
 			</Panel>
 		</section>
 	) : (
-		<EmptyState title="No active team" description="Create or switch to a team before running workday tests." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
+		<EmptyState title="No active team" description="Create or switch to a team before running workdays." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
 	)}
 </TreeseedAppLayout>
 
 <script>
-	document.querySelectorAll('[data-workday-test-form]').forEach((form) => {
+	document.querySelectorAll('[data-workday-run-form]').forEach((form) => {
 		form.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			const element = form as HTMLFormElement;
-			const status = element.querySelector<HTMLElement>('[data-workday-test-status]');
+			const status = element.querySelector<HTMLElement>('[data-workday-run-status]');
 			const data = new FormData(element);
 			const teamId = element.dataset.teamId || '';
-			if (status) status.textContent = 'Creating test run...';
-			const response = await fetch(`/v1/teams/${encodeURIComponent(teamId)}/workday-tests`, {
+			if (status) status.textContent = 'Creating workday run...';
+			const response = await fetch(`/v1/teams/${encodeURIComponent(teamId)}/workday-runs`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
 					capacityProviderId: String(data.get('providerId') || 'local'),
-					scenarioId: 'portfolio-local',
+					scenarioId: 'portfolio planning',
 					status: 'queued',
 					environment: 'local',
 					parameters: {
 						projects: String(data.get('projects') || 'all'),
 						providerId: String(data.get('providerId') || 'local'),
 						workdays: Number(data.get('workdays') || 1),
-						maxAssignments: Number(data.get('maxAssignments') || 81),
+						durationSeconds: Number(data.get('durationSeconds') || 900),
+						maxAssignments: Number(data.get('maxAssignments') || 162),
 						planningOnly: data.get('planningOnly') === 'on',
 					},
 				}),
 			});
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				if (status) status.textContent = payload?.error ?? 'Test run could not be created.';
+				if (status) status.textContent = payload?.error ?? 'Workday run could not be created.';
 				return;
 			}
 			const runId = payload?.payload?.id;
-			if (status) status.textContent = 'Test run created.';
-			if (runId) window.location.href = `/app/capacity/workday-tests/${encodeURIComponent(runId)}`;
+			if (status) status.textContent = 'Workday run created.';
+			if (runId) window.location.href = `/app/capacity/workday-runs/${encodeURIComponent(runId)}`;
 		});
 	});
 </script>

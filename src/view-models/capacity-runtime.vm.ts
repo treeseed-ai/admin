@@ -1,7 +1,28 @@
-import type {
-	CapacityRuntimeBlockerVm,
-	CapacityRuntimeDiagnosticsResponse,
-} from '@treeseed/sdk/agent-capacity';
+export interface CapacityRuntimeBlockerVm {
+	code: string;
+	severity: 'info' | 'warning' | 'danger' | 'error' | string;
+	title?: string;
+	message?: string;
+	owner?: string;
+	assignmentId?: string | null;
+	projectId?: string | null;
+	providerId?: string | null;
+	nextAction?: string;
+	evidence?: Array<{ label: string; value: string }>;
+}
+
+export interface CapacityRuntimeDiagnosticsResponse {
+	projectId: string;
+	teamId: string;
+	generatedAt: string;
+	assignments: unknown[];
+	explanations: unknown[];
+	modeRuns: unknown[];
+	treeDxProxyAudit: unknown[];
+	ledgerEntries: Array<Record<string, unknown> & { assignmentId?: string | null; modeRunId?: string | null }>;
+	fallbackOutputs: unknown[];
+	diagnostics: CapacityRuntimeBlockerVm[];
+}
 
 export interface CapacityRuntimeDiagnosticVm {
 	summary: {
@@ -51,8 +72,9 @@ export function buildCapacityRuntimeDiagnosticVm(
 			&& assignment.reservationId
 			&& !settledAssignmentIds.has(text(assignment.id));
 	});
-	const treeDxAuditAssignmentIds = new Set(response.treeDxProxyAudit
-		.map((audit) => text(record(audit).assignmentId))
+	const treeDxProxyAudit = response.treeDxProxyAudit.map((audit) => record(audit));
+	const treeDxAuditAssignmentIds = new Set(treeDxProxyAudit
+		.map((audit) => text(audit.assignmentId))
 		.filter(Boolean));
 	const missingAuditAssignmentIds = assignments
 		.filter((assignment) => record(assignment.treedxProxyHandle).id && !treeDxAuditAssignmentIds.has(text(assignment.id)))
@@ -89,7 +111,7 @@ export function buildCapacityRuntimeDiagnosticVm(
 			unsettledAssignments,
 		},
 		treeDx: {
-			auditRows: response.treeDxProxyAudit,
+			auditRows: treeDxProxyAudit,
 			missingAuditAssignmentIds,
 		},
 	};

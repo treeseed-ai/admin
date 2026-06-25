@@ -1,6 +1,5 @@
 import {
 	buildTreeseedClientEncryptedEscrowEnvelope,
-	type TreeseedClientEncryptedEscrowEnvelopeInput,
 } from '@treeseed/sdk/secrets-capability';
 
 const TEXT_ENCODER = new TextEncoder();
@@ -44,6 +43,7 @@ type TestHostEncryptedPayload = {
 };
 
 export type HostCredentialConfig = Record<string, unknown>;
+type TreeseedClientEncryptedEscrowEnvelopeInput = Parameters<typeof buildTreeseedClientEncryptedEscrowEnvelope>[0];
 
 export type HostCryptoOptions = {
 	opsLimit?: number;

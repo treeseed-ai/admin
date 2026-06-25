@@ -500,19 +500,19 @@ export class ApiClientFacade {
 		return this.request<any>('GET', `/v1/workdays/${encodeURIComponent(workdayId)}/summary`);
 	}
 
-	listWorkdayTestRuns(teamId: string, filters: { status?: string | null; providerId?: string | null } = {}) {
+	listWorkdayRuns(teamId: string, filters: { status?: string | null; providerId?: string | null } = {}) {
 		const query = new URLSearchParams();
 		if (filters.status) query.set('status', filters.status);
 		if (filters.providerId) query.set('providerId', filters.providerId);
-		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/workday-tests${query.toString() ? `?${query}` : ''}`);
+		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/workday-runs${query.toString() ? `?${query}` : ''}`);
 	}
 
-	createWorkdayTestRun(teamId: string, body: Record<string, unknown>) {
-		return this.request<any>('POST', `/v1/teams/${encodeURIComponent(teamId)}/workday-tests`, { body });
+	createWorkdayRun(teamId: string, body: Record<string, unknown>) {
+		return this.request<any>('POST', `/v1/teams/${encodeURIComponent(teamId)}/workday-runs`, { body });
 	}
 
-	getWorkdayTestRun(teamId: string, runId: string) {
-		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/workday-tests/${encodeURIComponent(runId)}`);
+	getWorkdayRun(teamId: string, runId: string) {
+		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/workday-runs/${encodeURIComponent(runId)}`);
 	}
 
 	listCapacityLedgerEntries(projectId: string, workdayId: string) {

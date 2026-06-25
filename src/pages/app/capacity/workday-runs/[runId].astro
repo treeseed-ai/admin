@@ -16,7 +16,7 @@ if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo
 const context = await loadAppContext(Astro);
 const team = context.activeTeam;
 const api = createApiFacade(Astro);
-const payload = team ? await api.getWorkdayTestRun(team.id, runId).catch(() => null) : null;
+const payload = team ? await api.getWorkdayRun(team.id, runId).catch(() => null) : null;
 const run = payload?.run ?? null;
 const events = payload?.events ?? [];
 const workdayIds = Array.isArray(run?.actual?.projects)
@@ -83,12 +83,12 @@ const artifactRows = executionRuns.flatMap((entry: any) => (Array.isArray(entry.
 })));
 ---
 
-<TreeseedAppLayout title="Workday test" description="Inspect a portfolio workday test run." currentPath="/app/capacity/workday-tests" teams={context.teams} activeTeam={team}>
+<TreeseedAppLayout title="Workday run" description="Inspect a portfolio workday run." currentPath="/app/capacity/workday-runs" teams={context.teams} activeTeam={team}>
 	{run ? (
-		<section class="ts-control-page" aria-label="Workday test detail">
-			<Panel eyebrow="Workday test" title={run.id} description={run.scenarioId ?? 'portfolio-local'}>
+		<section class="ts-control-page" aria-label="Workday run detail">
+			<Panel eyebrow="Workday run" title={run.id} description={run.scenarioId ?? 'portfolio planning'}>
 				<FormActions slot="actions" align="end">
-					<Button href="/app/capacity/workday-tests" variant="secondary" size="sm">All tests</Button>
+					<Button href="/app/capacity/workday-runs" variant="secondary" size="sm">All runs</Button>
 					<Button href="/app/capacity/runtime" variant="secondary" size="sm">Runtime</Button>
 				</FormActions>
 				<KeyValueList items={[
@@ -109,7 +109,7 @@ const artifactRows = executionRuns.flatMap((entry: any) => (Array.isArray(entry.
 					{ key: 'actual', label: 'Actual' },
 					{ key: 'expected', label: 'Expected' },
 					{ key: 'score', label: 'Score' },
-				]} rows={checkRows} emptyTitle="No checks" emptyDescription="Checks appear after the CLI or runner completes this test." />
+				]} rows={checkRows} emptyTitle="No checks" emptyDescription="Checks appear after the CLI or runner completes this workday." />
 			</Panel>
 
 			<Panel eyebrow="Projects" title="Portfolio coverage" description="Each project should have its knowledge hub, agent classes, assignments, planning evidence, and output evidence.">
@@ -122,7 +122,7 @@ const artifactRows = executionRuns.flatMap((entry: any) => (Array.isArray(entry.
 					{ key: 'acting', label: 'Acting runs' },
 					{ key: 'blockers', label: 'Blockers' },
 					{ key: 'workday', label: 'Workday' },
-				]} rows={projectRows} emptyTitle="No project evidence" emptyDescription="Project evidence appears after a workday test runs." interactive={true} pageSize={10} searchLabel="Filter projects" controlMode="filter" filterColumns={['status']} />
+				]} rows={projectRows} emptyTitle="No project evidence" emptyDescription="Project evidence appears after a workday runs." interactive={true} pageSize={10} searchLabel="Filter projects" controlMode="filter" filterColumns={['status']} />
 			</Panel>
 
 			<Panel eyebrow="Execution provider" title="Agent execution timeline" description="Provider-backed agent runs with timing, diagnostics, and content outputs.">
@@ -154,10 +154,10 @@ const artifactRows = executionRuns.flatMap((entry: any) => (Array.isArray(entry.
 					{ key: 'scope', label: 'Scope' },
 					{ key: 'context', label: 'Context' },
 					{ key: 'created', label: 'Created' },
-				]} rows={eventRows} emptyTitle="No audit events" emptyDescription="Events appear as the tester records command, API, provider, workday, assignment, and report steps." interactive={true} pageSize={20} searchLabel="Filter events" controlMode="filter" filterColumns={['status']} />
+				]} rows={eventRows} emptyTitle="No audit events" emptyDescription="Events appear as the runner records command, API, provider, workday, assignment, and report steps." interactive={true} pageSize={20} searchLabel="Filter events" controlMode="filter" filterColumns={['status']} />
 			</Panel>
 		</section>
 	) : (
-		<EmptyState title="Workday test not found" description="This test run is not available for the selected team." actions={[{ label: 'Back to tests', href: '/app/capacity/workday-tests' }]} />
+		<EmptyState title="Workday run not found" description="This workday run is not available for the selected team." actions={[{ label: 'Back to runs', href: '/app/capacity/workday-runs' }]} />
 	)}
 </TreeseedAppLayout>

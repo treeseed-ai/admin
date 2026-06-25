@@ -2,9 +2,10 @@ import {
 	assertTreeseedGitHubActionsEncryptedSecretDeployment,
 	buildTreeseedClientEncryptedEscrowEnvelope,
 	summarizeTreeseedClientEncryptedEscrowStatus,
-	type TreeseedClientEncryptedEscrowEnvelopeInput,
-	type TreeseedGitHubActionsEncryptedSecretDeployment,
 } from '@treeseed/sdk/secrets-capability';
+
+type TreeseedClientEncryptedEscrowEnvelopeInput = Parameters<typeof buildTreeseedClientEncryptedEscrowEnvelope>[0];
+type TreeseedGitHubActionsEncryptedSecretDeployment = ReturnType<typeof assertTreeseedGitHubActionsEncryptedSecretDeployment>;
 
 export type TreeseedSecretScope = 'local' | 'staging' | 'prod';
 
