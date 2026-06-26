@@ -4,7 +4,7 @@ import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
 import ProjectControlNav from '@treeseed/ui/components/astro/app/controls/ProjectControlNav.astro';
 import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
-import { deriveProjectHostBindingsView } from '@treeseed/sdk';
+import { deriveProjectHostBindingsView } from '@treeseed/sdk/operations/project-host-operations';
 import { TREESEED_DEFAULT_STARTER_TEMPLATE_ID, normalizeTreeseedTemplateId } from '@treeseed/sdk/types';
 import { deriveProjectLaunchRequirementsViewModel } from '@treeseed/sdk/template-launch-ui';
 import { escapeHtml as esc, hostTypeLabel, ownershipLabel, providerLabel } from '../../../../lib/market/control-ui.ts';
