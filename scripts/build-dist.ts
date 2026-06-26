@@ -252,7 +252,6 @@ async function main() {
   const releaseBuildLock = await acquireBuildLock();
   try {
   ensureWorkspaceRuntimePackageLinks();
-  rmSync(distRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
 
   for (const filePath of walkFiles(srcRoot)) {
