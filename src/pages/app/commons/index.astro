@@ -1,81 +1,40 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
-import CommonsProposalCard from '@treeseed/ui/components/astro/governance/CommonsProposalCard.astro';
+import DashboardTemplate from '@treeseed/ui/components/astro/templates/DashboardTemplate.astro';
 import CommonsDecisionTimeline from '@treeseed/ui/components/astro/governance/CommonsDecisionTimeline.astro';
+import CommonsProposalCard from '@treeseed/ui/components/astro/governance/CommonsProposalCard.astro';
 import '@treeseed/ui/styles/governance.css';
 import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { loadAppContext } from '../../../view-models/app-access.js';
+import { loadCommonsGovernanceDashboard } from '../../../view-models/ecommerce-governance.vm.js';
 
 const context = await loadAppContext(Astro);
 const api = new ApiClientFacade(Astro);
 
 if (Astro.request.method === 'POST') {
 	const form = await Astro.request.formData();
-	const action = String(form.get('action') ?? '');
-	if (action === 'backfill') {
+	if (String(form.get('action') ?? '') === 'backfill') {
 		await api.backfillCommonsParticipants();
 		return Astro.redirect('/app/commons?saved=backfilled', 303);
 	}
 }
 
-const [summary, proposals, questions, decisions, events] = await Promise.all([
-	api.getCommonsSummary().catch(() => null),
-	api.listCommonsProposals({ limit: 8 }).catch(() => []),
-	api.listCommonsQuestions({ limit: 8 }).catch(() => []),
-	api.listCommonsDecisions({ limit: 8 }).catch(() => []),
-	api.listCommonsEvents({ limit: 12 }).catch(() => []),
-]);
+const vm = await loadCommonsGovernanceDashboard(Astro, context);
 ---
 
-<TreeseedAppLayout title="TreeSeed Commons" description="Operate participant questions, proposals, voting, and steward decisions." currentPath="/app/commons" teams={context.teams} activeTeam={context.activeTeam}>
-	<section class="ts-governance-page">
-		<div class="ts-governance-inner">
-			<header class="ts-governance-hero">
-				<p class="ts-governance-eyebrow">Cooperative governance</p>
-				<h1 class="ts-governance-title">TreeSeed Commons</h1>
-				<p class="ts-governance-lede">Registered participants can ask questions, submit proposals, back work, and vote. Stewards convert high-signal participation into bounded decisions without turning registration into legal membership.</p>
-				<form class="ts-governance-actions" method="POST" action="/app/commons">
-					<Button type="submit" name="action" value="backfill" size="sm">Backfill participants</Button>
-					<Button href="/app/commons/participants" variant="secondary" size="sm">Participants</Button>
-				</form>
-			</header>
+<TreeseedAppLayout title={vm.dashboard.title} description={vm.dashboard.description} currentPath="/app/commons" teams={context.teams} activeTeam={context.activeTeam} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+	<DashboardTemplate viewModel={vm.dashboard} actions={vm.actions}>
+		<form slot="beforeContent" class="ts-governance-actions" method="post">
+			<button class="ts-governance-button" type="submit" name="action" value="backfill">Backfill participants</button>
+			<a class="ts-governance-button" data-variant="secondary" href="/app/commons/participants">Participants</a>
+		</form>
+		{vm.proposals.length ? (
 			<div class="ts-governance-grid">
-				<Panel eyebrow="Signal" title="Commons summary" description="Participation counts are advisory capacity signals.">
-					<PlainTable columns={[
-						{ key: 'metric', label: 'Metric' },
-						{ key: 'value', label: 'Value' },
-					]} rows={[
-						{ metric: 'Active participants', value: summary?.counts?.activeParticipants ?? 0 },
-						{ metric: 'Active proposals', value: summary?.counts?.activeProposals ?? 0 },
-						{ metric: 'Open questions', value: summary?.counts?.openQuestions ?? 0 },
-						{ metric: 'Accepted decisions', value: summary?.counts?.acceptedDecisions ?? 0 },
-					]} />
-				</Panel>
-				<Panel eyebrow="Questions" title="Recent questions" description="Questions are entry points before proposal work.">
-					<PlainTable columns={[
-						{ key: 'title', label: 'Question' },
-						{ key: 'status', label: 'Status' },
-					]} rows={questions.map((question: any) => ({ title: question.title, status: question.status }))} emptyTitle="No questions" emptyDescription="Participant questions will appear here." />
-				</Panel>
-			</div>
-			<div class="ts-governance-grid">
-				{proposals.map((proposal: any) => (
+				{vm.proposals.map((proposal: any) => (
 					<CommonsProposalCard proposal={proposal} href={`/app/commons/proposals/${encodeURIComponent(proposal.id)}`} />
 				))}
 			</div>
-			<div class="ts-governance-two-column">
-				<Panel eyebrow="Decisions" title="Commons decisions" description="Accepted decisions can later be scheduled or implemented through normal TreeSeed work systems.">
-					<PlainTable columns={[
-						{ key: 'title', label: 'Decision' },
-						{ key: 'status', label: 'Status' },
-						{ key: 'budget', label: 'Budget' },
-					]} rows={decisions.map((decision: any) => ({ title: decision.title, status: decision.status, budget: decision.capacityBudget ?? 'not set' }))} emptyTitle="No decisions" emptyDescription="Steward decisions will appear here." />
-				</Panel>
-				<CommonsDecisionTimeline events={events} />
-			</div>
-		</div>
-	</section>
+		) : null}
+		<CommonsDecisionTimeline events={vm.events} />
+	</DashboardTemplate>
 </TreeseedAppLayout>
