@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
@@ -10,12 +10,64 @@ const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const requireFromPackage = createRequire(resolve(packageRoot, 'package.json'));
 const srcRoot = resolve(packageRoot, 'src');
 const distRoot = resolve(packageRoot, 'dist');
+const buildLockRoot = resolve(packageRoot, '.treeseed-build-dist.lock');
 const workspaceCoreDistRoot = resolve(packageRoot, '..', 'core', 'dist');
 const workspaceSdkDistRoot = resolve(packageRoot, '..', 'sdk', 'dist');
 const workspaceUiDistRoot = resolve(packageRoot, '..', 'ui', 'dist');
 
 const COMPILE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const COPY_EXTENSIONS = new Set(['.astro', '.css', '.d.ts', '.js', '.json', '.yaml', '.yml']);
+const BUILD_LOCK_TIMEOUT_MS = 15 * 60 * 1000;
+const BUILD_LOCK_STALE_MS = 20 * 60 * 1000;
+
+function sleep(ms) {
+	return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+}
+
+function lockOwnerIsRunning() {
+	let owner;
+	try {
+		owner = JSON.parse(readFileSync(resolve(buildLockRoot, 'owner.json'), 'utf8'));
+	} catch {
+		return false;
+	}
+
+	if (typeof owner?.pid !== 'number') {
+		return false;
+	}
+
+	try {
+		process.kill(owner.pid, 0);
+		return true;
+	} catch (error) {
+		const code = typeof error === 'object' && error && 'code' in error ? error.code : null;
+		return code === 'EPERM';
+	}
+}
+
+async function acquireBuildLock() {
+	const startedAt = Date.now();
+	while (true) {
+		try {
+			mkdirSync(buildLockRoot);
+			writeFileSync(resolve(buildLockRoot, 'owner.json'), JSON.stringify({
+				pid: process.pid,
+				startedAt: new Date().toISOString(),
+			}, null, 2));
+			return () => rmSync(buildLockRoot, { recursive: true, force: true });
+		} catch {
+			const ageMs = existsSync(buildLockRoot) ? Date.now() - statSync(buildLockRoot).mtimeMs : 0;
+			if (!lockOwnerIsRunning() || ageMs > BUILD_LOCK_STALE_MS) {
+				rmSync(buildLockRoot, { recursive: true, force: true });
+				continue;
+			}
+			if (Date.now() - startedAt > BUILD_LOCK_TIMEOUT_MS) {
+				throw new Error(`Timed out waiting for Admin dist build lock at ${buildLockRoot}.`);
+			}
+			await sleep(250);
+		}
+	}
+}
 
 function runtimeDependencyNames() {
 	const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8')) as {
@@ -197,6 +249,8 @@ function emitDeclarations() {
 }
 
 async function main() {
+  const releaseBuildLock = await acquireBuildLock();
+  try {
   ensureWorkspaceRuntimePackageLinks();
   rmSync(distRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
@@ -222,6 +276,9 @@ async function main() {
   writeDeclaration('middleware.d.ts', "export declare const onRequest: any;\n");
   writeDeclaration('lib/market/catalog.d.ts', "export declare function createMarketTemplateCatalogProvider(...args: any[]): any;\n");
   writeDeclaration('lib/market/store.d.ts', "export declare function resolveApiStore(...args: any[]): any;\n");
+  } finally {
+    releaseBuildLock();
+  }
 }
 
 main().catch((error) => {
