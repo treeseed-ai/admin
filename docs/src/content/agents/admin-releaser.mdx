@@ -91,6 +91,14 @@ execution:
   worktree:
     enabled: false
     branchPrefix: admin-releaser
+tools:
+  allowed:
+    - treedx.build_context
+    - treedx.search_workspace
+    - treedx.read_repository_files
+    - treeseed.status
+    - treeseed.changed_paths
+    - treeseed.verify
 outputs:
   messageTypes:
     - release_candidate_created
@@ -100,9 +108,6 @@ outputs:
     - message:create
 governance:
   mutationClass: release_readiness_only
-  approvalRequiredForCanonicalContent: true
-  approvalRequiredForCode: true
-  requireHumanApproval: true
   requireSourceMap: false
 ---
 
