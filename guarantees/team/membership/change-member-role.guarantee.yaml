@@ -1,0 +1,78 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.team.membership.change-member-role.019
+journeyIndex: 19
+type: team
+subtype: membership
+journey: Change Member Role
+ownerPackage: "@treeseed/admin"
+summary: Update membership role with authorization and last-owner protections; changes should immediately affect API
+  permission decisions.
+status: active
+dependencies:
+  journeys:
+    - 18
+  guarantees:
+    - guarantee.team.membership.accept-team-invitation.018
+actors:
+  allowed:
+    - team_admin
+    - team_owner
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 18"
+scene:
+  required: true
+  manifest: ./scenes/change-member-role.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/teams/:teamId/change-member-role
+  componentContract: record-modal-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.team.member.role
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: non-member-denied
+    actor: non_member
+    verifierRefs:
+      - api.team.members.nonmember
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Update membership role with authorization and last-owner protections; changes should immediately affect API
+    permission decisions.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

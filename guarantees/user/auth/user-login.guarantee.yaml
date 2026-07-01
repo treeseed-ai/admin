@@ -1,0 +1,76 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.auth.user-login.004
+journeyIndex: 4
+type: user
+subtype: auth
+journey: User Login
+ownerPackage: "@treeseed/admin"
+summary: Establish an authenticated session for Market/admin surfaces; downstream journeys assume API calls carry the
+  authenticated user context.
+status: active
+dependencies:
+  journeys:
+    - 2
+  guarantees:
+    - guarantee.user.auth.verify-email.002
+actors:
+  allowed:
+    - anonymous_user
+  forbidden:
+    - already_authenticated_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+    - mobile_webkit
+gates:
+  - core
+  - release
+preconditions:
+  fixtures: []
+  notes:
+    - "Journey dependencies must be satisfied: 2"
+scene:
+  required: true
+  manifest: ./scenes/user-login.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /auth/sign-in
+  componentContract: auth-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.signin
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Establish an authenticated session for Market/admin surfaces; downstream journeys assume API calls carry the
+    authenticated user context.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

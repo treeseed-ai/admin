@@ -1,0 +1,78 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.auth.user-logout.005
+journeyIndex: 5
+type: user
+subtype: auth
+journey: User Logout
+ownerPackage: "@treeseed/admin"
+summary: End the provider session and clear local admin state before redirecting; should avoid leaving active team or
+  project context cached.
+status: active
+dependencies:
+  journeys:
+    - 4
+  guarantees:
+    - guarantee.user.auth.user-login.004
+actors:
+  allowed:
+    - verified_user
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+    - mobile_webkit
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 4"
+scene:
+  required: true
+  manifest: ./scenes/user-logout.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /auth/logout
+  componentContract: redirect/session guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.sessions
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - End the provider session and clear local admin state before redirecting; should avoid leaving active team or project
+    context cached.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

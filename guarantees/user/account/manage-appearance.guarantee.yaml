@@ -1,0 +1,77 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.account.manage-appearance.009
+journeyIndex: 9
+type: user
+subtype: account
+journey: Manage Appearance
+ownerPackage: "@treeseed/admin"
+summary: Set theme and interface preferences for the admin shell; should use reusable UI/theme tokens and persist per
+  user where available.
+status: active
+dependencies:
+  journeys:
+    - 4
+  guarantees:
+    - guarantee.user.auth.user-login.004
+actors:
+  allowed:
+    - verified_user
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 4"
+scene:
+  required: true
+  manifest: ./scenes/manage-appearance.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/account/manage-appearance
+  componentContract: record-modal-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.appearance
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Set theme and interface preferences for the admin shell; should use reusable UI/theme tokens and persist per user
+    where available.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

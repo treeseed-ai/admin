@@ -1,0 +1,77 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.capacity.capacity.revoke-capacity.031
+journeyIndex: 31
+type: capacity
+subtype: capacity
+journey: Revoke Capacity
+ownerPackage: "@treeseed/admin"
+summary: Revoke provider eligibility or keys and return active leases safely; must coordinate with API assignment and settlement records.
+status: planned
+dependencies:
+  journeys:
+    - 27
+    - 28
+  guarantees:
+    - guarantee.capacity.capacity.approve-capacity.027
+    - guarantee.capacity.capacity.deploy-capacity.028
+actors:
+  allowed:
+    - capacity_operator
+    - team_owner
+    - platform_operator
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - desktop_firefox
+    - tablet_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 27, 28"
+scene:
+  required: true
+  manifest: ./scenes/revoke-capacity.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/capacity/revoke-capacity
+  componentContract: record-action guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.capacity.capacity.revoke-capacity.api
+content:
+  required: false
+  verifierRefs:
+    - todo.capacity.capacity.revoke-capacity.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.capacity.capacity.revoke-capacity.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.capacity.capacity.revoke-capacity.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Revoke provider eligibility or keys and return active leases safely; must coordinate with API assignment and settlement records.

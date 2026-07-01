@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.proposal.edit-proposal.049
+journeyIndex: 49
+type: project
+subtype: proposal
+journey: Edit Proposal
+ownerPackage: "@treeseed/admin"
+summary: Edit proposal content and readiness state with provenance; changes should remain visible to proposal inbox and workday planning.
+status: planned
+dependencies:
+  journeys:
+    - 48
+  guarantees:
+    - guarantee.project.proposal.create-proposal.048
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 48"
+scene:
+  required: true
+  manifest: ./scenes/edit-proposal.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/proposal/edit-proposal
+  componentContract: full-page-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.proposal.edit-proposal.api
+content:
+  required: true
+  verifierRefs:
+    - todo.project.proposal.edit-proposal.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.proposal.edit-proposal.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.proposal.edit-proposal.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Edit proposal content and readiness state with provenance; changes should remain visible to proposal inbox and workday planning.

@@ -1,0 +1,79 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.workday.workday.analyze-workday.064
+journeyIndex: 64
+type: workday
+subtype: workday
+journey: Analyze Workday
+ownerPackage: "@treeseed/admin"
+summary: Summarize reports diagnostics artifacts decisions questions and usage after a workday; reports belong in .treeseed/workday-reports while content artifacts stay in collections.
+status: planned
+dependencies:
+  journeys:
+    - 27
+    - 28
+    - 32
+  guarantees:
+    - guarantee.capacity.capacity.approve-capacity.027
+    - guarantee.capacity.capacity.deploy-capacity.028
+    - guarantee.project.project.create-project.032
+actors:
+  allowed:
+    - project_manager
+    - agent_operator
+    - capacity_operator
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - desktop_firefox
+    - tablet_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 27, 28, 32"
+scene:
+  required: true
+  manifest: ./scenes/analyze-workday.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/workdays/analyze-workday
+  componentContract: dashboard/read-model guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.workday.workday.analyze-workday.api
+content:
+  required: false
+  verifierRefs:
+    - todo.workday.workday.analyze-workday.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.workday.workday.analyze-workday.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.workday.workday.analyze-workday.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Summarize reports diagnostics artifacts decisions questions and usage after a workday; reports belong in .treeseed/workday-reports while content artifacts stay in collections.

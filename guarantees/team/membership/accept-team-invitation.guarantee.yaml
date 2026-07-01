@@ -1,0 +1,76 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.team.membership.accept-team-invitation.018
+journeyIndex: 18
+type: team
+subtype: membership
+journey: Accept Team Invitation
+ownerPackage: "@treeseed/admin"
+summary: Redeem an invite and attach the user to the team; should handle authenticated and newly registered users cleanly.
+status: active
+dependencies:
+  journeys:
+    - 17
+  guarantees:
+    - guarantee.team.membership.invite-team-members.017
+actors:
+  allowed:
+    - team_admin
+    - team_owner
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 17"
+scene:
+  required: true
+  manifest: ./scenes/accept-team-invitation.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/teams/:teamId/accept-team-invitation
+  componentContract: redirect/session guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.team.invite.mailpit
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: non-member-denied
+    actor: non_member
+    verifierRefs:
+      - api.team.members.nonmember
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Redeem an invite and attach the user to the team; should handle authenticated and newly registered users cleanly.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

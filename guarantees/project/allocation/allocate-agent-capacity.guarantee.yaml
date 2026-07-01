@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.allocation.allocate-agent-capacity.061
+journeyIndex: 61
+type: project
+subtype: allocation
+journey: Allocate Agent Capacity
+ownerPackage: "@treeseed/admin"
+summary: Assign team capacity policy to specific project agents or classes; API assignment function uses this policy while providers only enforce local constraints.
+status: planned
+dependencies:
+  journeys:
+    - 57
+  guarantees:
+    - guarantee.project.agent.create-agent.057
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 57"
+scene:
+  required: true
+  manifest: ./scenes/allocate-agent-capacity.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/allocation/allocate-agent-capacity
+  componentContract: full-page-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.allocation.allocate-agent-capacity.api
+content:
+  required: false
+  verifierRefs:
+    - todo.project.allocation.allocate-agent-capacity.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.allocation.allocate-agent-capacity.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.allocation.allocate-agent-capacity.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Assign team capacity policy to specific project agents or classes; API assignment function uses this policy while providers only enforce local constraints.

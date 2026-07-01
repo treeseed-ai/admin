@@ -1,0 +1,76 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.auth.verify-email.002
+journeyIndex: 2
+type: user
+subtype: auth
+journey: Verify Email
+ownerPackage: "@treeseed/admin"
+summary: Complete auth-provider verification then redirect into the authenticated Market/admin shell; implementation
+  should not bypass the provider session model.
+status: active
+dependencies:
+  journeys:
+    - 1
+  guarantees:
+    - guarantee.user.auth.register-user.001
+actors:
+  allowed:
+    - anonymous_user
+  forbidden:
+    - already_authenticated_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+    - mobile_webkit
+gates:
+  - core
+  - release
+preconditions:
+  fixtures: []
+  notes:
+    - "Journey dependencies must be satisfied: 1"
+scene:
+  required: true
+  manifest: ./scenes/verify-email.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /auth/confirm-email
+  componentContract: redirect/session guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.signup.mailpit
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Complete auth-provider verification then redirect into the authenticated Market/admin shell; implementation should
+    not bypass the provider session model.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

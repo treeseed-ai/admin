@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.auth.register-user.001
+journeyIndex: 1
+type: user
+subtype: auth
+journey: Register User
+ownerPackage: "@treeseed/admin"
+summary: Create an account record and start email verification through the auth provider used by the admin/core runtime;
+  this is product plumbing rather than a Treeseed content operation.
+status: active
+dependencies:
+  journeys: []
+  guarantees: []
+actors:
+  allowed:
+    - anonymous_user
+  forbidden:
+    - already_authenticated_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+    - mobile_webkit
+gates:
+  - core
+  - release
+preconditions:
+  fixtures: []
+  notes: []
+scene:
+  required: true
+  manifest: ./scenes/register-user.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /auth/register
+  componentContract: auth-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.signup.mailpit
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Create an account record and start email verification through the auth provider used by the admin/core runtime; this
+    is product plumbing rather than a Treeseed content operation.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

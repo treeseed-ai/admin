@@ -1,0 +1,112 @@
+schemaVersion: treeseed.scene/v1
+id: team.policy.manage-allocation-sets.092
+title: Manage Allocation Sets
+description: Acceptance scene for guarantee.team.policy.manage-allocation-sets.092.
+audience:
+  - operator
+  - evaluator
+mode:
+  test: true
+  demo: true
+  training: true
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport:
+    width: 1600
+    height: 900
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      orientation: landscape
+      viewport:
+        width: 1600
+        height: 900
+      video:
+        width: 1600
+        height: 900
+      output:
+        width: 1920
+        height: 1080
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: mobile_chromium
+      title: Mobile Chromium
+      orientation: portrait
+      viewport:
+        width: 390
+        height: 844
+      video:
+        width: 390
+        height: 844
+      output:
+        width: 390
+        height: 844
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev:
+    required: true
+    reuseExisting: true
+  auth:
+    role: owner
+    required: false
+artifacts:
+  trace: true
+  video: true
+  screenshots: true
+  console: true
+  network: true
+  timeline: true
+  appLogs: true
+workflow:
+  - id: open-entry-route
+    title: Open Manage Allocation Sets
+    action:
+      goto: /app/capacity/allocation
+    expect:
+      urlIncludes: /app/capacity/allocation
+      text: Capacity allocation
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output:
+      format: mp4
+      fps: 30
+      resolution:
+        width: 1920
+        height: 1080
+    capture:
+      viewport:
+        width: 1600
+        height: 900
+      video:
+        width: 1600
+        height: 900
+      evidenceFit: fixed-browser
+runtime:
+  mode: training
+  timeouts:
+    sceneSeconds: 300
+    chapterSeconds: 120
+    stepSeconds: 60
+  checkpoints:
+    enabled: true
+    defaultResumable: true
+    everyStep: true
+  progress:
+    heartbeatSeconds: 15
+  failure:
+    continueOnFailure: false
+training: {}
+visualAudit:
+  enabled: false

@@ -1,0 +1,116 @@
+schemaVersion: treeseed.guarantee-verifiers/v1
+ownerPackage: "@treeseed/admin"
+verifiers:
+  api.auth.signup.mailpit:
+    kind: apiAcceptanceCase
+    caseId: auth.web.sign-up.sends-confirmation-email
+    ownerPackage: "@treeseed/api"
+    description: Signup succeeds and emits a verification email into local Mailpit.
+  api.auth.password-reset.request.mailpit:
+    kind: apiAcceptanceCase
+    caseId: auth.password-reset.request.mailpit
+    ownerPackage: "@treeseed/api"
+    description: Password reset request succeeds and emits a reset email into local Mailpit.
+  api.auth.signin:
+    kind: apiAcceptanceCase
+    caseId: auth.web.sign-in.site-admin
+    ownerPackage: "@treeseed/api"
+    description: Seeded account can sign in through web auth.
+  api.auth.me.requires-user:
+    kind: apiAcceptanceCase
+    caseId: auth.me.requires-user
+    ownerPackage: "@treeseed/api"
+    description: Anonymous users cannot access authenticated identity.
+  api.auth.me.site-admin:
+    kind: apiAcceptanceCase
+    caseId: auth.me.site-admin
+    ownerPackage: "@treeseed/api"
+    description: Authenticated user identity is readable.
+  api.auth.profile.update:
+    kind: apiAcceptanceCase
+    caseId: auth.profile.update.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Authenticated users can update profile details.
+  api.auth.sessions:
+    kind: apiAcceptanceCase
+    caseId: auth.sessions.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Authenticated users can inspect web sessions.
+  api.auth.appearance:
+    kind: apiAcceptanceCase
+    caseId: auth.appearance.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Authenticated users can update appearance preference.
+  api.auth.account.blockers:
+    kind: apiAcceptanceCase
+    caseId: auth.account-blockers.team-viewer
+    ownerPackage: "@treeseed/api"
+    description: Authenticated users can inspect account deletion blockers.
+  api.team.list.owner:
+    kind: apiAcceptanceCase
+    caseId: teams.list.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can list teams.
+  api.team.list.nonmember:
+    kind: apiAcceptanceCase
+    caseId: teams.list.non-member
+    ownerPackage: "@treeseed/api"
+    description: Non-member team listing remains bounded to authorized teams.
+  api.team.create:
+    kind: apiAcceptanceCase
+    caseId: teams.create.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Authenticated user can create a team.
+  api.team.update:
+    kind: apiAcceptanceCase
+    caseId: teams.update.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can update team settings.
+  api.team.invite.mailpit:
+    kind: apiAcceptanceCase
+    caseId: teams.invite.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can invite a member and Mailpit receives the invite email.
+  api.team.members.owner:
+    kind: apiAcceptanceCase
+    caseId: team-role-matrix.team-members.teamOwner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can inspect team members.
+  api.team.members.nonmember:
+    kind: apiAcceptanceCase
+    caseId: team-role-matrix.team-members.nonMember
+    ownerPackage: "@treeseed/api"
+    description: Non-members cannot inspect team membership.
+  api.team.permissions.owner:
+    kind: apiAcceptanceCase
+    caseId: team-role-matrix.team-permissions.teamOwner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can inspect team permissions.
+  api.team.member.role:
+    kind: apiAcceptanceCase
+    caseId: teams.member-role.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can change a member role.
+  api.team.member.remove:
+    kind: apiAcceptanceCase
+    caseId: teams.member-remove.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can remove a member.
+  api.team.deletion-blockers:
+    kind: apiAcceptanceCase
+    caseId: teams.deletion-blockers.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Team owner can inspect team deletion blockers.
+  api.team.profile:
+    kind: apiAcceptanceCase
+    caseId: teams.profile.by-name
+    ownerPackage: "@treeseed/api"
+    description: Public team profile can be loaded by name.
+  admin.agent.monitor.runtime-ui:
+    kind: scene
+    ownerPackage: "@treeseed/admin"
+    description: Admin runtime UI scene verifies project agent and capacity runtime monitoring surfaces.
+  admin.agent.monitor.unauthorized-denied:
+    kind: scene
+    ownerPackage: "@treeseed/admin"
+    description: Admin monitoring scene verifies unauthorized users are denied or redirected.

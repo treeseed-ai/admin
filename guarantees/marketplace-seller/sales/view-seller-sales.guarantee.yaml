@@ -1,0 +1,74 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.marketplace-seller.sales.view-seller-sales.112
+journeyIndex: 112
+type: marketplace-seller
+subtype: sales
+journey: View Seller Sales
+ownerPackage: "@treeseed/admin"
+summary: First-pass product guarantee for View Seller Sales.
+status: planned
+dependencies:
+  journeys:
+    - 107
+  guarantees:
+    - guarantee.marketplace-seller.onboarding.approve-seller.107
+actors:
+  allowed:
+    - buyer
+    - seller
+    - market_operator
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 107"
+scene:
+  required: true
+  manifest: ./scenes/view-seller-sales.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/teams/:teamId/commerce/view-seller-sales
+  componentContract: dashboard/read-model guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.marketplace-seller.sales.view-seller-sales.api
+content:
+  required: false
+  verifierRefs:
+    - todo.marketplace-seller.sales.view-seller-sales.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.marketplace-seller.sales.view-seller-sales.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.marketplace-seller.sales.view-seller-sales.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - First-pass product guarantee for View Seller Sales.

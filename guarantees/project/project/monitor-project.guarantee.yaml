@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.project.monitor-project.035
+journeyIndex: 35
+type: project
+subtype: project
+journey: Monitor Project
+ownerPackage: "@treeseed/admin"
+summary: Show operational health for project workdays assignments content updates and hosted surfaces; needs trace links to API logs and TreeDX operations.
+status: planned
+dependencies:
+  journeys:
+    - 32
+  guarantees:
+    - guarantee.project.project.create-project.032
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 32"
+scene:
+  required: true
+  manifest: ./scenes/monitor-project.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/project/monitor-project
+  componentContract: dashboard/read-model guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.project.monitor-project.api
+content:
+  required: false
+  verifierRefs:
+    - todo.project.project.monitor-project.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.project.monitor-project.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.project.monitor-project.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Show operational health for project workdays assignments content updates and hosted surfaces; needs trace links to API logs and TreeDX operations.

@@ -1,0 +1,75 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.agent.monitor-agent-admin-ui.140
+journeyIndex: 140
+type: project
+subtype: agent
+journey: Monitor Agent Admin Ui
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "Verify Admin can observe project agents, runtime diagnostics, assignments, mode runs, fallback outputs, usage, TreeDX proxy audit, and settlement evidence without becoming the scheduler."
+status: active
+dependencies:
+  journeys:
+    - 57
+    - 60
+  guarantees:
+    - guarantee.project.agent.create-agent.057
+    - guarantee.project.agent.monitor-agent.060
+actors:
+  allowed:
+    - project_manager
+    - capacity_operator
+    - team_owner
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+  optional:
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Guarantee starts as planned until all verifier refs execute in integrated environments."
+scene:
+  required: false
+  manifest: ./scenes/monitor-agent-admin-ui.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/capacity/runtime
+  componentContract: dashboard/read-model guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - admin.agent.monitor.runtime-ui
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - admin.agent.monitor.unauthorized-denied
+evidence:
+  required:
+    - guarantee_report
+    - verifier_evidence
+notes:
+  - "Admin monitoring uses project agent pages and /app/capacity/runtime; scheduling remains owned by API and agent runtime."
+

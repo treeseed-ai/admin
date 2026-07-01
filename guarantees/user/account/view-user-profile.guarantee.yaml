@@ -1,0 +1,77 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.account.view-user-profile.010
+journeyIndex: 10
+type: user
+subtype: account
+journey: View User Profile
+ownerPackage: "@treeseed/admin"
+summary: Show identity and account metadata plus team/project memberships; current architecture should read through
+  public admin/API facades.
+status: active
+dependencies:
+  journeys:
+    - 1
+  guarantees:
+    - guarantee.user.auth.register-user.001
+actors:
+  allowed:
+    - verified_user
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 1"
+scene:
+  required: true
+  manifest: ./scenes/view-user-profile.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/account/view-user-profile
+  componentContract: dashboard/read-model guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.me.site-admin
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Show identity and account metadata plus team/project memberships; current architecture should read through public
+    admin/API facades.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

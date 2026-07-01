@@ -1,0 +1,77 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.user.account.manage-notifications.008
+journeyIndex: 8
+type: user
+subtype: account
+journey: Manage Notifications
+ownerPackage: "@treeseed/admin"
+summary: Manage user notification preferences for Treeseed events; likely needs a durable API model before the UI can be
+  more than local settings.
+status: active
+dependencies:
+  journeys:
+    - 4
+  guarantees:
+    - guarantee.user.auth.user-login.004
+actors:
+  allowed:
+    - verified_user
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 4"
+scene:
+  required: true
+  manifest: ./scenes/manage-notifications.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/account/manage-notifications
+  componentContract: full-page-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.auth.me.site-admin
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: anonymous-denied
+    actor: anonymous_user
+    verifierRefs:
+      - api.auth.me.requires-user
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Manage user notification preferences for Treeseed events; likely needs a durable API model before the UI can be more
+    than local settings.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

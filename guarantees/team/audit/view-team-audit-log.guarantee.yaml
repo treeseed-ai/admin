@@ -1,0 +1,76 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.team.audit.view-team-audit-log.093
+journeyIndex: 93
+type: team
+subtype: audit
+journey: View Team Audit Log
+ownerPackage: "@treeseed/admin"
+summary: Show membership project capacity host secret and workday changes for accountability across admin/API operations.
+status: active
+dependencies:
+  journeys:
+    - 12
+  guarantees:
+    - guarantee.team.team.create-team.012
+actors:
+  allowed:
+    - team_admin
+    - team_owner
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 12"
+scene:
+  required: true
+  manifest: ./scenes/view-team-audit-log.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/teams/:teamId/view-team-audit-log
+  componentContract: dashboard/read-model guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - api.team.permissions.owner
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: non-member-denied
+    actor: non_member
+    verifierRefs:
+      - api.team.members.nonmember
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+  optional:
+    - mailpit_message
+notes:
+  - Show membership project capacity host secret and workday changes for accountability across admin/API operations.
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.book.delete-book.067
+journeyIndex: 67
+type: project
+subtype: book
+journey: Delete Book
+ownerPackage: "@treeseed/admin"
+summary: Delete or archive a book with checks for pages links downloads and library indexes.
+status: planned
+dependencies:
+  journeys:
+    - 65
+  guarantees:
+    - guarantee.project.book.create-book.065
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 65"
+scene:
+  required: true
+  manifest: ./scenes/delete-book.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/book/delete-book
+  componentContract: destructive-confirmation guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.book.delete-book.api
+content:
+  required: true
+  verifierRefs:
+    - todo.project.book.delete-book.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.book.delete-book.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.book.delete-book.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Delete or archive a book with checks for pages links downloads and library indexes.

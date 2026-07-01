@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.knowledge.delete-book-page.072
+journeyIndex: 72
+type: project
+subtype: knowledge
+journey: Delete Book Page
+ownerPackage: "@treeseed/admin"
+summary: Delete or archive a page with backlinks and book index updates; direct filesystem deletion is not appropriate.
+status: planned
+dependencies:
+  journeys:
+    - 69
+  guarantees:
+    - guarantee.project.knowledge.create-book-page.069
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 69"
+scene:
+  required: true
+  manifest: ./scenes/delete-book-page.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/knowledge/delete-book-page
+  componentContract: destructive-confirmation guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.knowledge.delete-book-page.api
+content:
+  required: true
+  verifierRefs:
+    - todo.project.knowledge.delete-book-page.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.knowledge.delete-book-page.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.knowledge.delete-book-page.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Delete or archive a page with backlinks and book index updates; direct filesystem deletion is not appropriate.

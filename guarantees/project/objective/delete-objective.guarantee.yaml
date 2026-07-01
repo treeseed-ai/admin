@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.objective.delete-objective.045
+journeyIndex: 45
+type: project
+subtype: objective
+journey: Delete Objective
+ownerPackage: "@treeseed/admin"
+summary: Delete or archive an objective with dependency checks; should not leave orphaned proposals notes or decisions.
+status: planned
+dependencies:
+  journeys:
+    - 43
+  guarantees:
+    - guarantee.project.objective.create-objective.043
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 43"
+scene:
+  required: true
+  manifest: ./scenes/delete-objective.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/objective/delete-objective
+  componentContract: destructive-confirmation guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.objective.delete-objective.api
+content:
+  required: true
+  verifierRefs:
+    - todo.project.objective.delete-objective.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.objective.delete-objective.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.objective.delete-objective.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Delete or archive an objective with dependency checks; should not leave orphaned proposals notes or decisions.

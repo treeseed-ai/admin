@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.allocation.allocate-project-capacity.037
+journeyIndex: 37
+type: project
+subtype: allocation
+journey: Allocate Project Capacity
+ownerPackage: "@treeseed/admin"
+summary: Define team capacity policy or allocation sets for the project; this is policy configuration and must not become provider-side scheduling.
+status: planned
+dependencies:
+  journeys:
+    - 32
+  guarantees:
+    - guarantee.project.project.create-project.032
+actors:
+  allowed:
+    - project_manager
+    - project_contributor
+  forbidden:
+    - anonymous_user
+    - unauthorized_user
+devices:
+  required:
+    - desktop_chromium
+    - mobile_chromium
+gates:
+  - core
+  - release
+preconditions:
+  fixtures:
+    - integrated_treeseed_project
+  notes:
+    - "Journey dependencies must be satisfied: 32"
+scene:
+  required: true
+  manifest: ./scenes/allocate-project-capacity.scene.yaml
+  mode:
+    acceptance: true
+    demo: true
+    training: true
+  entryRoute: /app/projects/:projectId/allocation/allocate-project-capacity
+  componentContract: full-page-form guarantee harness
+  expectedEvidence:
+    - playwright_trace
+    - scene_video
+    - screenshot_on_failure
+    - console_log
+    - network_log
+api:
+  required: true
+  verifierRefs:
+    - todo.project.allocation.allocate-project-capacity.api
+content:
+  required: false
+  verifierRefs:
+    - todo.project.allocation.allocate-project-capacity.content
+audit:
+  required: true
+  verifierRefs:
+    - todo.project.allocation.allocate-project-capacity.audit
+negativeCases:
+  - id: unauthorized-actor-denied
+    actor: anonymous_user
+    verifierRefs:
+      - todo.project.allocation.allocate-project-capacity.negative
+evidence:
+  required:
+    - playwright_trace
+    - scene_video
+    - api_verification_log
+    - audit_event_id
+notes:
+  - Define team capacity policy or allocation sets for the project; this is policy configuration and must not become provider-side scheduling.
