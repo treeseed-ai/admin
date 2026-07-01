@@ -71,7 +71,7 @@ setup:
     reuseExisting: true
   auth:
     role: owner
-    required: false
+    required: true
 artifacts:
   trace: true
   video: true
