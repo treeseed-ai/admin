@@ -49,7 +49,7 @@
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
     "@treeseed/core": "github:treeseed-ai/core#9b2b67f837cd656ed6d1e96eb90ff9ca735d81f1",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#84c2483d6a691e45d85d826197ad00c592085bbf",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#408a58b13ac37e1ec483c59418b9ab065701e190",
     "@treeseed/ui": "github:treeseed-ai/ui#2f472e00c8e0d5e90c7a8366c993d81d97d5f472",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
