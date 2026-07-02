@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.8] - 2026-07-02
+
+### Fixed
+
+- fix(release): refresh staging package refs (c64992398cd8)
+- fix(release): use staging package commit refs (05e11ed11560)
+
 ## [0.12.7] - 2026-07-02
 
 ### Changed
