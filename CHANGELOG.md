@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.10] - 2026-07-02
+
+### Fixed
+
+- fix(release): advance staging sdk lock recovery ref (d5d162512170)
+- fix(release): advance staging sdk ref (beeefab1ad18)
+- fix(release): advance staging sdk verification ref (a35a92b4e49e)
+- fix(release): advance staging sdk reference (b6dc2d0fe8e0)
+- fix(release): restore staging dependency refs (5bf40a6ed08e)
+
 ## [0.12.9] - 2026-07-02
 
 ### Fixed
