@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.33] - 2026-07-04
+
+### Dependencies
+
+- build(build): purge production web cache before release verification (b370857e848d)
+- build(build): purge production web cache before release verification (6d8e60646ac3)
+
 ## [0.12.32] - 2026-07-04
 
 ### Changed
