@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.35] - 2026-07-05
+
+### Fixed
+
+- build(build): fix production source cache purge finalization (40ac2da59fae)
+
 ## [0.12.34] - 2026-07-04
 
 ### Dependencies
