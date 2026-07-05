@@ -31,7 +31,6 @@ const sourceRef = normalizeTreeseedTemplateId(String(metadata.sourceRef ?? templ
 const starterTemplateNames: Record<string, string> = {
 	'research': 'TreeSeed Research Starter',
 	'engineering': 'TreeSeed Engineering Starter',
-	'information-hub': 'TreeSeed Information Hub Starter',
 };
 const templateName = starterTemplateNames[sourceRef] ?? sourceRef;
 const templateVersion = templateLineage[0]?.version ? `v${templateLineage[0].version}` : null;

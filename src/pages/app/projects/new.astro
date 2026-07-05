@@ -41,7 +41,6 @@ const marketplaceTemplateItems = templateListing.items as TemplateSiteCard[];
 const activeStarterTemplateIds = new Set([
 	'research',
 	'engineering',
-	'information-hub',
 ]);
 const templateSourceRef = (template: TemplateSiteCard) => template.sourceRef ?? template.slug;
 const launchableTemplates = marketplaceTemplateItems.filter((template) => activeStarterTemplateIds.has(templateSourceRef(template)));
