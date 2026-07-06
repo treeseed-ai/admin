@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.38] - 2026-07-06
+
+### Fixed
+
+- build(build): fix Railway Dockerfile hosted build command verification (6e1aeeeabbad)
+
+### Dependencies
+
+- build(build): complete starter, api guarantee, and agent live (9c8af76ff839)
+- build(docs): complete starter, api guarantee, and agent live (81198b7d70b6)
+
 ## [0.12.37] - 2026-07-05
 
 ### Changed
