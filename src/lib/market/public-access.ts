@@ -52,3 +52,19 @@ export async function resolveMarketplaceTeamProfile(context: AstroLike, name: st
 export async function resolveMarketplaceUserProfile(context: AstroLike, username: string) {
 	return await createApiFacade(context).loadUserProfileByUsername(username).catch(() => null);
 }
+
+export async function resolveMarketplaceProjectProfile(context: AstroLike, slug: string) {
+	const { store, principal } = loadMarketplaceContext(context);
+	if (!store) return null;
+	const normalized = String(slug ?? '').trim().toLowerCase();
+	if (!normalized || !/^[a-z0-9-]+$/u.test(normalized)) return null;
+	const teams = await store.all?.(`SELECT name FROM teams ORDER BY created_at ASC`).catch(() => []) ?? [];
+	for (const row of teams) {
+		const teamName = typeof row?.name === 'string' ? row.name : '';
+		if (!teamName) continue;
+		const profile = await store.loadTeamProfileByName(teamName, principal).catch(() => null);
+		const project = profile?.activity?.projects?.find((entry: any) => entry.slug === normalized || entry.id === normalized);
+		if (project) return { project, team: profile.team };
+	}
+	return null;
+}

@@ -2,7 +2,7 @@
 import DetailTemplate from '@treeseed/ui/components/astro/templates/DetailTemplate.astro';
 import DistributionSummary from '@treeseed/ui/components/astro/distribution/DistributionSummary.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import TreeseedPublicLayout from '../../../layouts/TreeseedPublicLayout.astro';
+import TreeseedOperationalMarketLayout from '../../../layouts/TreeseedOperationalMarketLayout.astro';
 import { loadPublicMarketplaceDetail } from '../../../view-models/knowledge-distribution.vm.js';
 
 const slug = String(Astro.params.slug ?? '');
@@ -10,7 +10,7 @@ const vm = await loadPublicMarketplaceDetail(Astro, 'knowledge-packs', slug);
 if (!vm.found) Astro.response.status = 404;
 ---
 
-<TreeseedPublicLayout title={`${vm.title} | TreeSeed`} description={vm.description} currentPath={Astro.url.pathname} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+<TreeseedOperationalMarketLayout title={`${vm.title} | TreeSeed`} description={vm.description} currentPath={Astro.url.pathname} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
 	{vm.found ? (
 		<DetailTemplate title={vm.title} description={vm.description} eyebrow={vm.eyebrow} metadata={vm.metadata} actions={vm.actions}>
 			<DistributionSummary viewModel={vm.distribution} />
@@ -18,4 +18,4 @@ if (!vm.found) Astro.response.status = 404;
 	) : (
 		<EmptyState title="Knowledge import not found" description="This marketplace listing could not be resolved." actions={[{ label: 'Back to Knowledge Imports', href: '/market/knowledge-packs' }]} />
 	)}
-</TreeseedPublicLayout>
+</TreeseedOperationalMarketLayout>

@@ -1,14 +1,14 @@
 ---
 import CollectionTemplate from '@treeseed/ui/components/astro/templates/CollectionTemplate.astro';
 import DistributionSummary from '@treeseed/ui/components/astro/distribution/DistributionSummary.astro';
-import TreeseedPublicLayout from '../../../layouts/TreeseedPublicLayout.astro';
+import TreeseedOperationalMarketLayout from '../../../layouts/TreeseedOperationalMarketLayout.astro';
 import { loadPublicMarketplaceCollection } from '../../../view-models/knowledge-distribution.vm.js';
 
 const vm = await loadPublicMarketplaceCollection(Astro, 'knowledge-packs');
 ---
 
-<TreeseedPublicLayout title="TreeSeed Knowledge Imports" description="Packaged operational knowledge assets for TreeSeed." currentPath={Astro.url.pathname} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
+<TreeseedOperationalMarketLayout title="TreeSeed Knowledge Imports" description="Packaged operational knowledge assets for TreeSeed." currentPath={Astro.url.pathname} helpContext={vm.helpContext} feedbackContext={vm.feedbackContext}>
 	<CollectionTemplate viewModel={vm.collection} actions={vm.actions} mode="cards">
 		<DistributionSummary viewModel={vm.distribution} />
 	</CollectionTemplate>
-</TreeseedPublicLayout>
+</TreeseedOperationalMarketLayout>

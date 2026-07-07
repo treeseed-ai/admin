@@ -111,6 +111,7 @@ export const ADMIN_ROUTES: TreeseedSiteRouteContribution[] = [
   { pattern: '/market/templates', resourcePath: 'pages/market/templates/index.astro' },
   { pattern: '/market/templates/[slug]', resourcePath: 'pages/market/templates/[slug].astro' },
   { pattern: '/t/[name]', resourcePath: 'pages/t/[name].astro' },
+  { pattern: '/p/[project]', resourcePath: 'pages/p/[project].astro' },
   { pattern: '/team-invites/[token]/accept', resourcePath: 'pages/team-invites/[token]/accept.astro' },
   { pattern: '/u/[username]', resourcePath: 'pages/u/[username].astro' },
   { pattern: '/v1/[...all]', resourcePath: 'pages/v1/[...all].ts' },

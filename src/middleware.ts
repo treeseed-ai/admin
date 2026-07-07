@@ -5,6 +5,41 @@ import { apiAccessTokenFromCookies, clearApiAccessTokenCookie, resolveApiBaseUrl
 import { ensureLocalCloudflareRuntime } from './lib/runtime/local-cloudflare';
 
 const DEV_RESET_COOKIE = 'ts_market_dev_reset';
+const PUBLIC_ROUTE_PREFIXES = [
+	'/auth/',
+	'/u/',
+	'/t/',
+	'/p/',
+	'/knowledge',
+	'/books',
+	'/book',
+	'/notes',
+	'/chronicles',
+	'/profiles',
+	'/api/',
+	'/v1/',
+	'/_astro/',
+];
+const PUBLIC_FILE_EXTENSIONS = [
+	'.css',
+	'.js',
+	'.mjs',
+	'.map',
+	'.png',
+	'.jpg',
+	'.jpeg',
+	'.gif',
+	'.svg',
+	'.ico',
+	'.webp',
+	'.avif',
+	'.woff',
+	'.woff2',
+	'.ttf',
+	'.json',
+	'.txt',
+	'.xml',
+];
 
 function runtimeEnv(context: any) {
 	return context.locals?.runtime?.env as Record<string, unknown> | undefined;
@@ -15,6 +50,19 @@ function envValue(context: any, name: string) {
 	if (typeof runtimeValue === 'string' && runtimeValue.trim()) return runtimeValue.trim();
 	const processValue = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[name];
 	return typeof processValue === 'string' && processValue.trim() ? processValue.trim() : '';
+}
+
+function isPublicRoute(pathname: string) {
+	if (pathname === '/' || pathname === '/favicon.svg' || pathname === '/logo.svg' || pathname === '/robots.txt') return true;
+	if (PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix))) return true;
+	return PUBLIC_FILE_EXTENSIONS.some((extension) => pathname.endsWith(extension));
+}
+
+function authRedirectFor(context: any) {
+	if (context.locals.auth?.principal) return null;
+	if (isPublicRoute(context.url.pathname)) return null;
+	const returnTo = `${context.url.pathname}${context.url.search}`;
+	return context.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`, 302);
 }
 
 function applyLocalDevResetCookieBoundary(context: any) {
@@ -78,6 +126,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			principal: webSession.principal,
 		}
 		: null;
+	const authRedirect = authRedirectFor(context);
+	if (authRedirect) return authRedirect;
 	resolveEditorialPreview(context);
 	const response = await next();
 	if (resetCookieBoundary.changed) {

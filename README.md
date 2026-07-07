@@ -72,6 +72,15 @@ import { ADMIN_ROUTES } from '@treeseed/admin/routes';
 
 The route set includes admin application pages, auth pages, team invite acceptance, API proxy route metadata, and generic catalog/profile browsing surfaces. Host apps can override Astro pages through their normal Treeseed page override mechanism.
 
+Admin route composition follows the current TreeSeed shell model:
+
+- `/app/**` pages use `TreeseedAppLayout`, which composes the UI shell primitives for authenticated app work.
+- `/market/**` acquisition/catalog pages use `TreeseedOperationalMarketLayout`, the authenticated operational market shell.
+- `/auth/**` pages use UI `AuthShell`.
+- `/u/**`, `/t/**`, `/p/**`, and invite acceptance pages use public/auth-appropriate layouts and must not show app team operations.
+
+`ProductShell` and `PublicShell` are compatibility wrappers in `@treeseed/ui`; Admin pages should use the package layouts above rather than importing those wrappers directly.
+
 ## Auth And Sessions
 
 Admin owns reusable browser auth/session flow, callback handling, account/profile UX integration, and middleware composition. Backend service trust, persistent auth storage, and service credential validation belong in `@treeseed/api`.
@@ -124,7 +133,7 @@ The extension contract is exported from:
 import type { AdminCommerceProvider } from '@treeseed/admin/commerce';
 ```
 
-Admin does not implement Stripe Elements, checkout confirmation, Stripe Checkout Sessions, PaymentIntent creation, webhooks, invoices, buyer subscriptions UI, seller payouts, commissions, application fees, revenue splits, benefit payout allocation, capacity billing, provider execution, marketplace grants/reservations, or routing decisions. Buyer checkout and participant marketplace flows belong in the root market app. Backend state and Stripe server calls belong in `@treeseed/api`.
+Admin does not implement Stripe Elements, checkout confirmation, Stripe Checkout Sessions, PaymentIntent creation, webhooks, invoices, buyer subscriptions UI, seller payouts, commissions, application fees, revenue splits, benefit payout allocation, capacity billing, provider execution, marketplace grants/reservations, or routing decisions. Authenticated operational buyer checkout and participant marketplace flows belong in the root market app. Backend state and Stripe server calls belong in `@treeseed/api`.
 
 ## Extension Points
 
@@ -149,7 +158,7 @@ Use package exports only. Do not import from `packages/admin/src` in host applic
 - generic Astro/Starlight runtime; use `@treeseed/core`
 - backend API implementation, PostgreSQL, migrations, or operations runner; use `@treeseed/api`
 - capacity provider runtime; use `@treeseed/agent`
-- buyer checkout, Stripe Elements, payout/commission logic, capacity execution, or backend ecommerce policy; use root market for buyer pages and `@treeseed/api` for backend state
+- buyer checkout, Stripe Elements, payout/commission logic, capacity execution, or backend ecommerce policy; use root market for authenticated operational marketplace/cart/checkout/service/capacity/Commons surfaces and `@treeseed/api` for backend state
 - TreeDX repository service internals
 - host app deployment manifest
 

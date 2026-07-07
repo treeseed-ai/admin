@@ -1,0 +1,40 @@
+---
+import TreeseedAppLayout from './TreeseedAppLayout.astro';
+import type { FeedbackContext, HelpContext } from '@treeseed/ui';
+import { loadAppContext } from '../view-models/app-access.js';
+
+interface Props {
+	title?: string;
+	description?: string;
+	currentPath?: string;
+	helpContext?: HelpContext;
+	feedbackContext?: FeedbackContext;
+}
+
+const {
+	title = 'TreeSeed Market',
+	description = 'Operational TreeSeed market and team commerce surfaces.',
+	currentPath = Astro.url.pathname,
+	helpContext,
+	feedbackContext,
+} = Astro.props as Props;
+
+if (!Astro.locals.auth?.principal) {
+	const returnTo = `${Astro.url.pathname}${Astro.url.search}`;
+	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
+const context = await loadAppContext(Astro);
+---
+
+<TreeseedAppLayout
+	title={title}
+	description={description}
+	currentPath={currentPath}
+	teams={context.teams}
+	activeTeam={context.activeTeam}
+	helpContext={helpContext}
+	feedbackContext={feedbackContext}
+>
+	<slot />
+</TreeseedAppLayout>

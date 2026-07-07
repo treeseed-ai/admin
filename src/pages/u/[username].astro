@@ -1,5 +1,8 @@
 ---
 import TreeseedPublicLayout from '../../layouts/TreeseedPublicLayout.astro';
+import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProfileHeader.astro';
+import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
+import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
 import { normalizeUsername, validateUsername } from '../../lib/auth/profile-validation';
 import { resolveMarketplaceUserProfile } from '../../lib/market/public-access.js';
 
@@ -44,25 +47,17 @@ const visibleCount = profile.activity.teams.length
 	description={`Public TreeSeed profile for @${profile.user.username}.`}
 	currentPath={`/u/${profile.user.username}`}
 >
-	<main class="ts-section">
-		<section class="ts-user-profile">
-			<div class="ts-user-profile__avatar" aria-hidden="true">
-				{profile.user.image ? <img src={profile.user.image} alt="" loading="lazy" /> : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
-			</div>
-			<div>
-				<p class="ts-section__eyebrow">User profile</p>
-				<h1 data-scene={`profile.display-name.${profile.user.username}`}>{displayName}</h1>
-				<p class="ts-user-profile__handle" data-scene={`profile.username.${profile.user.username}`}>@{profile.user.username}</p>
-				<p class="ts-user-profile__meta">Joined {joinedDate}</p>
-			</div>
-		</section>
+	<PublicStack>
+		<PublicProfileHeader
+			eyebrow="User profile"
+			name={displayName}
+			handle={`@${profile.user.username}`}
+			imageSrc={profile.user.image}
+			meta={`Joined ${joinedDate}`}
+		/>
 
 		<section class="ts-grid-2 ts-profile-activity" aria-label="Profile activity">
-			<div class="ts-panel">
-				<div class="ts-panel__header">
-					<h2>Teams</h2>
-					<span class="ts-badge">{profile.activity.teams.length}</span>
-				</div>
+			<PublicSection title="Teams" eyebrow={`${profile.activity.teams.length} visible`}>
 				<div class="ts-list">
 					{profile.activity.teams.length > 0 ? profile.activity.teams.map((team) => (
 						<a class="ts-list-item" href={`/t/${team.slug}`} data-scene={`profile.team.${team.slug}`}>
@@ -71,28 +66,20 @@ const visibleCount = profile.activity.teams.length
 						</a>
 					)) : <p>No visible teams.</p>}
 				</div>
-			</div>
+			</PublicSection>
 
-			<div class="ts-panel">
-				<div class="ts-panel__header">
-					<h2>Projects</h2>
-					<span class="ts-badge">{profile.activity.projects.length}</span>
-				</div>
+			<PublicSection title="Projects" eyebrow={`${profile.activity.projects.length} visible`}>
 				<div class="ts-list">
 					{profile.activity.projects.length > 0 ? profile.activity.projects.map((project) => (
-						<div class="ts-list-item">
+						<a class="ts-list-item" href={`/p/${project.slug}`}>
 							<strong>{project.name}</strong><br />
 							<span>{project.description || project.slug}</span>
-						</div>
+						</a>
 					)) : <p>No visible projects.</p>}
 				</div>
-			</div>
+			</PublicSection>
 
-			<div class="ts-panel">
-				<div class="ts-panel__header">
-					<h2>Catalog listings</h2>
-					<span class="ts-badge">{profile.activity.catalogItems.length}</span>
-				</div>
+			<PublicSection title="Catalog listings" eyebrow={`${profile.activity.catalogItems.length} visible`}>
 				<div class="ts-list">
 					{profile.activity.catalogItems.length > 0 ? profile.activity.catalogItems.map((item) => (
 						<a class="ts-list-item" href={`/market/${item.kind === 'knowledge_pack' ? 'knowledge-packs' : 'templates'}/${item.slug}`}>
@@ -101,13 +88,9 @@ const visibleCount = profile.activity.teams.length
 						</a>
 					)) : <p>No visible listings.</p>}
 				</div>
-			</div>
+			</PublicSection>
 
-			<div class="ts-panel">
-				<div class="ts-panel__header">
-					<h2>Knowledge packs</h2>
-					<span class="ts-badge">{profile.activity.knowledgePacks.length}</span>
-				</div>
+			<PublicSection title="Knowledge packs" eyebrow={`${profile.activity.knowledgePacks.length} visible`}>
 				<div class="ts-list">
 					{profile.activity.knowledgePacks.length > 0 ? profile.activity.knowledgePacks.map((pack) => (
 						<a class="ts-list-item" href={`/market/knowledge-packs/${pack.slug}`}>
@@ -116,49 +99,8 @@ const visibleCount = profile.activity.teams.length
 						</a>
 					)) : <p>No visible knowledge packs.</p>}
 				</div>
-			</div>
+			</PublicSection>
 		</section>
 		{visibleCount === 0 ? <p class="ts-muted">No profile activity is visible to you yet.</p> : null}
-	</main>
-	<style>
-		.ts-user-profile {
-			display: grid;
-			grid-template-columns: auto 1fr;
-			align-items: center;
-			gap: 1rem;
-			margin-bottom: 1.5rem;
-		}
-		.ts-user-profile h1 {
-			margin: 0.1rem 0;
-			font-size: clamp(2rem, 4vw, 3rem);
-			letter-spacing: 0;
-		}
-		.ts-user-profile__avatar {
-			width: 5rem;
-			height: 5rem;
-			border-radius: 8px;
-			overflow: hidden;
-			display: grid;
-			place-items: center;
-			background: var(--ts-color-link);
-			color: var(--ts-color-accent-text);
-			font-weight: 900;
-			font-size: 2rem;
-		}
-		.ts-user-profile__avatar img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
-		.ts-user-profile__handle,
-		.ts-user-profile__meta,
-		.ts-muted {
-			margin: 0;
-			color: var(--ts-color-text-muted);
-		}
-		.ts-profile-activity .ts-list-item {
-			text-decoration: none;
-			color: inherit;
-		}
-	</style>
+	</PublicStack>
 </TreeseedPublicLayout>

@@ -50,6 +50,10 @@ const railItems = [
 	{ label: 'Capacity', href: '/app/capacity/allocation' },
 	{ label: 'Work', href: '/app/work' },
 	{ label: 'Knowledge', href: '/app/knowledge' },
+	{ label: 'Market', href: '/market/' },
+	{ label: 'Cart', href: '/cart' },
+	{ label: 'Service requests', href: '/services/new' },
+	{ label: 'Seller operations', href: '/app/market/seller' },
 ];
 
 const appearance = await resolveAuthenticatedThemePreference(Astro);
@@ -57,6 +61,9 @@ const quickActions = [
 	activeTeam
 		? { label: 'New project', href: '/app/projects/new', variant: 'primary' as const }
 		: { label: 'New team', href: '/app/teams/new', variant: 'primary' as const },
+	{ label: 'Browse market', href: '/market/', variant: 'secondary' as const },
+];
+const accountActions = [
 	{ label: 'Account', href: '/app/account', variant: 'secondary' as const },
 	{ label: 'Sign out', href: '/v1/auth/logout?returnTo=/', variant: 'secondary' as const, reload: true },
 ];
@@ -92,6 +99,7 @@ const showSensitiveUnlock = sensitiveUnlockPaths.some((path) => (
 	}}
 	navItems={railItems}
 	quickActions={quickActions}
+	accountActions={accountActions}
 	helpContext={helpContext}
 	feedbackContext={feedbackContext}
 >
