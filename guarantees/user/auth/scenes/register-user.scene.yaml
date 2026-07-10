@@ -126,7 +126,7 @@ workflow:
         name: Username
         value: review-{{runShort}}
     expect:
-      text: Username
+      text: Username is available.
   - id: enter-email
     title: Enter email
     action:
@@ -163,6 +163,7 @@ workflow:
         role: button
         name: Create account
     expect:
+      urlIncludes: /auth/check-email
       text: Check your email
 chapters: []
 overlays: []
