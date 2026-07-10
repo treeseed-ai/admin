@@ -213,7 +213,7 @@ describe('@treeseed/admin package boundaries', () => {
 		const checkTagScript = readFileSync('scripts/assert-release-tag-version.ts', 'utf8');
 		const publishScript = readFileSync('scripts/publish-package.ts', 'utf8');
 
-		expect(packageManifest).toContain('workflow: deploy.yml');
+		expect(packageManifest).toContain('workflow: verify.yml');
 		expect(verifyWorkflow).toContain('npm run verify:direct');
 		expect(deployWorkflow).toContain('npm run verify:local');
 		expect(deployWorkflow).not.toContain('trsd hosting apply');
