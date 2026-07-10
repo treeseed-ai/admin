@@ -133,7 +133,10 @@ workflow:
       fill:
         role: textbox
         name: Email
-        value: owner+{{runSlug}}@treeseed.local
+        # Staging intentionally verifies the real SMTP delivery path. Use an
+        # authorized mailbox and a run-specific plus address so every run is
+        # independently traceable without reusing a prior registration.
+        value: adrian.webb+review-{{runShort}}@knowledge.coop
     expect:
       visible:
         - role: textbox
