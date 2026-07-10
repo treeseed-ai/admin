@@ -5,6 +5,17 @@ description: Acceptance scene for guarantee.user.auth.register-user.001.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - anonymous user can open registration
+    - registration form accepts required profile fields
+    - registration submits into the email verification flow
+  minimumSteps: 8
+  requiresInteractiveAction: true
+  producesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -78,13 +89,81 @@ artifacts:
   timeline: true
   appLogs: true
 workflow:
-  - id: open-entry-route
+  - id: open-registration
     title: Open Register User
     action:
       goto: /auth/register
     expect:
       urlIncludes: /auth/register
       text: Create account
+  - id: enter-first-name
+    title: Enter first name
+    action:
+      fill:
+        role: textbox
+        name: First name
+        value: Tree
+    expect:
+      visible:
+        - role: textbox
+          name: First name
+  - id: enter-last-name
+    title: Enter last name
+    action:
+      fill:
+        role: textbox
+        name: Last name
+        value: Seed
+    expect:
+      visible:
+        - role: textbox
+          name: Last name
+  - id: enter-username
+    title: Enter username
+    action:
+      fill:
+        role: textbox
+        name: Username
+        value: review-{{runShort}}
+    expect:
+      text: Username
+  - id: enter-email
+    title: Enter email
+    action:
+      fill:
+        role: textbox
+        name: Email
+        value: owner+{{runSlug}}@treeseed.local
+    expect:
+      visible:
+        - role: textbox
+          name: Email
+  - id: enter-password
+    title: Enter password
+    action:
+      fill:
+        css: "#registerPassword"
+        internal: true
+        value: TreeSeedReviewPass123!
+    expect:
+      text: Password
+  - id: confirm-password
+    title: Confirm password
+    action:
+      fill:
+        css: "[data-confirm-password-input]"
+        internal: true
+        value: TreeSeedReviewPass123!
+    expect:
+      text: Confirm password
+  - id: submit-registration
+    title: Submit registration
+    action:
+      click:
+        role: button
+        name: Create account
+    expect:
+      text: Check your email
 chapters: []
 overlays: []
 diagrams: []

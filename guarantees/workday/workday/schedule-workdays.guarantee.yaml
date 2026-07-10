@@ -6,7 +6,7 @@ subtype: workday
 journey: Schedule Workdays
 ownerPackage: "@treeseed/admin"
 summary: Create duration and budget bounded workdays for projects with approved capacity; planning must cover eligible agents before repeats.
-status: planned
+status: active
 dependencies:
   journeys:
     - 27
@@ -44,8 +44,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/workdays/schedule-workdays
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/projects/seed-project/workdays
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -55,20 +55,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.workday.workday.schedule-workdays.api
+    - admin.workday.workday.schedule-workdays.api
 content:
   required: false
   verifierRefs:
-    - todo.workday.workday.schedule-workdays.content
+    - admin.workday.workday.schedule-workdays.content
 audit:
   required: true
   verifierRefs:
-    - todo.workday.workday.schedule-workdays.audit
+    - admin.workday.workday.schedule-workdays.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.workday.workday.schedule-workdays.negative
+      - admin.workday.workday.schedule-workdays.negative
 evidence:
   required:
     - playwright_trace

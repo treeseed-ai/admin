@@ -6,7 +6,7 @@ subtype: allocation
 journey: Allocate Project Capacity
 ownerPackage: "@treeseed/admin"
 summary: Define team capacity policy or allocation sets for the project; this is policy configuration and must not become provider-side scheduling.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/allocation/allocate-project-capacity
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/capacity/allocation/projects/seed-project
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.allocation.allocate-project-capacity.api
+    - admin.project.allocation.allocate-project-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.project.allocation.allocate-project-capacity.content
+    - admin.project.allocation.allocate-project-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.allocation.allocate-project-capacity.audit
+    - admin.project.allocation.allocate-project-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.allocation.allocate-project-capacity.negative
+      - admin.project.allocation.allocate-project-capacity.negative
 evidence:
   required:
     - playwright_trace

@@ -6,7 +6,7 @@ subtype: listings
 journey: Create Product Listing
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Create Product Listing.
-status: planned
+status: active
 dependencies:
   journeys:
     - 107
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/create-product-listing
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/teams/current/commerce/products
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.listings.create-product-listing.api
+    - admin.marketplace-seller.listings.create-product-listing.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.listings.create-product-listing.content
+    - admin.marketplace-seller.listings.create-product-listing.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.listings.create-product-listing.audit
+    - admin.marketplace-seller.listings.create-product-listing.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.listings.create-product-listing.negative
+      - admin.marketplace-seller.listings.create-product-listing.negative
 evidence:
   required:
     - playwright_trace

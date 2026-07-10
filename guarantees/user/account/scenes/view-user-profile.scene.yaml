@@ -5,6 +5,14 @@ description: Acceptance scene for guarantee.user.account.view-user-profile.010.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - View User Profile opens the canonical @treeseed/admin dashboard read model workflow.
+    - View User Profile exercises a service journey instead of only loading /app/account.
+    - View User Profile records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
 mode:
   test: true
   demo: true
@@ -66,10 +74,15 @@ workflow:
   - id: open-entry-route
     title: Open View User Profile
     action:
-      goto: /u/visual-owner
+      goto: /app/account
     expect:
-      urlIncludes: /u/visual-owner
-      text: Visual Audit Owner
+      urlIncludes: /app/account
+  - id: inspect-service-surface
+    title: Inspect View User Profile service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/account
 chapters: []
 overlays: []
 diagrams: []

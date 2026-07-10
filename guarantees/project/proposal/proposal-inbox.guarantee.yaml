@@ -6,7 +6,7 @@ subtype: proposal
 journey: Proposal Inbox
 ownerPackage: "@treeseed/admin"
 summary: Review pending proposals estimates and readiness signals; this surface is central for turning planning output into approved decisions.
-status: planned
+status: active
 dependencies:
   journeys:
     - 48
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/proposal/proposal-inbox
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/work/proposals
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.proposal.proposal-inbox.api
+    - admin.project.proposal.proposal-inbox.api
 content:
   required: true
   verifierRefs:
-    - todo.project.proposal.proposal-inbox.content
+    - admin.project.proposal.proposal-inbox.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.proposal.proposal-inbox.audit
+    - admin.project.proposal.proposal-inbox.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.proposal.proposal-inbox.negative
+      - admin.project.proposal.proposal-inbox.negative
 evidence:
   required:
     - playwright_trace

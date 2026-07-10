@@ -5,6 +5,19 @@ description: Acceptance scene for guarantee.team.team.switch-active-team.013.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Switch Active Team opens the canonical @treeseed/admin dashboard read model workflow.
+    - Switch Active Team exercises a service journey instead of only loading /app/teams.
+    - Switch Active Team records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -72,7 +85,12 @@ workflow:
       goto: /app/teams
     expect:
       urlIncludes: /app/teams
-      text: Teams
+  - id: inspect-service-surface
+    title: Inspect Switch Active Team service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

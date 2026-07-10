@@ -5,6 +5,20 @@ description: Acceptance scene for guarantee.team.team.create-team.012.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Create Team opens the canonical @treeseed/admin full page form workflow.
+    - A verified owner can fill and submit the team creation form.
+    - The created team becomes visible in the authenticated team area for dependent journeys.
+  minimumSteps: 5
+  requiresInteractiveAction: true
+  producesState:
+    - key: team.primary
+      kind: team
+  consumesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -71,8 +85,47 @@ workflow:
     action:
       goto: /app/teams/new
     expect:
-      urlIncludes: /app/teams/new
+      urlIncludes: /app/teams
       text: Create team
+  - id: fill-team-name
+    title: Fill team name
+    action:
+      fill:
+        css: '#name'
+        value: guarantee-team-{{runShort}}
+    expect:
+      text: Create team
+  - id: fill-team-display-name
+    title: Fill team display name
+    action:
+      fill:
+        css: '#displayName'
+        value: Guarantee Team {{runShort}}
+    expect:
+      text: Create team
+  - id: fill-team-summary
+    title: Fill team profile summary
+    action:
+      fill:
+        role: textbox
+        name: Profile summary
+        value: Team created by the guarantee service journey for downstream UI verification.
+    expect:
+      text: Create team
+  - id: submit-team
+    title: Submit team creation
+    action:
+      click:
+        role: button
+        name: Create team
+    expect:
+      urlIncludes: /app/teams
+  - id: inspect-service-surface
+    title: Inspect Create Team service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

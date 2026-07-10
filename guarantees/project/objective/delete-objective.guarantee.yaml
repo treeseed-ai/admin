@@ -6,7 +6,7 @@ subtype: objective
 journey: Delete Objective
 ownerPackage: "@treeseed/admin"
 summary: Delete or archive an objective with dependency checks; should not leave orphaned proposals notes or decisions.
-status: planned
+status: active
 dependencies:
   journeys:
     - 43
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/objective/delete-objective
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/work/objectives/seed-objective
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.objective.delete-objective.api
+    - admin.project.objective.delete-objective.api
 content:
   required: true
   verifierRefs:
-    - todo.project.objective.delete-objective.content
+    - admin.project.objective.delete-objective.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.objective.delete-objective.audit
+    - admin.project.objective.delete-objective.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.objective.delete-objective.negative
+      - admin.project.objective.delete-objective.negative
 evidence:
   required:
     - playwright_trace

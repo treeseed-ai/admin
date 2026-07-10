@@ -6,7 +6,7 @@ subtype: project
 journey: View Project Profile
 ownerPackage: "@treeseed/admin"
 summary: Present project overview including agents objectives decisions content and capacity posture; should aggregate API and TreeDX-backed content references.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/project/view-project-profile
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/projects/seed-project
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.project.view-project-profile.api
+    - admin.project.project.view-project-profile.api
 content:
   required: false
   verifierRefs:
-    - todo.project.project.view-project-profile.content
+    - admin.project.project.view-project-profile.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.project.view-project-profile.audit
+    - admin.project.project.view-project-profile.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.project.view-project-profile.negative
+      - admin.project.project.view-project-profile.negative
 evidence:
   required:
     - playwright_trace

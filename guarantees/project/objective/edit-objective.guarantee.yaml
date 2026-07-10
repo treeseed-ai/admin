@@ -6,7 +6,7 @@ subtype: objective
 journey: Edit Objective
 ownerPackage: "@treeseed/admin"
 summary: Edit objective fields and status while preserving links to proposals decisions notes and workday artifacts.
-status: planned
+status: active
 dependencies:
   journeys:
     - 43
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/objective/edit-objective
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/work/objectives/seed-objective/edit
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.objective.edit-objective.api
+    - admin.project.objective.edit-objective.api
 content:
   required: true
   verifierRefs:
-    - todo.project.objective.edit-objective.content
+    - admin.project.objective.edit-objective.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.objective.edit-objective.audit
+    - admin.project.objective.edit-objective.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.objective.edit-objective.negative
+      - admin.project.objective.edit-objective.negative
 evidence:
   required:
     - playwright_trace

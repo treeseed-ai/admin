@@ -6,7 +6,7 @@ subtype: host
 journey: Delete Host
 ownerPackage: "@treeseed/admin"
 summary: Plan destroy or retention for owned resources using reconciliation lifecycle; direct provider deletion would violate the architecture.
-status: planned
+status: active
 dependencies:
   journeys:
     - 23
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/hosts/delete-host
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/hosts/web/seed-host
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.host.host.delete-host.api
+    - admin.host.host.delete-host.api
 content:
   required: false
   verifierRefs:
-    - todo.host.host.delete-host.content
+    - admin.host.host.delete-host.content
 audit:
   required: true
   verifierRefs:
-    - todo.host.host.delete-host.audit
+    - admin.host.host.delete-host.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.host.host.delete-host.negative
+      - admin.host.host.delete-host.negative
 evidence:
   required:
     - playwright_trace

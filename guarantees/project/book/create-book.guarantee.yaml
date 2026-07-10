@@ -6,7 +6,7 @@ subtype: book
 journey: Create Book
 ownerPackage: "@treeseed/admin"
 summary: Create a Knowledge Hub book through the SDK content model and TreeDX; books organize project knowledge rather than serving as package docs only.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/book/create-book
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/knowledge/books
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.book.create-book.api
+    - admin.project.book.create-book.api
 content:
   required: true
   verifierRefs:
-    - todo.project.book.create-book.content
+    - admin.project.book.create-book.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.book.create-book.audit
+    - admin.project.book.create-book.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.book.create-book.negative
+      - admin.project.book.create-book.negative
 evidence:
   required:
     - playwright_trace

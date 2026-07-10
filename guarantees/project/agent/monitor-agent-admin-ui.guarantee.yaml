@@ -35,6 +35,7 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
+    - Blocked by guarantee journey audit: route exists, but the scene does not yet prove a real interactive service journey.
     - "Guarantee starts as planned until all verifier refs execute in integrated environments."
 scene:
   required: false
@@ -44,7 +45,7 @@ scene:
     demo: true
     training: true
   entryRoute: /app/capacity/runtime
-  componentContract: dashboard/read-model guarantee harness
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video

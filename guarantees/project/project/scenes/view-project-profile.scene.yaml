@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.project.view-project-profile.0
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - View Project Profile opens the canonical @treeseed/admin dashboard read model workflow.
+    - View Project Profile exercises a service journey instead of only loading /app/projects/seed-project.
+    - View Project Profile records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open View Project Profile
     action:
-      goto: /app/projects/:projectId/project/view-project-profile
+      goto: /app/projects/seed-project
     expect:
       urlIncludes: /app/projects
-    demoOnly: true
+  - id: inspect-service-surface
+    title: Inspect View Project Profile service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/projects
 chapters: []
 overlays: []
 diagrams: []

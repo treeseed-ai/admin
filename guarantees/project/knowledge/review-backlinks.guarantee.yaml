@@ -6,7 +6,7 @@ subtype: knowledge
 journey: Review Backlinks
 ownerPackage: "@treeseed/admin"
 summary: Inspect relationships among questions objectives proposals decisions notes books and pages before delete/archive operations.
-status: planned
+status: active
 dependencies:
   journeys:
     - 38
@@ -48,8 +48,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/knowledge/review-backlinks
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/projects/seed-project/knowledge/seed-page
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -59,20 +59,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.knowledge.review-backlinks.api
+    - admin.project.knowledge.review-backlinks.api
 content:
   required: true
   verifierRefs:
-    - todo.project.knowledge.review-backlinks.content
+    - admin.project.knowledge.review-backlinks.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.knowledge.review-backlinks.audit
+    - admin.project.knowledge.review-backlinks.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.knowledge.review-backlinks.negative
+      - admin.project.knowledge.review-backlinks.negative
 evidence:
   required:
     - playwright_trace

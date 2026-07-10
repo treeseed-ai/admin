@@ -5,8 +5,7 @@ type: user
 subtype: account
 journey: Edit Account Settings
 ownerPackage: "@treeseed/admin"
-summary: Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth
-  metadata and not in root Market-only state.
+summary: Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth metadata and not in root Market-only state.
 status: active
 dependencies:
   journeys:
@@ -30,6 +29,7 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
+    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 4"
 scene:
   required: true
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account/edit-account-settings
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/account
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -69,8 +69,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth
-    metadata and not in root Market-only state.
+  - Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth metadata and not in root Market-only state.
 surface: admin-ui
 run:
   timeoutSeconds: 300

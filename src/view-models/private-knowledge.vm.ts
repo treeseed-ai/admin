@@ -1,5 +1,6 @@
 import { buildPrivateKnowledgeReaderViewModel, type RuntimeReaderViewModel } from '@treeseed/core';
 import { createApiFacade } from '../lib/market/api-client.ts';
+import { loadAppContext, resolveAppProject } from './app-access.ts';
 
 export interface PrivateKnowledgePageViewModel {
 	project: {
@@ -16,7 +17,7 @@ export interface PrivateKnowledgePageViewModel {
 
 function statusFromReader(reader: RuntimeReaderViewModel) {
 	if (reader.status === 'not_found') return 404;
-	if (reader.status === 'unavailable') return 503;
+	if (reader.status === 'unavailable') return 200;
 	if (reader.status === 'denied') return 403;
 	if (reader.status === 'requires_sign_in') return 401;
 	return 200;
@@ -39,23 +40,26 @@ function currentRoute(projectId: string, slug: string) {
 
 export async function loadPrivateKnowledgePageViewModel(context: any, projectId: string, slug: unknown): Promise<PrivateKnowledgePageViewModel> {
 	const api = createApiFacade(context);
+	const appContext = await loadAppContext(context).catch(() => null);
+	const projectResolution = appContext ? await resolveAppProject(appContext, projectId).catch(() => null) : null;
+	const resolvedProjectId = projectResolution?.resource?.id ?? projectId;
 	const normalizedSlug = safeSlug(slug);
-	const route = currentRoute(projectId, normalizedSlug);
+	const route = currentRoute(resolvedProjectId, normalizedSlug);
 	const teams = await api.listTeamsForPrincipal().catch(() => []);
 	try {
-		const access = await api.validatePrivateKnowledgeAccess(projectId, { slug: normalizedSlug, route });
+		const access = await api.validatePrivateKnowledgeAccess(resolvedProjectId, { slug: normalizedSlug, route });
 		const project = access.project ?? null;
 		const reader = await buildPrivateKnowledgeReaderViewModel({
 			locals: context.locals,
-			projectId,
+			projectId: resolvedProjectId,
 			teamId: project?.teamId ?? '',
 			slug: normalizedSlug === 'index' ? '' : normalizedSlug,
 			access: 'allowed',
 		});
 		if (reader.status === 'ready') {
-			await api.recordPrivateKnowledgeOutcome(projectId, { slug: normalizedSlug, route, outcome: 'read' }).catch(() => null);
+			await api.recordPrivateKnowledgeOutcome(resolvedProjectId, { slug: normalizedSlug, route, outcome: 'read' }).catch(() => null);
 		} else if (reader.status === 'not_found') {
-			await api.recordPrivateKnowledgeOutcome(projectId, { slug: normalizedSlug, route, outcome: 'not_found' }).catch(() => null);
+			await api.recordPrivateKnowledgeOutcome(resolvedProjectId, { slug: normalizedSlug, route, outcome: 'not_found' }).catch(() => null);
 		}
 		const activeTeam = Array.isArray(teams)
 			? teams.find((team: any) => team.id === project?.teamId || team.teamId === project?.teamId) ?? null
@@ -66,7 +70,7 @@ export async function loadPrivateKnowledgePageViewModel(context: any, projectId:
 		const access = status === 401 ? 'requires_sign_in' : 'denied';
 		const reader = await buildPrivateKnowledgeReaderViewModel({
 			locals: context.locals,
-			projectId,
+			projectId: resolvedProjectId,
 			teamId: '',
 			slug: normalizedSlug === 'index' ? '' : normalizedSlug,
 			access,

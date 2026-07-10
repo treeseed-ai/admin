@@ -5,6 +5,20 @@ description: Acceptance scene for guarantee.user.auth.verify-email.002.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - newly registered user can open the email-check state
+    - local Mailpit receives the confirmation message for the run-scoped email
+    - following the confirmation link establishes the authenticated app session
+  minimumSteps: 3
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+  producesState:
+    - key: auth.verified-owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -78,13 +92,32 @@ artifacts:
   timeline: true
   appLogs: true
 workflow:
-  - id: open-entry-route
-    title: Open Verify Email
+  - id: open-check-email
+    title: Open email verification holding page
     action:
       goto: /auth/check-email?kind=verify
     expect:
       urlIncludes: /auth/check-email
       text: Check your email
+  - id: confirm-latest-email
+    title: Confirm latest registration email
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: owner+{{runSlug}}@treeseed.local
+        subjectIncludes: confirm
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: inspect-authenticated-shell
+    title: Inspect authenticated shell after confirmation
+    action:
+      goto: /app
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
 chapters: []
 overlays: []
 diagrams: []

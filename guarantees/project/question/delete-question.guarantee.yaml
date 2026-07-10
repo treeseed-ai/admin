@@ -6,7 +6,7 @@ subtype: question
 journey: Delete Question
 ownerPackage: "@treeseed/admin"
 summary: Delete or archive a question through TreeDX with relationship checks; should avoid breaking linked notes decisions and proposals.
-status: planned
+status: active
 dependencies:
   journeys:
     - 38
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/question/delete-question
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/work/questions/seed-question
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.question.delete-question.api
+    - admin.project.question.delete-question.api
 content:
   required: true
   verifierRefs:
-    - todo.project.question.delete-question.content
+    - admin.project.question.delete-question.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.question.delete-question.audit
+    - admin.project.question.delete-question.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.question.delete-question.negative
+      - admin.project.question.delete-question.negative
 evidence:
   required:
     - playwright_trace

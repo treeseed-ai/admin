@@ -6,7 +6,7 @@ subtype: capacity
 journey: Deploy Capacity
 ownerPackage: "@treeseed/admin"
 summary: Start or reconcile provider runtime through the agent package lifecycle and trsd capacity commands; UI should trigger desired-state operations not bespoke deployment scripts.
-status: planned
+status: active
 dependencies:
   journeys:
     - 4
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/capacity/deploy-capacity
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/capacity/runtime
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.deploy-capacity.api
+    - admin.capacity.capacity.deploy-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.capacity.capacity.deploy-capacity.content
+    - admin.capacity.capacity.deploy-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.deploy-capacity.audit
+    - admin.capacity.capacity.deploy-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.capacity.capacity.deploy-capacity.negative
+      - admin.capacity.capacity.deploy-capacity.negative
 evidence:
   required:
     - playwright_trace

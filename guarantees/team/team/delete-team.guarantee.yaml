@@ -5,8 +5,7 @@ type: team
 subtype: team
 journey: Delete Team
 ownerPackage: "@treeseed/admin"
-summary: Delete or archive a team only after checking projects hosts capacity and content ownership; likely requires
-  explicit retention and transfer rules.
+summary: Delete or archive a team only after checking projects hosts capacity and content ownership; likely requires explicit retention and transfer rules.
 status: active
 dependencies:
   journeys:
@@ -31,6 +30,7 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
+    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/delete-team
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/teams/current/delete
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -70,8 +70,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Delete or archive a team only after checking projects hosts capacity and content ownership; likely requires explicit
-    retention and transfer rules.
+  - Delete or archive a team only after checking projects hosts capacity and content ownership; likely requires explicit retention and transfer rules.
 surface: admin-ui
 run:
   timeoutSeconds: 300

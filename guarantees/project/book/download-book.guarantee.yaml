@@ -6,7 +6,7 @@ subtype: book
 journey: Download Book
 ownerPackage: "@treeseed/admin"
 summary: Export a book or selected pages from TreeDX-backed content; depends on an existing book and at least one available page.
-status: planned
+status: active
 dependencies:
   journeys:
     - 65
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/book/download-book
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/knowledge/books/seed-book
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.book.download-book.api
+    - admin.project.book.download-book.api
 content:
   required: true
   verifierRefs:
-    - todo.project.book.download-book.content
+    - admin.project.book.download-book.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.book.download-book.audit
+    - admin.project.book.download-book.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.book.download-book.negative
+      - admin.project.book.download-book.negative
 evidence:
   required:
     - playwright_trace

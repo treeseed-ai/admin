@@ -6,7 +6,7 @@ subtype: host
 journey: Edit Host
 ownerPackage: "@treeseed/admin"
 summary: Edit host configuration such as domains provider bindings and environment metadata; changes must flow through trsd reconciliation plans.
-status: planned
+status: active
 dependencies:
   journeys:
     - 23
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/hosts/edit-host
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/hosts
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.host.host.edit-host.api
+    - admin.host.host.edit-host.api
 content:
   required: false
   verifierRefs:
-    - todo.host.host.edit-host.content
+    - admin.host.host.edit-host.content
 audit:
   required: true
   verifierRefs:
-    - todo.host.host.edit-host.audit
+    - admin.host.host.edit-host.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.host.host.edit-host.negative
+      - admin.host.host.edit-host.negative
 evidence:
   required:
     - playwright_trace

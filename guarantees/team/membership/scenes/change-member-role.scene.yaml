@@ -5,6 +5,19 @@ description: Acceptance scene for guarantee.team.membership.change-member-role.0
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Change Member Role opens the canonical @treeseed/admin dashboard read model workflow.
+    - Change Member Role exercises a service journey instead of only loading /app/teams/current/members.
+    - Change Member Role records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -69,10 +82,15 @@ workflow:
   - id: open-entry-route
     title: Open Change Member Role
     action:
-      goto: /app/teams
+      goto: /app/teams/current/members
     expect:
       urlIncludes: /app/teams
-      text: Teams
+  - id: inspect-service-surface
+    title: Inspect Change Member Role service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

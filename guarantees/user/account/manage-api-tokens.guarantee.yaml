@@ -29,6 +29,7 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
+    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 4"
 scene:
   required: true
@@ -37,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account/manage-api-tokens
-  componentContract: record-operations guarantee harness
+  entryRoute: /app/account
+  componentContract: record-operations service journey
   expectedEvidence:
     - playwright_trace
     - scene_video

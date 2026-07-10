@@ -5,6 +5,19 @@ description: Scene scaffold for project.agent.monitor-agent-admin-ui.140.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Monitor Agent Admin Ui opens the canonical @treeseed/admin record operations workflow.
+    - Monitor Agent Admin Ui exercises a service journey instead of only loading /app/capacity/runtime.
+    - Monitor Agent Admin Ui records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -49,13 +62,18 @@ artifacts:
   timeline: true
   appLogs: true
 workflow:
-  - id: open-runtime-monitoring
-    title: Open runtime monitoring
+  - id: open-entry-route
+    title: Open Monitor Agent Admin Ui
     action:
       goto: /app/capacity/runtime
     expect:
-      urlIncludes: /app/capacity/runtime
-    demoOnly: true
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Monitor Agent Admin Ui service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []
@@ -98,4 +116,3 @@ training:
     - srt
 visualAudit:
   enabled: false
-

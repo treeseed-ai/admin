@@ -6,7 +6,7 @@ subtype: registration
 journey: Rotate Capacity Key
 ownerPackage: "@treeseed/admin"
 summary: Rotate provider API keys used by capacity providers; the API should issue and track keys without exposing raw credentials in the UI.
-status: planned
+status: active
 dependencies:
   journeys:
     - 4
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/capacity/rotate-capacity-key
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/capacity/providers/seed-provider/keys
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.capacity.registration.rotate-capacity-key.api
+    - admin.capacity.registration.rotate-capacity-key.api
 content:
   required: false
   verifierRefs:
-    - todo.capacity.registration.rotate-capacity-key.content
+    - admin.capacity.registration.rotate-capacity-key.content
 audit:
   required: true
   verifierRefs:
-    - todo.capacity.registration.rotate-capacity-key.audit
+    - admin.capacity.registration.rotate-capacity-key.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.capacity.registration.rotate-capacity-key.negative
+      - admin.capacity.registration.rotate-capacity-key.negative
 evidence:
   required:
     - playwright_trace

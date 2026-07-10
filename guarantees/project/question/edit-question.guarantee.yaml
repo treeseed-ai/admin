@@ -6,7 +6,7 @@ subtype: question
 journey: Edit Question
 ownerPackage: "@treeseed/admin"
 summary: Edit question content through TreeDX with provenance and validation; should preserve links to answers notes proposals and workday context.
-status: planned
+status: active
 dependencies:
   journeys:
     - 38
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/question/edit-question
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/work/questions/seed-question/edit
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.question.edit-question.api
+    - admin.project.question.edit-question.api
 content:
   required: true
   verifierRefs:
-    - todo.project.question.edit-question.content
+    - admin.project.question.edit-question.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.question.edit-question.audit
+    - admin.project.question.edit-question.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.question.edit-question.negative
+      - admin.project.question.edit-question.negative
 evidence:
   required:
     - playwright_trace

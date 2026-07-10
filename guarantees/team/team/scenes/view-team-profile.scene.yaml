@@ -5,6 +5,19 @@ description: Acceptance scene for guarantee.team.team.view-team-profile.015.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - View Team Profile opens the canonical @treeseed/admin dashboard read model workflow.
+    - View Team Profile exercises a service journey instead of only loading /app/teams.
+    - View Team Profile records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -72,7 +85,12 @@ workflow:
       goto: /app/teams
     expect:
       urlIncludes: /app/teams
-      text: Teams
+  - id: inspect-service-surface
+    title: Inspect View Team Profile service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

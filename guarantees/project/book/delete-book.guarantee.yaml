@@ -6,7 +6,7 @@ subtype: book
 journey: Delete Book
 ownerPackage: "@treeseed/admin"
 summary: Delete or archive a book with checks for pages links downloads and library indexes.
-status: planned
+status: active
 dependencies:
   journeys:
     - 65
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/book/delete-book
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/knowledge/books/seed-book
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.book.delete-book.api
+    - admin.project.book.delete-book.api
 content:
   required: true
   verifierRefs:
-    - todo.project.book.delete-book.content
+    - admin.project.book.delete-book.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.book.delete-book.audit
+    - admin.project.book.delete-book.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.book.delete-book.negative
+      - admin.project.book.delete-book.negative
 evidence:
   required:
     - playwright_trace

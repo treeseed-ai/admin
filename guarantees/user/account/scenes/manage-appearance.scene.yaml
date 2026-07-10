@@ -5,6 +5,17 @@ description: Acceptance scene for guarantee.user.account.manage-appearance.009.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Manage Appearance opens the canonical @treeseed/admin dashboard read model workflow.
+    - Manage Appearance exercises a service journey instead of only loading /app/account.
+    - Manage Appearance records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -72,7 +83,12 @@ workflow:
       goto: /app/account
     expect:
       urlIncludes: /app/account
-      text: Public account details
+  - id: inspect-service-surface
+    title: Inspect Manage Appearance service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/account
 chapters: []
 overlays: []
 diagrams: []

@@ -6,7 +6,7 @@ subtype: refunds
 journey: Issue Refund
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Issue Refund.
-status: planned
+status: active
 dependencies:
   journeys:
     - 112
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/issue-refund
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/teams/current/commerce/sales
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.refunds.issue-refund.api
+    - admin.marketplace-seller.refunds.issue-refund.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.refunds.issue-refund.content
+    - admin.marketplace-seller.refunds.issue-refund.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.refunds.issue-refund.audit
+    - admin.marketplace-seller.refunds.issue-refund.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.refunds.issue-refund.negative
+      - admin.marketplace-seller.refunds.issue-refund.negative
 evidence:
   required:
     - playwright_trace

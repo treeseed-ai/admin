@@ -6,7 +6,7 @@ subtype: library
 journey: Download Library
 ownerPackage: "@treeseed/admin"
 summary: Export the project knowledge library from TreeDX-backed content; should honor project authorization and may need dependencies on books pages and library indexing.
-status: planned
+status: active
 dependencies:
   journeys:
     - 69
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/library/download-library
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/knowledge
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.library.download-library.api
+    - admin.project.library.download-library.api
 content:
   required: true
   verifierRefs:
-    - todo.project.library.download-library.content
+    - admin.project.library.download-library.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.library.download-library.audit
+    - admin.project.library.download-library.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.library.download-library.negative
+      - admin.project.library.download-library.negative
 evidence:
   required:
     - playwright_trace

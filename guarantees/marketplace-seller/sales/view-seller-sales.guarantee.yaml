@@ -6,7 +6,7 @@ subtype: sales
 journey: View Seller Sales
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for View Seller Sales.
-status: planned
+status: active
 dependencies:
   journeys:
     - 107
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/view-seller-sales
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/teams/current/commerce/sales
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.sales.view-seller-sales.api
+    - admin.marketplace-seller.sales.view-seller-sales.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.sales.view-seller-sales.content
+    - admin.marketplace-seller.sales.view-seller-sales.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.sales.view-seller-sales.audit
+    - admin.marketplace-seller.sales.view-seller-sales.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.sales.view-seller-sales.negative
+      - admin.marketplace-seller.sales.view-seller-sales.negative
 evidence:
   required:
     - playwright_trace

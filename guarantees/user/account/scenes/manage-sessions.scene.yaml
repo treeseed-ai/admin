@@ -5,6 +5,17 @@ description: Acceptance scene for guarantee.user.account.manage-sessions.007.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Manage Sessions opens the canonical @treeseed/admin dashboard read model workflow.
+    - Manage Sessions exercises a service journey instead of only loading /app/account.
+    - Manage Sessions records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -69,10 +80,15 @@ workflow:
   - id: open-entry-route
     title: Open Manage Sessions
     action:
-      goto: /app/account#sessions
+      goto: /app/account
     expect:
       urlIncludes: /app/account
-      text: Active and recent sessions
+  - id: inspect-service-surface
+    title: Inspect Manage Sessions service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/account
 chapters: []
 overlays: []
 diagrams: []

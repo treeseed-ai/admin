@@ -5,6 +5,20 @@ description: Acceptance scene for guarantee.user.auth.user-login.004.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - anonymous user can open sign-in
+    - sign-in form accepts credentials
+    - sign-in submission reaches authenticated app shell or returns a visible auth error
+  minimumSteps: 4
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.verified-owner
+      kind: user
+  producesState:
+    - key: auth.session
+      kind: user
 mode:
   test: true
   demo: true
@@ -78,13 +92,43 @@ artifacts:
   timeline: true
   appLogs: true
 workflow:
-  - id: open-entry-route
+  - id: open-sign-in
     title: Open User Login
     action:
       goto: /auth/sign-in
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
+  - id: enter-identifier
+    title: Enter email or username
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: owner+{{runSlug}}@treeseed.local
+    expect:
+      visible:
+        - role: textbox
+          name: Email or username
+  - id: enter-password
+    title: Enter password
+    action:
+      fill:
+        css: input[name='password']
+        internal: true
+        value: TreeSeedReviewPass123!
+    expect:
+      text: Password
+  - id: submit-sign-in
+    title: Submit sign in
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
 chapters: []
 overlays: []
 diagrams: []

@@ -6,7 +6,7 @@ subtype: project
 journey: Edit Project Settings
 ownerPackage: "@treeseed/admin"
 summary: Update project metadata agents and content settings through API models; project manifests may inform defaults but runtime edits need durable records.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/project/edit-project-settings
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/projects/seed-project/settings
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.project.edit-project-settings.api
+    - admin.project.project.edit-project-settings.api
 content:
   required: false
   verifierRefs:
-    - todo.project.project.edit-project-settings.content
+    - admin.project.project.edit-project-settings.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.project.edit-project-settings.audit
+    - admin.project.project.edit-project-settings.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.project.edit-project-settings.negative
+      - admin.project.project.edit-project-settings.negative
 evidence:
   required:
     - playwright_trace

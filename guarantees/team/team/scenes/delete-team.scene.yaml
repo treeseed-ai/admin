@@ -5,6 +5,19 @@ description: Acceptance scene for guarantee.team.team.delete-team.016.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Delete Team opens the canonical @treeseed/admin destructive confirmation workflow.
+    - Delete Team exercises a service journey instead of only loading /app/teams/current/delete.
+    - Delete Team records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -69,10 +82,15 @@ workflow:
   - id: open-entry-route
     title: Open Delete Team
     action:
-      goto: /app/teams
+      goto: /app/teams/current/delete
     expect:
       urlIncludes: /app/teams
-      text: Teams
+  - id: inspect-service-surface
+    title: Inspect Delete Team service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

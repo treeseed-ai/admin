@@ -6,7 +6,7 @@ subtype: decision
 journey: Search Decisions
 ownerPackage: "@treeseed/admin"
 summary: Search accepted or rejected decisions created from proposal review; decisions gate acting mode and capacity-plan provenance.
-status: planned
+status: active
 dependencies:
   journeys:
     - 50
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/decision/search-decisions
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/work/decisions
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.decision.search-decisions.api
+    - admin.project.decision.search-decisions.api
 content:
   required: true
   verifierRefs:
-    - todo.project.decision.search-decisions.content
+    - admin.project.decision.search-decisions.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.decision.search-decisions.audit
+    - admin.project.decision.search-decisions.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.decision.search-decisions.negative
+      - admin.project.decision.search-decisions.negative
 evidence:
   required:
     - playwright_trace

@@ -6,7 +6,7 @@ subtype: allocation
 journey: Allocate Agent Capacity
 ownerPackage: "@treeseed/admin"
 summary: Assign team capacity policy to specific project agents or classes; API assignment function uses this policy while providers only enforce local constraints.
-status: planned
+status: active
 dependencies:
   journeys:
     - 57
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/allocation/allocate-agent-capacity
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/capacity/allocation/projects/seed-project
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.allocation.allocate-agent-capacity.api
+    - admin.project.allocation.allocate-agent-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.project.allocation.allocate-agent-capacity.content
+    - admin.project.allocation.allocate-agent-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.allocation.allocate-agent-capacity.audit
+    - admin.project.allocation.allocate-agent-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.allocation.allocate-agent-capacity.negative
+      - admin.project.allocation.allocate-agent-capacity.negative
 evidence:
   required:
     - playwright_trace

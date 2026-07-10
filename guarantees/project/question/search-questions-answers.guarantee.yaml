@@ -6,7 +6,7 @@ subtype: question
 journey: Search Questions / Answers
 ownerPackage: "@treeseed/admin"
 summary: Search project questions and answers through indexed content APIs or TreeDX-backed query surfaces; missing search should be implemented as a content service capability.
-status: planned
+status: active
 dependencies:
   journeys:
     - 38
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/question/search-questions-answers
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/work/questions/seed-question
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.question.search-questions-answers.api
+    - admin.project.question.search-questions-answers.api
 content:
   required: true
   verifierRefs:
-    - todo.project.question.search-questions-answers.content
+    - admin.project.question.search-questions-answers.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.question.search-questions-answers.audit
+    - admin.project.question.search-questions-answers.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.question.search-questions-answers.negative
+      - admin.project.question.search-questions-answers.negative
 evidence:
   required:
     - playwright_trace

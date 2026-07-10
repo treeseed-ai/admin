@@ -6,7 +6,7 @@ subtype: listings
 journey: Manage Listing
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Manage Listing.
-status: planned
+status: active
 dependencies:
   journeys:
     - 108
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/manage-listing
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/teams/current/commerce/products
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.listings.manage-listing.api
+    - admin.marketplace-seller.listings.manage-listing.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.listings.manage-listing.content
+    - admin.marketplace-seller.listings.manage-listing.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.listings.manage-listing.audit
+    - admin.marketplace-seller.listings.manage-listing.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.listings.manage-listing.negative
+      - admin.marketplace-seller.listings.manage-listing.negative
 evidence:
   required:
     - playwright_trace

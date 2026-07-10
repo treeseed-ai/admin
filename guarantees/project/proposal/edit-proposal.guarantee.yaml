@@ -6,7 +6,7 @@ subtype: proposal
 journey: Edit Proposal
 ownerPackage: "@treeseed/admin"
 summary: Edit proposal content and readiness state with provenance; changes should remain visible to proposal inbox and workday planning.
-status: planned
+status: active
 dependencies:
   journeys:
     - 48
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/proposal/edit-proposal
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/work/proposals/seed-proposal/edit
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.proposal.edit-proposal.api
+    - admin.project.proposal.edit-proposal.api
 content:
   required: true
   verifierRefs:
-    - todo.project.proposal.edit-proposal.content
+    - admin.project.proposal.edit-proposal.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.proposal.edit-proposal.audit
+    - admin.project.proposal.edit-proposal.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.proposal.edit-proposal.negative
+      - admin.project.proposal.edit-proposal.negative
 evidence:
   required:
     - playwright_trace

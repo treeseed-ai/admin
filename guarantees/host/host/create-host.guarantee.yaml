@@ -6,7 +6,7 @@ subtype: host
 journey: Create Host
 ownerPackage: "@treeseed/admin"
 summary: Register a hostable environment or provider target as desired state; creation should compile reconciliation resources instead of calling providers directly.
-status: planned
+status: active
 dependencies:
   journeys:
     - 4
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/hosts/create-host
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/hosts/new
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.host.host.create-host.api
+    - admin.host.host.create-host.api
 content:
   required: false
   verifierRefs:
-    - todo.host.host.create-host.content
+    - admin.host.host.create-host.content
 audit:
   required: true
   verifierRefs:
-    - todo.host.host.create-host.audit
+    - admin.host.host.create-host.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.host.host.create-host.negative
+      - admin.host.host.create-host.negative
 evidence:
   required:
     - playwright_trace

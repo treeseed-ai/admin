@@ -5,6 +5,14 @@ description: Acceptance scene for guarantee.user.auth.user-logout.005.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - A verified signed-in user can end the current web session.
+    - Logout clears authenticated app access and returns to the anonymous sign-in surface.
+    - The session-ending route produces screenshot evidence before and after logout.
+  minimumSteps: 2
+  requiresInteractiveAction: true
 mode:
   test: true
   demo: true
@@ -81,13 +89,22 @@ artifacts:
   timeline: true
   appLogs: true
 workflow:
-  - id: open-entry-route
-    title: Open User Logout
+  - id: open-account-sessions
+    title: Open logout confirmation
     action:
-      goto: /app/account
+      goto: /auth/logout
     expect:
-      urlIncludes: /app/account
-      text: Public account details
+      urlIncludes: /auth/logout
+      text: Sign out
+  - id: submit-user-logout
+    title: End the current session
+    action:
+      click:
+        role: button
+        name: Sign out
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
 chapters: []
 overlays: []
 diagrams: []

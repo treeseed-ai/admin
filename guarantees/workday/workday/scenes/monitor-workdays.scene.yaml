@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.workday.workday.monitor-workdays.063. 
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Monitor Workdays opens the canonical @treeseed/admin record operations workflow.
+    - Monitor Workdays exercises a service journey on the canonical workday run operator surface.
+    - Monitor Workdays records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Monitor Workdays
     action:
-      goto: /app/projects/:projectId/workdays/monitor-workdays
+      goto: /app/capacity/workday-runs
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/capacity/workday-runs
+  - id: inspect-service-surface
+    title: Inspect Monitor Workdays service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity/workday-runs
 chapters: []
 overlays: []
 diagrams: []

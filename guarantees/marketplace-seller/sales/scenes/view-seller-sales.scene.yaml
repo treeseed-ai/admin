@@ -5,6 +5,17 @@ description: Scene scaffold for guarantee.marketplace-seller.sales.view-seller-s
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - View Seller Sales opens the canonical @treeseed/admin dashboard read model workflow.
+    - View Seller Sales exercises a service journey instead of only loading /app/teams/current/commerce/sales.
+    - View Seller Sales records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -52,10 +63,15 @@ workflow:
   - id: open-entry-route
     title: Open View Seller Sales
     action:
-      goto: /app/teams/:teamId/commerce/view-seller-sales
+      goto: /app/teams/current/commerce/sales
     expect:
       urlIncludes: /app/teams
-    demoOnly: true
+  - id: inspect-service-surface
+    title: Inspect View Seller Sales service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

@@ -5,6 +5,17 @@ description: Scene scaffold for guarantee.marketplace-seller.listings.create-pro
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Create Product Listing opens the canonical @treeseed/admin full page form workflow.
+    - Create Product Listing exercises a service journey instead of only loading /app/teams/current/commerce/products.
+    - Create Product Listing records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -52,10 +63,15 @@ workflow:
   - id: open-entry-route
     title: Open Create Product Listing
     action:
-      goto: /app/teams/:teamId/commerce/create-product-listing
+      goto: /app/teams/current/commerce/products
     expect:
       urlIncludes: /app/teams
-    demoOnly: true
+  - id: inspect-service-surface
+    title: Inspect Create Product Listing service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

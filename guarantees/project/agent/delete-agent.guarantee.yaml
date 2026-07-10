@@ -6,7 +6,7 @@ subtype: agent
 journey: Delete Agent
 ownerPackage: "@treeseed/admin"
 summary: Remove or disable an agent after checking scheduled workdays assignments and generated artifact ownership.
-status: planned
+status: active
 dependencies:
   journeys:
     - 57
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/agent/delete-agent
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/projects/seed-project/agents/seed-agent
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.agent.delete-agent.api
+    - admin.project.agent.delete-agent.api
 content:
   required: false
   verifierRefs:
-    - todo.project.agent.delete-agent.content
+    - admin.project.agent.delete-agent.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.agent.delete-agent.audit
+    - admin.project.agent.delete-agent.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.agent.delete-agent.negative
+      - admin.project.agent.delete-agent.negative
 evidence:
   required:
     - playwright_trace

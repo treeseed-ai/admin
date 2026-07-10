@@ -101,6 +101,7 @@ export const ADMIN_ROUTES: TreeseedSiteRouteContribution[] = [
   { pattern: '/auth/confirm-email', resourcePath: 'pages/auth/confirm-email.astro' },
   { pattern: '/auth/device/approve', resourcePath: 'pages/auth/device/approve.astro' },
   { pattern: '/auth/forgot-password', resourcePath: 'pages/auth/forgot-password.astro' },
+  { pattern: '/auth/logout', resourcePath: 'pages/auth/logout.astro' },
   { pattern: '/auth/register', resourcePath: 'pages/auth/register.astro' },
   { pattern: '/auth/reset-password', resourcePath: 'pages/auth/reset-password.astro' },
   { pattern: '/auth/sign-in', resourcePath: 'pages/auth/sign-in.astro' },

@@ -6,7 +6,7 @@ subtype: onboarding
 journey: Approve Seller
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Approve Seller.
-status: planned
+status: active
 dependencies:
   journeys:
     - 106
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/approve-seller
-  componentContract: record-action guarantee harness
+  entryRoute: /app/market/seller
+  componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.onboarding.approve-seller.api
+    - admin.marketplace-seller.onboarding.approve-seller.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.onboarding.approve-seller.content
+    - admin.marketplace-seller.onboarding.approve-seller.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.onboarding.approve-seller.audit
+    - admin.marketplace-seller.onboarding.approve-seller.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.onboarding.approve-seller.negative
+      - admin.marketplace-seller.onboarding.approve-seller.negative
 evidence:
   required:
     - playwright_trace

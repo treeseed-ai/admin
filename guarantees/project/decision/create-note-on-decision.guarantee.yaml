@@ -6,7 +6,7 @@ subtype: decision
 journey: Create Note on Decision
 ownerPackage: "@treeseed/admin"
 summary: Attach notes to decisions using relatedDecisions or about frontmatter; should preserve why a decision was made.
-status: planned
+status: active
 dependencies:
   journeys:
     - 50
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/decision/create-note-on-decision
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/work/decisions/seed-decision
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.decision.create-note-on-decision.api
+    - admin.project.decision.create-note-on-decision.api
 content:
   required: true
   verifierRefs:
-    - todo.project.decision.create-note-on-decision.content
+    - admin.project.decision.create-note-on-decision.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.decision.create-note-on-decision.audit
+    - admin.project.decision.create-note-on-decision.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.decision.create-note-on-decision.negative
+      - admin.project.decision.create-note-on-decision.negative
 evidence:
   required:
     - playwright_trace

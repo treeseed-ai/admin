@@ -5,8 +5,7 @@ type: user
 subtype: account
 journey: View User Profile
 ownerPackage: "@treeseed/admin"
-summary: Show identity and account metadata plus team/project memberships; current architecture should read through
-  public admin/API facades.
+summary: Show identity and account metadata plus team/project memberships; current architecture should read through public admin/API facades.
 status: active
 dependencies:
   journeys:
@@ -30,6 +29,7 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
+    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 1"
 scene:
   required: true
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account/view-user-profile
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/account
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -69,8 +69,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Show identity and account metadata plus team/project memberships; current architecture should read through public
-    admin/API facades.
+  - Show identity and account metadata plus team/project memberships; current architecture should read through public admin/API facades.
 surface: admin-ui
 run:
   timeoutSeconds: 300

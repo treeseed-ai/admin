@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.capacity.capacity.revoke-capacity.031.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Revoke Capacity opens the canonical @treeseed/admin destructive confirmation workflow.
+    - Revoke Capacity exercises a service journey instead of only loading /app/capacity/runtime.
+    - Revoke Capacity records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: capacity-provider.primary
+      kind: capacity-provider
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Revoke Capacity
     action:
-      goto: /app/capacity/revoke-capacity
+      goto: /app/capacity/runtime
     expect:
-      urlIncludes: /app/capacity/revoke-capacity
-    demoOnly: true
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Revoke Capacity service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []

@@ -5,6 +5,21 @@ description: Scene scaffold for guarantee.project.allocation.allocate-agent-capa
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Allocate Agent Capacity opens the canonical @treeseed/admin record operations workflow.
+    - Allocate Agent Capacity exercises a service journey instead of only loading /app/capacity/allocation/projects/seed-project.
+    - Allocate Agent Capacity records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
+    - key: capacity-provider.primary
+      kind: capacity-provider
 mode:
   test: true
   demo: true
@@ -52,10 +67,15 @@ workflow:
   - id: open-entry-route
     title: Open Allocate Agent Capacity
     action:
-      goto: /app/projects/:projectId/allocation/allocate-agent-capacity
+      goto: /app/capacity/allocation/projects/seed-project
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Allocate Agent Capacity service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []

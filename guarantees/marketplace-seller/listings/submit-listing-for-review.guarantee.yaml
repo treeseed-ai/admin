@@ -6,7 +6,7 @@ subtype: listings
 journey: Submit Listing For Review
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Submit Listing For Review.
-status: planned
+status: active
 dependencies:
   journeys:
     - 108
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/submit-listing-for-review
-  componentContract: record-action guarantee harness
+  entryRoute: /app/teams/current/commerce/products
+  componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.listings.submit-listing-for-review.api
+    - admin.marketplace-seller.listings.submit-listing-for-review.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.listings.submit-listing-for-review.content
+    - admin.marketplace-seller.listings.submit-listing-for-review.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.listings.submit-listing-for-review.audit
+    - admin.marketplace-seller.listings.submit-listing-for-review.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.listings.submit-listing-for-review.negative
+      - admin.marketplace-seller.listings.submit-listing-for-review.negative
 evidence:
   required:
     - playwright_trace

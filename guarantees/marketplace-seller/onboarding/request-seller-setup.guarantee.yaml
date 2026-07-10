@@ -6,7 +6,7 @@ subtype: onboarding
 journey: Request Seller Setup
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Request Seller Setup.
-status: planned
+status: active
 dependencies:
   journeys:
     - 12
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/request-seller-setup
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/market/seller
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.onboarding.request-seller-setup.api
+    - admin.marketplace-seller.onboarding.request-seller-setup.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.onboarding.request-seller-setup.content
+    - admin.marketplace-seller.onboarding.request-seller-setup.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.onboarding.request-seller-setup.audit
+    - admin.marketplace-seller.onboarding.request-seller-setup.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.onboarding.request-seller-setup.negative
+      - admin.marketplace-seller.onboarding.request-seller-setup.negative
 evidence:
   required:
     - playwright_trace

@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.capacity.capacity.deploy-capacity.028.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Deploy Capacity opens the canonical @treeseed/admin record action workflow.
+    - Deploy Capacity exercises a service journey instead of only loading /app/capacity/runtime.
+    - Deploy Capacity records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: capacity-provider.primary
+      kind: capacity-provider
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Deploy Capacity
     action:
-      goto: /app/capacity/deploy-capacity
+      goto: /app/capacity/runtime
     expect:
-      urlIncludes: /app/capacity/deploy-capacity
-    demoOnly: true
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Deploy Capacity service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []

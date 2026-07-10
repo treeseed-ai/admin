@@ -6,7 +6,7 @@ subtype: book
 journey: Search Books
 ownerPackage: "@treeseed/admin"
 summary: Search project books and metadata through content indexes; should not scan local fixture files in production workflows.
-status: planned
+status: active
 dependencies:
   journeys:
     - 65
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/book/search-books
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/knowledge/books
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.book.search-books.api
+    - admin.project.book.search-books.api
 content:
   required: true
   verifierRefs:
-    - todo.project.book.search-books.content
+    - admin.project.book.search-books.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.book.search-books.audit
+    - admin.project.book.search-books.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.book.search-books.negative
+      - admin.project.book.search-books.negative
 evidence:
   required:
     - playwright_trace

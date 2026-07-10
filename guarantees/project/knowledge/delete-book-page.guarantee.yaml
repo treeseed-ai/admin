@@ -6,7 +6,7 @@ subtype: knowledge
 journey: Delete Book Page
 ownerPackage: "@treeseed/admin"
 summary: Delete or archive a page with backlinks and book index updates; direct filesystem deletion is not appropriate.
-status: planned
+status: active
 dependencies:
   journeys:
     - 69
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/knowledge/delete-book-page
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/projects/seed-project/knowledge/seed-page
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.knowledge.delete-book-page.api
+    - admin.project.knowledge.delete-book-page.api
 content:
   required: true
   verifierRefs:
-    - todo.project.knowledge.delete-book-page.content
+    - admin.project.knowledge.delete-book-page.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.knowledge.delete-book-page.audit
+    - admin.project.knowledge.delete-book-page.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.knowledge.delete-book-page.negative
+      - admin.project.knowledge.delete-book-page.negative
 evidence:
   required:
     - playwright_trace

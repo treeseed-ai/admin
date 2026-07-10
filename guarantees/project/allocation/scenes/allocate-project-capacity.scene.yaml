@@ -5,6 +5,21 @@ description: Scene scaffold for guarantee.project.allocation.allocate-project-ca
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Allocate Project Capacity opens the canonical @treeseed/admin record operations workflow.
+    - Allocate Project Capacity exercises a service journey instead of only loading /app/capacity/allocation/projects/seed-project.
+    - Allocate Project Capacity records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
+    - key: capacity-provider.primary
+      kind: capacity-provider
 mode:
   test: true
   demo: true
@@ -52,10 +67,15 @@ workflow:
   - id: open-entry-route
     title: Open Allocate Project Capacity
     action:
-      goto: /app/projects/:projectId/allocation/allocate-project-capacity
+      goto: /app/capacity/allocation/projects/seed-project
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Allocate Project Capacity service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []

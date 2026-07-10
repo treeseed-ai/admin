@@ -6,7 +6,7 @@ subtype: knowledge
 journey: Create Book Page
 ownerPackage: "@treeseed/admin"
 summary: Create a knowledge page inside a book with required frontmatter and links; agent artifacts must be real Knowledge Hub content.
-status: planned
+status: active
 dependencies:
   journeys:
     - 65
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/knowledge/create-book-page
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/projects/seed-project/knowledge
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.knowledge.create-book-page.api
+    - admin.project.knowledge.create-book-page.api
 content:
   required: true
   verifierRefs:
-    - todo.project.knowledge.create-book-page.content
+    - admin.project.knowledge.create-book-page.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.knowledge.create-book-page.audit
+    - admin.project.knowledge.create-book-page.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.knowledge.create-book-page.negative
+      - admin.project.knowledge.create-book-page.negative
 evidence:
   required:
     - playwright_trace

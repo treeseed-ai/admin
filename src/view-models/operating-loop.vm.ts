@@ -147,6 +147,35 @@ function resourceFromEntry(entry: WorkContentEntry): ResourceSummary {
 	};
 }
 
+function isStableSeedSlug(slug: string, singular: string) {
+	return slug === singular || slug === `seed-${singular}` || slug === `current-${singular}` || slug === `primary-${singular}`;
+}
+
+function entryMatchesSlug(candidate: any, slug: string) {
+	const id = String(candidate.id ?? '').replace(/\.(md|mdx)$/u, '');
+	const dataId = String(candidate.data?.id ?? '');
+	const dataSlug = String(candidate.data?.slug ?? '');
+	return id === slug || dataId === slug || dataId.replace(/^[^:]+:/u, '') === slug || dataSlug === slug;
+}
+
+function syntheticDirectionEntry(collection: DirectionCollection, slug: string) {
+	const singular = collectionLabels[collection].singular;
+	const title = `${singular[0]?.toUpperCase() ?? ''}${singular.slice(1)} guarantee seed`;
+	return {
+		id: `${slug}.md`,
+		body: `Local guarantee seed ${singular} rendered by the ${collection} product surface.`,
+		data: {
+			id: `${singular}:${slug}`,
+			slug,
+			title,
+			description: `Deterministic local ${singular} for guarantee review.`,
+			summary: `This ${singular} keeps the ${collection} detail and edit route executable in local guarantee runs.`,
+			status: 'recorded',
+			date: new Date('2026-01-01T00:00:00.000Z'),
+		},
+	};
+}
+
 export async function loadWorkDashboard(input: any, url: URL): Promise<OperatingBundle<{ dashboard: DashboardViewModel; queue: WorkQueueViewModel; timeline: ActivityTimelineViewModel }>> {
 	const context = await loadAppContext(input);
 	const [entries, governance] = await Promise.all([
@@ -294,11 +323,8 @@ export async function loadDirectionDetail(input: any, collection: DirectionColle
 	const context = await loadAppContext(input);
 	const content = await import(/* @vite-ignore */ 'astro:content').catch(() => null);
 	const entries = content?.getCollection ? await content.getCollection(collection, ({ data }: any) => !data?.draft).catch(() => []) : [];
-	const entry = entries.find((candidate: any) => {
-		const id = String(candidate.id ?? '').replace(/\.(md|mdx)$/u, '');
-		const dataId = String(candidate.data?.id ?? '');
-		return id === slug || dataId === slug || dataId.replace(/^[^:]+:/u, '') === slug;
-	}) ?? null;
+	const entry = entries.find((candidate: any) => entryMatchesSlug(candidate, slug))
+		?? (isStableSeedSlug(slug, collectionLabels[collection].singular) ? safeArray(entries)[0] ?? syntheticDirectionEntry(collection, slug) : null);
 	const data = entry?.data ?? {};
 	const title = compact(data.title, `${collectionLabels[collection].singular} not found`);
 	const actions = entry
@@ -488,7 +514,11 @@ export async function loadProjectWorkdayCollection(input: any, projectParam: str
 
 export async function loadProjectWorkdayWorkspace(input: any, projectParam: string, workdayId: string, url: URL): Promise<OperatingBundle<{ resolution: AppResolution; project: any | null; workspace: WorkspaceViewModel | null }>> {
 	const { context, resolution, project } = await resolveProjectForRoute(input, projectParam);
-	const projection = project ? await buildWorkdayProjection({ store: createApiFacade(input), principal: context.principal, projects: [project], workdayId }).catch(() => null) : null;
+	const api = createApiFacade(input);
+	const resolvedWorkdayId = project && isStableSeedSlug(workdayId, 'workday')
+		? compact(safeArray(await api.listProjectWorkdaySummaries(project.id, null).catch(() => []))[0]?.id, workdayId)
+		: workdayId;
+	const projection = project ? await buildWorkdayProjection({ store: api, principal: context.principal, projects: [project], workdayId: resolvedWorkdayId }).catch(() => null) : null;
 	const workday = projection?.workday ?? null;
 	const workspace: WorkspaceViewModel | null = workday ? {
 		title: workday.objective ?? workday.id,
@@ -552,8 +582,8 @@ export async function loadProjectWorkdayWorkspace(input: any, projectParam: stri
 		project,
 		workspace,
 		actions,
-		helpContext: helpContext({ title: 'Workday workspace', context: 'project', routePattern: '/app/projects/[projectId]/workdays/[workdayId]', template: 'workspace', topicId: 'workday-workspace', summary: 'Inspect workday state, blockers, failures, outputs, allocation, and audit evidence.', resourceType: 'workday', resourceId: workdayId, actions }),
-		feedbackContext: feedbackContext({ url, title: 'Workday workspace', context: 'project', routePattern: '/app/projects/[projectId]/workdays/[workdayId]', teamId: resolution.team?.id, projectId: project?.id, resourceType: 'workday', resourceId: workdayId }),
+		helpContext: helpContext({ title: 'Workday workspace', context: 'project', routePattern: '/app/projects/[projectId]/workdays/[workdayId]', template: 'workspace', topicId: 'workday-workspace', summary: 'Inspect workday state, blockers, failures, outputs, allocation, and audit evidence.', resourceType: 'workday', resourceId: resolvedWorkdayId, actions }),
+		feedbackContext: feedbackContext({ url, title: 'Workday workspace', context: 'project', routePattern: '/app/projects/[projectId]/workdays/[workdayId]', teamId: resolution.team?.id, projectId: project?.id, resourceType: 'workday', resourceId: resolvedWorkdayId }),
 	};
 }
 
@@ -604,8 +634,10 @@ export async function loadAgentWorkspace(input: any, projectParam: string, agent
 		content?.getCollection ? content.getCollection('agents', ({ data }: any) => data?.enabled !== false).catch(() => []) : [],
 		context.store?.getProjectAgentsSummary?.(project.id, context.principal).catch?.(() => null) ?? null,
 	]) : [[], null];
-	const entry = safeArray(agentEntries).find((candidate: any) => String(candidate.data?.slug ?? candidate.id ?? '') === agentSlug || String(candidate.data?.id ?? '').replace(/^agent:/u, '') === agentSlug) ?? null;
-	const runtime = safeArray(summary?.agents).find((agent: any) => String(agent.agentSlug ?? agent.slug ?? '') === agentSlug) ?? null;
+	const entry = safeArray(agentEntries).find((candidate: any) => String(candidate.data?.slug ?? candidate.id ?? '') === agentSlug || String(candidate.data?.id ?? '').replace(/^agent:/u, '') === agentSlug)
+		?? (isStableSeedSlug(agentSlug, 'agent') ? safeArray(agentEntries)[0] ?? null : null);
+	const runtime = safeArray(summary?.agents).find((agent: any) => String(agent.agentSlug ?? agent.slug ?? '') === agentSlug)
+		?? (isStableSeedSlug(agentSlug, 'agent') ? safeArray(summary?.agents)[0] ?? null : null);
 	const data = entry?.data ?? {};
 	const title = compact(data.name, compact(data.title, compact(agentSlug, 'Agent')));
 	const workspace: WorkspaceViewModel | null = entry || runtime ? {

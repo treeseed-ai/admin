@@ -6,7 +6,7 @@ subtype: question
 journey: Ask Question
 ownerPackage: "@treeseed/admin"
 summary: Create a project question as Knowledge Hub content through TreeDX and SDK content models; direct local-content writes are not allowed for agent-facing work.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/question/ask-question
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/work/questions/new
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.question.ask-question.api
+    - admin.project.question.ask-question.api
 content:
   required: true
   verifierRefs:
-    - todo.project.question.ask-question.content
+    - admin.project.question.ask-question.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.question.ask-question.audit
+    - admin.project.question.ask-question.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.question.ask-question.negative
+      - admin.project.question.ask-question.negative
 evidence:
   required:
     - playwright_trace

@@ -6,7 +6,7 @@ subtype: objective
 journey: Create Objective
 ownerPackage: "@treeseed/admin"
 summary: Create an objective in the project content model through TreeDX; objectives drive planning work and should be eligible for agent context.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/objective/create-objective
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/work/objectives/new
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.objective.create-objective.api
+    - admin.project.objective.create-objective.api
 content:
   required: true
   verifierRefs:
-    - todo.project.objective.create-objective.content
+    - admin.project.objective.create-objective.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.objective.create-objective.audit
+    - admin.project.objective.create-objective.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.objective.create-objective.negative
+      - admin.project.objective.create-objective.negative
 evidence:
   required:
     - playwright_trace

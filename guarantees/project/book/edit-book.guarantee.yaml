@@ -6,7 +6,7 @@ subtype: book
 journey: Edit Book
 ownerPackage: "@treeseed/admin"
 summary: Edit book metadata ordering and visibility through TreeDX-backed content operations.
-status: planned
+status: active
 dependencies:
   journeys:
     - 65
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/book/edit-book
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/knowledge/books/seed-book
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.book.edit-book.api
+    - admin.project.book.edit-book.api
 content:
   required: true
   verifierRefs:
-    - todo.project.book.edit-book.content
+    - admin.project.book.edit-book.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.book.edit-book.audit
+    - admin.project.book.edit-book.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.book.edit-book.negative
+      - admin.project.book.edit-book.negative
 evidence:
   required:
     - playwright_trace

@@ -6,7 +6,7 @@ subtype: fulfillment
 journey: Record Fulfillment
 ownerPackage: "@treeseed/admin"
 summary: First-pass product guarantee for Record Fulfillment.
-status: planned
+status: active
 dependencies:
   journeys:
     - 112
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/commerce/record-fulfillment
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/teams/current/commerce/services
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,20 +50,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.fulfillment.record-fulfillment.api
+    - admin.marketplace-seller.fulfillment.record-fulfillment.api
 content:
   required: false
   verifierRefs:
-    - todo.marketplace-seller.fulfillment.record-fulfillment.content
+    - admin.marketplace-seller.fulfillment.record-fulfillment.content
 audit:
   required: true
   verifierRefs:
-    - todo.marketplace-seller.fulfillment.record-fulfillment.audit
+    - admin.marketplace-seller.fulfillment.record-fulfillment.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.marketplace-seller.fulfillment.record-fulfillment.negative
+      - admin.marketplace-seller.fulfillment.record-fulfillment.negative
 evidence:
   required:
     - playwright_trace

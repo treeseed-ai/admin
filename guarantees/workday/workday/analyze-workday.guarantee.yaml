@@ -6,7 +6,7 @@ subtype: workday
 journey: Analyze Workday
 ownerPackage: "@treeseed/admin"
 summary: Summarize reports diagnostics artifacts decisions questions and usage after a workday; reports belong in .treeseed/workday-reports while content artifacts stay in collections.
-status: planned
+status: active
 dependencies:
   journeys:
     - 27
@@ -44,8 +44,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/workdays/analyze-workday
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/projects/seed-project/workdays/seed-workday
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -55,20 +55,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.workday.workday.analyze-workday.api
+    - admin.workday.workday.analyze-workday.api
 content:
   required: false
   verifierRefs:
-    - todo.workday.workday.analyze-workday.content
+    - admin.workday.workday.analyze-workday.content
 audit:
   required: true
   verifierRefs:
-    - todo.workday.workday.analyze-workday.audit
+    - admin.workday.workday.analyze-workday.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.workday.workday.analyze-workday.negative
+      - admin.workday.workday.analyze-workday.negative
 evidence:
   required:
     - playwright_trace

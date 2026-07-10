@@ -6,7 +6,7 @@ subtype: proposal
 journey: Create Note on Proposal
 ownerPackage: "@treeseed/admin"
 summary: Create linked proposal commentary with relatedProposals frontmatter; useful for reviews estimates and implementation notes.
-status: planned
+status: active
 dependencies:
   journeys:
     - 48
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/proposal/create-note-on-proposal
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/work/proposals/seed-proposal
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.proposal.create-note-on-proposal.api
+    - admin.project.proposal.create-note-on-proposal.api
 content:
   required: true
   verifierRefs:
-    - todo.project.proposal.create-note-on-proposal.content
+    - admin.project.proposal.create-note-on-proposal.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.proposal.create-note-on-proposal.audit
+    - admin.project.proposal.create-note-on-proposal.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.proposal.create-note-on-proposal.negative
+      - admin.project.proposal.create-note-on-proposal.negative
 evidence:
   required:
     - playwright_trace

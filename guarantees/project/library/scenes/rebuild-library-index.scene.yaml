@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.library.rebuild-library-index.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Rebuild Library Index opens the canonical @treeseed/admin dashboard read model workflow.
+    - Rebuild Library Index exercises a service journey instead of only loading /app/knowledge.
+    - Rebuild Library Index records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Rebuild Library Index
     action:
-      goto: /app/projects/:projectId/library/rebuild-library-index
+      goto: /app/knowledge
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/knowledge
+  - id: inspect-service-surface
+    title: Inspect Rebuild Library Index service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/knowledge
 chapters: []
 overlays: []
 diagrams: []

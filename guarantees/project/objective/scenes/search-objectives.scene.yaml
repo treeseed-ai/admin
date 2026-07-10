@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.objective.search-objectives.04
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Search Objectives opens the canonical @treeseed/admin dashboard read model workflow.
+    - Search Objectives exercises a service journey instead of only loading /app/work/objectives.
+    - Search Objectives records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Search Objectives
     action:
-      goto: /app/projects/:projectId/objective/search-objectives
+      goto: /app/work/objectives
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/work
+  - id: inspect-service-surface
+    title: Inspect Search Objectives service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/work
 chapters: []
 overlays: []
 diagrams: []

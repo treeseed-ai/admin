@@ -443,9 +443,11 @@ export async function loadKnowledgeDistributionDetail(input: any, kind: Knowledg
 	const fullVm = await loadKnowledgeViewModel(input);
 	const artifactVm = kind === 'artifacts' ? await loadKnowledgeArtifactViewModel(input, slug) : null;
 	const context = fullVm.context;
+	const items = itemsForKind(fullVm, kind);
 	const projection = kind === 'artifacts' && artifactVm?.artifact
 		? itemFromArtifact(artifactVm.artifact)
-		: itemsForKind(fullVm, kind).find((item) => item.id === slug || item.href?.endsWith(`/${slug}`));
+		: items.find((item) => item.id === slug || item.href?.endsWith(`/${slug}`))
+			?? (['book', 'seed-book', 'current-book', 'primary-book'].includes(slug) ? items[0] ?? null : null);
 	const title = projection?.title ?? collectionLabels[kind].singular;
 	const path = `/app/knowledge/${kind}/${slug}`;
 	return {

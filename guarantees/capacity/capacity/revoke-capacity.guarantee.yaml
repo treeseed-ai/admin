@@ -6,7 +6,7 @@ subtype: capacity
 journey: Revoke Capacity
 ownerPackage: "@treeseed/admin"
 summary: Revoke provider eligibility or keys and return active leases safely; must coordinate with API assignment and settlement records.
-status: planned
+status: active
 dependencies:
   journeys:
     - 27
@@ -42,8 +42,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/capacity/revoke-capacity
-  componentContract: record-action guarantee harness
+  entryRoute: /app/capacity/runtime
+  componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -53,20 +53,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.revoke-capacity.api
+    - admin.capacity.capacity.revoke-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.capacity.capacity.revoke-capacity.content
+    - admin.capacity.capacity.revoke-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.revoke-capacity.audit
+    - admin.capacity.capacity.revoke-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.capacity.capacity.revoke-capacity.negative
+      - admin.capacity.capacity.revoke-capacity.negative
 evidence:
   required:
     - playwright_trace

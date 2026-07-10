@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.agent.create-agent.057. This s
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Create Agent opens the canonical @treeseed/admin project agent creation workflow.
+    - A project operator can fill the agent form and queue the local content operation.
+    - The UI shows reviewable operation feedback after submission.
+  minimumSteps: 5
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,45 @@ workflow:
   - id: open-entry-route
     title: Open Create Agent
     action:
-      goto: /app/projects/:projectId/agent/create-agent
+      goto: /app/projects/market/agents/new
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/projects/market/agents/new
+      text: New agent
+  - id: fill-agent-name
+    title: Fill agent name
+    action:
+      fill:
+        role: textbox
+        name: Name
+        value: Guarantee Review Agent {{runShort}}
+    expect:
+      text: New agent
+  - id: fill-agent-description
+    title: Fill agent description
+    action:
+      fill:
+        role: textbox
+        name: Description
+        value: Reviews guarantee evidence and prepares implementation feedback for the TreeSeed market project.
+    expect:
+      text: New agent
+  - id: fill-agent-prompt
+    title: Fill agent prompt
+    action:
+      fill:
+        role: textbox
+        name: System prompt
+        value: Review guarantee evidence, identify concrete UI defects, and produce concise implementation notes.
+    expect:
+      text: New agent
+  - id: submit-agent
+    title: Submit agent definition
+    action:
+      click:
+        role: button
+        name: Create agent
+    expect:
+      text: Queued. Waiting for the Treeseed operations runner
 chapters: []
 overlays: []
 diagrams: []

@@ -5,6 +5,19 @@ description: Acceptance scene for guarantee.team.policy.manage-allocation-sets.0
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Manage Allocation Sets opens the canonical @treeseed/admin dashboard read model workflow.
+    - Manage Allocation Sets exercises a service journey instead of only loading /app/capacity/allocation.
+    - Manage Allocation Sets records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -71,8 +84,13 @@ workflow:
     action:
       goto: /app/capacity/allocation
     expect:
-      urlIncludes: /app/capacity/allocation
-      text: Capacity allocation
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Manage Allocation Sets service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []

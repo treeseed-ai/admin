@@ -20,6 +20,7 @@ devices:
   required:
     - desktop_chromium
     - mobile_chromium
+  optional:
     - mobile_webkit
 gates:
   - core

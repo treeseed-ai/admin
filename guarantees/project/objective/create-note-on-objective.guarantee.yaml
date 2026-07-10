@@ -6,7 +6,7 @@ subtype: objective
 journey: Create Note on Objective
 ownerPackage: "@treeseed/admin"
 summary: Create a linked note with relatedObjectives or about frontmatter; this is a canonical planning artifact for workdays.
-status: planned
+status: active
 dependencies:
   journeys:
     - 43
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/objective/create-note-on-objective
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/work/objectives/seed-objective
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.objective.create-note-on-objective.api
+    - admin.project.objective.create-note-on-objective.api
 content:
   required: true
   verifierRefs:
-    - todo.project.objective.create-note-on-objective.content
+    - admin.project.objective.create-note-on-objective.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.objective.create-note-on-objective.audit
+    - admin.project.objective.create-note-on-objective.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.objective.create-note-on-objective.negative
+      - admin.project.objective.create-note-on-objective.negative
 evidence:
   required:
     - playwright_trace

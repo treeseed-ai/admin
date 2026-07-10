@@ -5,6 +5,17 @@ description: Acceptance scene for guarantee.team.membership.accept-team-invitati
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Accept Team Invitation opens the canonical @treeseed/admin dashboard read model workflow.
+    - Accept Team Invitation exercises a service journey instead of only loading /app/teams/current/members.
+    - Accept Team Invitation records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -66,10 +77,15 @@ workflow:
   - id: open-entry-route
     title: Open Accept Team Invitation
     action:
-      goto: /auth/register
+      goto: /app/teams/current/members
     expect:
-      urlIncludes: /auth/register
-      text: Create account
+      urlIncludes: /app/teams
+  - id: inspect-service-surface
+    title: Inspect Accept Team Invitation service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

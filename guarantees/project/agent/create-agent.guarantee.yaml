@@ -6,7 +6,7 @@ subtype: agent
 journey: Create Agent
 ownerPackage: "@treeseed/admin"
 summary: Define a project-owned agent class handler prompts permissions and output contracts; providers supply execution capacity but do not define project agents.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/agent/create-agent
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/projects/market/agents/new
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.agent.create-agent.api
+    - admin.project.agent.create-agent.api
 content:
   required: false
   verifierRefs:
-    - todo.project.agent.create-agent.content
+    - admin.project.agent.create-agent.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.agent.create-agent.audit
+    - admin.project.agent.create-agent.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.agent.create-agent.negative
+      - admin.project.agent.create-agent.negative
 evidence:
   required:
     - playwright_trace

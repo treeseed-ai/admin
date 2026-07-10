@@ -6,7 +6,7 @@ subtype: library
 journey: Rebuild Library Index
 ownerPackage: "@treeseed/admin"
 summary: Refresh searchable project content indexes after book page or note changes; supports search and export journeys without filesystem scans.
-status: planned
+status: active
 dependencies:
   journeys:
     - 65
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/library/rebuild-library-index
-  componentContract: record-action guarantee harness
+  entryRoute: /app/knowledge
+  componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.library.rebuild-library-index.api
+    - admin.project.library.rebuild-library-index.api
 content:
   required: true
   verifierRefs:
-    - todo.project.library.rebuild-library-index.content
+    - admin.project.library.rebuild-library-index.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.library.rebuild-library-index.audit
+    - admin.project.library.rebuild-library-index.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.library.rebuild-library-index.negative
+      - admin.project.library.rebuild-library-index.negative
 evidence:
   required:
     - playwright_trace

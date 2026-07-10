@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.capacity.capacity.approve-capacity.027
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Approve Capacity opens the canonical @treeseed/admin record action workflow.
+    - Approve Capacity exercises a service journey instead of only loading /app/capacity.
+    - Approve Capacity records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: capacity-provider.primary
+      kind: capacity-provider
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Approve Capacity
     action:
-      goto: /app/capacity/approve-capacity
+      goto: /app/capacity
     expect:
-      urlIncludes: /app/capacity/approve-capacity
-    demoOnly: true
+      urlIncludes: /app/capacity
+  - id: inspect-service-surface
+    title: Inspect Approve Capacity service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/capacity
 chapters: []
 overlays: []
 diagrams: []

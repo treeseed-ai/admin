@@ -6,7 +6,7 @@ subtype: workday
 journey: Monitor Workdays
 ownerPackage: "@treeseed/admin"
 summary: Track live workday assignments mode runs generated artifacts usage and settlement; should continue scheduling useful planning work while budget and time remain.
-status: planned
+status: active
 dependencies:
   journeys:
     - 27
@@ -44,8 +44,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/workdays/monitor-workdays
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/capacity/workday-runs
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -55,20 +55,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.workday.workday.monitor-workdays.api
+    - admin.workday.workday.monitor-workdays.api
 content:
   required: false
   verifierRefs:
-    - todo.workday.workday.monitor-workdays.content
+    - admin.workday.workday.monitor-workdays.content
 audit:
   required: true
   verifierRefs:
-    - todo.workday.workday.monitor-workdays.audit
+    - admin.workday.workday.monitor-workdays.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.workday.workday.monitor-workdays.negative
+      - admin.workday.workday.monitor-workdays.negative
 evidence:
   required:
     - playwright_trace

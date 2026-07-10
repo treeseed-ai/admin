@@ -6,7 +6,7 @@ subtype: project
 journey: Monitor Project
 ownerPackage: "@treeseed/admin"
 summary: Show operational health for project workdays assignments content updates and hosted surfaces; needs trace links to API logs and TreeDX operations.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/project/monitor-project
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/projects/seed-project
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.project.monitor-project.api
+    - admin.project.project.monitor-project.api
 content:
   required: false
   verifierRefs:
-    - todo.project.project.monitor-project.content
+    - admin.project.project.monitor-project.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.project.monitor-project.audit
+    - admin.project.project.monitor-project.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.project.monitor-project.negative
+      - admin.project.project.monitor-project.negative
 evidence:
   required:
     - playwright_trace

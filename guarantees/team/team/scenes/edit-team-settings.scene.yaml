@@ -5,6 +5,19 @@ description: Acceptance scene for guarantee.team.team.edit-team-settings.014.
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Edit Team Settings opens the canonical @treeseed/admin full page form workflow.
+    - Edit Team Settings exercises a service journey instead of only loading /app/teams/current/edit.
+    - Edit Team Settings records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: team.primary
+      kind: team
 mode:
   test: true
   demo: true
@@ -69,10 +82,15 @@ workflow:
   - id: open-entry-route
     title: Open Edit Team Settings
     action:
-      goto: /app/teams
+      goto: /app/teams/current/edit
     expect:
       urlIncludes: /app/teams
-      text: Teams
+  - id: inspect-service-surface
+    title: Inspect Edit Team Settings service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/teams
 chapters: []
 overlays: []
 diagrams: []

@@ -33,6 +33,8 @@ const notice = Astro.url.searchParams.get('reset') === 'complete'
 	? 'Password reset complete. You can sign in with your new password.'
 	: Astro.url.searchParams.get('verified')
 		? 'Email verified. Sign in to continue.'
+		: Astro.url.searchParams.get('signedOut')
+			? 'You have been signed out.'
 		: '';
 let oauthRedirectPath = '';
 

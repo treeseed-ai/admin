@@ -6,7 +6,7 @@ subtype: agent
 journey: Edit Agent
 ownerPackage: "@treeseed/admin"
 summary: Edit agent configuration and permissions with validation against SDK/agent public contracts; changes should affect future assignments not mutate active runs unsafely.
-status: planned
+status: active
 dependencies:
   journeys:
     - 57
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/agent/edit-agent
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/projects/seed-project/agents/seed-agent
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.agent.edit-agent.api
+    - admin.project.agent.edit-agent.api
 content:
   required: false
   verifierRefs:
-    - todo.project.agent.edit-agent.content
+    - admin.project.agent.edit-agent.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.agent.edit-agent.audit
+    - admin.project.agent.edit-agent.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.agent.edit-agent.negative
+      - admin.project.agent.edit-agent.negative
 evidence:
   required:
     - playwright_trace

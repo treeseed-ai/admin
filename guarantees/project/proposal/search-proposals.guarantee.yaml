@@ -6,7 +6,7 @@ subtype: proposal
 journey: Search Proposals
 ownerPackage: "@treeseed/admin"
 summary: Search proposals by state objective agent and decision status; should power planning dashboards and review workflows.
-status: planned
+status: active
 dependencies:
   journeys:
     - 48
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/proposal/search-proposals
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/work/proposals
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.proposal.search-proposals.api
+    - admin.project.proposal.search-proposals.api
 content:
   required: true
   verifierRefs:
-    - todo.project.proposal.search-proposals.content
+    - admin.project.proposal.search-proposals.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.proposal.search-proposals.audit
+    - admin.project.proposal.search-proposals.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.proposal.search-proposals.negative
+      - admin.project.proposal.search-proposals.negative
 evidence:
   required:
     - playwright_trace

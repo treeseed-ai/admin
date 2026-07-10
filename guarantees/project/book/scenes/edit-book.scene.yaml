@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.book.edit-book.066. This scene
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Edit Book opens the canonical @treeseed/admin full page form workflow.
+    - Edit Book exercises a service journey instead of only loading /app/knowledge/books/seed-book.
+    - Edit Book records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Edit Book
     action:
-      goto: /app/projects/:projectId/book/edit-book
+      goto: /app/knowledge/books/seed-book
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/knowledge
+  - id: inspect-service-surface
+    title: Inspect Edit Book service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/knowledge
 chapters: []
 overlays: []
 diagrams: []

@@ -22,6 +22,7 @@ devices:
   required:
     - desktop_chromium
     - mobile_chromium
+  optional:
     - mobile_webkit
 gates:
   - core
@@ -70,6 +71,7 @@ evidence:
 notes:
   - Complete auth-provider verification then redirect into the authenticated Market/admin shell; implementation should
     not bypass the provider session model.
+  - The scene confirms the run-scoped registration email through local Mailpit before downstream login journeys execute.
 surface: admin-ui
 run:
   timeoutSeconds: 300

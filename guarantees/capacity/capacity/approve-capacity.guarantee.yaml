@@ -6,7 +6,7 @@ subtype: capacity
 journey: Approve Capacity
 ownerPackage: "@treeseed/admin"
 summary: Approve provider availability or registration for team/project use; API owns durable availability sessions and policy decisions.
-status: planned
+status: active
 dependencies:
   journeys:
     - 4
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/capacity/approve-capacity
-  componentContract: record-action guarantee harness
+  entryRoute: /app/capacity
+  componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.approve-capacity.api
+    - admin.capacity.capacity.approve-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.capacity.capacity.approve-capacity.content
+    - admin.capacity.capacity.approve-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.approve-capacity.audit
+    - admin.capacity.capacity.approve-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.capacity.capacity.approve-capacity.negative
+      - admin.capacity.capacity.approve-capacity.negative
 evidence:
   required:
     - playwright_trace

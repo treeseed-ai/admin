@@ -6,7 +6,7 @@ subtype: capacity
 journey: Monitor Capacity
 ownerPackage: "@treeseed/admin"
 summary: Show provider manager runner availability leases usage and diagnostics; data should come from API control-plane records and provider check-ins.
-status: planned
+status: active
 dependencies:
   journeys:
     - 27
@@ -42,8 +42,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/capacity/monitor-capacity
-  componentContract: dashboard/read-model guarantee harness
+  entryRoute: /app/capacity/runtime
+  componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -53,20 +53,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.monitor-capacity.api
+    - admin.capacity.capacity.monitor-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.capacity.capacity.monitor-capacity.content
+    - admin.capacity.capacity.monitor-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.monitor-capacity.audit
+    - admin.capacity.capacity.monitor-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.capacity.capacity.monitor-capacity.negative
+      - admin.capacity.capacity.monitor-capacity.negative
 evidence:
   required:
     - playwright_trace

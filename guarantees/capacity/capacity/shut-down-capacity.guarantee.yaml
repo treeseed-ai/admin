@@ -6,7 +6,7 @@ subtype: capacity
 journey: Shut Down Capacity
 ownerPackage: "@treeseed/admin"
 summary: Stop provider runtime through reconciliation while preserving volumes logs and state as required; should not manually kill provider resources.
-status: planned
+status: active
 dependencies:
   journeys:
     - 28
@@ -40,8 +40,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/capacity/shut-down-capacity
-  componentContract: destructive-confirmation guarantee harness
+  entryRoute: /app/capacity/runtime
+  componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -51,20 +51,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.shut-down-capacity.api
+    - admin.capacity.capacity.shut-down-capacity.api
 content:
   required: false
   verifierRefs:
-    - todo.capacity.capacity.shut-down-capacity.content
+    - admin.capacity.capacity.shut-down-capacity.content
 audit:
   required: true
   verifierRefs:
-    - todo.capacity.capacity.shut-down-capacity.audit
+    - admin.capacity.capacity.shut-down-capacity.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.capacity.capacity.shut-down-capacity.negative
+      - admin.capacity.capacity.shut-down-capacity.negative
 evidence:
   required:
     - playwright_trace

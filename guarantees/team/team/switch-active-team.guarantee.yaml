@@ -5,8 +5,7 @@ type: team
 subtype: team
 journey: Switch Active Team
 ownerPackage: "@treeseed/admin"
-summary: Change the active team context used by admin and API requests; must refresh project capacity and
-  membership-scoped views.
+summary: Change the active team context used by admin and API requests; must refresh project capacity and membership-scoped views.
 status: active
 dependencies:
   journeys:
@@ -31,6 +30,7 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
+    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
@@ -39,8 +39,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/:teamId/switch-active-team
-  componentContract: inline-form/search-panel guarantee harness
+  entryRoute: /app/teams
+  componentContract: inline-form/search-panel service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -70,8 +70,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Change the active team context used by admin and API requests; must refresh project capacity and membership-scoped
-    views.
+  - Change the active team context used by admin and API requests; must refresh project capacity and membership-scoped views.
 surface: admin-ui
 run:
   timeoutSeconds: 300

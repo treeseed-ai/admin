@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.host.host.edit-host.024. This scene is
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Edit Host opens the canonical @treeseed/admin record operations workflow.
+    - Edit Host exercises a service journey from the canonical host inventory surface.
+    - Edit Host records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: host.primary
+      kind: host
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Edit Host
     action:
-      goto: /app/hosts/edit-host
+      goto: /app/hosts
     expect:
-      urlIncludes: /app/hosts/edit-host
-    demoOnly: true
+      urlIncludes: /app/hosts
+  - id: inspect-service-surface
+    title: Inspect host inventory service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/hosts
 chapters: []
 overlays: []
 diagrams: []

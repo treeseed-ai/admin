@@ -6,7 +6,7 @@ subtype: proposal
 journey: Create Proposal
 ownerPackage: "@treeseed/admin"
 summary: Create a project proposal tied to objectives or questions; proposals should be content model records and ready for review or voting.
-status: planned
+status: active
 dependencies:
   journeys:
     - 32
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/proposal/create-proposal
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/work/proposals/new
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.proposal.create-proposal.api
+    - admin.project.proposal.create-proposal.api
 content:
   required: true
   verifierRefs:
-    - todo.project.proposal.create-proposal.content
+    - admin.project.proposal.create-proposal.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.proposal.create-proposal.audit
+    - admin.project.proposal.create-proposal.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.proposal.create-proposal.negative
+      - admin.project.proposal.create-proposal.negative
 evidence:
   required:
     - playwright_trace

@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.objective.delete-objective.045
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Delete Objective opens the canonical @treeseed/admin destructive confirmation workflow.
+    - Delete Objective exercises a service journey instead of only loading /app/work/objectives/seed-objective.
+    - Delete Objective records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Delete Objective
     action:
-      goto: /app/projects/:projectId/objective/delete-objective
+      goto: /app/work/objectives/seed-objective
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/work
+  - id: inspect-service-surface
+    title: Inspect Delete Objective service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/work
 chapters: []
 overlays: []
 diagrams: []

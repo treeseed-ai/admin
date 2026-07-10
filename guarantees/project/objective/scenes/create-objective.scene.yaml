@@ -5,6 +5,19 @@ description: Scene scaffold for guarantee.project.objective.create-objective.043
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Create Objective opens the canonical @treeseed/admin full page form workflow.
+    - Create Objective exercises a service journey instead of only loading /app/work/objectives/new.
+    - Create Objective records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
+    - key: project.primary
+      kind: project
 mode:
   test: true
   demo: true
@@ -52,10 +65,15 @@ workflow:
   - id: open-entry-route
     title: Open Create Objective
     action:
-      goto: /app/projects/:projectId/objective/create-objective
+      goto: /app/work/objectives/new
     expect:
-      urlIncludes: /app/projects
-    demoOnly: true
+      urlIncludes: /app/work
+  - id: inspect-service-surface
+    title: Inspect Create Objective service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/work
 chapters: []
 overlays: []
 diagrams: []

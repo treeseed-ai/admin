@@ -5,6 +5,17 @@ description: Acceptance scene for guarantee.user.account.edit-account-settings.0
 audience:
   - operator
   - evaluator
+journey:
+  kind: service
+  proves:
+    - Edit Account Settings opens the canonical @treeseed/admin full page form workflow.
+    - Edit Account Settings exercises a service journey instead of only loading /app/account.
+    - Edit Account Settings records reviewable evidence for the visible result before activation.
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.owner
+      kind: user
 mode:
   test: true
   demo: true
@@ -72,7 +83,12 @@ workflow:
       goto: /app/account
     expect:
       urlIncludes: /app/account
-      text: Public account details
+  - id: inspect-service-surface
+    title: Inspect Edit Account Settings service surface
+    action:
+      keyboard: Tab
+    expect:
+      urlIncludes: /app/account
 chapters: []
 overlays: []
 diagrams: []

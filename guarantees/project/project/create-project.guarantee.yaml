@@ -6,7 +6,7 @@ subtype: project
 journey: Create Project
 ownerPackage: "@treeseed/admin"
 summary: Create a Treeseed project owned by a team with content model and TreeDX routing metadata; should not depend on local package checkout state.
-status: planned
+status: active
 dependencies:
   journeys:
     - 4
@@ -38,8 +38,8 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/:projectId/project/create-project
-  componentContract: full-page-form guarantee harness
+  entryRoute: /app/projects/new
+  componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,20 +49,20 @@ scene:
 api:
   required: true
   verifierRefs:
-    - todo.project.project.create-project.api
+    - admin.project.project.create-project.api
 content:
   required: false
   verifierRefs:
-    - todo.project.project.create-project.content
+    - admin.project.project.create-project.content
 audit:
   required: true
   verifierRefs:
-    - todo.project.project.create-project.audit
+    - admin.project.project.create-project.audit
 negativeCases:
   - id: unauthorized-actor-denied
     actor: anonymous_user
     verifierRefs:
-      - todo.project.project.create-project.negative
+      - admin.project.project.create-project.negative
 evidence:
   required:
     - playwright_trace

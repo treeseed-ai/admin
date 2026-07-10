@@ -33,6 +33,15 @@ function projectFromDetails(details: any) {
 	return details?.project ?? details?.summary?.project ?? details ?? null;
 }
 
+function isStableSeedAlias(value: string, kind: string) {
+	return value === kind || value === `seed-${kind}` || value === `current-${kind}` || value === `primary-${kind}` || value === 'current' || value === 'active';
+}
+
+async function projectDetails(context: OperationalContext, projectId: string) {
+	if (typeof context.store?.getProjectDetails !== 'function') return null;
+	return context.store.getProjectDetails(projectId).catch(() => null);
+}
+
 function resolution<T>(status: AppAccessStatus, resource: T | null = null, team: any | null = null, details: any | null = null, error?: unknown): AppResolution<T> {
 	return { resource, team, details, status, ...(error ? { error } : {}) };
 }
@@ -71,6 +80,7 @@ export function persistActiveTeamSelection(astro: any, team: any | null) {
 export function resolveAppTeam(context: OperationalContext, teamParam: unknown): AppResolution {
 	const param = compact(teamParam, '');
 	if (!param) return resolution('not_found');
+	if ((param === 'current' || param === 'active') && context.activeTeam) return resolution('found', context.activeTeam, context.activeTeam, null);
 	const team = safeArray(context.teams).find((entry: any) => teamMatches(entry, param)) ?? null;
 	return team ? resolution('found', team, team, null) : resolution('not_found');
 }
@@ -78,6 +88,13 @@ export function resolveAppTeam(context: OperationalContext, teamParam: unknown):
 export async function resolveAppProject(context: OperationalContext, projectParam: unknown): Promise<AppResolution> {
 	const param = compact(projectParam, '');
 	if (!param || !context.store) return resolution('not_found');
+
+	if (isStableSeedAlias(param, 'project')) {
+		const project = safeArray(context.projects)[0] ?? null;
+		const team = project ? safeArray(context.teams).find((entry: any) => entry.id === project.teamId || entry.id === project.team_id) ?? context.activeTeam ?? null : null;
+		const details = project?.id ? await projectDetails(context, project.id) : null;
+		if (project && team) return resolution('found', projectFromDetails(details) ?? project, team, details ?? project);
+	}
 
 	let directError: unknown = null;
 	if (typeof context.store.getProjectDetails === 'function') {
@@ -121,6 +138,13 @@ export async function resolveAppHost(context: OperationalContext, hostType: unkn
 	let forbidden = false;
 	for (const team of safeArray(context.teams)) {
 		try {
+			if (isStableSeedAlias(id, 'host')) {
+				const hosts = requestedType === 'repository'
+					? await context.store.listRepositoryHosts?.(team.id, { includePlatform: true }).catch?.(() => []) ?? []
+					: await context.store.listTeamWebHosts?.(team.id).catch?.(() => []) ?? [];
+				const host = safeArray(hosts).find((entry: any) => hostMatchesRequestedType(entry, requestedType)) ?? null;
+				if (host) return resolution('found', host, team, host);
+			}
 			const host = requestedType === 'repository'
 				? await context.store.getRepositoryHost(team.id, id)
 				: await context.store.getTeamWebHost(team.id, id);
@@ -136,6 +160,13 @@ export async function resolveAppHost(context: OperationalContext, hostType: unkn
 export async function resolveAppCapacityProvider(context: OperationalContext, providerId: unknown): Promise<AppResolution> {
 	const id = compact(providerId, '');
 	if (!id || !context.store) return resolution('not_found');
+
+	if (isStableSeedAlias(id, 'provider')) {
+		for (const team of safeArray(context.teams)) {
+			const provider = safeArray(await context.store.listTeamCapacityProviders?.(team.id).catch?.(() => []) ?? [])[0] ?? null;
+			if (provider) return resolution('found', provider, team, provider);
+		}
+	}
 
 	if (typeof context.store.getCapacityProviderById === 'function') {
 		try {

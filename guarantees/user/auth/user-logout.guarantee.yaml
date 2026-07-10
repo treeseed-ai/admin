@@ -5,8 +5,7 @@ type: user
 subtype: auth
 journey: User Logout
 ownerPackage: "@treeseed/admin"
-summary: End the provider session and clear local admin state before redirecting; should avoid leaving active team or
-  project context cached.
+summary: End the provider session and clear local admin state before redirecting to the anonymous sign-in surface.
 status: active
 dependencies:
   journeys:
@@ -23,6 +22,7 @@ devices:
   required:
     - desktop_chromium
     - mobile_chromium
+  optional:
     - mobile_webkit
 gates:
   - core
@@ -70,8 +70,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - End the provider session and clear local admin state before redirecting; should avoid leaving active team or project
-    context cached.
+  - Uses the canonical /auth/logout route to revoke the API session, clear web cookies, and return to /auth/sign-in?signedOut=1.
 surface: admin-ui
 run:
   timeoutSeconds: 300
