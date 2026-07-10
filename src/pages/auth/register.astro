@@ -120,7 +120,7 @@ if (Astro.request.method === 'POST') {
 					required
 					minlength={1}
 					maxlength={39}
-					pattern="[A-Za-z0-9](?:[A-Za-z0-9\-]{0,37}[A-Za-z0-9])?"
+					pattern="[A-Za-z0-9](?:(?:[A-Za-z0-9]|-){0,37}[A-Za-z0-9])?"
 					aria-describedby="username-status"
 				/>
 				<span id="username-status" data-username-status class="auth-field-help">Username is public and cannot be changed after registration.</span>
