@@ -207,7 +207,7 @@ describe('@treeseed/admin package boundaries', () => {
 
 	it('ships package-local verify, release gate, and publish workflows', () => {
 		const verifyWorkflow = readFileSync('.github/workflows/verify.yml', 'utf8');
-		const deployWorkflow = readFileSync('.github/workflows/deploy.yml', 'utf8');
+		const releaseGateWorkflow = readFileSync('.github/workflows/release-gate.yml', 'utf8');
 		const publishWorkflow = readFileSync('.github/workflows/publish.yml', 'utf8');
 		const packageManifest = readFileSync('treeseed.package.yaml', 'utf8');
 		const checkTagScript = readFileSync('scripts/assert-release-tag-version.ts', 'utf8');
@@ -215,8 +215,9 @@ describe('@treeseed/admin package boundaries', () => {
 
 		expect(packageManifest).toContain('workflow: verify.yml');
 		expect(verifyWorkflow).toContain('npm run verify:direct');
-		expect(deployWorkflow).toContain('npm run verify:local');
-		expect(deployWorkflow).not.toContain('trsd hosting apply');
+		expect(releaseGateWorkflow).toContain('npm run verify:local');
+		expect(releaseGateWorkflow).not.toContain('trsd hosting apply');
+		expect(existsSync('.github/workflows/deploy.yml')).toBe(false);
 		expect(publishWorkflow).toContain("startsWith(github.ref, 'refs/tags/')");
 		expect(publishWorkflow).toContain("!contains(github.ref_name, '-')");
 		expect(publishWorkflow).toContain('npm publish --access public');

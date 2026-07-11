@@ -1,4 +1,4 @@
-name: Verify TreeSeed Admin
+name: Verify TreeSeed Admin Release
 
 on:
   workflow_dispatch:
