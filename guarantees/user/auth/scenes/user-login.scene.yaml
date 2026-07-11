@@ -83,6 +83,10 @@ setup:
   dev:
     required: true
     reuseExisting: true
+  auth:
+    role: owner
+    required: true
+    seedOnly: true
 artifacts:
   trace: true
   video: true
@@ -105,7 +109,7 @@ workflow:
       fill:
         role: textbox
         name: Email or username
-        value: owner+{{runSlug}}@treeseed.local
+        value: visual.owner@treeseed.io
     expect:
       visible:
         - role: textbox
@@ -116,7 +120,7 @@ workflow:
       fill:
         css: input[name='password']
         internal: true
-        value: TreeSeedReviewPass123!
+        value: TreeSeedVisualAudit!2026
     expect:
       text: Password
   - id: submit-sign-in
