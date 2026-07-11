@@ -38,7 +38,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/market/agents/new
+  entryRoute: /app/projects/visual-audit-project/agents/new
   componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace

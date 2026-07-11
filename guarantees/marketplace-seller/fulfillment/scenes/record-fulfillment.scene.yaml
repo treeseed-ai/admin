@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Record Fulfillment opens the canonical @treeseed/admin dashboard read model workflow.
-    - Record Fulfillment exercises a service journey instead of only loading /app/teams/current/commerce/services.
+    - Record Fulfillment exercises a service journey instead of only loading /app/teams/visual-audit-team/commerce/services.
     - Record Fulfillment records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -63,7 +63,7 @@ workflow:
   - id: open-entry-route
     title: Open Record Fulfillment
     action:
-      goto: /app/teams/current/commerce/services
+      goto: /app/teams/visual-audit-team/commerce/services
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

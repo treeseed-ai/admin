@@ -44,7 +44,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/seed-project/workdays
+  entryRoute: /app/projects/visual-audit-project/workdays
   componentContract: dashboard/read-model service journey
   expectedEvidence:
     - playwright_trace

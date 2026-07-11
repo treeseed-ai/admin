@@ -39,7 +39,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/current/delete
+  entryRoute: /app/teams/visual-audit-team/delete
   componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace

@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Submit Listing For Review opens the canonical @treeseed/admin record action workflow.
-    - Submit Listing For Review exercises a service journey instead of only loading /app/teams/current/commerce/products.
+    - Submit Listing For Review exercises a service journey instead of only loading /app/teams/visual-audit-team/commerce/products.
     - Submit Listing For Review records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -63,7 +63,7 @@ workflow:
   - id: open-entry-route
     title: Open Submit Listing For Review
     action:
-      goto: /app/teams/current/commerce/products
+      goto: /app/teams/visual-audit-team/commerce/products
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

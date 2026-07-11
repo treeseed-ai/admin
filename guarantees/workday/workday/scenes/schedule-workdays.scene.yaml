@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Schedule Workdays opens the canonical @treeseed/admin record operations workflow.
-    - Schedule Workdays exercises a service journey instead of only loading /app/projects/seed-project/workdays.
+    - Schedule Workdays exercises a service journey instead of only loading /app/projects/visual-audit-project/workdays.
     - Schedule Workdays records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -65,7 +65,7 @@ workflow:
   - id: open-entry-route
     title: Open Schedule Workdays
     action:
-      goto: /app/projects/seed-project/workdays
+      goto: /app/projects/visual-audit-project/workdays
     expect:
       urlIncludes: /app/projects
   - id: inspect-service-surface

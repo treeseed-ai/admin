@@ -39,7 +39,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/current/members
+  entryRoute: /app/teams/visual-audit-team/members
   componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace

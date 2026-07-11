@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - View Seller Sales opens the canonical @treeseed/admin dashboard read model workflow.
-    - View Seller Sales exercises a service journey instead of only loading /app/teams/current/commerce/sales.
+    - View Seller Sales exercises a service journey instead of only loading /app/teams/visual-audit-team/commerce/sales.
     - View Seller Sales records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -63,7 +63,7 @@ workflow:
   - id: open-entry-route
     title: Open View Seller Sales
     action:
-      goto: /app/teams/current/commerce/sales
+      goto: /app/teams/visual-audit-team/commerce/sales
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

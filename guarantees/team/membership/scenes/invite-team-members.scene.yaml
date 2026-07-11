@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Invite Team Members opens the canonical @treeseed/admin record modal form workflow.
-    - Invite Team Members exercises a service journey instead of only loading /app/teams/current/members.
+    - Invite Team Members exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
     - Invite Team Members records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -82,7 +82,7 @@ workflow:
   - id: open-entry-route
     title: Open Invite Team Members
     action:
-      goto: /app/teams/current/members
+      goto: /app/teams/visual-audit-team/members
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

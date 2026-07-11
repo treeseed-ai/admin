@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Change Member Role opens the canonical @treeseed/admin dashboard read model workflow.
-    - Change Member Role exercises a service journey instead of only loading /app/teams/current/members.
+    - Change Member Role exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
     - Change Member Role records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -82,7 +82,7 @@ workflow:
   - id: open-entry-route
     title: Open Change Member Role
     action:
-      goto: /app/teams/current/members
+      goto: /app/teams/visual-audit-team/members
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

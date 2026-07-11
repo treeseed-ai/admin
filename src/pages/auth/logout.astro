@@ -3,28 +3,11 @@ import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
-import { WEB_SESSION_COOKIE } from '../../lib/auth/config';
-import { apiServiceHeaders, clearApiAccessTokenCookie, resolveApiBaseUrl } from '../../lib/market/api-client';
 import { resolveAnonymousThemePreference } from '../../lib/auth/appearance';
 
 export const prerender = false;
 
 if (!Astro.locals.auth?.principal) {
-	return Astro.redirect('/auth/sign-in?signedOut=1', 303);
-}
-
-if (Astro.request.method === 'POST') {
-	await fetch(`${resolveApiBaseUrl(Astro.locals)}/v1/auth/logout`, {
-		method: 'POST',
-		headers: apiServiceHeaders(Astro),
-	}).catch(() => null);
-
-	Astro.cookies.delete(WEB_SESSION_COOKIE, {
-		path: '/',
-		secure: Astro.url.protocol === 'https:',
-	});
-	clearApiAccessTokenCookie(Astro);
-
 	return Astro.redirect('/auth/sign-in?signedOut=1', 303);
 }
 
@@ -37,7 +20,8 @@ const appearance = resolveAnonymousThemePreference(Astro);
 		description="End this browser session and return to the anonymous sign-in surface."
 		appearance={appearance}
 	>
-		<form class="auth-form" method="POST" action="/auth/logout" data-scene="logout-form">
+		<form class="auth-form" method="GET" action="/v1/auth/logout" data-scene="logout-form">
+			<input type="hidden" name="returnTo" value="/auth/sign-in?signedOut=1" />
 			<FormActions>
 				<Button type="submit">Sign out</Button>
 			</FormActions>

@@ -39,7 +39,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/current/commerce/sales
+  entryRoute: /app/teams/visual-audit-team/commerce/sales
   componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace

@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Create Product Listing opens the canonical @treeseed/admin full page form workflow.
-    - Create Product Listing exercises a service journey instead of only loading /app/teams/current/commerce/products.
+    - Create Product Listing exercises a service journey instead of only loading /app/teams/visual-audit-team/commerce/products.
     - Create Product Listing records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -63,7 +63,7 @@ workflow:
   - id: open-entry-route
     title: Open Create Product Listing
     action:
-      goto: /app/teams/current/commerce/products
+      goto: /app/teams/visual-audit-team/commerce/products
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Delete Team opens the canonical @treeseed/admin destructive confirmation workflow.
-    - Delete Team exercises a service journey instead of only loading /app/teams/current/delete.
+    - Delete Team exercises a service journey instead of only loading /app/teams/visual-audit-team/delete.
     - Delete Team records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -82,7 +82,7 @@ workflow:
   - id: open-entry-route
     title: Open Delete Team
     action:
-      goto: /app/teams/current/delete
+      goto: /app/teams/visual-audit-team/delete
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface

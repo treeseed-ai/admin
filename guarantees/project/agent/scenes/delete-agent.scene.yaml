@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Delete Agent opens the canonical @treeseed/admin destructive confirmation workflow.
-    - Delete Agent exercises a service journey instead of only loading /app/projects/seed-project/agents/seed-agent.
+    - Delete Agent exercises a service journey instead of only loading /app/projects/visual-audit-project/agents/seed-agent.
     - Delete Agent records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -65,7 +65,7 @@ workflow:
   - id: open-entry-route
     title: Open Delete Agent
     action:
-      goto: /app/projects/seed-project/agents/seed-agent
+      goto: /app/projects/visual-audit-project/agents/seed-agent
     expect:
       urlIncludes: /app/projects
   - id: inspect-service-surface

@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Manage Listing opens the canonical @treeseed/admin dashboard read model workflow.
-    - Manage Listing exercises a service journey instead of only loading /app/teams/current/commerce/products.
+    - Manage Listing exercises a service journey instead of only loading /app/teams/visual-audit-team/commerce/products.
     - Manage Listing records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -63,7 +63,7 @@ workflow:
   - id: open-entry-route
     title: Open Manage Listing
     action:
-      goto: /app/teams/current/commerce/products
+      goto: /app/teams/visual-audit-team/commerce/products
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface
