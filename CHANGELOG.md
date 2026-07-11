@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.12.41] - 2026-07-11
+
+### Added
+
+- feat(config): use deterministic seeded project IDs in scenes (85c619debe32)
+- feat(config): fix hosted scene fixtures routes and browsers (fba3361fcd02)
+- feat(config): assert stable verification handoff heading (cffbe559838c)
+- feat(config): separate hosted email UI and delivery evidence (c6cb3d9acccd)
+- feat(ui): Bind hosted API SMTP settings from root staging registry (9561c4cba5c5)
+- feat(config): Repair staging guarantee scenes and retain scene evidence (01f3b71e67ef)
+- feat(config): Fix staging guarantee scene routes and registration (b7b3aeba7824)
+
+### Fixed
+
+- build(build): fix stage completion and API SMTP routing (2e477991efc6)
+- build(build): Bind hosted API SMTP settings from root staging registry (58640c155db2)
+- build(build): fix staging candidate credential handoff (cbd89bfbdc6e)
+- build(ui): lock in UI shell architecture and test fixes (93068402f79d)
+
+### Tests
+
+- ci(build): Standardize verify release-gate and deploy workflows (fec0d7dcba9e)
+- ci(ci): recover reliable save stage release workflow (f50761996ea3)
+
+### Dependencies
+
+- build(build): Exclude verification-only packages from release (1b2868ce2a43)
+- build(build): seed verified login fixture without browser session (5e086b49f23a)
+- build(build): preserve dependency graph during artifact hydration (618c668b443c)
+- build(build): hydrate exact candidate artifacts before staging deploy (2ace7555911a)
+- build(build): Propagate API web service secret through staging (16fcf315da5e)
+- build(build): Propagate control-plane secrets through staging (64d86ce64dbc)
+- build(build): Expose API surface URLs to strict live staging checks (8b9194b2bc54)
+- build(build): Make hosted apply wait for transient HTTP readiness (a5e1342f2997)
+- build(build): inject protected TreeDX secrets into staging (6641abfdc0a4)
+- build(build): make staging candidate retries resumable (416a05cf64bd)
+- build(build): release guarantee reviewer and coverage updates (08abbb4ecb26)
+- build(build): release guarantee reviewer and coverage updates (976041949d98)
+- build(build): release guarantee reviewer and coverage updates (983e7aadcc1e)
+- build(config): release guarantee reviewer and coverage updates (c4d563cdfa95)
+- build(build): guard API workflow entrypoints and staging fanout (f659b8fa5ced)
+- build(build): block dependents on API deploy workflow (bff31a852f10)
+- build(build): sync package dependency references (13e7ee9d460f)
+
 ## [0.12.40] - 2026-07-06
 
 ### Changed
