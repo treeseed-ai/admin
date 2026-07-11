@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Create Book Page opens the canonical @treeseed/admin full page form workflow.
-    - Create Book Page exercises a service journey instead of only loading /app/projects/visual-audit-project/knowledge.
+    - Create Book Page exercises a service journey instead of only loading /app/projects/project-visual-audit-project/knowledge.
     - Create Book Page records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -65,7 +65,7 @@ workflow:
   - id: open-entry-route
     title: Open Create Book Page
     action:
-      goto: /app/projects/visual-audit-project/knowledge
+      goto: /app/projects/project-visual-audit-project/knowledge
     expect:
       urlIncludes: /app/projects
   - id: inspect-service-surface

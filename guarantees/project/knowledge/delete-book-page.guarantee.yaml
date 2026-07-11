@@ -38,7 +38,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/visual-audit-project/knowledge/seed-page
+  entryRoute: /app/projects/project-visual-audit-project/knowledge/seed-page
   componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace

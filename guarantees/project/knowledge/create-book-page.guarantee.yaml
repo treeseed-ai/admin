@@ -38,7 +38,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/visual-audit-project/knowledge
+  entryRoute: /app/projects/project-visual-audit-project/knowledge
   componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace

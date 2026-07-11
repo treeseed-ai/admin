@@ -65,9 +65,9 @@ workflow:
   - id: open-entry-route
     title: Open Create Agent
     action:
-      goto: /app/projects/visual-audit-project/agents/new
+      goto: /app/projects/project-visual-audit-project/agents/new
     expect:
-      urlIncludes: /app/projects/visual-audit-project/agents/new
+      urlIncludes: /app/projects/project-visual-audit-project/agents/new
       text: New agent
   - id: fill-agent-name
     title: Fill agent name

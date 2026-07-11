@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Review Backlinks opens the canonical @treeseed/admin dashboard read model workflow.
-    - Review Backlinks exercises a service journey instead of only loading /app/projects/visual-audit-project/knowledge/seed-page.
+    - Review Backlinks exercises a service journey instead of only loading /app/projects/project-visual-audit-project/knowledge/seed-page.
     - Review Backlinks records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -65,7 +65,7 @@ workflow:
   - id: open-entry-route
     title: Open Review Backlinks
     action:
-      goto: /app/projects/visual-audit-project/knowledge/seed-page
+      goto: /app/projects/project-visual-audit-project/knowledge/seed-page
     expect:
       urlIncludes: /app/projects
   - id: inspect-service-surface

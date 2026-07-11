@@ -38,7 +38,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/projects/visual-audit-project/agents/seed-agent
+  entryRoute: /app/projects/project-visual-audit-project/agents/seed-agent
   componentContract: full-page-form service journey
   expectedEvidence:
     - playwright_trace

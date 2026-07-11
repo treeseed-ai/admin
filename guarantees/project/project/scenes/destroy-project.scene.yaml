@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - Destroy Project opens the canonical @treeseed/admin destructive confirmation workflow.
-    - Destroy Project exercises a service journey instead of only loading /app/projects/visual-audit-project/delete.
+    - Destroy Project exercises a service journey instead of only loading /app/projects/project-visual-audit-project/delete.
     - Destroy Project records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -65,7 +65,7 @@ workflow:
   - id: open-entry-route
     title: Open Destroy Project
     action:
-      goto: /app/projects/visual-audit-project/delete
+      goto: /app/projects/project-visual-audit-project/delete
     expect:
       urlIncludes: /app/projects
   - id: inspect-service-surface
