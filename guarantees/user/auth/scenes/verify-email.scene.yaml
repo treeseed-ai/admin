@@ -107,14 +107,14 @@ workflow:
         name: I verified my email
     expect:
       urlIncludes: /auth/sign-in
-      text: Welcome back
+      text: Sign in
   - id: inspect-sign-in-handoff
     title: Inspect sign-in handoff after confirmation
     action:
       goto: /auth/sign-in?returnTo=%2Fapp%2F
     expect:
       urlIncludes: /auth/sign-in
-      text: Welcome back
+      text: Sign in
 chapters: []
 overlays: []
 diagrams: []
