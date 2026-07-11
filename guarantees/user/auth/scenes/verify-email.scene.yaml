@@ -9,8 +9,8 @@ journey:
   kind: service
   proves:
     - newly registered user can open the email-check state
-    - local Mailpit receives the confirmation message for the run-scoped email
-    - following the confirmation link establishes the authenticated app session
+    - the email-check state directs a user back to sign in after verification
+    - confirmation delivery and token exchange remain API-owned evidence
   minimumSteps: 3
   requiresInteractiveAction: true
   consumesState:
@@ -99,25 +99,22 @@ workflow:
     expect:
       urlIncludes: /auth/check-email
       text: Check your email
-  - id: confirm-latest-email
-    title: Confirm latest registration email
+  - id: continue-after-verification
+    title: Continue after verifying email
     action:
-      mailpitConfirmLatest:
-        mailpitUrl: http://127.0.0.1:8025
-        email: owner+{{runSlug}}@treeseed.local
-        subjectIncludes: confirm
+      click:
+        role: link
+        name: I verified my email
     expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: inspect-authenticated-shell
-    title: Inspect authenticated shell after confirmation
+      urlIncludes: /auth/sign-in
+      text: Welcome back
+  - id: inspect-sign-in-handoff
+    title: Inspect sign-in handoff after confirmation
     action:
-      goto: /app
+      goto: /auth/sign-in?returnTo=%2Fapp%2F
     expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
+      urlIncludes: /auth/sign-in
+      text: Welcome back
 chapters: []
 overlays: []
 diagrams: []

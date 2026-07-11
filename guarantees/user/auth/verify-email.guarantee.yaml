@@ -71,7 +71,7 @@ evidence:
 notes:
   - Complete auth-provider verification then redirect into the authenticated Market/admin shell; implementation should
     not bypass the provider session model.
-  - The scene confirms the run-scoped registration email through local Mailpit before downstream login journeys execute.
+  - The scene proves the hosted check-email and sign-in handoff; API acceptance owns confirmation delivery and token behavior.
 surface: admin-ui
 run:
   timeoutSeconds: 300
