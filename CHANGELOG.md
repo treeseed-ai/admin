@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.47] - 2026-07-12
+
+### Dependencies
+
+- build(deps): point @treeseed/core and @treeseed/sdk to git sources (ee1f2242c974)
+
 ## [0.12.46] - 2026-07-12
 
 ### Dependencies
