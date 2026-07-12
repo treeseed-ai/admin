@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.48] - 2026-07-12
+
+### Dependencies
+
+- build(deps): update @treeseed/core and @treeseed/sdk to git pointers (9e1d9a71227d)
+
 ## [0.12.47] - 2026-07-12
 
 ### Dependencies
