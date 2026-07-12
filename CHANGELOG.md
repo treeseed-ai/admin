@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.44] - 2026-07-12
+
+### Dependencies
+
+- build(build): preserve registry dependency lock semantics (58747b4b63f0)
+
 ## [0.12.43] - 2026-07-12
 
 ### Dependencies
