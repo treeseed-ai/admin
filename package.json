@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.42-dev.recovery-release-gate-dependency-hydrati.20260712T022533Z",
+  "version": "0.12.42",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,9 +48,9 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#412ed4ca6f22bb17a49411fa6936bed8fcc998a4",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#de6fe53d8132dd6c1d8b28c9cc333c25ee0e6651",
-    "@treeseed/ui": "0.12.9",
+    "@treeseed/core": "0.12.43",
+    "@treeseed/sdk": "0.12.46",
+    "@treeseed/ui": "0.12.10",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"

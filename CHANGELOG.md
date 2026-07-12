@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.42] - 2026-07-12
+
+### Tests
+
+- build(build): verify local-only reviewer through workspace links (792f12314fa2)
+
+### Dependencies
+
+- build(build): allow Railway deployments to settle before live (4f557c98f00b)
+- build(build): restore workspace links after release dependency hydration (ade03f00c783)
+- build(build): hydrate missing package dependencies before release (91cf41a4558e)
+- build(build): avoid release tag collisions after partial publication (a7b14dcb3482)
+- build(build): sync package dependency references (31adca31ce83)
+- build(admin): bump version and update dependencies (b1c86b517d33)
+- build(deps): update @treeseed/sdk and @treeseed/core git references (274efabdf23c)
+- build(deps): update @treeseed/core and @treeseed/sdk commit hashes (3493819a66da)
+- build(deps): update package version and dependency pointers (d29f1ba19c3a)
+
 ## [0.12.41] - 2026-07-11
 
 ### Added
