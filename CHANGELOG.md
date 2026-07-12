@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.46] - 2026-07-12
+
+### Dependencies
+
+- build(deps): update dependencies and version (9031fd09ab8a)
+
 ## [0.12.45] - 2026-07-12
 
 ### Dependencies
