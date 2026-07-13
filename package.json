@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.51-dev.recovery-production-railway-environment-.20260713T151546Z",
+  "version": "0.12.51",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,8 +48,8 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#d602007781f812c7f7dd1022e83581d70ed5a20e",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#7b7f39c1cc51d6285129fab267bc7a95cbcbc2e6",
+    "@treeseed/core": "0.12.52",
+    "@treeseed/sdk": "0.12.55",
     "@treeseed/ui": "0.12.16",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
