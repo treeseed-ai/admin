@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.49] - 2026-07-13
+
+### Dependencies
+
+- build(deps): pin @treeseed/core and @treeseed/sdk to git commits (d34df6edbde0)
+
 ## [0.12.48] - 2026-07-12
 
 ### Dependencies
