@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.50-dev.recovery-bulk-branch-cleanup-performance.20260713T130743Z",
+  "version": "0.12.50",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,8 +48,8 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#8476b78c9bddd8fe933c1c77cd4ecd493620c6a5",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#d7cb7bd0fba1c9d3901c44b033b2b66885a9d538",
+    "@treeseed/core": "0.12.51",
+    "@treeseed/sdk": "0.12.54",
     "@treeseed/ui": "0.12.16",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
