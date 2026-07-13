@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.50-dev.recovery-staging-git-source-invariant.20260713T024545Z",
+  "version": "0.12.50-dev.recovery-stage-branch-cleanup.20260713T032551Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,8 +48,8 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#7e0a3cd95e5bfdc040ecb4779a49525824657bd4",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#589c5ef8926858a3f1e2f5f02c7b4995ab68e65d",
+    "@treeseed/core": "github:treeseed-ai/core#c8d462086e3c3fdd668b1809e381a096588a0a2e",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#98a9f62804fa5742ce86ce910d1922726a116d14",
     "@treeseed/ui": "0.12.16",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
