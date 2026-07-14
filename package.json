@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.56",
+  "version": "0.12.57-dev.fix-railway-environment-source-isolation.20260714T115101Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,8 +48,8 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "0.12.57",
-    "@treeseed/sdk": "0.12.60",
+    "@treeseed/core": "github:treeseed-ai/core#ef40d729552065855cf77c0a7a1e0b6596f86df2",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#b0c561c0d492f085790b595e9e1c7efa939df4c7",
     "@treeseed/ui": "0.12.16",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
