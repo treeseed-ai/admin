@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.12.57] - 2026-07-15
+
+### Fixed
+
+- build(build): archive stale stage resumes after repository heads (6189581b2a50)
+- build(build): wait for Railway deployments before live hosting (2a0ecb6b8a58)
+- build(build): honor package deployment capabilities during staging (cc4322a344e1)
+- build(build): sync package dependency references (24b8f9dff6de)
+- build(build): bound remote Git workflow probes (58ff08ba5d11)
+- build(build): handle orphaned Railway volume migration (79be021ae3d7)
+- build(build): use Railway SDK for environment patch operations (ddf7953567a5)
+- build(build): classify stale Railway attachments from blocker records (2cd1dd76c1bf)
+- build(build): scope Railway migration cleanup to target environment (472aab253bc6)
+- build(build): resolve qualified Railway service from project inventory (c2c5d5d73fa7)
+- build(build): unblock exact inactive Railway migration attachment (c7afe12b1559)
+- build(build): detach only known empty Railway migration volumes (040be9aff3ad)
+- build(build): commit Railway restored volume patch (6131176e8491)
+- build(build): restore Railway volumes through native source snapshots (0848beaed3be)
+- build(build): retry Railway backup propagation safely (089162209c90)
+- build(build): treat Railway backup workflows as opaque (c9bb2d146828)
+- build(build): support Railway backup workflow identifiers (bc7c09fa4802)
+- build(build): preserve Railway volume data while splitting environment (6381b7fa8aa8)
+- build(build): isolate Railway staging and production service sources (000e191eb988)
+
+### Dependencies
+
+- chore(deps): update @treeseed/sdk and @treeseed/core pointers (387436fec937)
+- build(build): sync package dependency references (d1aa05ddfa7a)
+- build(build): enforce SDK-first Railway reconciliation (61af642e1bd7)
+- build(build): wait for Railway volume detach propagation (ecbcd8ace579)
+
 ## [0.12.56] - 2026-07-14
 
 ### Fixed
