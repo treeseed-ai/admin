@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.58",
+  "version": "0.12.59-dev.fix-railway-staged-apply.20260715T222245Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -48,8 +48,8 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "0.12.59",
-    "@treeseed/sdk": "0.12.62",
+    "@treeseed/core": "github:treeseed-ai/core#96d2d07fd429dbc0f7a0c74881a88415f55dfbba",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#6f21e05e67c1c112a22ab27968364f4355313d38",
     "@treeseed/ui": "0.12.17",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
