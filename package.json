@@ -48,9 +48,9 @@
   "dependencies": {
     "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#96d2d07fd429dbc0f7a0c74881a88415f55dfbba",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#6f21e05e67c1c112a22ab27968364f4355313d38",
-    "@treeseed/ui": "0.12.17",
+    "@treeseed/core": "github:treeseed-ai/core#3d6a2e47992cdbd399ddcfd8b6b3900be5c61e18",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#aa0ce40dfbe416fd791675a5660cbe937b6d52f7",
+    "@treeseed/ui": "github:treeseed-ai/ui#0f10f2a452d570eb3d4aa31a246c62f3adf49aa2",
     "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
