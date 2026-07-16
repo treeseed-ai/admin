@@ -8,12 +8,14 @@ import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { loadAppContext } from '../../../view-models/app-access.js';
+import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/csrf';
 
 if (!Astro.locals.auth?.principal) {
 	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/teams/new')}`);
 }
 
 let formError = '';
+const csrfToken = ensureCsrfToken(Astro);
 let formValues = {
 	name: '',
 	displayName: '',
@@ -23,6 +25,7 @@ let formValues = {
 
 if (Astro.request.method === 'POST') {
 	const data = await Astro.request.formData();
+	requireCsrf(Astro, data.get('csrfToken'));
 	formValues = {
 		name: String(data.get('name') ?? '').trim(),
 		displayName: String(data.get('displayName') ?? '').trim(),
@@ -57,6 +60,7 @@ const context = await loadAppContext(Astro);
 	<section class="ts-control-page" aria-label="New team">
 		<Panel eyebrow="Team" title="Create team" description="Teams own hosts, projects, capacity, work, and knowledge.">
 			<form id="team-create-form" class="ts-form-stack" method="POST" action="/app/teams/new">
+				<input type="hidden" name="csrfToken" value={csrfToken} />
 				{formError && <p class="ts-form-error" role="alert">{formError}</p>}
 				<div class="ts-form-grid">
 					<Field label="Name" name="name" required>

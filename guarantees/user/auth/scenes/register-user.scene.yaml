@@ -127,6 +127,12 @@ workflow:
         value: review-{{runShort}}
     expect:
       text: Username is available.
+  - id: verify-username-immutability
+    title: Verify permanent username disclosure
+    action:
+      keyboard: Tab
+    expect:
+      text: Your username is public and cannot be changed after registration.
   - id: enter-email
     title: Enter email
     action:
@@ -138,9 +144,7 @@ workflow:
         # independently traceable without reusing a prior registration.
         value: adrian.webb+review-{{runShort}}@knowledge.coop
     expect:
-      visible:
-        - role: textbox
-          name: Email
+      text: Email is available.
   - id: enter-password
     title: Enter password
     action:

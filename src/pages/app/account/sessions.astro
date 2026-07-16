@@ -1,0 +1,18 @@
+---
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import SessionManager from '@treeseed/ui/components/astro/account/SessionManager.astro';
+import { handleSessionRequest, loadAccountFrame } from '../../../view-models/account-settings';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/sessions')}`);
+const frame = await loadAccountFrame(Astro, 'sessions');
+const response = await handleSessionRequest(Astro, frame.api);
+if (response) return response;
+const sessions = await frame.api.accountSessions();
+---
+
+<TreeseedAppLayout title="Sessions" description="Review and revoke account sessions." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+	<SettingsTemplate title="Account sessions" description="The current device signs out through the dedicated logout flow." sections={frame.sections}>
+		<SessionManager sessions={sessions} csrfToken={frame.csrfToken} status={frame.status} error={frame.error} />
+	</SettingsTemplate>
+</TreeseedAppLayout>

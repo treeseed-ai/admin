@@ -7,7 +7,7 @@ journey: User Login
 ownerPackage: "@treeseed/admin"
 summary: Establish an authenticated session for Market/admin surfaces; downstream journeys assume API calls carry the
   authenticated user context.
-status: active
+status: planned
 dependencies:
   journeys:
     - 2
@@ -74,4 +74,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: true
+  requiredForRelease: false

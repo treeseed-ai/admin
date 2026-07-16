@@ -1,8 +1,6 @@
 ---
 import TreeseedPublicLayout from '../../layouts/TreeseedPublicLayout.astro';
-import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProfileHeader.astro';
-import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
-import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
+import ProfileTemplate from '@treeseed/ui/components/astro/templates/ProfileTemplate.astro';
 import { normalizeUsername, validateUsername } from '../../lib/auth/profile-validation';
 import { resolvePublicUserProfile } from '../../lib/market/public-access.js';
 
@@ -28,16 +26,7 @@ const joinedDate = user.joinedAt
 	description={`Public TreeSeed identity for @${user.username}.`}
 	currentPath={`/u/${user.username}`}
 >
-	<PublicStack>
-		<PublicProfileHeader
-			eyebrow="User identity"
-			name={displayName}
-			handle={`@${user.username}`}
-			imageSrc={user.image}
-			meta={joinedDate ? `Joined ${joinedDate}` : undefined}
-		/>
-		<PublicSection title="TreeSeed account" eyebrow="Public identity">
-			<p>This profile confirms the public username and display identity associated with a TreeSeed account.</p>
-		</PublicSection>
-	</PublicStack>
+	<ProfileTemplate title={displayName} description="Public TreeSeed account identity." handle={user.username} image={user.image} metadata={joinedDate ? [{ label: 'Joined', value: joinedDate }] : []}>
+		<p>This profile confirms the public username and display identity associated with a TreeSeed account.</p>
+	</ProfileTemplate>
 </TreeseedPublicLayout>

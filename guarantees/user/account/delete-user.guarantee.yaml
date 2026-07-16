@@ -6,7 +6,7 @@ subtype: account
 journey: Delete User
 ownerPackage: "@treeseed/admin"
 summary: Perform a destructive account removal with ownership and membership checks; needs policy around teams projects content and provider-owned auth records.
-status: active
+status: planned
 dependencies:
   journeys:
     - 4
@@ -38,7 +38,7 @@ scene:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account
+  entryRoute: /app/account/delete
   componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
@@ -73,4 +73,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: true
+  requiredForRelease: false

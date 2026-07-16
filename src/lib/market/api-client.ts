@@ -1,6 +1,7 @@
 import type { APIContext } from 'astro';
 import { TREESEED_REMOTE_CONTRACT_HEADER, TREESEED_REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/remote';
 import { getSiteAuthConfig } from '../auth/config';
+import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 
 type AstroLike = Pick<APIContext, 'locals' | 'cookies' | 'url' | 'request'>;
 
@@ -160,6 +161,33 @@ export class ApiClientFacade {
 	get currentPrincipal() {
 		return this.context.locals.auth?.principal ?? null;
 	}
+
+	accountIdentity() { return this.request<AccountIdentity>('GET', '/v1/auth/web/account/identity'); }
+	authProviders() { return this.request<AuthProviderCapability[]>('GET', '/v1/auth/providers'); }
+	requestPasswordReset(email: string) { return this.request<{ accepted: true }>('POST', '/v1/auth/web/password-reset/request', { body: { email } }); }
+	completePasswordReset(token: string, newPassword: string) { return this.request<{ changed: true }>('POST', '/v1/auth/web/password-reset/complete', { body: { token, newPassword } }); }
+	confirmEmail(token: string) { return this.request<WebAuthenticationResult>('POST', '/v1/auth/web/confirm-email', { body: { token } }); }
+	approveDevice(userCode: string) { return this.request<{ approved: true }>('POST', '/v1/auth/device/approve', { body: { userCode } }); }
+	claimUsername(username: string) { return this.request<UsernameClaimResult>('PATCH', '/v1/auth/web/username', { body: { username } }); }
+	updateAccountProfile(body: { firstName: string; lastName: string; image?: string | null }) { return this.request<AccountMutationResult>('PATCH', '/v1/auth/web/profile', { body }); }
+	addAccountEmail(email: string) { return this.request<AccountEmailMutationResult>('POST', '/v1/auth/web/emails', { body: { email } }); }
+	resendAccountEmail(emailId: string) { return this.request<AccountEmailMutationResult>('POST', `/v1/auth/web/emails/${encodeURIComponent(emailId)}/verify`, { body: {} }); }
+	setPrimaryAccountEmail(emailId: string) { return this.request<AccountEmailMutationResult>('POST', `/v1/auth/web/emails/${encodeURIComponent(emailId)}/primary`, { body: {} }); }
+	deleteAccountEmail(emailId: string) { return this.request<AccountEmailAddress[]>('DELETE', `/v1/auth/web/emails/${encodeURIComponent(emailId)}`); }
+	updateAccountPassword(body: { currentPassword?: string; password: string; reauthenticationGrantId?: string }) { return this.request<{ changed: true }>('PATCH', '/v1/auth/web/password', { body }); }
+	unlinkAccountProvider(identityId: string) { return this.request<AccountMutationResult>('DELETE', `/v1/auth/web/providers/${encodeURIComponent(identityId)}`); }
+	accountSessions() { return this.request<AccountWebSession[]>('GET', '/v1/auth/web/sessions'); }
+	revokeAccountSession(sessionId: string) { return this.request<AccountMutationResult>('POST', `/v1/auth/web/sessions/${encodeURIComponent(sessionId)}/revoke`, { body: {} }); }
+	notificationPreferences() { return this.request<NotificationPreferences>('GET', '/v1/auth/web/notifications/preferences'); }
+	accountNotifications(limit = 20) { return this.request<AccountNotification[]>('GET', `/v1/auth/web/notifications?limit=${encodeURIComponent(String(limit))}`); }
+	updateNotificationPreferences(body: NotificationPreferences) { return this.request<NotificationPreferences>('PUT', '/v1/auth/web/notifications/preferences', { body }); }
+	listProjectsForPrincipal() { return this.request<NotificationProject[]>('GET', '/v1/projects'); }
+	personalThemes() { return this.request<PersonalTheme[]>('GET', '/v1/auth/web/themes'); }
+	createPersonalTheme(body: PersonalThemeDraft) { return this.request<PersonalTheme>('POST', '/v1/auth/web/themes', { body }); }
+	updatePersonalTheme(id: string, body: PersonalThemeDraft) { return this.request<PersonalTheme>('PATCH', `/v1/auth/web/themes/${encodeURIComponent(id)}`, { body }); }
+	deletePersonalTheme(id: string) { return this.request<AccountMutationResult>('DELETE', `/v1/auth/web/themes/${encodeURIComponent(id)}`); }
+	accountDeletionBlockers() { return this.request<{ blockers: AccountDeletionBlocker[]; canDelete: boolean }>('GET', '/v1/auth/web/account/deletion-blockers'); }
+	deleteCurrentAccount(body: { confirmation: string; currentPassword?: string; reauthenticationGrantId?: string }) { return this.request<{ deleted: true }>('DELETE', '/v1/auth/web/account', { body }); }
 
 	listTeamsForPrincipal() {
 		return this.request<any[]>('GET', '/v1/teams');

@@ -1,0 +1,20 @@
+---
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import AccountIdentitySettings from '@treeseed/ui/components/astro/account/AccountIdentitySettings.astro';
+import { handleIdentityRequest, loadAccountFrame } from '../../../view-models/account-settings';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account')}`);
+const frame = await loadAccountFrame(Astro, 'identity');
+const response = await handleIdentityRequest(Astro, frame.api);
+if (response) return response;
+const identity = await frame.api.accountIdentity();
+const providers = await frame.api.authProviders();
+const passwordGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
+---
+
+<TreeseedAppLayout title="Account" description="Manage your identity and sign-in methods." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+	<SettingsTemplate title="Account identity" description="Your public identity, verified email addresses, password, and connected providers." sections={frame.sections}>
+		<AccountIdentitySettings identity={identity} availableProviders={providers} callbackBaseUrl={Astro.url.origin} passwordGrantId={passwordGrantId} csrfToken={frame.csrfToken} status={frame.status} error={frame.error} />
+	</SettingsTemplate>
+</TreeseedAppLayout>

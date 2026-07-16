@@ -4,16 +4,24 @@ import { resolveApiBaseUrl, setApiAccessTokenCookie } from '../../../lib/market/
 
 export const prerender = false;
 
-export const GET: APIRoute = async (context) => {
+const callback: APIRoute = async (context) => {
 	const provider = context.params.provider ?? 'unknown';
 	if (!isSupportedAuthProvider(provider)) {
 		return context.redirect('/auth/sign-in?error=unsupported_provider', 302);
 	}
 	const target = new URL(`/v1/auth/oauth/${provider}/callback`, resolveApiBaseUrl(context.locals));
-	target.search = context.url.search;
+	let body: URLSearchParams | undefined;
+	if (context.request.method === 'POST') {
+		const form = await context.request.formData();
+		body = new URLSearchParams();
+		for (const [key, value] of form) if (typeof value === 'string') body.append(key, value);
+	} else {
+		target.search = context.url.search;
+	}
 	const response = await fetch(target, {
-		method: 'GET',
-		headers: { accept: 'application/json' },
+		method: context.request.method === 'POST' ? 'POST' : 'GET',
+		headers: { accept: 'application/json', ...(body ? { 'content-type': 'application/x-www-form-urlencoded' } : {}) },
+		body,
 		redirect: 'manual',
 	});
 	const envelope = await response.json().catch(() => null);
@@ -29,3 +37,6 @@ export const GET: APIRoute = async (context) => {
 	for (const cookie of context.cookies.headers()) redirect.headers.append('set-cookie', cookie);
 	return redirect;
 };
+
+export const GET = callback;
+export const POST = callback;

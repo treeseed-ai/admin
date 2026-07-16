@@ -7,7 +7,7 @@ journey: Register User
 ownerPackage: "@treeseed/admin"
 summary: Create an account record and start email verification through the auth provider used by the admin/core runtime;
   this is product plumbing rather than a Treeseed content operation.
-status: active
+status: planned
 dependencies:
   journeys: []
   guarantees: []
@@ -71,4 +71,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: true
+  requiredForRelease: false

@@ -80,15 +80,15 @@ workflow:
   - id: open-entry-route
     title: Open Manage Sessions
     action:
-      goto: /app/account
+      goto: /app/account/sessions
     expect:
-      urlIncludes: /app/account
+      urlIncludes: /app/account/sessions
   - id: inspect-service-surface
     title: Inspect Manage Sessions service surface
     action:
       keyboard: Tab
     expect:
-      urlIncludes: /app/account
+      urlIncludes: /app/account/sessions
 chapters: []
 overlays: []
 diagrams: []

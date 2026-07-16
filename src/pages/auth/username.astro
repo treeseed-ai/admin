@@ -1,25 +1,35 @@
 ---
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
-import { resolveAnonymousThemePreference } from '../../lib/auth/appearance';
+import UsernameClaimForm from '@treeseed/ui/components/astro/auth/UsernameClaimForm.astro';
+import { resolveAuthenticatedThemePreference } from '../../lib/auth/appearance';
 import { normalizeReturnTo } from '../../lib/auth/flow';
+import { ensureCsrfToken, requireCsrf } from '../../lib/auth/csrf';
+import { createApiFacade, setApiAccessTokenCookie } from '../../lib/market/api-client';
 
 export const prerender = false;
-
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`, 302);
 const returnTo = normalizeReturnTo(Astro);
-const appearance = resolveAnonymousThemePreference(Astro);
+const existing = String(Astro.locals.auth.principal.metadata?.username ?? '');
+if (existing) return Astro.redirect(returnTo, 302);
+let error = Astro.url.searchParams.get('error') ?? '';
+let value = '';
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	value = String(form.get('username') ?? '');
+	try {
+		requireCsrf(Astro, form.get('csrfToken'));
+		const result = await createApiFacade(Astro).claimUsername(value);
+		if (result.accessToken) setApiAccessTokenCookie(Astro, result.accessToken, Number(result.expiresInSeconds ?? 900));
+		const redirect = Astro.redirect(returnTo, 303);
+		for (const cookie of Astro.cookies.headers()) redirect.headers.append('set-cookie', cookie);
+		return redirect;
+	} catch (caught) { error = caught instanceof Error ? caught.message : 'Username could not be assigned.'; }
+}
+const appearance = await resolveAuthenticatedThemePreference(Astro);
 ---
-
-<AuthShell title="Username Managed | TreeSeed" description="Usernames are managed by the API." appearance={appearance}>
-	<AuthCard
-		title="Username already configured"
-		description="TreeSeed Market usernames are now assigned during account creation by the backend API."
-		appearance={appearance}
-	>
-		<FormActions>
-			<Button href={returnTo}>Continue</Button>
-		</FormActions>
+<AuthShell title="Choose Username | TreeSeed" description="Choose your permanent public TreeSeed username." appearance={appearance}>
+	<AuthCard title="Choose your username" description="This is the final step for a provider-created account." error={error} appearance={appearance}>
+		<UsernameClaimForm csrfToken={ensureCsrfToken(Astro)} value={value} />
 	</AuthCard>
 </AuthShell>

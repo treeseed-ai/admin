@@ -14,13 +14,15 @@ Add `@treeseed/admin/plugin` to the host `treeseed.site.yaml`, use the config he
 
 ## Current route surface
 
-- `/app` and `/app/account`
+- `/app` and focused account routes for Identity, Sessions, Notifications, Appearance, and Delete
 - `/app/teams`, team creation, edit, delete, membership, and active-team selection
 - registration, verification, sign-in/out, recovery, OAuth callback, username, and device approval
 - `/u/[username]` and `/t/[name]` identity-only public profiles
 - invitation acceptance and the shared `/v1/[...all]` API facade
 
-`ADMIN_ROUTES` is exported from `@treeseed/admin/routes` and is tested against the package page tree. There are no project, capacity, host, work, knowledge, catalog, seller, commerce, or Markdown-preview routes and no compatibility redirects for them.
+`ADMIN_ROUTES` and `ADMIN_SUPPORT_ROUTES` are exported from `@treeseed/admin/routes`, use the SDK route-capability contract, and are tested against the package page tree. Account routes contain only focused controllers and standardized UI-package composition. There are no project, capacity, host, work, knowledge, catalog, seller, commerce, or Markdown-preview routes and no compatibility redirects for them.
+
+Browser mutations use one double-submit CSRF contract at the cookie-to-bearer boundary. Registration checks both permanent username availability and privacy-safe email usability. Provider state/nonce/PKCE, account policy, notifications, personal themes, and deletion cleanup remain API-owned; Admin owns only session glue and focused view models.
 
 ## Preserved non-UI contracts
 

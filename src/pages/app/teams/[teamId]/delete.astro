@@ -10,6 +10,7 @@ import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
 import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
 import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
+import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/csrf';
 
 const teamParam = String(Astro.params.teamId ?? '');
 if (!Astro.locals.auth?.principal) {
@@ -33,10 +34,12 @@ const blockerRows = Object.entries(blockers ?? {})
 const hasDeletionBlockers = blockerRows.length > 0;
 const confirmation = team ? `DELETE ${team.name}` : '';
 let formError = '';
+const csrfToken = ensureCsrfToken(Astro);
 let confirmationValue = '';
 
 if (Astro.request.method === 'POST' && team && canManageTeam) {
 	const data = await Astro.request.formData();
+	requireCsrf(Astro, data.get('csrfToken'));
 	confirmationValue = String(data.get('confirmation') ?? '');
 	if (hasDeletionBlockers) {
 		formError = 'Blocking records must be removed before this team can be deleted.';
@@ -65,6 +68,7 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 			<Panel eyebrow="Team" title="Delete team" description="This action is permanent. Blocking records must be removed first.">
 				<PlainTable columns={[{ key: 'name', label: 'Blocker' }, { key: 'value', label: 'Count' }]} rows={blockerRows} emptyTitle="No blockers found" emptyDescription="This team can be deleted after confirmation." />
 				<form id="team-delete-form" class="ts-form-stack ts-stack-top" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/delete`}>
+					<input type="hidden" name="csrfToken" value={csrfToken} />
 					{formError && <p class="ts-form-error" role="alert">{formError}</p>}
 					<Field label={`Type "${confirmation}"`} name="confirmation" required>
 						<TextInput name="confirmation" required value={confirmationValue} data-confirmation-input />

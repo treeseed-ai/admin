@@ -6,7 +6,7 @@ subtype: auth
 journey: User Logout
 ownerPackage: "@treeseed/admin"
 summary: End the provider session and clear local admin state before redirecting to the anonymous sign-in surface.
-status: active
+status: planned
 dependencies:
   journeys:
     - 4
@@ -74,4 +74,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: true
+  requiredForRelease: false

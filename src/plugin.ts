@@ -1,7 +1,7 @@
 import { envField } from 'astro/config';
 import { defineTreeseedPlugin } from '@treeseed/sdk/platform/plugin';
 import type { TreeseedPlugin } from '@treeseed/sdk/platform/plugin';
-import { ADMIN_ROUTES } from './routes.js';
+import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from './routes.js';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from './commerce.js';
 import { DEFAULT_SECRET_MANAGER_PROVIDERS } from './secret-managers.js';
 
@@ -112,7 +112,7 @@ const adminPlugin: TreeseedPlugin = defineTreeseedPlugin({
   id: '@treeseed/admin',
   siteLayers: [{ root: '.', kinds: ['pages', 'styles', 'components'] }],
   siteHooks: {
-    routes: ADMIN_ROUTES,
+    routes: [...ADMIN_ROUTES, ...ADMIN_SUPPORT_ROUTES],
     customCss: [
       '@treeseed/ui/styles/tokens.css',
       '@treeseed/ui/styles/theme.css',

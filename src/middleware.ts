@@ -3,18 +3,25 @@ import { resolveEditorialPreview } from '@treeseed/core/middleware/editorial-pre
 import { getSiteAuthConfig, localAuthCanonicalRedirectUrl } from './lib/auth/config';
 import { apiAccessTokenFromCookies, clearApiAccessTokenCookie, resolveApiBaseUrl } from './lib/market/api-client';
 import { ensureLocalCloudflareRuntime } from './lib/runtime/local-cloudflare';
+import { ensureCsrfToken } from './lib/auth/csrf';
 
 const DEV_RESET_COOKIE = 'ts_market_dev_reset';
 const PUBLIC_ROUTE_PREFIXES = [
 	'/auth/',
 	'/u/',
 	'/t/',
-	'/knowledge',
+	'/team-invites/',
+	'/agents',
 	'/books',
-	'/book',
+	'/contact',
+	'/decisions',
+	'/docs-runtime',
 	'/notes',
-	'/chronicles',
-	'/profiles',
+	'/objectives',
+	'/people',
+	'/proposals',
+	'/questions',
+	'/ui',
 	'/v1/',
 	'/_astro/',
 ];
@@ -51,13 +58,22 @@ function envValue(context: any, name: string) {
 }
 
 function isPublicRoute(pathname: string) {
+	if (pathname === '/app' || pathname.startsWith('/app/')) return false;
 	if (pathname === '/' || pathname === '/favicon.svg' || pathname === '/logo.svg' || pathname === '/robots.txt') return true;
 	if (PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix))) return true;
-	return PUBLIC_FILE_EXTENSIONS.some((extension) => pathname.endsWith(extension));
+	if (PUBLIC_FILE_EXTENSIONS.some((extension) => pathname.endsWith(extension))) return true;
+	return true;
 }
 
 function authRedirectFor(context: any) {
-	if (context.locals.auth?.principal) return null;
+	if (context.locals.auth?.principal) {
+		const username = String(context.locals.auth.principal.metadata?.username ?? '').trim();
+		if (!username && !isPublicRoute(context.url.pathname) && context.url.pathname !== '/auth/username') {
+			const returnTo = `${context.url.pathname}${context.url.search}`;
+			return context.redirect(`/auth/username?returnTo=${encodeURIComponent(returnTo)}`, 302);
+		}
+		return null;
+	}
 	if (isPublicRoute(context.url.pathname)) return null;
 	const returnTo = `${context.url.pathname}${context.url.search}`;
 	return context.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`, 302);
@@ -105,6 +121,7 @@ async function loadApiBackedWebSession(context: any) {
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	await ensureLocalCloudflareRuntime(context.locals);
+	ensureCsrfToken(context);
 	const config = getSiteAuthConfig(context);
 	const resetCookieBoundary = applyLocalDevResetCookieBoundary(context);
 	const canonicalLocalUrl = localAuthCanonicalRedirectUrl(context.url, config.siteBaseUrl);

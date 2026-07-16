@@ -1,0 +1,83 @@
+schemaVersion: treeseed.scene/v1
+id: user.account.manage-notifications.008
+title: Manage Notifications
+description: Configure canonical account notification preferences and capture reviewable evidence.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves:
+    - Notification cadence is independent from immediate in-app visibility.
+    - Global content types apply unless an authorized project exact-replacement override is selected.
+    - The notification preference implementation is the shared UI-package component.
+  minimumSteps: 4
+  requiresInteractiveAction: true
+  consumesState:
+    - { key: auth.owner, kind: user }
+mode: { test: true, demo: true, training: true }
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport: { width: 1600, height: 900 }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      orientation: landscape
+      viewport: { width: 1600, height: 900 }
+      video: { width: 1600, height: 900 }
+      output: { width: 1920, height: 1080 }
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: mobile_chromium
+      title: Mobile Chromium
+      orientation: portrait
+      viewport: { width: 390, height: 844 }
+      video: { width: 390, height: 844 }
+      output: { width: 390, height: 844 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: owner, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-notifications
+    title: Open notification preferences
+    action: { goto: /app/account/notifications }
+    expect: { urlIncludes: /app/account/notifications, text: Notification preferences }
+  - id: select-weekly
+    title: Select weekly email cadence
+    action: { click: { role: radio, name: Weekly } }
+    expect: { text: In-app notifications remain immediate. }
+  - id: select-questions
+    title: Select questions globally
+    action: { click: { role: checkbox, name: Questions } }
+    expect: { text: These choices apply to every project }
+  - id: save-preferences
+    title: Save notification preferences
+    action: { click: { role: button, name: Save notification preferences } }
+    expect: { urlIncludes: /app/account/notifications, text: Notification preferences saved. }
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+    capture:
+      viewport: { width: 1600, height: 900 }
+      video: { width: 1600, height: 900 }
+      evidenceFit: fixed-browser
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: false }

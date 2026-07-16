@@ -10,6 +10,7 @@ import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.as
 import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
 import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
 import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
+import { ensureCsrfToken } from '../../../../lib/auth/csrf';
 
 const teamParam = String(Astro.params.teamId ?? '');
 if (!Astro.locals.auth?.principal) {
@@ -18,6 +19,7 @@ if (!Astro.locals.auth?.principal) {
 const context = await loadAppContext(Astro);
 const teamResolution = resolveAppTeam(context, teamParam);
 const team = teamResolution.resource;
+const csrfToken = ensureCsrfToken(Astro);
 if (teamResolution.team?.id && teamResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, teamResolution.team);
 const manageableRoles = new Set(['team_owner', 'project_lead']);
 const access = team && context.store && typeof context.store.getTeamAccessSummary === 'function'
@@ -89,11 +91,11 @@ const rows = members.map((member: any) => ({
 	)}
 </TreeseedAppLayout>
 
-<script is:inline define:vars={{ teamId: team?.id ?? '' }}>
+<script is:inline define:vars={{ teamId: team?.id ?? '', csrfToken }}>
 	const status = document.getElementById('member-status');
 	const inviteForm = document.getElementById('invite-form');
 	async function send(url, method, body) {
-		const response = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+		const response = await fetch(url, { method, headers: { 'content-type': 'application/json', 'x-treeseed-csrf': csrfToken }, body: body ? JSON.stringify(body) : undefined });
 		const payload = await response.json().catch(() => null);
 		if (!response.ok || payload?.ok === false) throw new Error(payload?.error ?? 'Request failed.');
 		return payload.payload;

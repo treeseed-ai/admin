@@ -39,15 +39,8 @@ export interface PublicUserProfile {
 		id: string;
 		username: string;
 		displayName: string | null;
-		email: string | null;
 		image: string | null;
 		joinedAt: string;
-	};
-	activity: {
-		teams: Array<{ id: string; slug: string; name: string; createdAt?: string }>;
-		projects: Array<{ id: string; teamId: string; slug: string; name: string; description?: string | null; createdAt?: string }>;
-		catalogItems: Array<{ id: string; teamId: string; kind: string; slug: string; title: string; summary?: string | null; visibility?: string }>;
-		knowledgePacks: Array<{ id: string; teamId: string; slug: string; name: string; summary?: string | null; visibility?: string }>;
 	};
 }
 

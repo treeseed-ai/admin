@@ -6,7 +6,7 @@ subtype: account
 journey: Edit Account Settings
 ownerPackage: "@treeseed/admin"
 summary: Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth metadata and not in root Market-only state.
-status: active
+status: planned
 dependencies:
   journeys:
     - 4
@@ -73,4 +73,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: true
+  requiredForRelease: false

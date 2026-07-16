@@ -41,6 +41,11 @@ verifiers:
     caseId: auth.appearance.team-owner
     ownerPackage: "@treeseed/api"
     description: Authenticated users can update appearance preference.
+  api.auth.notifications:
+    kind: apiAcceptanceCase
+    caseId: auth.notifications.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Authenticated users can replace global and authorized-project notification preferences without data leakage.
   api.auth.account.blockers:
     kind: apiAcceptanceCase
     caseId: auth.account-blockers.team-viewer

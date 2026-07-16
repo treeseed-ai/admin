@@ -9,6 +9,7 @@ import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
 import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
+import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/csrf';
 
 const teamId = String(Astro.params.teamId ?? '');
 if (!Astro.locals.auth?.principal) {
@@ -27,6 +28,7 @@ if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 :
 else if (!canManageTeam) Astro.response.status = 403;
 
 let formError = '';
+const csrfToken = ensureCsrfToken(Astro);
 const saved = Astro.url.searchParams.get('saved') === '1';
 const formValues = {
 	name: team?.name ?? '',
@@ -37,6 +39,7 @@ const formValues = {
 
 if (Astro.request.method === 'POST' && team && canManageTeam) {
 	const data = await Astro.request.formData();
+	requireCsrf(Astro, data.get('csrfToken'));
 	const body = {
 		name: String(data.get('name') ?? '').trim(),
 		displayName: String(data.get('displayName') ?? '').trim(),
@@ -64,6 +67,7 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 		<section class="ts-control-page" aria-label="Edit team">
 			<Panel eyebrow="Team" title="Edit team" description="Update the team fields.">
 				<form id="team-edit-form" class="ts-form-stack" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/edit`}>
+					<input type="hidden" name="csrfToken" value={csrfToken} />
 					{formError && <p class="ts-form-error" role="alert">{formError}</p>}
 					{saved && !formError && <p class="ts-subtle" role="status">Saved.</p>}
 					<div class="ts-form-grid">

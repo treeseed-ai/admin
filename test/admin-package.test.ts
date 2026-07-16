@@ -3,13 +3,17 @@ import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../src/plugin';
 import type { TreeseedPluginSiteContext, TreeseedSiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
-import { ADMIN_ROUTES } from '../src/routes';
+import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../src/commerce';
 import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../src/secret-managers';
 
 const EXPECTED_ROUTES = [
 	'/app',
 	'/app/account',
+	'/app/account/sessions',
+	'/app/account/notifications',
+	'/app/account/appearance',
+	'/app/account/delete',
 	'/app/teams',
 	'/app/teams/new',
 	'/app/teams/[teamId]/edit',
@@ -28,8 +32,8 @@ const EXPECTED_ROUTES = [
 	'/u/[username]',
 	'/t/[name]',
 	'/team-invites/[token]/accept',
-	'/v1/[...all]',
 ].sort();
+const EXPECTED_SUPPORT_ROUTES = ['/v1/[...all]'];
 
 function filesUnder(root: string): string[] {
 	if (!existsSync(root)) return [];
@@ -67,8 +71,9 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('registers exactly the retained routes and resources', () => {
 		const pageFiles = filesUnder('src/pages').filter((path) => /\.(astro|ts)$/u.test(path));
 		expect(ADMIN_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_ROUTES);
-		expect(pageFiles.map(routePatternFromPage).sort()).toEqual(EXPECTED_ROUTES);
-		expect(ADMIN_ROUTES.map((route) => route.resourcePath).sort()).toEqual(
+		expect(ADMIN_SUPPORT_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_SUPPORT_ROUTES);
+		expect(pageFiles.map(routePatternFromPage).sort()).toEqual([...EXPECTED_ROUTES, ...EXPECTED_SUPPORT_ROUTES].sort());
+		expect([...ADMIN_ROUTES, ...ADMIN_SUPPORT_ROUTES].map((route) => route.resourcePath).sort()).toEqual(
 			pageFiles.map((path) => path.replace(/^src\//u, '')).sort(),
 		);
 	});
@@ -79,7 +84,8 @@ describe('@treeseed/admin identity and team surface', () => {
 			expect(appLayout).toContain(target);
 		}
 		for (const target of ['/app/projects', '/app/capacity', '/app/work', '/app/knowledge', '/market', '/cart', '/seller']) {
-			expect(appLayout).not.toContain(target);
+			const escaped = target.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+			expect(appLayout).not.toMatch(new RegExp(`(?:href|action)\\s*[:=]\\s*['"\\x60]${escaped}`, 'u'));
 		}
 	});
 

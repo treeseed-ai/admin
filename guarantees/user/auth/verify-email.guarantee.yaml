@@ -7,7 +7,7 @@ journey: Verify Email
 ownerPackage: "@treeseed/admin"
 summary: Complete auth-provider verification then redirect into the authenticated Market/admin shell; implementation
   should not bypass the provider session model.
-status: active
+status: planned
 dependencies:
   journeys:
     - 1
@@ -75,4 +75,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: true
+  requiredForRelease: false

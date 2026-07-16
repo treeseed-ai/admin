@@ -78,9 +78,9 @@ export function authProviderCapabilities(context: Pick<APIContext, 'locals'>) {
 }
 
 export function providerSignInPath(context: Pick<APIContext, 'locals' | 'url'>, provider: SupportedAuthProvider, returnTo = normalizeReturnTo(context)) {
-	const target = new URL(`/v1/auth/oauth/${provider}/start`, resolveApiBaseUrl(context.locals));
+	const target = new URL(`/v1/auth/oauth/${provider}/start`, context.url.origin);
 	target.searchParams.set('returnTo', returnTo);
-	target.searchParams.set('callbackUrl', `${context.url.origin}/auth/callback/${provider}?returnTo=${encodeURIComponent(returnTo)}`);
+	target.searchParams.set('callbackUrl', `${context.url.origin}/auth/callback/${provider}`);
 	return target.toString();
 }
 

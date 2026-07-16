@@ -1,0 +1,19 @@
+---
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import PersonalThemeManager from '@treeseed/ui/components/astro/account/PersonalThemeManager.astro';
+import { resolveAuthenticatedThemePreference } from '../../../lib/auth/appearance';
+import { handleAppearanceRequest, loadAccountFrame } from '../../../view-models/account-settings';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/appearance')}`);
+const frame = await loadAccountFrame(Astro, 'appearance');
+const response = await handleAppearanceRequest(Astro, frame.api);
+if (response) return response;
+const [themes, appearance] = await Promise.all([frame.api.personalThemes(), resolveAuthenticatedThemePreference(Astro)]);
+---
+
+<TreeseedAppLayout title="Appearance" description="Create personal themes for the TreeSeed selector." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+	<SettingsTemplate title="Personal themes" description="Create and maintain themes here; select the active theme only from the application header." sections={frame.sections}>
+		<PersonalThemeManager themes={themes} activeScheme={appearance.scheme} csrfToken={frame.csrfToken} status={frame.status} error={frame.error} />
+	</SettingsTemplate>
+</TreeseedAppLayout>

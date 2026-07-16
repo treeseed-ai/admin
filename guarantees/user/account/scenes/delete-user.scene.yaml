@@ -80,15 +80,15 @@ workflow:
   - id: open-entry-route
     title: Open Delete User
     action:
-      goto: /app/account
+      goto: /app/account/delete
     expect:
-      urlIncludes: /app/account
+      urlIncludes: /app/account/delete
   - id: inspect-service-surface
     title: Inspect Delete User service surface
     action:
       keyboard: Tab
     expect:
-      urlIncludes: /app/account
+      urlIncludes: /app/account/delete
 chapters: []
 overlays: []
 diagrams: []

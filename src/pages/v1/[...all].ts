@@ -6,6 +6,7 @@ import {
 	resolveApiBaseUrl,
 	setApiAccessTokenCookie,
 } from '../../lib/market/api-client';
+import { csrfMatches, WEB_CSRF_HEADER } from '../../lib/auth/csrf';
 
 export const prerender = false;
 
@@ -77,17 +78,20 @@ export const ALL: APIRoute = async (context) => {
 	upstream.search = context.url.search;
 
 	const headers = copyClientHeaders(context.request);
+	const incomingMethod = context.request.method.toUpperCase();
+	if (!['GET', 'HEAD', 'OPTIONS'].includes(incomingMethod)) {
+		const candidate = context.request.headers.get(WEB_CSRF_HEADER);
+		if (!csrfMatches(context, candidate)) {
+			return new Response(JSON.stringify({ ok: false, error: 'The request failed CSRF validation.', code: 'csrf' }), { status: 403, headers: { 'content-type': 'application/json' } });
+		}
+	}
 	const token = apiAccessTokenFromCookies(context);
 	for (const [name, value] of apiServiceHeaders(context, { skipUserAssertion: Boolean(token) })) {
 		headers.set(name, value);
 	}
 	if (token) headers.set('authorization', `Bearer ${token}`);
 
-	let method = context.request.method.toUpperCase();
-	const logoutRedirect = path === 'auth/logout' && method === 'GET'
-		? (context.url.searchParams.get('returnTo') ?? '/')
-		: null;
-	if (logoutRedirect) method = 'POST';
+	const method = context.request.method.toUpperCase();
 	const body = ['GET', 'HEAD'].includes(method) ? undefined : await context.request.arrayBuffer();
 	const response = await fetch(upstream, {
 		method,
@@ -99,18 +103,6 @@ export const ALL: APIRoute = async (context) => {
 	const responseHeaders = new Headers();
 	for (const [name, value] of response.headers) {
 		if (!hopByHopHeaders.has(name.toLowerCase())) responseHeaders.set(name, value);
-	}
-	if (logoutRedirect) {
-		clearApiAccessTokenCookie(context);
-		for (const cookie of context.cookies.headers()) {
-			responseHeaders.append('set-cookie', cookie);
-		}
-		const target = logoutRedirect.startsWith('/') && !logoutRedirect.startsWith('//') ? logoutRedirect : '/';
-		responseHeaders.set('location', target);
-		return new Response(null, {
-			status: 303,
-			headers: responseHeaders,
-		});
 	}
 	if (isAuthPath(path) && (response.headers.get('content-type') ?? '').includes('application/json')) {
 		const envelope = await response.clone().json().catch(() => null);

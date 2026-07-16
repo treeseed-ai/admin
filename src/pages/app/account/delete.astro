@@ -1,0 +1,19 @@
+---
+import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import AccountDeletionPanel from '@treeseed/ui/components/astro/account/AccountDeletionPanel.astro';
+import { handleDeletionRequest, loadAccountFrame } from '../../../view-models/account-settings';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/delete')}`);
+const frame = await loadAccountFrame(Astro, 'delete');
+const response = await handleDeletionRequest(Astro, frame.api);
+if (response) return response;
+const [identity, deletion, providers] = await Promise.all([frame.api.accountIdentity(), frame.api.accountDeletionBlockers(), frame.api.authProviders()]);
+const reauthenticationGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
+---
+
+<TreeseedAppLayout title="Delete account" description="Review blockers and permanently delete this account." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+	<SettingsTemplate title="Delete account" description="Deletion requires exact confirmation and recent authentication." sections={frame.sections}>
+		<AccountDeletionPanel blockers={deletion.blockers} hasCredential={identity.hasCredential} providers={providers} connectedProviderIds={identity.providers.map((provider) => provider.provider)} callbackBaseUrl={Astro.url.origin} reauthenticationGrantId={reauthenticationGrantId} csrfToken={frame.csrfToken} error={frame.error} />
+	</SettingsTemplate>
+</TreeseedAppLayout>
