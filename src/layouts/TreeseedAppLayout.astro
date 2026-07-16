@@ -6,12 +6,7 @@ import '@treeseed/ui/styles/forms.css';
 import '@treeseed/ui/styles/app-shell.css';
 import '@treeseed/ui/styles/app-controls.css';
 import '@treeseed/ui/styles/auth.css';
-import '@treeseed/ui/styles/operations.css';
-import '@treeseed/ui/styles/pie-allocation.css';
 import ProductShell from '@treeseed/ui/components/astro/shell/ProductShell.astro';
-import DeleteConfirmationModal from '@treeseed/ui/components/astro/app/controls/DeleteConfirmationModal.astro';
-import SensitiveDataUnlock from '@treeseed/ui/components/astro/app/sensitive/SensitiveDataUnlock.astro';
-import type { FeedbackContext, HelpContext } from '@treeseed/ui';
 import { resolveAuthenticatedThemePreference } from '../lib/auth/appearance';
 
 interface TeamEntry {
@@ -27,62 +22,21 @@ interface Props {
 	currentPath: string;
 	teams: TeamEntry[];
 	activeTeam?: TeamEntry | null;
-	showSensitiveUnlock?: boolean;
-	helpContext?: HelpContext;
-	feedbackContext?: FeedbackContext;
 }
 
 const {
 	title,
-	description = 'Set up teams, hosts, projects, capacity, work, and knowledge.',
+	description = 'Manage your account, teams, and active team.',
 	currentPath,
 	teams,
 	activeTeam = null,
-	showSensitiveUnlock: forceSensitiveUnlock = false,
-	helpContext,
-	feedbackContext,
 } = Astro.props as Props;
 
-const railItems = [
-	{ label: 'Start', href: '/app/' },
-	{ label: 'Services', href: '/app/services' },
-	{ label: 'Projects', href: '/app/projects' },
-	{ label: 'Capacity', href: '/app/capacity/allocation' },
-	{ label: 'Work', href: '/app/work' },
-	{ label: 'Knowledge', href: '/app/knowledge' },
-	{ label: 'Market', href: '/market/' },
-	{ label: 'Cart', href: '/cart' },
-	{ label: 'Service requests', href: '/services/new' },
-	{ label: 'Seller operations', href: '/app/market/seller' },
-];
-
 const appearance = await resolveAuthenticatedThemePreference(Astro);
-const quickActions = [
-	activeTeam
-		? { label: 'New project', href: '/app/projects/new', variant: 'primary' as const }
-		: { label: 'New team', href: '/app/teams/new', variant: 'primary' as const },
-	{ label: 'Browse market', href: '/market/', variant: 'secondary' as const },
-];
-const accountActions = [
-	{ label: 'Account', href: '/app/account', variant: 'secondary' as const },
-	{ label: 'Sign out', href: '/v1/auth/logout?returnTo=/', variant: 'secondary' as const, reload: true },
-];
 const teamOptions = teams.map((team) => ({
 	id: team.id,
 	label: team.displayName ?? team.name ?? team.slug ?? team.id,
 }));
-const sensitiveUnlockPaths = [
-	'/app/hosts',
-	'/app/projects/new',
-	'/app/capacity/providers/new',
-];
-const routePath = Astro.url.pathname;
-const showSensitiveUnlock = sensitiveUnlockPaths.some((path) => (
-	currentPath === path
-	|| currentPath.startsWith(`${path}/`)
-	|| routePath === path
-	|| routePath.startsWith(`${path}/`)
-)) || forceSensitiveUnlock;
 ---
 
 <ProductShell
@@ -91,20 +45,28 @@ const showSensitiveUnlock = sensitiveUnlockPaths.some((path) => (
 	currentPath={currentPath}
 	appearance={appearance}
 	brand={{
-		name: 'TreeSeed Platform',
-		tag: 'Contextual operations',
+		name: 'TreeSeed',
+		tag: 'Identity and teams',
 		href: '/app/',
 		logoSrc: '/logo.svg',
 		logoAlt: '',
 	}}
-	navItems={railItems}
-	quickActions={quickActions}
-	accountActions={accountActions}
-	helpContext={helpContext}
-	feedbackContext={feedbackContext}
+	navItems={[
+		{ label: 'Start', href: '/app/' },
+		{ label: 'Teams', href: '/app/teams' },
+	]}
+	quickActions={[
+		activeTeam
+			? { label: 'Manage team', href: `/app/teams/${encodeURIComponent(activeTeam.id)}/edit`, variant: 'primary' as const }
+			: { label: 'Create team', href: '/app/teams/new', variant: 'primary' as const },
+	]}
+	accountActions={[
+		{ label: 'Account', href: '/app/account', variant: 'secondary' as const },
+		{ label: 'Sign out', href: '/v1/auth/logout?returnTo=/', variant: 'secondary' as const, reload: true },
+	]}
 >
 	<div slot="railContext" class="ts-team-switcher">
-		<div class="ts-section__eyebrow">Team</div>
+		<div class="ts-section__eyebrow">Active team</div>
 		{teams.length > 0 ? (
 			<form class="ts-team-selector" aria-label="Active team" data-team-switcher>
 				<label class="ts-field ts-team-selector__label">
@@ -114,16 +76,13 @@ const showSensitiveUnlock = sensitiveUnlockPaths.some((path) => (
 						))}
 					</select>
 				</label>
-				<a class="ts-icon-button" href="/app/teams" title="Manage teams" aria-label="Manage teams">Manage</a>
+				<a class="ts-icon-button" href="/app/teams" aria-label="Manage teams">Manage</a>
 			</form>
 		) : (
 			<a class="ts-create-team-button" href="/app/teams/new">Create team</a>
 		)}
 	</div>
-	{showSensitiveUnlock ? <SensitiveDataUnlock part="button" slot="headerAction" /> : null}
 	<slot />
-	{showSensitiveUnlock ? <SensitiveDataUnlock part="modal" slot="sensitiveModal" /> : null}
-	<DeleteConfirmationModal slot="modal" />
 </ProductShell>
 
 <script>
@@ -143,7 +102,6 @@ const showSensitiveUnlock = sensitiveUnlockPaths.some((path) => (
 		const bindingKey = '__treeseedAuthenticatedAppearanceSyncBound';
 		if (window[bindingKey]) return;
 		window[bindingKey] = true;
-
 		window.addEventListener('treeseed:theme-change', (event) => {
 			const detail = event.detail || {};
 			if (detail.persist !== true || !detail.scheme || !detail.mode) return;
@@ -152,9 +110,7 @@ const showSensitiveUnlock = sensitiveUnlockPaths.some((path) => (
 				headers: { accept: 'application/json', 'content-type': 'application/json' },
 				body: JSON.stringify({ colorScheme: detail.scheme, themeMode: detail.mode }),
 				keepalive: true,
-			}).catch(() => {
-				// Local cookies already carry the immediate preference; the next change can retry persistence.
-			});
+			}).catch(() => {});
 		});
 	})();
 </script>

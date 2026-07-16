@@ -1,143 +1,34 @@
 # @treeseed/admin
 
-`@treeseed/admin` is the distributable Treeseed administration portal for organizations. It gives a Treeseed site the authenticated admin surfaces for teams, projects, hosts, work, knowledge, catalog browsing, operational status, and secret-manager workflows.
+`@treeseed/admin` is the distributable AGPLv3 identity and team administration layer for Treeseed sites. During preparation for the comprehensive UI redesign, its rendered surface is intentionally limited to authentication, account management, team management, active-team selection, invitations, and public user/team identity profiles.
 
-Use this package when you want a Treeseed-compatible admin portal without taking on the Treeseed market site's public messaging, buyer checkout, or backend ecommerce implementation.
+The removed pre-redesign surface is archived in the root [legacy route inventory](../../docs/legacy-routes.md). The redesign direction is described in [ui-redesign.md](../../docs/ui-redesign.md).
 
-## What You Can Build With Admin
-
-- Internal administration portals for teams and projects
-- Host and credential management surfaces
-- Knowledge and work management screens
-- Operational status and deployment control surfaces
-- Agent capacity allocation, provider session, assignment, mode-run, and usage views over API contracts
-- Catalog/profile browsing and seller commerce operations without buyer payment processing
-- Seller readiness, ecommerce monitoring, product governance, scoped-service operations, capacity listing review, and Commons steward operations through API facades
-- Admin integrations that can be layered into a host Treeseed site
-
-Admin is not a UI component library. Reusable layout-down components and styles live in `@treeseed/ui`.
-
-## Install
+## Install and compose
 
 ```bash
 npm install @treeseed/admin @treeseed/core @treeseed/ui @treeseed/sdk
 ```
 
-The host application owns deployment and site configuration. In this workspace, the root `@treeseed/market` app is that host.
+Add `@treeseed/admin/plugin` to the host `treeseed.site.yaml`, use the config helper from `@treeseed/admin/config`, and delegate host middleware to `@treeseed/admin/middleware`. Admin does not own a hostable site manifest; the host app owns deployment and environment configuration.
 
-## Use In A Treeseed Site
+## Current route surface
 
-Add the admin plugin to the host site's `treeseed.site.yaml`:
+- `/app` and `/app/account`
+- `/app/teams`, team creation, edit, delete, membership, and active-team selection
+- registration, verification, sign-in/out, recovery, OAuth callback, username, and device approval
+- `/u/[username]` and `/t/[name]` identity-only public profiles
+- invitation acceptance and the shared `/v1/[...all]` API facade
 
-```yaml
-plugins:
-  - package: "@treeseed/core/plugin-default"
-  - package: "@treeseed/admin/plugin"
-```
+`ADMIN_ROUTES` is exported from `@treeseed/admin/routes` and is tested against the package page tree. There are no project, capacity, host, work, knowledge, catalog, seller, commerce, or Markdown-preview routes and no compatibility redirects for them.
 
-Use the admin Astro config helper from the host app:
+## Preserved non-UI contracts
 
-```ts
-import { defineTreeseedAdminConfig } from '@treeseed/admin/config';
+The generic API facade, auth/session integration, middleware, commerce extension contract, and secret-manager contracts remain exported so backend capabilities and future redesign work keep their package boundaries. Admin does not import backend implementation from `@treeseed/api`; runtime behavior stays behind HTTP/proxy surfaces.
 
-export default defineTreeseedAdminConfig();
-```
+Reusable components and styles remain owned by `@treeseed/ui` and were not removed as part of this cleanup. React and email dependencies remain because authentication email flows require them.
 
-Delegate middleware from the host app:
-
-```ts
-export { onRequest } from '@treeseed/admin/middleware';
-```
-
-## Required Host App Setup
-
-The host app must provide:
-
-- a host-owned `treeseed.site.yaml` when the app owns a deployable runtime surface
-- tenant config and environment values
-- public content and page overrides
-- deployment target and hosting workflow
-- API base URL or `/v1/*` proxy path
-- any tenant-specific branding or marketplace policy
-
-`@treeseed/admin` does not ship a package-local `treeseed.site.yaml` and does not own hosting. The root Market app owns the Treeseed web tenant in this workspace; other packages may own package-local manifests only when they operate independently released runtime surfaces.
-
-## Routes And Capabilities
-
-Admin contributes route metadata through:
-
-```ts
-import { ADMIN_ROUTES } from '@treeseed/admin/routes';
-```
-
-The route set includes admin application pages, auth pages, team invite acceptance, API proxy route metadata, and generic catalog/profile browsing surfaces. Host apps can override Astro pages through their normal Treeseed page override mechanism.
-
-Admin route composition follows the current TreeSeed shell model:
-
-- `/app/**` pages use `TreeseedAppLayout`, which composes the UI shell primitives for authenticated app work.
-- `/market/**` acquisition/catalog pages use `TreeseedOperationalMarketLayout`, the authenticated operational market shell.
-- `/auth/**` pages use UI `AuthShell`.
-- `/u/**`, `/t/**`, `/p/**`, and invite acceptance pages use public/auth-appropriate layouts and must not show app team operations.
-
-`ProductShell` and `PublicShell` are compatibility wrappers in `@treeseed/ui`; Admin pages should use the package layouts above rather than importing those wrappers directly.
-
-## Auth And Sessions
-
-Admin owns reusable browser auth/session flow, callback handling, account/profile UX integration, and middleware composition. Backend service trust, persistent auth storage, and service credential validation belong in `@treeseed/api`.
-
-Host apps provide deployment-specific secrets and provider settings through their environment registry and secret manager.
-
-## API Connection
-
-Admin reaches backend behavior through API client facades and HTTP/proxy surfaces. It must not import backend implementation from `@treeseed/api`.
-
-In the root market app, `/v1/*` is the web proxy to the API service hosted from `packages/api`.
-
-## Secret Manager Support
-
-Admin owns the user-facing secret-manager experience:
-
-- provider selection
-- host credential forms
-- unlock/passphrase UX
-- linked manager status
-- diagnostics views
-
-The public contract is exported from:
-
-```ts
-import type { TreeseedSecretManagerProvider } from '@treeseed/admin/secret-managers';
-```
-
-Provider mutation, secure read/write adapters, import/adopt/reconcile behavior, and target-specific sync belong in SDK/API primitives.
-
-## Agent Capacity Surfaces
-
-Admin may expose allocation-set editing, project/agent-class capacity views, planning/acting splits, provider registration, provider availability sessions, assignment status, mode-run timelines, usage summaries, and blocker diagnostics.
-
-The current capacity operator surfaces are:
-
-- `/app/capacity/allocation` for portfolio and project agent-class allocation.
-- `/app/capacity/providers` for provider registration, native capacity, grants, and lifecycle overview.
-- `/app/capacity/runtime` for read-only allocation-set versions, project agent classes, provider sessions, accepted capacity plans, synthesized or explicit assignments, assignment source/explanation metadata, and mode-run telemetry. The API facade also exposes decision readiness, execution inputs, capacity plans, and workday settlement summaries for focused operator drill-downs.
-
-Admin does not own scheduling, assignment selection, provider runtime internals, or ledger settlement. Those belong to API, agent runtime, and SDK contracts as described in the root [Agent Capacity Operator Surfaces](../../docs/agent-capacity-operator-surfaces.md) guide.
-
-## Commerce Operations Without Buyer Checkout
-
-Admin can display and operate seller-side commerce records through API client facades: vendor readiness, product registry state, offer/price review, sales summaries, refunds, fulfillment, cooperative ownership workflows, scoped service requests, capacity listing inquiries, seller monitoring, and Commons steward decisions.
-
-The extension contract is exported from:
-
-```ts
-import type { AdminCommerceProvider } from '@treeseed/admin/commerce';
-```
-
-Admin does not implement Stripe Elements, checkout confirmation, Stripe Checkout Sessions, PaymentIntent creation, webhooks, invoices, buyer subscriptions UI, seller payouts, commissions, application fees, revenue splits, benefit payout allocation, capacity billing, provider execution, marketplace grants/reservations, or routing decisions. Authenticated operational buyer checkout and participant marketplace flows belong in the root market app. Backend state and Stripe server calls belong in `@treeseed/api`.
-
-## Extension Points
-
-Public exports include:
+## Public exports
 
 - `@treeseed/admin`
 - `@treeseed/admin/config`
@@ -149,36 +40,14 @@ Public exports include:
 - `@treeseed/admin/secret-managers`
 - `@treeseed/admin/lib/*`
 - `@treeseed/admin/view-models/*`
+- retained app/public layouts
 
-Use package exports only. Do not import from `packages/admin/src` in host applications.
-
-## What Admin Does Not Own
-
-- reusable UI primitives or CSS tokens; use `@treeseed/ui`
-- generic Astro/Starlight runtime; use `@treeseed/core`
-- backend API implementation, PostgreSQL, migrations, or operations runner; use `@treeseed/api`
-- capacity provider runtime; use `@treeseed/agent`
-- buyer checkout, Stripe Elements, payout/commission logic, capacity execution, or backend ecommerce policy; use root market for authenticated operational marketplace/cart/checkout/service/capacity/Commons surfaces and `@treeseed/api` for backend state
-- TreeDX repository service internals
-- host app deployment manifest
-
-## Verification And Release
-
-Package commands:
+## Verification and release
 
 ```bash
-npm install
-npm run build
-npm run verify:local
+npm run check
+npm test
 npm run release:verify
 ```
 
-Release integration:
-
-- `treeseed.package.yaml` declares the package repository and release gate.
-- `deploy.yml` is the hosted release gate workflow.
-- `publish.yml` publishes semver tags to npm.
-- GitHub repository credential: `TREESEED_GITHUB_TOKEN_TREESEED_AI_ADMIN`.
-- GitHub `production` environment secret: `NPM_TOKEN`.
-
-See the root [Package Ownership](../../docs/package-ownership.md) guide for cross-package boundaries.
+`verify.yml`, the manual `release-gate.yml`, and `publish.yml` remain package-owned. Hosted deployment is suspended; the package must not contain a push-triggered `deploy.yml`.

@@ -19,11 +19,6 @@ declare module 'cloudflare:sockets' {
 	): Socket;
 }
 
-declare module 'libsodium-wrappers-sumo' {
-	const sodium: any;
-	export default sodium;
-}
-
 declare namespace App {
 	interface Locals {
 		runtime?: import('@treeseed/sdk/types/cloudflare').CloudflareRuntime;

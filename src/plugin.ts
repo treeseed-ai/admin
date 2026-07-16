@@ -121,8 +121,6 @@ const adminPlugin: TreeseedPlugin = defineTreeseedPlugin({
       '@treeseed/ui/styles/app-shell.css',
       '@treeseed/ui/styles/app-controls.css',
       '@treeseed/ui/styles/auth.css',
-      '@treeseed/ui/styles/operations.css',
-      '@treeseed/ui/styles/market.css',
     ],
     envSchema: ADMIN_ENV_SCHEMA,
   },

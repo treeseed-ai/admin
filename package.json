@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.59-dev.fix-local-dev-unhealthy-restart.20260716T025832Z",
+  "version": "0.12.59-dev.staging.20260716T154320Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -46,12 +46,10 @@
     "release:publish": "node --import tsx ./scripts/publish-package.ts"
   },
   "dependencies": {
-    "@mdxeditor/editor": "^4.0.2",
     "@react-email/render": "^2.0.8",
     "@treeseed/core": "github:treeseed-ai/core#92947586ed8829b36921018c61d81a2f655f0410",
     "@treeseed/sdk": "github:treeseed-ai/sdk#42d9e8308e1eb7bdb31a6d204e6b0aa7358e775a",
     "@treeseed/ui": "github:treeseed-ai/ui#0f10f2a452d570eb3d4aa31a246c62f3adf49aa2",
-    "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
@@ -110,7 +108,6 @@
       "default": "./dist/view-models/*.js"
     },
     "./layouts/TreeseedAppLayout.astro": "./dist/layouts/TreeseedAppLayout.astro",
-    "./layouts/TreeseedOperationalMarketLayout.astro": "./dist/layouts/TreeseedOperationalMarketLayout.astro",
     "./layouts/TreeseedPublicLayout.astro": "./dist/layouts/TreeseedPublicLayout.astro"
   }
 }

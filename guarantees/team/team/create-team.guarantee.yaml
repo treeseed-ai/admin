@@ -5,7 +5,7 @@ type: team
 subtype: team
 journey: Create Team
 ownerPackage: "@treeseed/admin"
-summary: Create the team boundary that owns projects capacity policy members and billing-like settings; this should be API-backed durable state.
+summary: Create the durable team identity and membership boundary used by active-team selection and team management.
 status: active
 dependencies:
   journeys:
@@ -69,7 +69,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Create the team boundary that owns projects capacity policy members and billing-like settings; this should be API-backed durable state.
+  - Create the durable team identity and membership boundary used by active-team selection and team management.
 surface: admin-ui
 run:
   timeoutSeconds: 300

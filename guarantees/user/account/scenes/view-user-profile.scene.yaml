@@ -8,8 +8,8 @@ audience:
 journey:
   kind: service
   proves:
-    - View User Profile opens the canonical @treeseed/admin dashboard read model workflow.
-    - View User Profile exercises a service journey instead of only loading /app/account.
+    - View User Profile opens the public identity-only @treeseed/admin profile.
+    - View User Profile does not expose project, catalog, or knowledge distribution links.
     - View User Profile records reviewable evidence for the visible result before activation.
   minimumSteps: 2
   requiresInteractiveAction: true
@@ -62,6 +62,9 @@ setup:
   dev:
     required: true
     reuseExisting: true
+  auth:
+    role: owner
+    required: true
 artifacts:
   trace: true
   video: true
@@ -72,17 +75,25 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-entry-route
-    title: Open View User Profile
+    title: Open account settings
     action:
       goto: /app/account
     expect:
       urlIncludes: /app/account
-  - id: inspect-service-surface
-    title: Inspect View User Profile service surface
+  - id: open-public-profile
+    title: Follow the public profile link
+    action:
+      click:
+        css: 'a[href^="/u/"]'
+        internal: true
+    expect:
+      urlIncludes: /u/
+  - id: inspect-identity-surface
+    title: Inspect the identity-only profile
     action:
       keyboard: Tab
     expect:
-      urlIncludes: /app/account
+      text: TreeSeed account
 chapters: []
 overlays: []
 diagrams: []

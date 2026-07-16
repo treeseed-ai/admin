@@ -9,7 +9,7 @@ if (!Astro.locals.auth?.principal) {
 }
 
 const context = await loadAppContext(Astro);
-const dashboard = await buildTeamDashboard(context, Astro.url);
+const dashboard = await buildTeamDashboard(context);
 ---
 
 <TreeseedAppLayout
@@ -18,8 +18,6 @@ const dashboard = await buildTeamDashboard(context, Astro.url);
 	currentPath={Astro.url.pathname}
 	teams={context.teams}
 	activeTeam={context.activeTeam}
-	helpContext={dashboard.helpContext}
-	feedbackContext={dashboard.feedbackContext}
 >
 	<DashboardTemplate viewModel={dashboard.viewModel} actions={dashboard.actions} />
 </TreeseedAppLayout>

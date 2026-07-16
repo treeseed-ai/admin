@@ -5,50 +5,26 @@ import '@treeseed/ui/styles/ui.css';
 import '@treeseed/ui/styles/forms.css';
 import '@treeseed/ui/styles/app-shell.css';
 import '@treeseed/ui/styles/site.css';
-import '@treeseed/ui/styles/market.css';
 import PublicShell from '@treeseed/ui/components/astro/shell/PublicShell.astro';
 import PublicFooter from '@treeseed/ui/components/astro/shell/PublicFooter.astro';
 import ShellIconLink from '@treeseed/ui/components/astro/shell/ShellIconLink.astro';
-import type { FeedbackContext, HelpContext } from '@treeseed/ui';
 import { resolveAnonymousThemePreference, resolveAuthenticatedThemePreference } from '../lib/auth/appearance';
-
-interface NavItem {
-	label: string;
-	href: string;
-}
 
 interface Props {
 	title?: string;
 	description?: string;
 	currentPath?: string;
-	helpContext?: HelpContext;
-	feedbackContext?: FeedbackContext;
 }
 
 const {
 	title = 'TreeSeed',
-	description = 'Launch, guide, release, and publish knowledge hubs with your team and your agents.',
+	description = 'TreeSeed account and team identity.',
 	currentPath = '/',
-	helpContext,
-	feedbackContext,
 } = Astro.props as Props;
-
-const navItems: NavItem[] = [
-	{ label: 'Home', href: '/' },
-	{ label: 'Resources', href: '/market/' },
-	{ label: 'Workflow Imports', href: '/market/templates/' },
-	{ label: 'Knowledge Imports', href: '/market/knowledge-packs/' },
-];
-
 const isSignedIn = Boolean(Astro.locals.auth?.principal);
 const appearance = isSignedIn
 	? await resolveAuthenticatedThemePreference(Astro)
 	: resolveAnonymousThemePreference(Astro);
-const actions = isSignedIn
-	? []
-	: [
-		{ label: 'Sign in', href: '/auth/sign-in', variant: 'ghost' as const },
-	];
 ---
 
 <PublicShell
@@ -56,38 +32,22 @@ const actions = isSignedIn
 	description={description}
 	currentPath={currentPath}
 	appearance={appearance}
-	brand={{
-		name: 'TreeSeed',
-		tag: 'Governable AI Infrastructure for Organizational Continuity',
-		href: '/',
-		logoSrc: '/logo.svg',
-		logoAlt: '',
-	}}
-	navItems={navItems}
-	actions={actions}
-	helpContext={helpContext}
-	feedbackContext={feedbackContext}
+	brand={{ name: 'TreeSeed', tag: 'Identity and teams', href: '/', logoSrc: '/logo.svg', logoAlt: '' }}
+	navItems={[{ label: 'Home', href: '/' }]}
+	actions={isSignedIn ? [] : [{ label: 'Sign in', href: '/auth/sign-in', variant: 'ghost' as const }]}
 	showAppearanceControl
 	preferServerAppearance={isSignedIn}
 >
 	<Fragment slot="actions">
-		<ShellIconLink href="/app/" label="Manager" icon="manager" />
+		<ShellIconLink href="/app/" label="Account and teams" icon="manager" />
 	</Fragment>
 	<PublicFooter
 		slot="footer"
 		brandName="TreeSeed"
-		summary="Governed AI work, private teams, workflow imports, and durable Knowledge Hub memory."
-		stageLabel="Platform home"
-		stageDescription="A public front door for launching, guiding, reviewing, and retaining AI-assisted work."
-		groups={[
-			{
-				label: 'Resources',
-				items: [
-					{ label: 'Workflow Imports', href: '/market/templates/' },
-					{ label: 'Knowledge Hub', href: '/knowledge/' },
-				],
-			},
-		]}
+		summary="Account identity and team membership for TreeSeed."
+		stageLabel="Identity"
+		stageDescription="Authentication, account settings, and team management."
+		groups={[{ label: 'Account', items: [{ label: 'Open account and teams', href: '/app/' }] }]}
 	/>
 	<slot />
 </PublicShell>

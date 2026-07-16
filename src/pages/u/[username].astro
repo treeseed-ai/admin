@@ -4,103 +4,40 @@ import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProf
 import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
 import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
 import { normalizeUsername, validateUsername } from '../../lib/auth/profile-validation';
-import { resolveMarketplaceUserProfile } from '../../lib/market/public-access.js';
+import { resolvePublicUserProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;
-
-type PublicProfile = {
-	user: {
-		id: string;
-		username: string;
-		displayName: string | null;
-		email: string | null;
-		image: string | null;
-		joinedAt: string;
-	};
-	activity: {
-		teams: Array<{ id: string; slug: string; name: string; createdAt?: string }>;
-		projects: Array<{ id: string; teamId: string; slug: string; name: string; description?: string | null; createdAt?: string }>;
-		catalogItems: Array<{ id: string; teamId: string; kind: string; slug: string; title: string; summary?: string | null; visibility?: string }>;
-		knowledgePacks: Array<{ id: string; teamId: string; slug: string; name: string; summary?: string | null; visibility?: string }>;
-	};
-};
 
 const requestedUsername = String(Astro.params.username ?? '');
 const normalizedUsername = normalizeUsername(requestedUsername);
 if (requestedUsername !== normalizedUsername && validateUsername(normalizedUsername).ok) {
 	return Astro.redirect(`/u/${normalizedUsername}`, 301);
 }
-const profile = await resolveMarketplaceUserProfile(Astro, normalizedUsername) as PublicProfile | null;
-if (!profile) {
-	return new Response('Not found', { status: 404 });
-}
-const displayName = profile.user.displayName || `@${profile.user.username}`;
-const joinedDate = new Date(profile.user.joinedAt).toLocaleDateString('en', { month: 'long', year: 'numeric' });
-const visibleCount = profile.activity.teams.length
-	+ profile.activity.projects.length
-	+ profile.activity.catalogItems.length
-	+ profile.activity.knowledgePacks.length;
+const profile: any = await resolvePublicUserProfile(Astro, normalizedUsername);
+if (!profile?.user) return new Response('Not found', { status: 404 });
+
+const user = profile.user;
+const displayName = user.displayName || `@${user.username}`;
+const joinedDate = user.joinedAt
+	? new Date(user.joinedAt).toLocaleDateString('en', { month: 'long', year: 'numeric' })
+	: null;
 ---
 
 <TreeseedPublicLayout
-	title={`${displayName} (@${profile.user.username}) | TreeSeed`}
-	description={`Public TreeSeed profile for @${profile.user.username}.`}
-	currentPath={`/u/${profile.user.username}`}
+	title={`${displayName} (@${user.username}) | TreeSeed`}
+	description={`Public TreeSeed identity for @${user.username}.`}
+	currentPath={`/u/${user.username}`}
 >
 	<PublicStack>
 		<PublicProfileHeader
-			eyebrow="User profile"
+			eyebrow="User identity"
 			name={displayName}
-			handle={`@${profile.user.username}`}
-			imageSrc={profile.user.image}
-			meta={`Joined ${joinedDate}`}
+			handle={`@${user.username}`}
+			imageSrc={user.image}
+			meta={joinedDate ? `Joined ${joinedDate}` : undefined}
 		/>
-
-		<section class="ts-grid-2 ts-profile-activity" aria-label="Profile activity">
-			<PublicSection title="Teams" eyebrow={`${profile.activity.teams.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.teams.length > 0 ? profile.activity.teams.map((team) => (
-						<a class="ts-list-item" href={`/t/${team.slug}`} data-scene={`profile.team.${team.slug}`}>
-							<strong>{team.name}</strong><br />
-							<span>{team.slug}</span>
-						</a>
-					)) : <p>No visible teams.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Projects" eyebrow={`${profile.activity.projects.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.projects.length > 0 ? profile.activity.projects.map((project) => (
-						<a class="ts-list-item" href={`/p/${project.slug}`}>
-							<strong>{project.name}</strong><br />
-							<span>{project.description || project.slug}</span>
-						</a>
-					)) : <p>No visible projects.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Catalog listings" eyebrow={`${profile.activity.catalogItems.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.catalogItems.length > 0 ? profile.activity.catalogItems.map((item) => (
-						<a class="ts-list-item" href={`/market/${item.kind === 'knowledge_pack' ? 'knowledge-packs' : 'templates'}/${item.slug}`}>
-							<strong>{item.title}</strong><br />
-							<span>{item.summary || item.kind}</span>
-						</a>
-					)) : <p>No visible listings.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Knowledge packs" eyebrow={`${profile.activity.knowledgePacks.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.knowledgePacks.length > 0 ? profile.activity.knowledgePacks.map((pack) => (
-						<a class="ts-list-item" href={`/market/knowledge-packs/${pack.slug}`}>
-							<strong>{pack.name}</strong><br />
-							<span>{pack.summary || pack.visibility}</span>
-						</a>
-					)) : <p>No visible knowledge packs.</p>}
-				</div>
-			</PublicSection>
-		</section>
-		{visibleCount === 0 ? <p class="ts-muted">No profile activity is visible to you yet.</p> : null}
+		<PublicSection title="TreeSeed account" eyebrow="Public identity">
+			<p>This profile confirms the public username and display identity associated with a TreeSeed account.</p>
+		</PublicSection>
 	</PublicStack>
 </TreeseedPublicLayout>

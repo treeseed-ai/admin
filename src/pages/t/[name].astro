@@ -3,76 +3,40 @@ import TreeseedPublicLayout from '../../layouts/TreeseedPublicLayout.astro';
 import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProfileHeader.astro';
 import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
 import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
-import { resolveMarketplaceTeamProfile } from '../../lib/market/public-access.js';
+import { resolvePublicTeamProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;
 
 const requestedName = String(Astro.params.name ?? '');
 const normalizedName = requestedName.trim().toLowerCase().replace(/[^a-z0-9-]+/gu, '-').replace(/^-+|-+$/gu, '').slice(0, 63);
-if (requestedName !== normalizedName && normalizedName) {
-	return Astro.redirect(`/t/${normalizedName}`, 301);
-}
+if (requestedName !== normalizedName && normalizedName) return Astro.redirect(`/t/${normalizedName}`, 301);
 
-const profile = await resolveMarketplaceTeamProfile(Astro, normalizedName);
-if (!profile) {
-	return new Response('Not found', { status: 404 });
-}
+const profile: any = await resolvePublicTeamProfile(Astro, normalizedName);
+if (!profile?.team) return new Response('Not found', { status: 404 });
 
 const team = profile.team;
 const displayName = team.displayName ?? team.name;
-const joinedDate = new Date(team.createdAt).toLocaleDateString('en', { month: 'long', year: 'numeric' });
-const visibleCount = profile.activity.projects.length + profile.activity.catalogItems.length + profile.activity.knowledgePacks.length;
+const createdDate = team.createdAt
+	? new Date(team.createdAt).toLocaleDateString('en', { month: 'long', year: 'numeric' })
+	: null;
 ---
 
 <TreeseedPublicLayout
 	title={`${displayName} (@${team.name}) | TreeSeed`}
-	description={team.profileSummary ?? `Public TreeSeed profile for @${team.name}.`}
+	description={team.profileSummary ?? `Public TreeSeed team identity for @${team.name}.`}
 	currentPath={`/t/${team.name}`}
 >
 	<PublicStack>
 		<PublicProfileHeader
-			eyebrow="Team profile"
+			eyebrow="Team identity"
 			name={displayName}
 			handle={`@${team.name}`}
 			imageSrc={team.logoUrl}
-			meta={`Created ${joinedDate}`}
+			meta={createdDate ? `Created ${createdDate}` : undefined}
 			description={team.profileSummary}
 		/>
-
-		<section class="ts-grid-2 ts-profile-activity" aria-label="Team activity">
-			<PublicSection title="Projects" eyebrow={`${profile.activity.projects.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.projects.length > 0 ? profile.activity.projects.map((project: any) => (
-						<a class="ts-list-item" href={`/p/${project.slug}`}>
-							<strong>{project.name}</strong><br />
-							<span>{project.description || project.slug}</span>
-						</a>
-					)) : <p>No visible projects.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Catalog listings" eyebrow={`${profile.activity.catalogItems.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.catalogItems.length > 0 ? profile.activity.catalogItems.map((item: any) => (
-						<a class="ts-list-item" href={`/market/${item.kind === 'knowledge_pack' ? 'knowledge-packs' : 'templates'}/${item.slug}`}>
-							<strong>{item.title}</strong><br />
-							<span>{item.summary || item.kind}</span>
-						</a>
-					)) : <p>No visible listings.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Knowledge packs" eyebrow={`${profile.activity.knowledgePacks.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.knowledgePacks.length > 0 ? profile.activity.knowledgePacks.map((pack: any) => (
-						<a class="ts-list-item" href={`/market/knowledge-packs/${pack.slug}`}>
-							<strong>{pack.name}</strong><br />
-							<span>{pack.summary || pack.visibility}</span>
-						</a>
-					)) : <p>No visible knowledge packs.</p>}
-				</div>
-			</PublicSection>
-		</section>
-		{visibleCount === 0 ? <p class="ts-muted">No team activity is visible to you yet.</p> : null}
+		<PublicSection title="TreeSeed team" eyebrow="Public identity">
+			<p>This profile confirms the public name and identity of a TreeSeed team.</p>
+		</PublicSection>
 	</PublicStack>
 </TreeseedPublicLayout>
