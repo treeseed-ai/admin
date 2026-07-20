@@ -249,34 +249,6 @@ export class ApiClientFacade {
 		return this.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/capacity?environment=${encodeURIComponent(environment)}`);
 	}
 
-	getProjectCapacityOperations(projectId: string, environment = 'staging') {
-		return this.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/capacity/operations?environment=${encodeURIComponent(environment)}`);
-	}
-
-	listProjectWorkdaySummaries(projectId: string, environment: string | null = null) {
-		const query = environment ? `?environment=${encodeURIComponent(environment)}` : '';
-		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/workdays${query}`);
-	}
-
-	listRuntimeWorkDays(projectId: string, options: { limit?: number } = {}) {
-		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/runtime/workdays?limit=${encodeURIComponent(String(options.limit ?? 100))}`);
-	}
-
-	listRuntimeTasks(projectId: string, options: { workDayId?: string; limit?: number } = {}) {
-		const query = new URLSearchParams();
-		if (options.workDayId) query.set('workDayId', options.workDayId);
-		query.set('limit', String(options.limit ?? 100));
-		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/runtime/tasks?${query}`);
-	}
-
-	listRuntimeTaskEvents(projectId: string, taskId: string) {
-		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/runtime/tasks/${encodeURIComponent(taskId)}/events`);
-	}
-
-	listRuntimeTaskOutputs(projectId: string, taskId: string) {
-		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/runtime/tasks/${encodeURIComponent(taskId)}/outputs`);
-	}
-
 	listApprovalRequestsForProject(projectId: string, limit = 100) {
 		return this.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/approval-requests?limit=${encodeURIComponent(String(limit))}`);
 	}
@@ -391,22 +363,6 @@ export class ApiClientFacade {
 
 	getTeamAccessSummary(teamId: string) {
 		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/permissions`);
-	}
-
-	getTeamPortfolioAllocation(teamId: string) {
-		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-allocation`);
-	}
-
-	updateTeamPortfolioAllocation(teamId: string, body: Record<string, unknown>) {
-		return this.request<any>('PUT', `/v1/teams/${encodeURIComponent(teamId)}/capacity-allocation`, { body });
-	}
-
-	getProjectAgentClassAllocation(projectId: string) {
-		return this.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/capacity-allocation`);
-	}
-
-	updateProjectAgentClassAllocation(projectId: string, body: Record<string, unknown>) {
-		return this.request<any>('PUT', `/v1/projects/${encodeURIComponent(projectId)}/capacity-allocation`, { body });
 	}
 
 	getCommerceVendor(teamId: string) {
@@ -767,57 +723,6 @@ export class ApiClientFacade {
 
 	getTeamWebHost(teamId: string, hostId: string) {
 		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/web-hosts/${encodeURIComponent(hostId)}`);
-	}
-
-	listTeamCapacityProviders(teamId: string) {
-		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers`);
-	}
-
-	getCapacityProvider(teamId: string, providerId: string) {
-		return this.request<any>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}`);
-	}
-
-	getCapacityProviderById(providerId: string) {
-		return this.request<any>('GET', `/v1/capacity/providers/${encodeURIComponent(providerId)}`);
-	}
-
-	updateCapacityProvider(teamId: string, providerId: string, body: Record<string, unknown>) {
-		return this.request<any>('PATCH', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}`, { body });
-	}
-
-	listCapacityGrants(teamId: string, filters: { projectId?: string | null; providerId?: string | null } = {}) {
-		const query = new URLSearchParams();
-		if (filters.projectId) query.set('projectId', filters.projectId);
-		if (filters.providerId) query.set('providerId', filters.providerId);
-		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-grants${query.toString() ? `?${query}` : ''}`);
-	}
-
-	createCapacityGrant(teamId: string, body: Record<string, unknown>) {
-		return this.request<any>('POST', `/v1/teams/${encodeURIComponent(teamId)}/capacity-grants`, { body });
-	}
-
-	updateCapacityGrant(teamId: string, grantId: string, body: Record<string, unknown>) {
-		return this.request<any>('PATCH', `/v1/teams/${encodeURIComponent(teamId)}/capacity-grants/${encodeURIComponent(grantId)}`, { body });
-	}
-
-	listExecutionProviders(teamId: string, providerId: string) {
-		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}/execution-providers`);
-	}
-
-	createExecutionProvider(teamId: string, providerId: string, body: Record<string, unknown>) {
-		return this.request<any>('POST', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}/execution-providers`, { body });
-	}
-
-	updateExecutionProvider(teamId: string, providerId: string, executionProviderId: string, body: Record<string, unknown>) {
-		return this.request<any>('PATCH', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}/execution-providers/${encodeURIComponent(executionProviderId)}`, { body });
-	}
-
-	createExecutionProviderNativeLimit(teamId: string, providerId: string, executionProviderId: string, body: Record<string, unknown>) {
-		return this.request<any>('POST', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}/execution-providers/${encodeURIComponent(executionProviderId)}/native-limits`, { body });
-	}
-
-	listCapacityProviderDeployments(teamId: string, providerId: string) {
-		return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity-providers/${encodeURIComponent(providerId)}/deployments`);
 	}
 
 	listCapacityAllocationSets(teamId: string) {
