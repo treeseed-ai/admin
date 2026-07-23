@@ -26,13 +26,14 @@
     "access": "public"
   },
   "scripts": {
+    "check:file-lengths": "node --import tsx ./scripts/check-file-lengths.ts",
     "setup": "npm install",
     "setup:ci": "npm ci --workspaces=false",
     "build": "npm run build:dist",
     "build:dist": "node --import tsx ./scripts/build-dist.ts",
     "prepare": "node --import tsx ./scripts/prepare.ts",
     "prepack": "npm run build:dist",
-    "check": "npm run build:dist && tsc --noEmit",
+    "check": "npm run check:file-lengths && npm run build:dist && tsc --noEmit",
     "test": "npm run test:unit",
     "test:unit": "vitest run --config ./vitest.config.ts",
     "lint": "npm run check",
@@ -42,14 +43,14 @@
     "verify": "TMPDIR=/tmp node --import tsx ./scripts/verify-driver.ts",
     "release:setup": "npm run setup:ci",
     "release:check-tag": "node --import tsx ./scripts/assert-release-tag-version.ts",
-    "release:verify": "npm run build:dist && npm run test:unit",
+    "release:verify": "npm run check:file-lengths && npm run build:dist && npm run test:unit",
     "release:publish": "node --import tsx ./scripts/publish-package.ts"
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#4c289dc0fb2041925ead7c1dd92f44aae33cc25f",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#689ab4dee96c4b288589b3b60f5989e038fc7f8a",
-    "@treeseed/ui": "github:treeseed-ai/ui#3ae6621a42733e85169505823de8ffadbb640f70",
+    "@treeseed/core": "github:treeseed-ai/core#2a00e061edbcf24c288aee73a43345d5f3db8005",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#2e95b2e65d3a8f224b79459c127875483883c7f8",
+    "@treeseed/ui": "github:treeseed-ai/ui#9c6940f6ca0820c1478815dcbca0f298daf0dae3",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },

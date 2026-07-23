@@ -13,5 +13,5 @@
       "@treeseed/ui/theme": ["src/internal/ui-theme.d.ts"]
     }
   },
-  "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
+  "include": ["src/**/*", "tests/**/*", "vitest.config.ts"]
 }
