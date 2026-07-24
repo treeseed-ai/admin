@@ -34,7 +34,7 @@ preconditions:
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
-  manifest: ./scenes/view-team-profile.scene.yaml
+  manifest: ../scenes/view-team-profile.scene.yaml
   mode:
     acceptance: true
     demo: true

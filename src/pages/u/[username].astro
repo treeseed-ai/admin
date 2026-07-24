@@ -1,7 +1,7 @@
 ---
-import TreeseedPublicLayout from '../../layouts/TreeseedPublicLayout.astro';
+import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
 import ProfileTemplate from '@treeseed/ui/components/astro/templates/ProfileTemplate.astro';
-import { normalizeUsername, validateUsername } from '../../lib/auth/profile-validation';
+import { normalizeUsername, validateUsername } from '../../lib/auth/support/profile-validation';
 import { resolvePublicUserProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;

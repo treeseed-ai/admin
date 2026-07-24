@@ -1,0 +1,53 @@
+---
+import '@treeseed/ui/styles/tokens.css';
+import '@treeseed/ui/styles/theme.css';
+import '@treeseed/ui/styles/ui.css';
+import '@treeseed/ui/styles/forms.css';
+import '@treeseed/ui/styles/app-shell.css';
+import '@treeseed/ui/styles/site.css';
+import PublicShell from '@treeseed/ui/components/astro/shell/layout/PublicShell.astro';
+import PublicFooter from '@treeseed/ui/components/astro/shell/chrome/PublicFooter.astro';
+import ShellIconLink from '@treeseed/ui/components/astro/shell/navigation/ShellIconLink.astro';
+import { resolveAnonymousThemePreference, resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
+
+interface Props {
+	title?: string;
+	description?: string;
+	currentPath?: string;
+}
+
+const {
+	title = 'TreeSeed',
+	description = 'TreeSeed account and team identity.',
+	currentPath = '/',
+} = Astro.props as Props;
+const isSignedIn = Boolean(Astro.locals.auth?.principal);
+const appearance = isSignedIn
+	? await resolveAuthenticatedThemePreference(Astro)
+	: resolveAnonymousThemePreference(Astro);
+---
+
+<PublicShell
+	title={title}
+	description={description}
+	currentPath={currentPath}
+	appearance={appearance}
+	brand={{ name: 'TreeSeed', tag: 'Identity and teams', href: '/', logoSrc: '/logo.svg', logoAlt: '' }}
+	navItems={[{ label: 'Home', href: '/' }]}
+	actions={isSignedIn ? [] : [{ label: 'Sign in', href: '/auth/sign-in', variant: 'ghost' as const }]}
+	showAppearanceControl
+	preferServerAppearance={isSignedIn}
+>
+	<Fragment slot="actions">
+		<ShellIconLink href="/app/" label="Account and teams" icon="manager" />
+	</Fragment>
+	<PublicFooter
+		slot="footer"
+		brandName="TreeSeed"
+		summary="Account identity and team membership for TreeSeed."
+		stageLabel="Identity"
+		stageDescription="Authentication, account settings, and team management."
+		groups={[{ label: 'Account', items: [{ label: 'Open account and teams', href: '/app/' }] }]}
+	/>
+	<slot />
+</PublicShell>

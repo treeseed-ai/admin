@@ -2,10 +2,10 @@
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
 import RegistrationForm from '@treeseed/ui/components/astro/auth/RegistrationForm.astro';
-import { authProviderCapabilities, normalizeReturnTo, redirectAuthenticatedToApp, submitMarketEmailAuthFlow } from '../../lib/auth/flow';
-import { composeDisplayNameFromParts, normalizeUsername, validateUsername } from '../../lib/auth/profile-validation';
-import { passwordMeetsPolicy, passwordPolicyMessage } from '../../lib/auth/password-policy';
-import { resolveAnonymousThemePreference, setAnonymousThemeCookies } from '../../lib/auth/appearance';
+import { authProviderCapabilities, normalizeReturnTo, redirectAuthenticatedToApp, submitMarketEmailAuthFlow } from '../../lib/auth/support/flow';
+import { composeDisplayNameFromParts, normalizeUsername, validateUsername } from '../../lib/auth/support/profile-validation';
+import { passwordMeetsPolicy, passwordPolicyMessage } from '../../lib/auth/accounts/password-policy';
+import { resolveAnonymousThemePreference, setAnonymousThemeCookies } from '../../lib/auth/accounts/appearance';
 
 export const prerender = false;
 

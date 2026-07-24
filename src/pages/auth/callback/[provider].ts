@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { isSupportedAuthProvider, normalizeReturnTo } from '../../../lib/auth/flow';
+import { isSupportedAuthProvider, normalizeReturnTo } from '../../../lib/auth/support/flow';
 import { resolveApiBaseUrl, setApiAccessTokenCookie } from '../../../lib/market/api-client';
 
 export const prerender = false;

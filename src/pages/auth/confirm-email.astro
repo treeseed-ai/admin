@@ -2,8 +2,8 @@
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
 import { createApiFacade, setApiAccessTokenCookie } from '../../lib/market/api-client';
-import { resolveAnonymousThemePreference, setAnonymousThemeCookies, setPrincipalThemeCookies } from '../../lib/auth/appearance';
-import { normalizeReturnTo, redirectAuthenticatedToApp } from '../../lib/auth/flow';
+import { resolveAnonymousThemePreference, setAnonymousThemeCookies, setPrincipalThemeCookies } from '../../lib/auth/accounts/appearance';
+import { normalizeReturnTo, redirectAuthenticatedToApp } from '../../lib/auth/support/flow';
 
 export const prerender = false;
 

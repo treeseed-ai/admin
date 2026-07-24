@@ -266,8 +266,8 @@ async function main() {
   emitDeclarations();
 
   writeDeclaration('index.d.ts', "export * from './routes.js';\nexport * from './commerce.js';\nexport * from './secret-managers.js';\n");
-  writeDeclaration('config.d.ts', "export { createTreeseedTenantSite as createTreeseedAdminSite } from '@treeseed/core/config';\n");
-  writeDeclaration('content-config.d.ts', "export { createTreeseedTenantCollections as createTreeseedAdminCollections } from '@treeseed/core/content-config';\n");
+  writeDeclaration('config.d.ts', "export { createTenantSite as createAdminSite } from '@treeseed/core/config';\n");
+  writeDeclaration('content-config.d.ts', "export { createTenantCollections as createAdminCollections } from '@treeseed/core/content-config';\n");
   writeDeclaration('plugin.d.ts', "declare const plugin: import('@treeseed/sdk/platform/plugin').TreeseedPlugin;\nexport default plugin;\nexport declare const ADMIN_ENV_SCHEMA: Record<string, unknown>;\nexport declare const ADMIN_CAPABILITIES: Record<string, unknown>;\n");
   writeDeclaration('routes.d.ts', "import type { TreeseedSiteRouteContribution } from '@treeseed/sdk/platform/plugin';\nexport declare const ADMIN_ROUTES: TreeseedSiteRouteContribution[];\n");
   writeDeclaration('commerce.d.ts', readFileSync(resolve(srcRoot, 'commerce.ts'), 'utf8').replace(/export const DEFAULT_ADMIN_COMMERCE_PROVIDER[\s\S]*$/u, 'export declare const DEFAULT_ADMIN_COMMERCE_PROVIDER: AdminCommerceProvider;\n'));

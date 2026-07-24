@@ -2,9 +2,9 @@
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
 import UsernameClaimForm from '@treeseed/ui/components/astro/auth/UsernameClaimForm.astro';
-import { resolveAuthenticatedThemePreference } from '../../lib/auth/appearance';
-import { normalizeReturnTo } from '../../lib/auth/flow';
-import { ensureCsrfToken, requireCsrf } from '../../lib/auth/csrf';
+import { resolveAuthenticatedThemePreference } from '../../lib/auth/accounts/appearance';
+import { normalizeReturnTo } from '../../lib/auth/support/flow';
+import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
 import { createApiFacade, setApiAccessTokenCookie } from '../../lib/market/api-client';
 
 export const prerender = false;

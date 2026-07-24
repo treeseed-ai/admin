@@ -1,15 +1,15 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import Field from '@treeseed/ui/components/astro/forms/Field.astro';
-import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
-import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
-import Textarea from '@treeseed/ui/components/astro/forms/Textarea.astro';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
+import Textarea from '@treeseed/ui/components/astro/forms/fields/Textarea.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import TreeseedAppLayout from '../../../../layouts/TreeseedAppLayout.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
 import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
-import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/csrf';
+import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/support/csrf';
 
 const teamId = String(Astro.params.teamId ?? '');
 if (!Astro.locals.auth?.principal) {

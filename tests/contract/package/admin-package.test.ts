@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../../../src/plugin';
-import type { TreeseedPluginSiteContext, TreeseedSiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
+import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../../../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
 import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../../../src/secret-managers';
@@ -56,15 +56,15 @@ function exportTargets(value: unknown): string[] {
 	return Object.values(value as Record<string, unknown>).flatMap(exportTargets);
 }
 
-function resolveSiteHooks(): TreeseedSiteExtensionContribution {
+function resolveSiteHooks(): SiteExtensionContribution {
 	const hooks = adminPlugin.siteHooks;
 	if (!hooks) return {};
 	if (typeof hooks !== 'function') return hooks;
 	return hooks({
 		projectRoot: process.cwd(),
-		tenantConfig: {} as TreeseedPluginSiteContext['tenantConfig'],
+		tenantConfig: {} as PluginSiteContext['tenantConfig'],
 		pluginConfig: {},
-	} satisfies TreeseedPluginSiteContext);
+	} satisfies PluginSiteContext);
 }
 
 describe('@treeseed/admin identity and team surface', () => {
@@ -79,7 +79,7 @@ describe('@treeseed/admin identity and team surface', () => {
 	});
 
 	it('keeps navigation limited to identity and team management', () => {
-		const appLayout = readFileSync('src/layouts/TreeseedAppLayout.astro', 'utf8');
+		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
 		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new']) {
 			expect(appLayout).toContain(target);
 		}
@@ -113,7 +113,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(packageJson.dependencies).not.toHaveProperty('@treeseed/api');
 		expect(DEFAULT_ADMIN_COMMERCE_PROVIDER.id).toBe('none');
 		expect(DEFAULT_SECRET_MANAGER_PROVIDERS[0]?.id).toBe('treeseed-local-encrypted');
-		expect(readFileSync('src/lib/market/api-client/get-commerce-vendor-sales-summary.ts', 'utf8')).toContain('getCommerceVendorSalesSummaryMethod');
+		expect(readFileSync('src/lib/market/api-client/commerce/vendors/queries/get-commerce-vendor-sales-summary.ts', 'utf8')).toContain('getCommerceVendorSalesSummaryMethod');
 	});
 
 	it('builds declarations and valid package exports', () => {

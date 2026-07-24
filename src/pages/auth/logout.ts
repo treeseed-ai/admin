@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { requireCsrf } from '../../lib/auth/csrf';
+import { requireCsrf } from '../../lib/auth/support/csrf';
 import { clearApiAccessTokenCookie, createApiFacade } from '../../lib/market/api-client';
 
 export const prerender = false;

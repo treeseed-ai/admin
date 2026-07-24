@@ -1,9 +1,9 @@
 import { defineMiddleware } from 'astro:middleware';
 import { resolveEditorialPreview } from '@treeseed/core/middleware/editorial-preview';
-import { getSiteAuthConfig, localAuthCanonicalRedirectUrl } from './lib/auth/config';
+import { getSiteAuthConfig, localAuthCanonicalRedirectUrl } from './lib/auth/configuration/config';
 import { apiAccessTokenFromCookies, clearApiAccessTokenCookie, resolveApiBaseUrl } from './lib/market/api-client';
 import { ensureLocalCloudflareRuntime } from './lib/runtime/local-cloudflare';
-import { ensureCsrfToken } from './lib/auth/csrf';
+import { ensureCsrfToken } from './lib/auth/support/csrf';
 
 const DEV_RESET_COOKIE = 'ts_market_dev_reset';
 const PUBLIC_ROUTE_PREFIXES = [

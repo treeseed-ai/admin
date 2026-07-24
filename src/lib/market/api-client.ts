@@ -1,6 +1,6 @@
 import type { APIContext } from 'astro';
-import { TREESEED_REMOTE_CONTRACT_HEADER, TREESEED_REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/remote';
-import { getSiteAuthConfig } from '../auth/config';
+import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/remote';
+import { getSiteAuthConfig } from '../auth/configuration/config';
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 export type AstroLike = Pick<APIContext, 'locals' | 'cookies' | 'url' | 'request'>;
 export const API_SESSION_COOKIE = 'ts_market_api_access';
@@ -85,7 +85,7 @@ export function apiServiceHeaders(context: Pick<APIContext, 'locals' | 'url'>, o
     const config = getSiteAuthConfig(context);
     const headers = new Headers({
         accept: 'application/json',
-        [TREESEED_REMOTE_CONTRACT_HEADER]: String(TREESEED_REMOTE_CONTRACT_VERSION),
+        [REMOTE_CONTRACT_HEADER]: String(REMOTE_CONTRACT_VERSION),
     });
     const assertion = options.skipUserAssertion ? null : createTrustedWebUserAssertion(context);
     if (assertion || options.forceService) {

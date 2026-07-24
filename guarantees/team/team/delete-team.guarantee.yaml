@@ -34,7 +34,7 @@ preconditions:
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
-  manifest: ./scenes/delete-team.scene.yaml
+  manifest: ../scenes/delete-team.scene.yaml
   mode:
     acceptance: true
     demo: true

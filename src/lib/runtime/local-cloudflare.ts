@@ -14,7 +14,7 @@ interface LocalRuntimeState {
 }
 
 declare global {
-	var __treeseedLocalCloudflareRuntime: Promise<LocalRuntimeState> | undefined;
+	var __LocalCloudflareRuntime: Promise<LocalRuntimeState> | undefined;
 }
 
 class LocalFormGuardKv implements KvNamespaceLike {
@@ -99,14 +99,14 @@ function shouldInstallLocalRuntime(locals: RuntimeLocals) {
 	if (locals.runtime?.env?.SITE_DATA_DB) return false;
 	const processEnv = getProcessEnv();
 	if (!processEnv) return false;
-	return processEnv.TREESEED_LOCAL_DEV_MODE === 'cloudflare'
+	return processEnv.LOCAL_DEV_MODE === 'cloudflare'
 		|| processEnv.TREESEED_API_D1_DATABASE_NAME === 'SITE_DATA_DB'
 		|| processEnv.SITE_DATA_DB === 'SITE_DATA_DB';
 }
 
 export async function ensureLocalCloudflareRuntime(locals: RuntimeLocals) {
 	if (!shouldInstallLocalRuntime(locals)) return;
-	const state = await (globalThis.__treeseedLocalCloudflareRuntime ??= createLocalRuntime());
+	const state = await (globalThis.__LocalCloudflareRuntime ??= createLocalRuntime());
 	locals.runtime = {
 		...(locals.runtime ?? {}),
 		env: {

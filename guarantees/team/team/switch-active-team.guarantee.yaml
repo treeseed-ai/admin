@@ -34,7 +34,7 @@ preconditions:
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
-  manifest: ./scenes/switch-active-team.scene.yaml
+  manifest: ../scenes/switch-active-team.scene.yaml
   mode:
     acceptance: true
     demo: true

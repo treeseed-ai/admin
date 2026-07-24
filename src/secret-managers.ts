@@ -1,18 +1,18 @@
 import {
-	assertTreeseedGitHubActionsEncryptedSecretDeployment,
-	buildTreeseedClientEncryptedEscrowEnvelope,
-	summarizeTreeseedClientEncryptedEscrowStatus,
+	assertGitHubActionsEncryptedSecretDeployment,
+	buildClientEncryptedEscrowEnvelope,
+	summarizeClientEncryptedEscrowStatus,
 } from '@treeseed/sdk/secrets-capability';
 
-type TreeseedClientEncryptedEscrowEnvelopeInput = Parameters<typeof buildTreeseedClientEncryptedEscrowEnvelope>[0];
-type TreeseedGitHubActionsEncryptedSecretDeployment = ReturnType<typeof assertTreeseedGitHubActionsEncryptedSecretDeployment>;
+type ClientEncryptedEscrowEnvelopeInput = Parameters<typeof buildClientEncryptedEscrowEnvelope>[0];
+type GitHubActionsEncryptedSecretDeployment = ReturnType<typeof assertGitHubActionsEncryptedSecretDeployment>;
 
-export type TreeseedSecretScope = 'local' | 'staging' | 'prod';
+export type SecretScope = 'local' | 'staging' | 'prod';
 
 export interface SecretBindingSummary {
   id: string;
   label: string;
-  scope: TreeseedSecretScope;
+  scope: SecretScope;
   status: 'active' | 'missing' | 'error' | (string & {});
   metadata?: Record<string, unknown>;
 }
@@ -21,32 +21,32 @@ export interface SecretResolution {
   resolved: boolean;
   ref: string;
   value?: string;
-  diagnostics?: TreeseedSecretManagerDiagnostic[];
+  diagnostics?: SecretManagerDiagnostic[];
 }
 
 export interface SecretWriteInput {
   ref: string;
   value: string;
-  scope: TreeseedSecretScope;
+  scope: SecretScope;
   metadata?: Record<string, unknown>;
 }
 
 export interface SecretWriteResult {
   ok: boolean;
   ref: string;
-  diagnostics?: TreeseedSecretManagerDiagnostic[];
+  diagnostics?: SecretManagerDiagnostic[];
 }
 
-export interface TreeseedSecretManagerDiagnostic {
+export interface SecretManagerDiagnostic {
   code: string;
   severity: 'info' | 'warning' | 'error';
   message: string;
 }
 
-export interface TreeseedSecretManagerProvider {
+export interface SecretManagerProvider {
   id: string;
   label: string;
-  supportedScopes: TreeseedSecretScope[];
+  supportedScopes: SecretScope[];
   capabilities: {
     write: boolean;
     rotate: boolean;
@@ -56,10 +56,10 @@ export interface TreeseedSecretManagerProvider {
   listBindings(context: unknown): Promise<SecretBindingSummary[]>;
   resolveSecret(context: unknown, ref: string): Promise<SecretResolution>;
   writeSecret(context: unknown, input: SecretWriteInput): Promise<SecretWriteResult>;
-  validateConnection(context: unknown): Promise<TreeseedSecretManagerDiagnostic[]>;
+  validateConnection(context: unknown): Promise<SecretManagerDiagnostic[]>;
 }
 
-function unsupportedWrite(provider: Pick<TreeseedSecretManagerProvider, 'id'>, input: SecretWriteInput): SecretWriteResult {
+function unsupportedWrite(provider: Pick<SecretManagerProvider, 'id'>, input: SecretWriteInput): SecretWriteResult {
   return {
     ok: false,
     ref: input.ref,
@@ -71,7 +71,7 @@ function unsupportedWrite(provider: Pick<TreeseedSecretManagerProvider, 'id'>, i
   };
 }
 
-function provider(id: string, label: string, capabilities: TreeseedSecretManagerProvider['capabilities']): TreeseedSecretManagerProvider {
+function provider(id: string, label: string, capabilities: SecretManagerProvider['capabilities']): SecretManagerProvider {
   return {
     id,
     label,
@@ -92,7 +92,7 @@ function provider(id: string, label: string, capabilities: TreeseedSecretManager
   };
 }
 
-export const DEFAULT_SECRET_MANAGER_PROVIDERS: TreeseedSecretManagerProvider[] = [
+export const DEFAULT_SECRET_MANAGER_PROVIDERS: SecretManagerProvider[] = [
   provider('treeseed-local-encrypted', 'Treeseed local encrypted payloads', { write: true, rotate: false, import: true, audit: false }),
   provider('treeseed-config', 'Treeseed machine config', { write: false, rotate: false, import: true, audit: false }),
   provider('github-actions', 'GitHub Actions secrets and variables', { write: true, rotate: true, import: true, audit: true }),
@@ -101,13 +101,13 @@ export const DEFAULT_SECRET_MANAGER_PROVIDERS: TreeseedSecretManagerProvider[] =
 ];
 
 export function buildAdminClientEncryptedEscrowBody(
-  input: TreeseedClientEncryptedEscrowEnvelopeInput & {
+  input: ClientEncryptedEscrowEnvelopeInput & {
     name?: string;
     secretClass?: string;
     secretMetadata?: Record<string, unknown>;
   },
 ) {
-  const envelope = buildTreeseedClientEncryptedEscrowEnvelope(input);
+  const envelope = buildClientEncryptedEscrowEnvelope(input);
   return {
     ...envelope,
     name: input.name,
@@ -117,8 +117,8 @@ export function buildAdminClientEncryptedEscrowBody(
   };
 }
 
-export function describeAdminClientEncryptedEscrowStatus(record: TreeseedClientEncryptedEscrowEnvelopeInput, now = new Date()) {
-  const summary = summarizeTreeseedClientEncryptedEscrowStatus(record, now);
+export function describeAdminClientEncryptedEscrowStatus(record: ClientEncryptedEscrowEnvelopeInput, now = new Date()) {
+  const summary = summarizeClientEncryptedEscrowStatus(record, now);
   return {
     ...summary,
     label: summary.reentryRequired
@@ -131,15 +131,15 @@ export function describeAdminClientEncryptedEscrowStatus(record: TreeseedClientE
   };
 }
 
-export function buildAdminGitHubActionsSecretDeploymentBody(input: TreeseedGitHubActionsEncryptedSecretDeployment & Record<string, unknown>) {
+export function buildAdminGitHubActionsSecretDeploymentBody(input: GitHubActionsEncryptedSecretDeployment & Record<string, unknown>) {
   return {
-    ...assertTreeseedGitHubActionsEncryptedSecretDeployment(input),
+    ...assertGitHubActionsEncryptedSecretDeployment(input),
     custodyMode: 'github_actions_secret_enclave',
   };
 }
 
 export function describeAdminSecretCapabilityState(
-  input: Partial<TreeseedClientEncryptedEscrowEnvelopeInput> & {
+  input: Partial<ClientEncryptedEscrowEnvelopeInput> & {
     custodyMode?: string | null;
     githubSecretTarget?: Record<string, unknown> | null;
     providerOwned?: boolean | null;
@@ -161,7 +161,7 @@ export function describeAdminSecretCapabilityState(
                 : 'metadata_only_reentry'
   );
   const escrow = custodyMode === 'client_encrypted_escrow'
-    ? describeAdminClientEncryptedEscrowStatus(input as TreeseedClientEncryptedEscrowEnvelopeInput, now)
+    ? describeAdminClientEncryptedEscrowStatus(input as ClientEncryptedEscrowEnvelopeInput, now)
     : null;
   const label = escrow?.label
     ?? (custodyMode === 'github_actions_secret_enclave' ? 'GitHub-backed'

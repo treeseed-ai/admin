@@ -1,8 +1,8 @@
 ---
-import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
 import PersonalThemeManager from '@treeseed/ui/components/astro/account/PersonalThemeManager.astro';
-import { resolveAuthenticatedThemePreference } from '../../../lib/auth/appearance';
+import { resolveAuthenticatedThemePreference } from '../../../lib/auth/accounts/appearance';
 import { handleAppearanceRequest, loadAccountFrame } from '../../../view-models/account-settings';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/appearance')}`);

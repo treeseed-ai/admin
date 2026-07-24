@@ -6,7 +6,7 @@ import {
 	resolveApiBaseUrl,
 	setApiAccessTokenCookie,
 } from '../../lib/market/api-client';
-import { csrfMatches, WEB_CSRF_HEADER } from '../../lib/auth/csrf';
+import { csrfMatches, WEB_CSRF_HEADER } from '../../lib/auth/support/csrf';
 
 export const prerender = false;
 

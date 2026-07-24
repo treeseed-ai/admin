@@ -1,13 +1,13 @@
-import { defineTreeseedRoute, validateTreeseedRouteCapabilities, type TreeseedRouteCapability, type TreeseedSiteRouteContribution } from '@treeseed/sdk/platform/plugin';
+import { defineRoute, validateRouteCapabilities, type RouteCapability, type SiteRouteContribution } from '@treeseed/sdk/platform/plugin';
 
-type CapabilityInput = Partial<TreeseedRouteCapability> & Pick<TreeseedRouteCapability, 'id' | 'description'>;
+type CapabilityInput = Partial<RouteCapability> & Pick<RouteCapability, 'id' | 'description'>;
 
-function adminRoute(pattern: string, resourcePath: string, input: CapabilityInput): TreeseedSiteRouteContribution {
+function adminRoute(pattern: string, resourcePath: string, input: CapabilityInput): SiteRouteContribution {
 	const auth = pattern.startsWith('/auth');
 	const personal = pattern === '/app' || pattern.startsWith('/app/account');
 	const team = pattern.startsWith('/app/teams') || pattern.startsWith('/t/') || pattern.startsWith('/team-invites');
 	const support = pattern.startsWith('/v1/');
-	return defineTreeseedRoute({ pattern, resourcePath, capability: {
+	return defineRoute({ pattern, resourcePath, capability: {
 		owner: 'admin',
 		responseKind: support ? 'proxy' : pattern === '/auth/logout' || pattern.startsWith('/team-invites') ? 'redirect' : 'page',
 		archetype: auth ? 'auth-form' : pattern === '/app' ? 'dashboard' : pattern.startsWith('/u/') || pattern.startsWith('/t/') ? 'profile' : pattern.includes('/delete') || personal ? 'settings' : pattern.endsWith('/new') ? 'wizard' : 'collection',
@@ -26,7 +26,7 @@ function adminRoute(pattern: string, resourcePath: string, input: CapabilityInpu
 	} });
 }
 
-export const ADMIN_ROUTES: readonly TreeseedSiteRouteContribution[] = validateTreeseedRouteCapabilities([
+export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapabilities([
 	adminRoute('/app', 'pages/app/index.astro', { id: 'admin.app.start', description: 'Authenticated identity and active-team start dashboard.', guarantees: ['guarantee.route.registry'] }),
 	adminRoute('/app/account', 'pages/app/account/index.astro', { id: 'admin.account.identity', description: 'Identity, immutable username, verified email, password, and connected-provider settings.', guarantees: ['guarantee.user.account.edit-account-settings.006'] }),
 	adminRoute('/app/account/sessions', 'pages/app/account/sessions.astro', { id: 'admin.account.sessions', description: 'Account session collection with current-session protection and revocation.', guarantees: ['guarantee.user.account.manage-sessions.007'] }),
@@ -53,7 +53,7 @@ export const ADMIN_ROUTES: readonly TreeseedSiteRouteContribution[] = validateTr
 	adminRoute('/team-invites/[token]/accept', 'pages/team-invites/[token]/accept.astro', { id: 'admin.team.invite-accept', description: 'Idempotent invitation acceptance and safe destination.' }),
 ]);
 
-export const ADMIN_SUPPORT_ROUTES: readonly TreeseedSiteRouteContribution[] = validateTreeseedRouteCapabilities([
+export const ADMIN_SUPPORT_ROUTES: readonly SiteRouteContribution[] = validateRouteCapabilities([
 	adminRoute('/v1/[...all]', 'pages/v1/[...all].ts', {
 		id: 'admin.support.api-proxy',
 		description: 'Same-origin authenticated API facade with double-submit CSRF enforcement.',

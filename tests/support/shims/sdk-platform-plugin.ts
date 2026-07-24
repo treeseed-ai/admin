@@ -1,10 +1,10 @@
-export type TreeseedPlugin = Record<string, any>;
-export type TreeseedSiteRouteContribution = {
+export type Plugin = Record<string, any>;
+export type SiteRouteContribution = {
   pattern: string;
   resourcePath: string;
-  capability?: TreeseedRouteCapability;
+  capability?: RouteCapability;
 };
-export type TreeseedRouteCapability = {
+export type RouteCapability = {
   id: string;
   owner: 'market' | 'admin' | 'core';
   responseKind: string;
@@ -23,14 +23,14 @@ export type TreeseedRouteCapability = {
   description: string;
 };
 
-export function defineTreeseedPlugin<T extends TreeseedPlugin>(plugin: T): T {
+export function definePlugin<T extends Plugin>(plugin: T): T {
   return plugin;
 }
 
-export function defineTreeseedRoute<T extends TreeseedSiteRouteContribution>(route: T): T {
+export function defineRoute<T extends SiteRouteContribution>(route: T): T {
   return route;
 }
 
-export function validateTreeseedRouteCapabilities<T extends readonly TreeseedSiteRouteContribution[]>(routes: T): T {
+export function validateRouteCapabilities<T extends readonly SiteRouteContribution[]>(routes: T): T {
   return routes;
 }

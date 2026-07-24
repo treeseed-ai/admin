@@ -1,7 +1,7 @@
 import type { APIContext } from 'astro';
 import { NOTIFICATION_CONTENT_CAPABILITIES, normalizeNotificationPreferences, type PersonalThemeDraft } from '@treeseed/sdk/account-contracts';
 import { validateGuidedThemePalette } from '@treeseed/ui/theme';
-import { ensureCsrfToken, requireCsrf } from '../lib/auth/csrf';
+import { ensureCsrfToken, requireCsrf } from '../lib/auth/support/csrf';
 import { clearApiAccessTokenCookie, createApiFacade } from '../lib/market/api-client';
 import { loadAppContext } from './app-access';
 

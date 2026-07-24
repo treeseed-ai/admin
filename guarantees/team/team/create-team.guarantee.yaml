@@ -33,7 +33,7 @@ preconditions:
     - "Journey dependencies must be satisfied: 4"
 scene:
   required: true
-  manifest: ./scenes/create-team.scene.yaml
+  manifest: ../scenes/create-team.scene.yaml
   mode:
     acceptance: true
     demo: true
