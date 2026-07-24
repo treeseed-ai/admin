@@ -26,7 +26,8 @@
     "access": "public"
   },
   "scripts": {
-    "check:file-lengths": "node --import tsx ./scripts/check-file-lengths.ts",
+    "check:file-lengths": "node --import tsx ./scripts/check-file-lengths.ts && npm run check:file-architecture",
+    "check:file-architecture": "node --import tsx ./scripts/check-file-architecture.ts",
     "setup": "npm install",
     "setup:ci": "npm ci --workspaces=false",
     "build": "npm run build:dist",
@@ -48,9 +49,9 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#0a123d60d9c423c1a59140eaa80efb86c23538b9",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#d7e2c296f3003327a5cca64f83a5950dedba4aac",
-    "@treeseed/ui": "github:treeseed-ai/ui#9c6940f6ca0820c1478815dcbca0f298daf0dae3",
+    "@treeseed/core": "github:treeseed-ai/core#784c3b0f770a3f2252445d8da6006b884b2252b3",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#363356034d2717f401f4cdd0c54b22c16dffc60c",
+    "@treeseed/ui": "github:treeseed-ai/ui#84b54513a13691dc55a5868ab2e97b3f14f83fd6",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
