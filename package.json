@@ -49,8 +49,8 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#a98ecdf205fff69b1f88e5774c3c8839771b875c",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#f2206b8a01a33ad20f40c59a537239a0f2343f77",
+    "@treeseed/core": "github:treeseed-ai/core#07e64f229e18152564c6991e1b3df46f7ce5092d",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#04423b717d32411ab3ff9920b15b222886911b36",
     "@treeseed/ui": "github:treeseed-ai/ui#3703cb057472895d224cf99def95066aa9ea399c",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
