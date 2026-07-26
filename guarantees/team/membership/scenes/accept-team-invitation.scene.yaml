@@ -11,11 +11,14 @@ journey:
     - Accept Team Invitation opens the canonical @treeseed/admin dashboard read model workflow.
     - Accept Team Invitation exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
     - Accept Team Invitation records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: team.primary
-      kind: team
+    - key: team.invitation
+      kind: marker
+  producesState:
+    - key: team.membership-accepted
+      kind: marker
 mode:
   test: true
   demo: true
@@ -74,18 +77,71 @@ artifacts:
   timeline: true
   appLogs: true
 workflow:
-  - id: open-entry-route
-    title: Open Accept Team Invitation
+  - id: open-exact-invitation
+    title: Open the exact invitation from Mailpit
     action:
-      goto: /app/teams/visual-audit-team/members
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: invite-{{runId}}-{{deviceId}}@treeseed.local
+        subjectIncludes: You're invited to join Verified {{runShort}} {{deviceId}}
     expect:
-      urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Accept Team Invitation service surface
+      urlIncludes: /auth/register
+      text: Create account
+  - id: fill-invited-first-name
+    title: Set the invited user's first name
     action:
-      keyboard: Tab
+      fill:
+        role: textbox
+        name: First name
+        value: Invited
     expect:
-      urlIncludes: /app/teams
+      text: Create account
+  - id: fill-invited-last-name
+    title: Set the invited user's last name
+    action:
+      fill:
+        role: textbox
+        name: Last name
+        value: Member
+    expect:
+      text: Create account
+  - id: fill-invited-username
+    title: Set the invited user's username
+    action:
+      fill:
+        role: textbox
+        name: Username
+        value: i-{{runShort}}-{{deviceId}}
+    expect:
+      text: Create account
+  - id: fill-invited-password
+    title: Set the invited user's password
+    action:
+      fill:
+        css: '#registerPassword'
+        internal: true
+        value: TreeSeedInviteGuarantee123!
+    expect:
+      text: Create account
+  - id: confirm-invited-password
+    title: Confirm the invited user's password
+    action:
+      fill:
+        css: 'input[name="confirmPassword"]'
+        internal: true
+        value: TreeSeedInviteGuarantee123!
+    expect:
+      text: Create account
+  - id: submit-invited-registration
+    title: Register and accept as the invited principal
+    action:
+      click:
+        role: button
+        name: Create account
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
 chapters: []
 overlays: []
 diagrams: []

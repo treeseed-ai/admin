@@ -44,7 +44,10 @@ const [personalThemes, notifications] = await Promise.all([
 const customSchemes = Object.fromEntries(personalThemes.flatMap((theme) => {
 	try { return [[theme.schemeId, compileGuidedThemePalette(theme.palette, theme.baseScheme)]]; } catch { return []; }
 }));
-const themeConfig = { schemes: customSchemes };
+const themeConfig = {
+	schemes: customSchemes,
+	schemeNames: Object.fromEntries(personalThemes.map((theme) => [theme.schemeId, theme.name])),
+};
 const csrfToken = ensureCsrfToken(Astro);
 const teamOptions = teams.map((team) => ({
 	id: team.id,
@@ -82,7 +85,7 @@ const teamOptions = teams.map((team) => ({
 		{ label: 'Sign out', action: '/auth/logout', method: 'post' as const, hiddenFields: { csrfToken }, variant: 'secondary' as const },
 	]}
 >
-	<div slot="railContext" class="ts-team-switcher">
+	<div slot="railContext" class="ts-team-switcher" data-active-team-label={activeTeam ? (activeTeam.displayName ?? activeTeam.name ?? activeTeam.slug ?? activeTeam.id) : ''}>
 		<div class="ts-section__eyebrow">Active team</div>
 		{teams.length > 0 ? (
 			<form class="ts-team-selector" aria-label="Active team" data-team-switcher>

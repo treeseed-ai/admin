@@ -15,10 +15,10 @@ journey:
   requiresInteractiveAction: true
   producesState:
     - key: team.primary
-      kind: team
+      kind: marker
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
 mode:
   test: true
   demo: true
@@ -87,20 +87,13 @@ workflow:
     expect:
       urlIncludes: /app/teams
       text: Create team
-  - id: fill-team-name
-    title: Fill team name
-    action:
-      fill:
-        css: '#name'
-        value: guarantee-team-{{runShort}}
-    expect:
-      text: Create team
   - id: fill-team-display-name
     title: Fill team display name
     action:
       fill:
         css: '#displayName'
-        value: Guarantee Team {{runShort}}
+        internal: true
+        value: Guarantee {{runShort}} {{deviceId}}
     expect:
       text: Create team
   - id: fill-team-summary
@@ -112,6 +105,15 @@ workflow:
         value: Team created by the guarantee service journey for downstream UI verification.
     expect:
       text: Create team
+  - id: fill-team-name
+    title: Fill team name after dependent identity fields
+    action:
+      fill:
+        css: '#name'
+        internal: true
+        value: gt-{{runShort}}-{{deviceId}}
+    expect:
+      text: Create team
   - id: submit-team
     title: Submit team creation
     action:
@@ -121,11 +123,14 @@ workflow:
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface
-    title: Inspect Create Team service surface
+    title: Reload the durable team settings
     action:
-      keyboard: Tab
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/edit
     expect:
-      urlIncludes: /app/teams
+      urlIncludes: /edit
+      visible:
+        - role: textbox
+          name: Display name
 chapters: []
 overlays: []
 diagrams: []

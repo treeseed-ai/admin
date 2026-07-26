@@ -9,16 +9,14 @@ summary: Display public team identity and profile metadata without project, capa
 status: active
 dependencies:
   journeys:
-    - 12
+    - 14
   guarantees:
-    - guarantee.team.team.create-team.012
+    - guarantee.team.team.edit-team-settings.014
 actors:
   allowed:
-    - team_admin
-    - team_owner
-  forbidden:
     - anonymous_user
-    - unauthorized_user
+  forbidden:
+    - none
 devices:
   required:
     - desktop_chromium
@@ -30,16 +28,16 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
   manifest: ../scenes/view-team-profile.scene.yaml
+  executionKey: admin.team.public-profile
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /t/treeseed
+  entryRoute: /t/[name]
   componentContract: public team identity profile
   expectedEvidence:
     - playwright_trace

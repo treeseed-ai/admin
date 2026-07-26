@@ -11,11 +11,14 @@ journey:
     - Manage Sessions opens the canonical @treeseed/admin dashboard read model workflow.
     - Manage Sessions exercises a service journey instead of only loading /app/account.
     - Manage Sessions records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
+  producesState:
+    - key: account.sessions-reviewed
+      kind: marker
 mode:
   test: true
   demo: true
@@ -83,12 +86,58 @@ workflow:
       goto: /app/account/sessions
     expect:
       urlIncludes: /app/account/sessions
-  - id: inspect-service-surface
-    title: Inspect Manage Sessions service surface
+      visible:
+        - scene: account-sessions
+      text: Current session
+  - id: create-revocable-session
+    title: Create an additional session owned by this run
     action:
-      keyboard: Tab
+      apiRequest:
+        base: api
+        path: /v1/auth/web/sign-in
+        method: POST
+        expectedStatus: 200
+        headers:
+          user-agent: Treeseed Guarantee Revocable Session
+        body:
+          email: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+          password: TreeSeedGuaranteeReset123!
     expect:
       urlIncludes: /app/account/sessions
+      text: Current session
+  - id: reload-session-list
+    title: Load the run-owned revocable session
+    action:
+      goto: /app/account/sessions
+    expect:
+      visible:
+        - scene: account-sessions
+      text: Revoke session
+  - id: reject-current-session-revocation
+    title: Prove no current-session revoke control is exposed
+    action:
+      goto: /app/account/sessions
+    expect:
+      urlIncludes: /app/account/sessions
+      text: Current session
+      notText: Revoke current session
+  - id: revoke-extra-session
+    title: Revoke the additional non-current session
+    action:
+      click:
+        css: '[data-session-user-agent="treeseed-guarantee-revocable-session"]'
+        internal: true
+    expect:
+      urlIncludes: /app/account/sessions
+      text: Session revoked.
+  - id: verify-revoked-session
+    title: Verify the revoked session remains observable
+    action:
+      goto: /app/account/sessions
+    expect:
+      visible:
+        - scene: account-sessions
+      text: Revoked
 chapters: []
 overlays: []
 diagrams: []

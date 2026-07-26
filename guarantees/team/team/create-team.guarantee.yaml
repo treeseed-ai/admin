@@ -29,11 +29,11 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 4"
 scene:
   required: true
   manifest: ../scenes/create-team.scene.yaml
+  executionKey: admin.team.create
   mode:
     acceptance: true
     demo: true
@@ -54,8 +54,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.team.lifecycle.audit]
 negativeCases:
   - id: non-member-denied
     actor: non_member

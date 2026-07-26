@@ -7,7 +7,7 @@ journey: Verify Email
 ownerPackage: "@treeseed/admin"
 summary: Complete auth-provider verification then redirect into the authenticated Market/admin shell; implementation
   should not bypass the provider session model.
-status: planned
+status: active
 dependencies:
   journeys:
     - 1
@@ -33,12 +33,13 @@ preconditions:
     - "Journey dependencies must be satisfied: 1"
 scene:
   required: true
-  manifest: ./scenes/verify-email.scene.yaml
+  manifest: ./scenes/register-user.scene.yaml
+  executionKey: admin.identity.onboarding
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /auth/confirm-email
+  entryRoute: /auth/register
   componentContract: redirect/session guarantee harness
   expectedEvidence:
     - playwright_trace
@@ -54,8 +55,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.auth.lifecycle.audit]
 negativeCases:
   - id: anonymous-denied
     actor: anonymous_user
@@ -75,4 +76,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

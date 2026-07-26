@@ -11,13 +11,16 @@ journey:
     - Invite Team Members opens the canonical @treeseed/admin record modal form workflow.
     - Invite Team Members exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
     - Invite Team Members records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
-    - key: team.primary
-      kind: team
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.updated
+      kind: marker
+  producesState:
+    - key: team.invitation
+      kind: marker
 mode:
   test: true
   demo: true
@@ -82,15 +85,46 @@ workflow:
   - id: open-entry-route
     title: Open Invite Team Members
     action:
-      goto: /app/teams/visual-audit-team/members
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
     expect:
-      urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Invite Team Members service surface
+      text: Invite member
+  - id: fill-recipient
+    title: Enter a unique invited user
     action:
-      keyboard: Tab
+      fill:
+        role: textbox
+        name: Email
+        value: invite-{{runId}}-{{deviceId}}@treeseed.local
     expect:
-      urlIncludes: /app/teams
+      text: Invite member
+  - id: choose-role
+    title: Select the initial contributor role
+    action:
+      select:
+        role: combobox
+        name: Role
+        value: contributor
+    expect:
+      text: Invite member
+  - id: send-invitation
+    title: Send the invitation through the member UI
+    action:
+      click:
+        role: button
+        name: Invite member
+    expect:
+      text: Invite sent to invite-{{runId}}-{{deviceId}}@treeseed.local.
+  - id: observe-invitation-email
+    title: Observe exact invitation delivery in Mailpit
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: invite-{{runId}}-{{deviceId}}@treeseed.local
+        subjectIncludes: You're invited to join Verified {{runShort}} {{deviceId}}
+        navigate: false
+    expect:
+      urlIncludes: /members
+      text: Invite sent
 chapters: []
 overlays: []
 diagrams: []

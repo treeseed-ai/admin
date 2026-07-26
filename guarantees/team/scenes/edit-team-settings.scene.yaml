@@ -11,13 +11,16 @@ journey:
     - Edit Team Settings opens the canonical @treeseed/admin full page form workflow.
     - Edit Team Settings exercises a service journey instead of only loading /app/teams/visual-audit-team/edit.
     - Edit Team Settings records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
-    - key: team.primary
-      kind: team
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.active
+      kind: marker
+  producesState:
+    - key: team.updated
+      kind: marker
 mode:
   test: true
   demo: true
@@ -82,15 +85,45 @@ workflow:
   - id: open-entry-route
     title: Open Edit Team Settings
     action:
-      goto: /app/teams/visual-audit-team/edit
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/edit
     expect:
       urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Edit Team Settings service surface
+      text: Edit team
+  - id: update-display-name
+    title: Update the public team display name
     action:
-      keyboard: Tab
+      fill:
+        css: '#displayName'
+        internal: true
+        value: Verified {{runShort}} {{deviceId}}
     expect:
-      urlIncludes: /app/teams
+      text: Save team
+  - id: update-summary
+    title: Update the identity-only public summary
+    action:
+      fill:
+        role: textbox
+        name: Profile summary
+        value: Public identity verified by a complete team settings service journey.
+    expect:
+      text: Save team
+  - id: save-team
+    title: Persist the team settings
+    action:
+      click:
+        role: button
+        name: Save team
+    expect:
+      urlIncludes: saved=1
+      text: Saved.
+  - id: reload-team
+    title: Reload persisted settings
+    action:
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/edit
+    expect:
+      visible:
+        - css: '[data-team-display-name="Verified {{runShort}} {{deviceId}}"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []

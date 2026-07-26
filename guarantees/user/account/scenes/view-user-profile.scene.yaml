@@ -11,8 +11,11 @@ journey:
     - View User Profile opens the public identity-only @treeseed/admin profile.
     - View User Profile does not expose project, catalog, or knowledge distribution links.
     - View User Profile records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 3
   requiresInteractiveAction: true
+  consumesState:
+    - key: account.profile-updated
+      kind: marker
 mode:
   test: true
   demo: true
@@ -62,9 +65,6 @@ setup:
   dev:
     required: true
     reuseExisting: true
-  auth:
-    role: owner
-    required: true
 artifacts:
   trace: true
   video: true
@@ -75,25 +75,47 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-entry-route
-    title: Open account settings
+    title: Open the anonymous public profile
     action:
-      goto: /app/account
+      goto: /u/g-{{runShort}}-{{deviceId}}
     expect:
-      urlIncludes: /app/account
-  - id: open-public-profile
-    title: Follow the public profile link
+      urlIncludes: /u/g-
+      text: Public TreeSeed account identity.
+      visible:
+        - scene: profile-template
+  - id: verify-private-data-redacted
+    title: Verify private identity data is redacted
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+  - id: verify-memberships-redacted
+    title: Verify memberships are not published
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: Memberships
+  - id: verify-projects-redacted
+    title: Verify projects are not published
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: Projects
+  - id: verify-roles-redacted
+    title: Verify roles are not published
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: Roles
+  - id: leave-public-profile
+    title: Follow the public manager link
     action:
       click:
-        css: 'a[href^="/u/"]'
-        internal: true
+        role: link
+        name: Manager
     expect:
-      urlIncludes: /u/
-  - id: inspect-identity-surface
-    title: Inspect the identity-only profile
-    action:
-      keyboard: Tab
-    expect:
-      text: TreeSeed account
+      urlIncludes: /auth/sign-in
+      text: Sign in
 chapters: []
 overlays: []
 diagrams: []

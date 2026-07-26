@@ -8,10 +8,10 @@ ownerPackage: "@treeseed/admin"
 summary: Delete or archive a team only after checking projects hosts capacity and content ownership; likely requires explicit retention and transfer rules.
 status: active
 dependencies:
-  journeys:
-    - 12
+  journeys: []
   guarantees:
-    - guarantee.team.team.create-team.012
+    - guarantee.team.membership.remove-team-member.020
+    - guarantee.team.team.view-team-profile.015
 actors:
   allowed:
     - team_admin
@@ -30,16 +30,16 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
-    - "Journey dependencies must be satisfied: 12"
+    - Membership lifecycle and public profile verification must finish before deletion.
 scene:
   required: true
   manifest: ../scenes/delete-team.scene.yaml
+  executionKey: admin.team.delete
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/visual-audit-team/delete
+  entryRoute: /app/teams/[teamId]/delete
   componentContract: destructive-confirmation service journey
   expectedEvidence:
     - playwright_trace
@@ -55,8 +55,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.team.lifecycle.audit]
 negativeCases:
   - id: non-member-denied
     actor: non_member

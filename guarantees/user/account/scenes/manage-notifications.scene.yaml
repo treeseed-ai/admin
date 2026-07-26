@@ -12,7 +12,9 @@ journey:
   minimumSteps: 4
   requiresInteractiveAction: true
   consumesState:
-    - { key: auth.owner, kind: user }
+    - { key: auth.primary-session, kind: browser-storage }
+  producesState:
+    - { key: account.notifications-updated, kind: marker }
 mode: { test: true, demo: true, training: true }
 target:
   app: market
@@ -49,7 +51,7 @@ workflow:
   - id: open-notifications
     title: Open notification preferences
     action: { goto: /app/account/notifications }
-    expect: { urlIncludes: /app/account/notifications, text: Notification preferences }
+    expect: { urlIncludes: /app/account/notifications, visible: [{ scene: account-notifications }] }
   - id: select-weekly
     title: Select weekly email cadence
     action: { click: { role: radio, name: Weekly } }
@@ -62,6 +64,10 @@ workflow:
     title: Save notification preferences
     action: { click: { role: button, name: Save notification preferences } }
     expect: { urlIncludes: /app/account/notifications, text: Notification preferences saved. }
+  - id: reload-preferences
+    title: Reload persisted notification preferences
+    action: { goto: /app/account/notifications }
+    expect: { urlIncludes: /app/account/notifications, text: Weekly }
 chapters: []
 overlays: []
 diagrams: []

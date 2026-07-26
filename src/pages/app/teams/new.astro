@@ -64,7 +64,7 @@ const context = await loadAppContext(Astro);
 				{formError && <p class="ts-form-error" role="alert">{formError}</p>}
 				<div class="ts-form-grid">
 					<Field label="Name" name="name" required>
-						<TextInput name="name" required placeholder="acme-ops" pattern="[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?" value={formValues.name} />
+						<TextInput name="name" required placeholder="acme-ops" pattern="[a-z0-9](?:[a-z0-9\\-]{0,61}[a-z0-9])?" value={formValues.name} />
 					</Field>
 					<Field label="Display name" name="displayName">
 						<TextInput name="displayName" placeholder="Acme Operations" value={formValues.displayName} />

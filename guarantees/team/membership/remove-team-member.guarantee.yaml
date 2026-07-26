@@ -9,9 +9,9 @@ summary: Remove or deactivate a team member with auditability; must avoid orphan
 status: active
 dependencies:
   journeys:
-    - 18
+    - 19
   guarantees:
-    - guarantee.team.membership.accept-team-invitation.018
+    - guarantee.team.membership.change-member-role.019
 actors:
   allowed:
     - team_admin
@@ -30,16 +30,16 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 18"
 scene:
   required: true
   manifest: ./scenes/remove-team-member.scene.yaml
+  executionKey: admin.team.remove-member
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/visual-audit-team/members
+  entryRoute: /app/teams/[teamId]/members
   componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
@@ -55,8 +55,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.team.lifecycle.audit]
 negativeCases:
   - id: non-member-denied
     actor: non_member

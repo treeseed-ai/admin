@@ -11,14 +11,14 @@ journey:
     - anonymous user can open sign-in
     - sign-in form accepts credentials
     - sign-in submission reaches authenticated app shell or returns a visible auth error
-  minimumSteps: 4
+  minimumSteps: 7
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.verified-owner
-      kind: user
+    - key: credentials.reset
+      kind: marker
   producesState:
-    - key: auth.session
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
 mode:
   test: true
   demo: true
@@ -83,10 +83,6 @@ setup:
   dev:
     required: true
     reuseExisting: true
-  auth:
-    role: owner
-    required: true
-    seedOnly: true
 artifacts:
   trace: true
   video: true
@@ -109,7 +105,7 @@ workflow:
       fill:
         role: textbox
         name: Email or username
-        value: visual.owner@treeseed.io
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
       visible:
         - role: textbox
@@ -120,15 +116,41 @@ workflow:
       fill:
         css: input[name='password']
         internal: true
-        value: TreeSeedVisualAudit!2026
+        value: incorrect-password
     expect:
       text: Password
-  - id: submit-sign-in
-    title: Submit sign in
+  - id: reject-invalid-sign-in
+    title: Reject invalid credentials
     action:
       click:
         role: button
         name: Sign in
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Authentication failed.
+  - id: enter-correct-password
+    title: Enter the reset password
+    action:
+      fill:
+        css: input[name='password']
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Password
+  - id: submit-sign-in
+    title: Submit valid sign in
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reload-authenticated-dashboard
+    title: Reload the authenticated dashboard
+    action:
+      goto: /app
     expect:
       urlIncludes: /app
       visible:

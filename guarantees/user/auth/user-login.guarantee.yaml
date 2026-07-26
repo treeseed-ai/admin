@@ -7,12 +7,12 @@ journey: User Login
 ownerPackage: "@treeseed/admin"
 summary: Establish an authenticated session for Market/admin surfaces; downstream journeys assume API calls carry the
   authenticated user context.
-status: planned
+status: active
 dependencies:
   journeys:
-    - 2
+    - 3
   guarantees:
-    - guarantee.user.auth.verify-email.002
+    - guarantee.user.auth.forgot-reset-password.003
 actors:
   allowed:
     - anonymous_user
@@ -34,6 +34,7 @@ preconditions:
 scene:
   required: true
   manifest: ./scenes/user-login.scene.yaml
+  executionKey: admin.identity.login
   mode:
     acceptance: true
     demo: true
@@ -74,4 +75,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

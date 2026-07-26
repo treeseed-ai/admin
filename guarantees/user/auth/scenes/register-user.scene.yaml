@@ -11,11 +11,13 @@ journey:
     - anonymous user can open registration
     - registration form accepts required profile fields
     - registration submits into the email verification flow
-  minimumSteps: 8
+  minimumSteps: 9
   requiresInteractiveAction: true
   producesState:
-    - key: auth.owner
-      kind: user
+    - key: identity.primary
+      kind: marker
+    - key: auth.onboarding-session
+      kind: browser-storage
 mode:
   test: true
   demo: true
@@ -124,7 +126,7 @@ workflow:
       fill:
         role: textbox
         name: Username
-        value: review-{{runShort}}
+        value: g-{{runShort}}-{{deviceId}}
     expect:
       text: Username is available.
   - id: verify-username-immutability
@@ -139,10 +141,7 @@ workflow:
       fill:
         role: textbox
         name: Email
-        # Staging intentionally verifies the real SMTP delivery path. Use an
-        # authorized mailbox and a run-specific plus address so every run is
-        # independently traceable without reusing a prior registration.
-        value: adrian.webb+review-{{runShort}}@knowledge.coop
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
       text: Email is available.
   - id: enter-password
@@ -172,6 +171,19 @@ workflow:
     expect:
       urlIncludes: /auth/check-email
       text: Check your email
+  - id: confirm-registration-email
+    title: Confirm the delivered registration email
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+        subjectIncludes: Confirm your Treeseed Market email
+        displayInboxSeconds: 1
+        displayMessageSeconds: 1
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
 chapters: []
 overlays: []
 diagrams: []

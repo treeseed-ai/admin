@@ -6,12 +6,11 @@ subtype: account
 journey: Delete User
 ownerPackage: "@treeseed/admin"
 summary: Perform a destructive account removal with ownership and membership checks; needs policy around teams projects content and provider-owned auth records.
-status: planned
+status: active
 dependencies:
-  journeys:
-    - 4
+  journeys: []
   guarantees:
-    - guarantee.user.auth.user-login.004
+    - guarantee.user.auth.user-logout.005
 actors:
   allowed:
     - verified_user
@@ -29,11 +28,11 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
-    - "Journey dependencies must be satisfied: 4"
+    - Team deletion and logout must complete before final account deletion.
 scene:
   required: true
   manifest: ./scenes/delete-user.scene.yaml
+  executionKey: admin.account.delete
   mode:
     acceptance: true
     demo: true
@@ -54,8 +53,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.auth.lifecycle.audit]
 negativeCases:
   - id: anonymous-denied
     actor: anonymous_user
@@ -73,4 +72,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

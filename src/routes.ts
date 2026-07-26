@@ -27,17 +27,17 @@ function adminRoute(pattern: string, resourcePath: string, input: CapabilityInpu
 }
 
 export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapabilities([
-	adminRoute('/app', 'pages/app/index.astro', { id: 'admin.app.start', description: 'Authenticated identity and active-team start dashboard.', guarantees: ['guarantee.route.registry'] }),
+	adminRoute('/app', 'pages/app/index.astro', { id: 'admin.app.start', description: 'Authenticated identity and active-team start dashboard.', guarantees: ['guarantee.user.auth.user-login.004', 'guarantee.team.team.switch-active-team.013'] }),
 	adminRoute('/app/account', 'pages/app/account/index.astro', { id: 'admin.account.identity', description: 'Identity, immutable username, verified email, password, and connected-provider settings.', guarantees: ['guarantee.user.account.edit-account-settings.006'] }),
 	adminRoute('/app/account/sessions', 'pages/app/account/sessions.astro', { id: 'admin.account.sessions', description: 'Account session collection with current-session protection and revocation.', guarantees: ['guarantee.user.account.manage-sessions.007'] }),
-	adminRoute('/app/account/notifications', 'pages/app/account/notifications.astro', { id: 'admin.account.notifications', description: 'Global and per-project content notification preferences and email cadence.', guarantees: ['guarantee.user.account.manage-notifications.011'] }),
+	adminRoute('/app/account/notifications', 'pages/app/account/notifications.astro', { id: 'admin.account.notifications', description: 'Global and per-project content notification preferences and email cadence.', guarantees: ['guarantee.user.account.manage-notifications.008'] }),
 	adminRoute('/app/account/appearance', 'pages/app/account/appearance.astro', { id: 'admin.account.appearance', description: 'Personal theme creation and management; activation remains in the shell selector.', guarantees: ['guarantee.user.account.manage-appearance.009'] }),
 	adminRoute('/app/account/delete', 'pages/app/account/delete.astro', { id: 'admin.account.delete', description: 'Blocked, reauthenticated, exact-confirmation account deletion.', guarantees: ['guarantee.user.account.delete-user.011'] }),
-	adminRoute('/app/teams', 'pages/app/teams/index.astro', { id: 'admin.team.collection', description: 'Teams available to the principal and active-team selection.' }),
-	adminRoute('/app/teams/new', 'pages/app/teams/new.astro', { id: 'admin.team.create', description: 'Authenticated team creation.' }),
-	adminRoute('/app/teams/[teamId]/edit', 'pages/app/teams/[teamId]/edit.astro', { id: 'admin.team.edit', description: 'Authorized team identity settings.' }),
-	adminRoute('/app/teams/[teamId]/delete', 'pages/app/teams/[teamId]/delete.astro', { id: 'admin.team.delete', description: 'Authorized, blocker-aware team deletion.' }),
-	adminRoute('/app/teams/[teamId]/members', 'pages/app/teams/[teamId]/members.astro', { id: 'admin.team.members', description: 'Team membership, invitation, role, and removal operations.' }),
+	adminRoute('/app/teams', 'pages/app/teams/index.astro', { id: 'admin.team.collection', description: 'Teams available to the principal and active-team selection.', guarantees: ['guarantee.team.team.switch-active-team.013'] }),
+	adminRoute('/app/teams/new', 'pages/app/teams/new.astro', { id: 'admin.team.create', description: 'Authenticated team creation.', guarantees: ['guarantee.team.team.create-team.012'] }),
+	adminRoute('/app/teams/[teamId]/edit', 'pages/app/teams/[teamId]/edit.astro', { id: 'admin.team.edit', description: 'Authorized team identity settings.', guarantees: ['guarantee.team.team.edit-team-settings.014'] }),
+	adminRoute('/app/teams/[teamId]/delete', 'pages/app/teams/[teamId]/delete.astro', { id: 'admin.team.delete', description: 'Authorized, blocker-aware team deletion.', guarantees: ['guarantee.team.team.delete-team.016'] }),
+	adminRoute('/app/teams/[teamId]/members', 'pages/app/teams/[teamId]/members.astro', { id: 'admin.team.members', description: 'Team membership, invitation, role, and removal operations.', guarantees: ['guarantee.team.membership.invite-team-members.017', 'guarantee.team.membership.change-member-role.019', 'guarantee.team.membership.remove-team-member.020'] }),
 	adminRoute('/auth/register', 'pages/auth/register.astro', { id: 'admin.auth.register', description: 'Credential registration with username/email availability and immutable username disclosure.', guarantees: ['guarantee.user.auth.register-user.001'] }),
 	adminRoute('/auth/check-email', 'pages/auth/check-email.astro', { id: 'admin.auth.check-email', description: 'Hidden verification/reset check-inbox continuation.', archetype: 'message', template: 'MessageTemplate' }),
 	adminRoute('/auth/confirm-email', 'pages/auth/confirm-email.astro', { id: 'admin.auth.confirm-email', description: 'Email-confirmation token result and recovery.', archetype: 'message', guarantees: ['guarantee.user.auth.verify-email.002'] }),
@@ -49,8 +49,8 @@ export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapab
 	adminRoute('/auth/device/approve', 'pages/auth/device/approve.astro', { id: 'admin.auth.device-approve', description: 'Authenticated CLI/device authorization approval.', accessPolicy: ['signed-in principal', 'valid pending device request'] }),
 	adminRoute('/auth/callback/[provider]', 'pages/auth/callback/[provider].ts', { id: 'admin.auth.provider-callback', description: 'Hidden configured-provider callback with one-time state, nonce, PKCE, and safe redirect.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['configured provider', 'one-time database state', 'nonce and PKCE validation', 'safe return URL'] }),
 	adminRoute('/u/[username]', 'pages/u/[username].astro', { id: 'admin.profile.user', description: 'Public identity-only user profile.', guarantees: ['guarantee.user.account.view-user-profile.010'] }),
-	adminRoute('/t/[name]', 'pages/t/[name].astro', { id: 'admin.profile.team', description: 'Public identity-only team profile.' }),
-	adminRoute('/team-invites/[token]/accept', 'pages/team-invites/[token]/accept.astro', { id: 'admin.team.invite-accept', description: 'Idempotent invitation acceptance and safe destination.' }),
+	adminRoute('/t/[name]', 'pages/t/[name].astro', { id: 'admin.profile.team', description: 'Public identity-only team profile.', guarantees: ['guarantee.team.team.view-team-profile.015'] }),
+	adminRoute('/team-invites/[token]/accept', 'pages/team-invites/[token]/accept.astro', { id: 'admin.team.invite-accept', description: 'Idempotent invitation acceptance and safe destination.', guarantees: ['guarantee.team.membership.accept-team-invitation.018'] }),
 ]);
 
 export const ADMIN_SUPPORT_ROUTES: readonly SiteRouteContribution[] = validateRouteCapabilities([

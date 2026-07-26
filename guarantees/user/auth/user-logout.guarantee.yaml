@@ -6,12 +6,15 @@ subtype: auth
 journey: User Logout
 ownerPackage: "@treeseed/admin"
 summary: End the provider session and clear local admin state before redirecting to the anonymous sign-in surface.
-status: planned
+status: active
 dependencies:
-  journeys:
-    - 4
+  journeys: []
   guarantees:
-    - guarantee.user.auth.user-login.004
+    - guarantee.user.account.view-user-profile.010
+    - guarantee.user.account.manage-sessions.007
+    - guarantee.user.account.manage-notifications.008
+    - guarantee.user.account.manage-appearance.009
+    - guarantee.team.team.delete-team.016
 actors:
   allowed:
     - verified_user
@@ -35,11 +38,12 @@ preconditions:
 scene:
   required: true
   manifest: ./scenes/user-logout.scene.yaml
+  executionKey: admin.identity.logout
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /auth/logout
+  entryRoute: /app/
   componentContract: redirect/session guarantee harness
   expectedEvidence:
     - playwright_trace
@@ -55,8 +59,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.auth.lifecycle.audit]
 negativeCases:
   - id: anonymous-denied
     actor: anonymous_user
@@ -74,4 +78,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

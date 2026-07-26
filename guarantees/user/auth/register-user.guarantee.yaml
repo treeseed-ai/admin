@@ -7,7 +7,7 @@ journey: Register User
 ownerPackage: "@treeseed/admin"
 summary: Create an account record and start email verification through the auth provider used by the admin/core runtime;
   this is product plumbing rather than a Treeseed content operation.
-status: planned
+status: active
 dependencies:
   journeys: []
   guarantees: []
@@ -31,6 +31,7 @@ preconditions:
 scene:
   required: true
   manifest: ./scenes/register-user.scene.yaml
+  executionKey: admin.identity.onboarding
   mode:
     acceptance: true
     demo: true
@@ -51,8 +52,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.auth.lifecycle.audit]
 negativeCases:
   - id: anonymous-denied
     actor: anonymous_user
@@ -71,4 +72,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

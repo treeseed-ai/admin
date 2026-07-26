@@ -9,9 +9,9 @@ summary: Create team invitation records and send notices; roles should map to AP
 status: active
 dependencies:
   journeys:
-    - 12
+    - 14
   guarantees:
-    - guarantee.team.team.create-team.012
+    - guarantee.team.team.edit-team-settings.014
 actors:
   allowed:
     - team_admin
@@ -30,16 +30,16 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
   manifest: ./scenes/invite-team-members.scene.yaml
+  executionKey: admin.team.invite
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/visual-audit-team/members
+  entryRoute: /app/teams/[teamId]/members
   componentContract: modal-form service journey
   expectedEvidence:
     - playwright_trace
@@ -55,8 +55,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.team.lifecycle.audit]
 negativeCases:
   - id: non-member-denied
     actor: non_member

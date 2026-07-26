@@ -11,11 +11,14 @@ journey:
     - Edit Account Settings opens the canonical @treeseed/admin full page form workflow.
     - Edit Account Settings exercises a service journey instead of only loading /app/account.
     - Edit Account Settings records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
+  producesState:
+    - key: account.profile-updated
+      kind: marker
 mode:
   test: true
   demo: true
@@ -83,12 +86,42 @@ workflow:
       goto: /app/account
     expect:
       urlIncludes: /app/account
-  - id: inspect-service-surface
-    title: Inspect Edit Account Settings service surface
+      visible:
+        - scene: account-identity
+  - id: edit-first-name
+    title: Edit the public first name
     action:
-      keyboard: Tab
+      fill:
+        role: textbox
+        name: First name
+        value: Guarantee
+    expect:
+      text: Public profile
+  - id: edit-last-name
+    title: Edit the public last name
+    action:
+      fill:
+        role: textbox
+        name: Last name
+        value: "{{deviceId}}"
+    expect:
+      text: Public profile
+  - id: save-profile
+    title: Save account identity
+    action:
+      click:
+        role: button
+        name: Save identity
     expect:
       urlIncludes: /app/account
+      text: Identity saved.
+  - id: reload-profile
+    title: Reload the durable profile
+    action:
+      goto: /app/account
+    expect:
+      visible:
+        - scene: account-identity
 chapters: []
 overlays: []
 diagrams: []

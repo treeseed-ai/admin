@@ -11,13 +11,16 @@ journey:
     - Switch Active Team opens the canonical @treeseed/admin dashboard read model workflow.
     - Switch Active Team exercises a service journey instead of only loading /app/teams.
     - Switch Active Team records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 4
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
     - key: team.primary
-      kind: team
+      kind: marker
+  producesState:
+    - key: team.active
+      kind: marker
 mode:
   test: true
   demo: true
@@ -85,12 +88,40 @@ workflow:
       goto: /app/teams
     expect:
       urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Switch Active Team service surface
+      visible:
+        - css: '[data-active-team-label="TreeSeed"]:visible'
+          internal: true
+  - id: switch-to-personal-team
+    title: Select the personal team through the shell
     action:
-      keyboard: Tab
+      select:
+        role: combobox
+        name: Active team
+        label: Tree Seed
     expect:
-      urlIncludes: /app/teams
+      visible:
+        - css: '[data-active-team-label="Tree Seed"]:visible'
+          internal: true
+  - id: switch-to-created-team
+    title: Select the created team through the shell
+    action:
+      select:
+        role: combobox
+        name: Active team
+        label: Guarantee {{runShort}} {{deviceId}}
+    expect:
+      visible:
+        - css: '[data-active-team-label="Guarantee {{runShort}} {{deviceId}}"]:visible'
+          internal: true
+  - id: reload-active-team
+    title: Prove active-team cookie persistence after reload
+    action:
+      goto: /app
+    expect:
+      urlIncludes: /app
+      visible:
+        - css: '[data-active-team-label="Guarantee {{runShort}} {{deviceId}}"]:visible'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []

@@ -11,13 +11,16 @@ journey:
     - Remove Team Member opens the canonical @treeseed/admin destructive confirmation workflow.
     - Remove Team Member exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
     - Remove Team Member records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 3
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
-    - key: team.primary
-      kind: team
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.member-role-changed
+      kind: marker
+  producesState:
+    - key: team.member-removed
+      kind: marker
 mode:
   test: true
   demo: true
@@ -82,15 +85,23 @@ workflow:
   - id: open-entry-route
     title: Open Remove Team Member
     action:
-      goto: /app/teams/visual-audit-team/members
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
     expect:
-      urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Remove Team Member service surface
+      text: invite-{{runId}}-{{deviceId}}@treeseed.local
+  - id: remove-invited-member
+    title: Remove the invited member
     action:
-      keyboard: Tab
+      click:
+        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] button[data-remove-member]'
+        internal: true
     expect:
-      urlIncludes: /app/teams
+      urlIncludes: removed=
+  - id: verify-member-removed
+    title: Verify the member no longer appears
+    action:
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
+    expect:
+      notText: invite-{{runId}}-{{deviceId}}@treeseed.local
 chapters: []
 overlays: []
 diagrams: []

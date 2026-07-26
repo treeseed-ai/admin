@@ -14,10 +14,8 @@ dependencies:
     - guarantee.team.membership.invite-team-members.017
 actors:
   allowed:
-    - team_admin
-    - team_owner
-  forbidden:
     - anonymous_user
+  forbidden:
     - unauthorized_user
 devices:
   required:
@@ -30,16 +28,16 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 17"
 scene:
   required: true
   manifest: ./scenes/accept-team-invitation.scene.yaml
+  executionKey: admin.team.accept-invite
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/visual-audit-team/members
+  entryRoute: /team-invites/[token]/accept
   componentContract: redirect/session service journey
   expectedEvidence:
     - playwright_trace
@@ -55,8 +53,8 @@ content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.team.lifecycle.audit]
 negativeCases:
   - id: non-member-denied
     actor: non_member

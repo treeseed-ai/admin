@@ -11,13 +11,16 @@ journey:
     - Change Member Role opens the canonical @treeseed/admin dashboard read model workflow.
     - Change Member Role exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
     - Change Member Role records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 4
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
-    - key: team.primary
-      kind: team
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.membership-accepted
+      kind: marker
+  producesState:
+    - key: team.member-role-changed
+      kind: marker
 mode:
   test: true
   demo: true
@@ -82,15 +85,34 @@ workflow:
   - id: open-entry-route
     title: Open Change Member Role
     action:
-      goto: /app/teams/visual-audit-team/members
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
     expect:
-      urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Change Member Role service surface
+      text: invite-{{runId}}-{{deviceId}}@treeseed.local
+  - id: choose-reviewer-role
+    title: Change the invited member to reviewer
     action:
-      keyboard: Tab
+      select:
+        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] select[name="roleKey"]'
+        internal: true
+        value: reviewer
     expect:
-      urlIncludes: /app/teams
+      text: invite-{{runId}}-{{deviceId}}@treeseed.local
+  - id: save-member-role
+    title: Persist the member role
+    action:
+      click:
+        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] button[type="submit"]'
+        internal: true
+    expect:
+      urlIncludes: updated=
+  - id: verify-member-role
+    title: Verify role persistence after reload
+    action:
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
+    expect:
+      visible:
+        - css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"][data-scene-state="reviewer"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []

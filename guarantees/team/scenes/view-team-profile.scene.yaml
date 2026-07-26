@@ -11,13 +11,11 @@ journey:
     - View Team Profile opens the public identity-only @treeseed/admin profile.
     - View Team Profile does not expose project, capacity, catalog, or knowledge distribution links.
     - View Team Profile records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 3
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
-    - key: team.primary
-      kind: team
+    - key: team.updated
+      kind: marker
 mode:
   test: true
   demo: true
@@ -67,9 +65,6 @@ setup:
   dev:
     required: true
     reuseExisting: true
-  auth:
-    role: owner
-    required: true
 artifacts:
   trace: true
   video: true
@@ -82,15 +77,38 @@ workflow:
   - id: open-entry-route
     title: Open View Team Profile
     action:
-      goto: /t/treeseed
+      goto: /t/gt-{{runShort}}-{{deviceId}}
     expect:
-      urlIncludes: /t/treeseed
-  - id: inspect-service-surface
-    title: Inspect View Team Profile service surface
+      urlIncludes: /t/gt-
+      text: Verified {{runShort}} {{deviceId}}
+      visible:
+        - css: 'main'
+          internal: true
+  - id: exercise-anonymous-account-boundary
+    title: Follow the account action from the anonymous profile
     action:
-      keyboard: Tab
+      click:
+        css: 'a[aria-label="Account and teams"]'
+        internal: true
     expect:
-      urlIncludes: /t/treeseed
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: verify-private-links-redacted
+    title: Return anonymously and verify private team aggregates remain absent
+    action:
+      goto: /t/gt-{{runShort}}-{{deviceId}}
+    expect:
+      text: Public identity verified by a complete team settings service journey.
+      notText: Projects
+      notVisible:
+        - role: link
+          name: Manage members
+  - id: verify-private-email-redacted
+    title: Verify private contact data remains absent
+    action:
+      goto: /t/gt-{{runShort}}-{{deviceId}}
+    expect:
+      notText: "@treeseed.local"
 chapters: []
 overlays: []
 diagrams: []

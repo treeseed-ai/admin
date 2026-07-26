@@ -11,13 +11,16 @@ journey:
     - Delete Team opens the canonical @treeseed/admin destructive confirmation workflow.
     - Delete Team exercises a service journey instead of only loading /app/teams/visual-audit-team/delete.
     - Delete Team records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
-    - key: team.primary
-      kind: team
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.member-removed
+      kind: marker
+  producesState:
+    - key: team.deleted
+      kind: marker
 mode:
   test: true
   demo: true
@@ -82,15 +85,47 @@ workflow:
   - id: open-entry-route
     title: Open Delete Team
     action:
-      goto: /app/teams/visual-audit-team/delete
+      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/delete
     expect:
-      urlIncludes: /app/teams
-  - id: inspect-service-surface
-    title: Inspect Delete Team service surface
+      text: No blockers found
+  - id: enter-incorrect-confirmation
+    title: Enter an incorrect deletion confirmation
     action:
-      keyboard: Tab
+      fill:
+        role: textbox
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}"
+        value: DELETE wrong-team
+    expect:
+      text: Delete team
+  - id: enter-exact-confirmation
+    title: Enter the exact deletion confirmation
+    action:
+      fill:
+        role: textbox
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}"
+        value: DELETE gt-{{runShort}}-{{deviceId}}
+    expect:
+      text: Delete team
+  - id: delete-team
+    title: Permanently delete the run-owned team
+    action:
+      click:
+        role: button
+        name: Delete team
     expect:
       urlIncludes: /app/teams
+      notText: Verified {{runShort}} {{deviceId}}
+  - id: verify-team-lookup-cleared
+    title: Verify the deleted team no longer resolves
+    action:
+      apiRequest:
+        base: web
+        method: GET
+        path: /t/gt-{{runShort}}-{{deviceId}}
+        expectedStatus: 404
+    expect:
+      urlIncludes: /app/teams
+      notText: Verified {{runShort}} {{deviceId}}
 chapters: []
 overlays: []
 diagrams: []

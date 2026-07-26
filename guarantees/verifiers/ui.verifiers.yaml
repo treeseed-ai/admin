@@ -1,6 +1,18 @@
 schemaVersion: treeseed.guarantee-verifiers/v1
 ownerPackage: "@treeseed/admin"
 verifiers:
+  api.auth.lifecycle.audit:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/treedx/repositories/seeds-and-treedx.test.ts
+    testName: owns web auth lifecycle and acceptance session seeding in the API
+    description: Web identity lifecycle records canonical dotted audit events and durable session evidence.
+  api.team.lifecycle.audit:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/governance/policy/teams-and-governance.test.ts
+    testName: manages team profiles, invites, member roles, and guarded deletion
+    description: Team identity, invitation, membership, and deletion mutations record canonical dotted audit events.
   api.auth.signup.mailpit:
     kind: apiAcceptanceCase
     caseId: auth.web.sign-up.sends-confirmation-email

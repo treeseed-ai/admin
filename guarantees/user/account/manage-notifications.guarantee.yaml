@@ -6,7 +6,7 @@ subtype: account
 journey: Manage Notifications
 ownerPackage: "@treeseed/admin"
 summary: Configure global content-type notification preferences, exact per-project replacements, and one email cadence without weakening project authorization.
-status: planned
+status: active
 dependencies:
   journeys: [4]
   guarantees: [guarantee.user.auth.user-login.004]
@@ -23,6 +23,7 @@ preconditions:
 scene:
   required: true
   manifest: ./scenes/manage-notifications.scene.yaml
+  executionKey: admin.account.notifications
   mode: { acceptance: true, demo: true, training: true }
   entryRoute: /app/account/notifications
   componentContract: notification-preference-panel
@@ -44,4 +45,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

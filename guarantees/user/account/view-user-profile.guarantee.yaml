@@ -6,12 +6,12 @@ subtype: account
 journey: View User Profile
 ownerPackage: "@treeseed/admin"
 summary: Show public user identity and profile metadata without project, catalog, or knowledge distribution details.
-status: planned
+status: active
 dependencies:
   journeys:
-    - 1
+    - 6
   guarantees:
-    - guarantee.user.auth.register-user.001
+    - guarantee.user.account.edit-account-settings.006
 actors:
   allowed:
     - verified_user
@@ -34,11 +34,12 @@ preconditions:
 scene:
   required: true
   manifest: ./scenes/view-user-profile.scene.yaml
+  executionKey: admin.account.public-profile
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account
+  entryRoute: /u/[username]
   componentContract: public identity profile
   expectedEvidence:
     - playwright_trace
@@ -73,4 +74,4 @@ notes:
 surface: admin-ui
 run:
   timeoutSeconds: 300
-  requiredForRelease: false
+  requiredForRelease: true

@@ -30,11 +30,11 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 12"
 scene:
   required: true
   manifest: ../scenes/switch-active-team.scene.yaml
+  executionKey: admin.team.select-active
   mode:
     acceptance: true
     demo: true

@@ -64,7 +64,7 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 
 <TreeseedAppLayout title={team ? `Edit ${team.displayName ?? team.name}` : 'Team not found'} description="Edit one team." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
 	{team && canManageTeam ? (
-		<section class="ts-control-page" aria-label="Edit team">
+		<section class="ts-control-page" aria-label="Edit team" data-team-display-name={formValues.displayName}>
 			<Panel eyebrow="Team" title="Edit team" description="Update the team fields.">
 				<form id="team-edit-form" class="ts-form-stack" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/edit`}>
 					<input type="hidden" name="csrfToken" value={csrfToken} />
@@ -72,7 +72,7 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 					{saved && !formError && <p class="ts-subtle" role="status">Saved.</p>}
 					<div class="ts-form-grid">
 						<Field label="Name" name="name" required>
-							<TextInput name="name" required value={formValues.name} pattern="[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?" />
+							<TextInput name="name" required value={formValues.name} pattern="[a-z0-9](?:[a-z0-9\\-]{0,61}[a-z0-9])?" />
 						</Field>
 						<Field label="Display name" name="displayName">
 							<TextInput name="displayName" value={formValues.displayName} />

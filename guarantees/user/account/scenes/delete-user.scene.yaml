@@ -11,11 +11,18 @@ journey:
     - Delete User opens the canonical @treeseed/admin destructive confirmation workflow.
     - Delete User exercises a service journey instead of only loading /app/account.
     - Delete User records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 10
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.onboarding-session
+      kind: browser-storage
+    - key: auth.logged-out
+      kind: marker
+    - key: team.deleted
+      kind: marker
+  producesState:
+    - key: account.deleted
+      kind: marker
 mode:
   test: true
   demo: true
@@ -83,12 +90,91 @@ workflow:
       goto: /app/account/delete
     expect:
       urlIncludes: /app/account/delete
-  - id: inspect-service-surface
-    title: Inspect Delete User service surface
+      visible:
+        - scene: account-delete
+  - id: enter-invalid-confirmation
+    title: Enter an invalid deletion confirmation
     action:
-      keyboard: Tab
+      fill:
+        role: textbox
+        name: Type "DELETE MY ACCOUNT"
+        value: DELETE
+    expect:
+      text: Delete account
+  - id: enter-current-password
+    title: Reauthenticate account deletion
+    action:
+      fill:
+        css: "#currentPassword"
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Current password
+  - id: reject-invalid-deletion
+    title: Reject invalid account deletion
+    action:
+      click:
+        role: button
+        name: Delete my account
     expect:
       urlIncludes: /app/account/delete
+      text: DELETE MY ACCOUNT
+  - id: enter-valid-confirmation
+    title: Enter the exact deletion confirmation
+    action:
+      fill:
+        css: "#confirmation"
+        internal: true
+        value: DELETE MY ACCOUNT
+    expect:
+      text: Delete account
+  - id: reauthenticate-valid-deletion
+    title: Reauthenticate the valid deletion request
+    action:
+      fill:
+        css: "#currentPassword"
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Current password
+  - id: delete-account
+    title: Permanently delete the account
+    action:
+      click:
+        role: button
+        name: Delete my account
+    expect:
+      urlIncludes: /auth/sign-in
+      visible:
+        - role: heading
+          name: Sign in
+  - id: enter-deleted-account-email
+    title: Try the deleted account email
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      urlIncludes: /auth/sign-in
+  - id: enter-deleted-account-password
+    title: Try the deleted account password
+    action:
+      fill:
+        css: "#password"
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      urlIncludes: /auth/sign-in
+  - id: reject-deleted-account-login
+    title: Reject authentication for the deleted identity
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Authentication failed
 chapters: []
 overlays: []
 diagrams: []
