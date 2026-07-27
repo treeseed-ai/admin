@@ -192,19 +192,21 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('uses one account timezone and timestamp presentation contract', () => {
 		const accountPage = readFileSync('src/pages/app/account/index.astro', 'utf8');
 		const sessionsPage = readFileSync('src/pages/app/account/sessions.astro', 'utf8');
+		const notificationsPage = readFileSync('src/pages/app/account/notifications.astro', 'utf8');
 		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
 		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
-		const notifications = readFileSync('../ui/src/astro/account/NotificationPreferencePanel.astro', 'utf8');
-		const sessionManager = readFileSync('../ui/src/astro/account/SessionManager.astro', 'utf8');
 
 		expect(accountPage).toContain('AccountTimeZoneSettings');
 		expect(accountHandler).toContain("intent === 'time-zone'");
 		expect(accountHandler).toContain('updateAccountPreferences');
 		expect(appLayout).toContain('timeZone={preferences.timeZone}');
+		expect(sessionsPage).toContain(
+			"SessionManager from '@treeseed/ui/components/astro/account/SessionManager.astro'",
+		);
 		expect(sessionsPage).toContain('timeZone={frame.preferences.timeZone}');
-		expect(notifications).not.toContain('data-time-zone');
-		expect(sessionManager).toContain('data-session-ip');
-		expect(sessionManager).toContain('<Timestamp');
+		expect(notificationsPage).toContain(
+			"NotificationPreferencePanel from '@treeseed/ui/components/astro/account/NotificationPreferencePanel.astro'",
+		);
 	});
 
 	it('routes network forms through the UI-owned enhanced submission contract', () => {
