@@ -91,6 +91,11 @@ workflow:
       visible:
         - css: '[data-active-team-label="TreeSeed"]:visible'
           internal: true
+        - css: '[data-page-header-owner="content"] .ts-page-header'
+          internal: true
+      notVisible:
+        - css: '[data-page-header-owner="content"] > .ts-product-shell__body .ts-control-surface > .ts-control-surface__header'
+          internal: true
   - id: switch-to-personal-team
     title: Select the personal team through the shell
     action:
@@ -121,6 +126,11 @@ workflow:
       urlIncludes: /app
       visible:
         - css: '[data-active-team-label="Guarantee {{runShort}} {{deviceId}}"]:visible'
+          internal: true
+        - css: '[data-page-header-owner="content"] .ts-page-header'
+          internal: true
+      notVisible:
+        - css: '[data-page-header-owner="content"] > .ts-product-shell__body .ts-control-surface > .ts-control-surface__header'
           internal: true
 chapters: []
 overlays: []

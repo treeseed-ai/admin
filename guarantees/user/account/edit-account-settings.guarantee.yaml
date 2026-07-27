@@ -5,7 +5,7 @@ type: user
 subtype: account
 journey: Edit Account Settings
 ownerPackage: "@treeseed/admin"
-summary: Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth metadata and not in root Market-only state.
+summary: Edit user identity, verify additional account emails, and persist the account-wide time zone used by every UI timestamp.
 status: active
 dependencies:
   journeys:
@@ -51,12 +51,15 @@ api:
   required: true
   verifierRefs:
     - api.auth.profile.update
+    - api.auth.account-preferences
+    - api.auth.email.lifecycle
 content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs:
+    - api.auth.lifecycle.audit
 negativeCases:
   - id: anonymous-denied
     actor: anonymous_user
@@ -70,7 +73,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Edit user profile preferences owned by the admin/account surface; persistence should live in the API or auth metadata and not in root Market-only state.
+  - Account identity, additional verified emails, and the selected IANA time zone persist through API-owned records; notification delivery consumes the same account time zone.
 surface: admin-ui
 run:
   timeoutSeconds: 300

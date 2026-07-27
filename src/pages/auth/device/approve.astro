@@ -8,6 +8,7 @@ import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions
 import { resolveAnonymousThemePreference } from '../../../lib/auth/accounts/appearance';
 import { createApiFacade } from '../../../lib/market/api-client';
 import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/support/csrf';
+import { pageFormFailure, pageFormResponse } from '../../../lib/forms/page-submission';
 
 export const prerender = false;
 
@@ -34,21 +35,23 @@ const directApprovalAction = `${Astro.url.pathname}${Astro.url.search}`;
 
 if (Astro.request.method === 'POST') {
 	const form = await Astro.request.formData();
-	requireCsrf(Astro, form.get('csrfToken'));
 	userCode = String(form.get('userCode') ?? '').trim().toUpperCase();
-	if (!userCode) {
-		error = 'Enter the CLI login code to approve this session.';
-	} else {
-		try {
+	try {
+		requireCsrf(Astro, form.get('csrfToken'));
+		if (!userCode) {
+			return pageFormFailure(Astro, 'Please correct the highlighted fields.', directApprovalAction, { userCode: 'Enter the CLI login code to approve this session.' });
+		} else {
 			const approvedByApi = await approveThroughApi();
 			if (!approvedByApi) throw new Error('Device login approval endpoint was not found.');
-			approved = true;
-			notice = 'CLI login approved. You can return to your terminal.';
-		} catch (approvalError) {
-			error = approvalError instanceof Error
-				? approvalError.message
-				: 'CLI login approval failed.';
+			return pageFormResponse(Astro, {
+				ok: true,
+				code: 'device_login_approved',
+				message: 'CLI login approved.',
+				redirect: `${Astro.url.pathname}?approved=1`,
+			}, directApprovalAction);
 		}
+	} catch (approvalError) {
+		return pageFormFailure(Astro, approvalError instanceof Error ? approvalError.message : 'CLI login approval failed.', directApprovalAction);
 	}
 }
 ---
@@ -68,7 +71,7 @@ if (Astro.request.method === 'POST') {
 				You may close this tab.
 			</p>
 		) : (
-			<form class="auth-form" method="POST" action={directApprovalAction}>
+			<form class="auth-form" method="POST" action={directApprovalAction} data-ts-submit="enhanced">
 				<input type="hidden" name="csrfToken" value={csrfToken} />
 				<Field label="CLI login code" name="userCode" required>
 					<TextInput name="userCode" type="text" value={userCode} autocomplete="one-time-code" required />

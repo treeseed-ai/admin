@@ -1,6 +1,7 @@
 ---
 import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
 import ProfileTemplate from '@treeseed/ui/components/astro/templates/ProfileTemplate.astro';
+import { formatTimestamp } from '@treeseed/ui/timestamps';
 import { normalizeUsername, validateUsername } from '../../lib/auth/support/profile-validation';
 import { resolvePublicUserProfile } from '../../lib/market/public-access.js';
 
@@ -17,7 +18,7 @@ if (!profile?.user) return new Response('Not found', { status: 404 });
 const user = profile.user;
 const displayName = user.displayName || `@${user.username}`;
 const joinedDate = user.joinedAt
-	? new Date(user.joinedAt).toLocaleDateString('en', { month: 'long', year: 'numeric' })
+	? formatTimestamp(user.joinedAt, { style: 'date', timeZone: 'UTC' })
 	: null;
 ---
 

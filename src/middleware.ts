@@ -4,6 +4,7 @@ import { getSiteAuthConfig, localAuthCanonicalRedirectUrl } from './lib/auth/con
 import { apiAccessTokenFromCookies, clearApiAccessTokenCookie, resolveApiBaseUrl } from './lib/market/api-client';
 import { ensureLocalCloudflareRuntime } from './lib/runtime/local-cloudflare';
 import { ensureCsrfToken } from './lib/auth/support/csrf';
+import { authenticatedAuthRedirect } from './lib/auth/support/access-policy';
 
 const DEV_RESET_COOKIE = 'ts_market_dev_reset';
 const PUBLIC_ROUTE_PREFIXES = [
@@ -68,6 +69,11 @@ function isPublicRoute(pathname: string) {
 function authRedirectFor(context: any) {
 	if (context.locals.auth?.principal) {
 		const username = String(context.locals.auth.principal.metadata?.username ?? '').trim();
+		const anonymousAuthRedirect = authenticatedAuthRedirect(context.url.pathname, Boolean(username));
+		if (anonymousAuthRedirect) {
+			const status = ['GET', 'HEAD'].includes(context.request.method.toUpperCase()) ? 302 : 303;
+			return context.redirect(anonymousAuthRedirect, status);
+		}
 		if (!username && !isPublicRoute(context.url.pathname) && context.url.pathname !== '/auth/username') {
 			const returnTo = `${context.url.pathname}${context.url.search}`;
 			return context.redirect(`/auth/username?returnTo=${encodeURIComponent(returnTo)}`, 302);

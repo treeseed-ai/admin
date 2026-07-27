@@ -12,8 +12,8 @@ const [identity, deletion, providers] = await Promise.all([frame.api.accountIden
 const reauthenticationGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
 ---
 
-<TreeseedAppLayout title="Delete account" description="Review blockers and permanently delete this account." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+<TreeseedAppLayout title="Delete account" description="Review blockers and permanently delete this account." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
 	<SettingsTemplate title="Delete account" description="Deletion requires exact confirmation and recent authentication." sections={frame.sections}>
-		<AccountDeletionPanel blockers={deletion.blockers} hasCredential={identity.hasCredential} providers={providers} connectedProviderIds={identity.providers.map((provider) => provider.provider)} callbackBaseUrl={Astro.url.origin} reauthenticationGrantId={reauthenticationGrantId} csrfToken={frame.csrfToken} error={frame.error} />
+		<AccountDeletionPanel blockers={deletion.blockers} hasCredential={identity.hasCredential} providers={providers} connectedProviderIds={identity.providers.map((provider) => provider.provider)} callbackBaseUrl={Astro.url.origin} reauthenticationGrantId={reauthenticationGrantId} csrfToken={frame.csrfToken} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

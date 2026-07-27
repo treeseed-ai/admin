@@ -88,6 +88,8 @@ workflow:
       urlIncludes: /app/account/appearance
       visible:
         - scene: account-appearance
+        - css: '[data-built-in-theme-table]'
+          internal: true
   - id: open-theme-dialog
     title: Open personal theme creation
     action:
@@ -102,9 +104,22 @@ workflow:
       fill:
         role: textbox
         name: Theme name
-        value: Guarantee {{deviceId}}
+        value: Guarantee {{runId}} {{deviceId}}
     expect:
-      text: Base theme
+      visible:
+        - css: "[data-personal-theme-builder] [data-personal-theme-base]"
+          internal: true
+  - id: change-personal-theme-base
+    title: Seed the custom palette from another built-in theme
+    action:
+      select:
+        role: combobox
+        name: Base theme
+        label: Cedar Clay
+    expect:
+      visible:
+        - css: '[data-personal-theme-builder][data-theme-palette-source="cedar"] [data-theme-color-mode="light"][data-theme-color-key="accent"][data-theme-color-value="#b86b3c"]'
+          internal: true
   - id: create-personal-theme
     title: Create the personal theme
     action:
@@ -113,6 +128,9 @@ workflow:
     expect:
       urlIncludes: /app/account/appearance
       text: Theme saved.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: reload-personal-theme
     title: Reload the personal theme collection
     action:
@@ -129,23 +147,16 @@ workflow:
     expect:
       text: Color scheme
   - id: activate-personal-theme
-    title: Select the personal theme
+    title: Select the personal theme and reload the appearance page
     action:
       select:
         role: combobox
         name: Color scheme
-        label: Guarantee {{deviceId}}
+        label: Guarantee {{runId}} {{deviceId}}
     expect:
+      urlIncludes: /app/account/appearance
       visible:
-        - css: '[data-testid="appearance-menu-trigger"]:visible'
-          internal: true
-  - id: verify-persisted-shell-theme
-    title: Reload and verify the active shell theme
-    action:
-      goto: /app/account/appearance
-    expect:
-      visible:
-        - css: '[data-active-personal-theme-name="Guarantee {{deviceId}}"]'
+        - css: '[data-active-personal-theme-name="Guarantee {{runId}} {{deviceId}}"]'
           internal: true
 chapters: []
 overlays: []

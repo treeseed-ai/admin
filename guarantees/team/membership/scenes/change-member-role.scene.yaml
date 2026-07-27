@@ -101,10 +101,14 @@ workflow:
     title: Persist the member role
     action:
       click:
-        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] button[type="submit"]'
+        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="PATCH"] button[type="submit"]'
         internal: true
     expect:
-      urlIncludes: updated=
+      urlIncludes: /members
+      text: Member role updated.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: verify-member-role
     title: Verify role persistence after reload
     action:

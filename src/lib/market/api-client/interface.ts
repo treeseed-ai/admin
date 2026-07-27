@@ -3,6 +3,7 @@ declare module '../api-client.ts' {
 		acceptTeamInvite: typeof import('./teams/lifecycle/accept-team-invite.ts').acceptTeamInviteMethod;
 		accountDeletionBlockers: typeof import('./accounts/contracts/account-deletion-blockers.ts').accountDeletionBlockersMethod;
 		accountIdentity: typeof import('./accounts/contracts/account-identity.ts').accountIdentityMethod;
+		accountPreferences: typeof import('./accounts/contracts/account-preferences.ts').accountPreferencesMethod;
 		accountNotifications: typeof import('./accounts/contracts/account-notifications.ts').accountNotificationsMethod;
 		accountSessions: typeof import('./accounts/contracts/account-sessions.ts').accountSessionsMethod;
 		addAccountEmail: typeof import('./accounts/creation/add-account-email.ts').addAccountEmailMethod;
@@ -161,6 +162,7 @@ declare module '../api-client.ts' {
 		suspendCommerceCapacityListing: typeof import('./commerce/capacity/retirement/suspend-commerce-capacity-listing.ts').suspendCommerceCapacityListingMethod;
 		unlinkAccountProvider: typeof import('./capacity/providers/contracts/unlink-account-provider.ts').unlinkAccountProviderMethod;
 		updateAccountPassword: typeof import('./accounts/updates/update-account-password.ts').updateAccountPasswordMethod;
+		updateAccountPreferences: typeof import('./accounts/updates/update-account-preferences.ts').updateAccountPreferencesMethod;
 		updateAccountProfile: typeof import('./accounts/updates/update-account-profile.ts').updateAccountProfileMethod;
 		updateCommerceCapacityListing: typeof import('./commerce/capacity/updates/update-commerce-capacity-listing.ts').updateCommerceCapacityListingMethod;
 		updateCommerceContribution: typeof import('./commerce/governance/updates/update-commerce-contribution.ts').updateCommerceContributionMethod;

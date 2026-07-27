@@ -5,7 +5,7 @@ type: user
 subtype: account
 journey: Manage Sessions
 ownerPackage: "@treeseed/admin"
-summary: List and revoke active sessions through the auth/session facade; this may be missing if the selected auth provider does not expose session management yet.
+summary: List active sessions with source IP and account-time-zone-aware activity dates, revoke a non-current session, and preserve the current session through the auth/session facade.
 status: active
 dependencies:
   journeys:
@@ -70,7 +70,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - List and revoke active sessions through the auth/session facade; this may be missing if the selected auth provider does not expose session management yet.
+  - Session metadata records the trusted forwarded client address at authentication and presents an explicit fallback when an address was unavailable.
 surface: admin-ui
 run:
   timeoutSeconds: 300

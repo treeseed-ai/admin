@@ -46,15 +46,16 @@ const rows = members.map((member: any) => ({
 	sceneState: String(member.roleKey ?? member.role ?? 'contributor'),
 	name: `<strong>${esc(member.displayName ?? member.email ?? member.userId ?? 'Member')}</strong><span>${esc(member.email ?? member.userId ?? '')}</span>`,
 	role: esc(roleOptions.find((option) => option.value === (member.roleKey ?? member.role))?.label ?? member.roleKey ?? member.role ?? 'member'),
-	actions: `<form class="ts-inline-form" data-member-form="${esc(member.id)}"><select class="ts-control" name="roleKey">${roleSelectOptions(String(member.roleKey ?? member.role ?? 'contributor'))}</select><button class="ts-link-button" type="submit">Save</button><button class="ts-link-button" type="button" data-remove-member="${esc(member.id)}">Remove</button></form>`,
+	actions: `<div class="ts-inline-form"><form action="/v1/teams/${encodeURIComponent(team?.id ?? '')}/members/${encodeURIComponent(String(member.id))}" method="post" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="PATCH" data-ts-success-message="Member role updated." data-ts-refresh-target="[data-team-members-panel]"><input type="hidden" name="csrfToken" value="${esc(csrfToken)}"><select class="ts-control" name="roleKey">${roleSelectOptions(String(member.roleKey ?? member.role ?? 'contributor'))}</select><button class="ts-link-button" type="submit">Save</button></form><form action="/v1/teams/${encodeURIComponent(team?.id ?? '')}/members/${encodeURIComponent(String(member.id))}" method="post" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Member removed." data-ts-refresh-target="[data-team-members-panel]"><input type="hidden" name="csrfToken" value="${esc(csrfToken)}"><button class="ts-link-button" type="submit" data-remove-member>Remove</button></form></div>`,
 }));
 ---
 
 <TreeseedAppLayout title={team ? `${team.displayName ?? team.name} members` : 'Team not found'} description="Invite and manage team members." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
 	{team && canManageTeam ? (
-		<section class="ts-control-page" aria-label="Team members">
+		<section class="ts-control-page" aria-label="Team members" data-team-members-panel>
 			<Panel eyebrow="Team" title="Invite member" description="Send an invitation to this team.">
-				<form id="invite-form" class="ts-form-stack">
+				<form id="invite-form" class="ts-form-stack" method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/invites`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation sent." data-ts-reset-on-success="true" data-ts-refresh-target="[data-team-members-panel]">
+					<input type="hidden" name="csrfToken" value={csrfToken} />
 					<div class="ts-form-grid">
 						<Field label="Email" name="email" required>
 							<TextInput name="email" type="email" required />
@@ -73,7 +74,6 @@ const rows = members.map((member: any) => ({
 					<FormActions align="start">
 						<Button type="submit">Invite member</Button>
 						<Button href="/app/teams" variant="secondary">Back</Button>
-						<span class="ts-subtle" id="member-status" role="status" data-scene="team.member.invite-status"></span>
 					</FormActions>
 				</form>
 			</Panel>
@@ -91,53 +91,3 @@ const rows = members.map((member: any) => ({
 		<EmptyState title="Team not found" description="This team is not available." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
 	)}
 </TreeseedAppLayout>
-
-<script is:inline define:vars={{ teamId: team?.id ?? '', csrfToken }}>
-	const status = document.getElementById('member-status');
-	const inviteForm = document.getElementById('invite-form');
-	async function send(url, method, body) {
-		const response = await fetch(url, { method, headers: { 'content-type': 'application/json', 'x-treeseed-csrf': csrfToken }, body: body ? JSON.stringify(body) : undefined });
-		const payload = await response.json().catch(() => null);
-		if (!response.ok || payload?.ok === false) throw new Error(payload?.error ?? 'Request failed.');
-		return payload.payload;
-	}
-	inviteForm?.addEventListener('submit', async (event) => {
-		event.preventDefault();
-		const form = new FormData(inviteForm);
-		const email = String(form.get('email') ?? '').trim();
-		if (status) status.textContent = 'Inviting...';
-		try {
-			await send(`/v1/teams/${encodeURIComponent(teamId)}/invites`, 'POST', {
-				email,
-				roleKey: String(form.get('roleKey') ?? 'contributor'),
-			});
-			if (status) status.textContent = `Invite sent to ${email}.`;
-		} catch (error) {
-			if (status) status.textContent = error instanceof Error ? error.message : 'Invite failed.';
-		}
-	});
-	document.querySelectorAll('[data-member-form]').forEach((form) => {
-		form.addEventListener('submit', async (event) => {
-			event.preventDefault();
-			const membershipId = form.getAttribute('data-member-form') ?? '';
-			const roleKey = String(new FormData(form).get('roleKey') ?? 'contributor');
-			try {
-				await send(`/v1/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(membershipId)}`, 'PATCH', { roleKey });
-				window.location.href = `${window.location.pathname}?updated=${Date.now()}`;
-			} catch (error) {
-				if (status) status.textContent = error instanceof Error ? error.message : 'Role update failed.';
-			}
-		});
-	});
-	document.querySelectorAll('[data-remove-member]').forEach((button) => {
-		button.addEventListener('click', async () => {
-			const membershipId = button.getAttribute('data-remove-member') ?? '';
-			try {
-				await send(`/v1/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(membershipId)}`, 'DELETE');
-				window.location.href = `${window.location.pathname}?removed=${Date.now()}`;
-			} catch (error) {
-				if (status) status.textContent = error instanceof Error ? error.message : 'Remove failed.';
-			}
-		});
-	});
-</script>

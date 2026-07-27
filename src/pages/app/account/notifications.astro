@@ -11,8 +11,8 @@ if (response) return response;
 const [preferences, projects] = await Promise.all([frame.api.notificationPreferences(), frame.api.listProjectsForPrincipal()]);
 ---
 
-<TreeseedAppLayout title="Notifications" description="Choose project content notifications and email cadence." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+<TreeseedAppLayout title="Notifications" description="Choose project content notifications and email cadence." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
 	<SettingsTemplate title="Notification preferences" description="One global content policy with focused project overrides." sections={frame.sections}>
-		<NotificationPreferencePanel preferences={preferences} capabilities={NOTIFICATION_CONTENT_CAPABILITIES} projects={projects} csrfToken={frame.csrfToken} status={frame.status} error={frame.error} />
+		<NotificationPreferencePanel preferences={preferences} capabilities={NOTIFICATION_CONTENT_CAPABILITIES} projects={projects} csrfToken={frame.csrfToken} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

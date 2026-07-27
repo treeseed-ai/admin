@@ -12,8 +12,8 @@ if (response) return response;
 const [themes, appearance] = await Promise.all([frame.api.personalThemes(), resolveAuthenticatedThemePreference(Astro)]);
 ---
 
-<TreeseedAppLayout title="Appearance" description="Create personal themes for the TreeSeed selector." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
+<TreeseedAppLayout title="Appearance" description="Create personal themes for the TreeSeed selector." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
 	<SettingsTemplate title="Personal themes" description="Create and maintain themes here; select the active theme only from the application header." sections={frame.sections}>
-		<PersonalThemeManager themes={themes} activeScheme={appearance.scheme} csrfToken={frame.csrfToken} status={frame.status} error={frame.error} />
+		<PersonalThemeManager themes={themes} activeScheme={appearance.scheme} csrfToken={frame.csrfToken} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

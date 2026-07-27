@@ -2,6 +2,7 @@
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
 import AccountIdentitySettings from '@treeseed/ui/components/astro/account/AccountIdentitySettings.astro';
+import AccountTimeZoneSettings from '@treeseed/ui/components/astro/account/AccountTimeZoneSettings.astro';
 import { handleIdentityRequest, loadAccountFrame } from '../../../view-models/account-settings';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account')}`);
@@ -13,8 +14,9 @@ const providers = await frame.api.authProviders();
 const passwordGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
 ---
 
-<TreeseedAppLayout title="Account" description="Manage your identity and sign-in methods." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam}>
-	<SettingsTemplate title="Account identity" description="Your public identity, verified email addresses, password, and connected providers." sections={frame.sections}>
-		<AccountIdentitySettings identity={identity} availableProviders={providers} callbackBaseUrl={Astro.url.origin} passwordGrantId={passwordGrantId} csrfToken={frame.csrfToken} status={frame.status} error={frame.error} />
+<TreeseedAppLayout title="Account" description="Manage your identity and sign-in methods." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
+	<SettingsTemplate title="Account identity" description="Your public identity, regional settings, verified email addresses, password, and connected providers." sections={frame.sections}>
+		<AccountIdentitySettings identity={identity} availableProviders={providers} callbackBaseUrl={Astro.url.origin} passwordGrantId={passwordGrantId} csrfToken={frame.csrfToken} />
+		<AccountTimeZoneSettings timeZone={frame.preferences.timeZone} csrfToken={frame.csrfToken} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

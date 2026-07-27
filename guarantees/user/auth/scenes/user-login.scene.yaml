@@ -118,7 +118,9 @@ workflow:
         internal: true
         value: incorrect-password
     expect:
-      text: Password
+      visible:
+        - css: "input[name='password']"
+          internal: true
   - id: reject-invalid-sign-in
     title: Reject invalid credentials
     action:
@@ -136,7 +138,9 @@ workflow:
         internal: true
         value: TreeSeedGuaranteeReset123!
     expect:
-      text: Password
+      visible:
+        - css: "input[name='password']"
+          internal: true
   - id: submit-sign-in
     title: Submit valid sign in
     action:
@@ -151,6 +155,62 @@ workflow:
     title: Reload the authenticated dashboard
     action:
       goto: /app
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-sign-in
+    title: Redirect an active session away from sign in
+    action:
+      goto: /auth/sign-in
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-registration
+    title: Redirect an active session away from registration
+    action:
+      goto: /auth/register
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-password-recovery
+    title: Redirect an active session away from password recovery
+    action:
+      goto: /auth/forgot-password
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-password-reset
+    title: Redirect an active session away from password reset
+    action:
+      goto: /auth/reset-password?token=active-session-must-not-consume
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-email-continuation
+    title: Redirect an active session away from the check-email page
+    action:
+      goto: /auth/check-email
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-email-confirmation
+    title: Redirect an active session away from email confirmation
+    action:
+      goto: /auth/confirm-email
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reject-authenticated-provider-callback
+    title: Redirect an active session away from provider callbacks
+    action:
+      goto: /auth/callback/github
     expect:
       urlIncludes: /app
       visible:

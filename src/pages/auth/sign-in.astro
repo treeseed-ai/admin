@@ -16,6 +16,7 @@ import {
 	submitMarketEmailAuthFlow,
 } from '../../lib/auth/support/flow';
 import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
+import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
 export const prerender = false;
 
@@ -61,7 +62,10 @@ if (Astro.request.method === 'POST') {
 	const password = String(form.get('password') ?? '');
 	submittedIdentifier = identifier;
 	if (!identifier || !password) {
-		error = 'Email or username and password are required.';
+		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, {
+			...(!identifier ? { login: 'Email or username is required.' } : {}),
+			...(!password ? { password: 'Password is required.' } : {}),
+		});
 	} else {
 		const result = await submitMarketEmailAuthFlow(Astro, 'sign-in/email', {
 			login: identifier,
@@ -69,13 +73,9 @@ if (Astro.request.method === 'POST') {
 			rememberMe: true,
 		});
 		if (result.ok) {
-			const response = Astro.redirect(returnTo, 303);
-			for (const cookie of Astro.cookies.headers()) {
-				response.headers.append('set-cookie', cookie);
-			}
-			return response;
+			return pageFormResponse(Astro, { ok: true, code: 'signed_in', message: 'Signed in.', redirect: returnTo }, Astro.url.pathname + Astro.url.search);
 		}
-		error = result.error;
+		return pageFormFailure(Astro, result.error, Astro.url.pathname + Astro.url.search);
 	}
 }
 
@@ -86,7 +86,6 @@ const appearance = resolveAnonymousThemePreference(Astro);
 <AuthShell title="Sign In | TreeSeed" description="Sign in to TreeSeed Market." appearance={appearance}>
 	<AuthCard
 		title="Sign in"
-		description="Use your account email or username and password, or continue with a configured provider."
 		error={error}
 		notice={notice}
 		appearance={appearance}
@@ -100,7 +99,7 @@ const appearance = resolveAnonymousThemePreference(Astro);
 			) : null}
 		</Fragment>
 		{capabilities.internal.enabled ? (
-			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>
+			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`} data-ts-submit="enhanced">
 				<Field label="Email or username" name="login" required>
 					<TextInput name="login" type="text" autocomplete="username" value={submittedIdentifier} required />
 				</Field>

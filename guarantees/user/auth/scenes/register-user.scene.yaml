@@ -128,7 +128,10 @@ workflow:
         name: Username
         value: g-{{runShort}}-{{deviceId}}
     expect:
-      text: Username is available.
+      visible:
+        - role: textbox
+          name: Username
+      notText: Username is available.
   - id: verify-username-immutability
     title: Verify permanent username disclosure
     action:
@@ -143,7 +146,10 @@ workflow:
         name: Email
         value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
-      text: Email is available.
+      visible:
+        - role: textbox
+          name: Email
+      notText: Email is available.
   - id: enter-password
     title: Enter password
     action:
@@ -152,16 +158,25 @@ workflow:
         internal: true
         value: TreeSeedReviewPass123!
     expect:
-      text: Password
+      text: Strong
   - id: confirm-password
-    title: Confirm password
+    title: Reject mismatched password confirmation
     action:
       fill:
-        css: "[data-confirm-password-input]"
+        css: "[data-ts-confirm-password-input]"
+        internal: true
+        value: TreeSeedReviewMismatch123!
+    expect:
+      text: Passwords do not match.
+  - id: correct-password-confirmation
+    title: Confirm matching password
+    action:
+      fill:
+        css: "[data-ts-confirm-password-input]"
         internal: true
         value: TreeSeedReviewPass123!
     expect:
-      text: Confirm password
+      text: Passwords match.
   - id: submit-registration
     title: Submit registration
     action:

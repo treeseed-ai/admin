@@ -3,6 +3,7 @@ import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
 import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProfileHeader.astro';
 import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
 import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
+import { formatTimestamp } from '@treeseed/ui/timestamps';
 import { resolvePublicTeamProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;
@@ -17,7 +18,7 @@ if (!profile?.team) return new Response('Not found', { status: 404 });
 const team = profile.team;
 const displayName = team.displayName ?? team.name;
 const createdDate = team.createdAt
-	? new Date(team.createdAt).toLocaleDateString('en', { month: 'long', year: 'numeric' })
+	? formatTimestamp(team.createdAt, { style: 'date', timeZone: 'UTC' })
 	: null;
 ---
 

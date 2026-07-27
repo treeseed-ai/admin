@@ -6,6 +6,7 @@ import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../../../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
 import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../../../src/secret-managers';
+import { authenticatedAuthRedirect, isAnonymousAuthRoute } from '../../../src/lib/auth/support/access-policy';
 
 const EXPECTED_ROUTES = [
 	'/app',
@@ -78,14 +79,81 @@ describe('@treeseed/admin identity and team surface', () => {
 		);
 	});
 
+	it('keeps anonymous authentication routes inaccessible to active sessions', () => {
+		const anonymousRoutes = [
+			'/auth/register',
+			'/auth/check-email',
+			'/auth/sign-in',
+			'/auth/forgot-password',
+			'/auth/reset-password',
+			'/auth/callback/github',
+		];
+		for (const route of anonymousRoutes) {
+			expect(isAnonymousAuthRoute(route), route).toBe(true);
+			expect(authenticatedAuthRedirect(route, true), route).toBe('/app/');
+			expect(authenticatedAuthRedirect(route, false), route).toBe('/auth/username?returnTo=%2Fapp%2F');
+		}
+		for (const route of ['/auth/confirm-email', '/auth/logout', '/auth/username', '/auth/device/approve', '/team-invites/token/accept']) {
+			expect(isAnonymousAuthRoute(route), route).toBe(false);
+			expect(authenticatedAuthRedirect(route, true), route).toBeNull();
+		}
+		const routes = new Map(ADMIN_ROUTES.map((route) => [route.pattern, route.capability?.accessPolicy ?? []]));
+		for (const route of [
+			'/auth/register',
+			'/auth/check-email',
+			'/auth/sign-in',
+			'/auth/forgot-password',
+			'/auth/reset-password',
+			'/auth/callback/[provider]',
+		]) {
+			expect(routes.get(route), route).toContain('anonymous principal only');
+		}
+		expect(routes.get('/auth/confirm-email')).toEqual(expect.arrayContaining([
+			'valid one-time confirmation token',
+			'anonymous or signed-in principal',
+			'safe return URL',
+		]));
+	});
+
 	it('keeps navigation limited to identity and team management', () => {
 		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+		const publicLayout = readFileSync('src/layouts/PublicLayout.astro', 'utf8');
 		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new']) {
 			expect(appLayout).toContain(target);
 		}
 		for (const target of ['/app/projects', '/app/capacity', '/app/work', '/app/knowledge', '/market', '/cart', '/seller']) {
 			const escaped = target.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 			expect(appLayout).not.toMatch(new RegExp(`(?:href|action)\\s*[:=]\\s*['"\\x60]${escaped}`, 'u'));
+		}
+		expect(appLayout).not.toContain('accountNotifications');
+		expect(appLayout).not.toMatch(/\bnotifications=/u);
+		expect(appLayout).toContain('SITE_SLOGAN');
+		expect(appLayout).toContain("from '@treeseed/ui/site-brand'");
+		expect(appLayout).toContain("from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro'");
+		for (const icon of ['start', 'team-settings', 'account', 'sign-out']) {
+			expect(appLayout).toContain(`icon: '${icon}'`);
+		}
+		expect(appLayout).not.toContain("{ label: 'Teams'");
+		expect(appLayout).toContain('<ShellIcon name="teams"');
+		expect(appLayout).toContain('iconOnly: true');
+		expect(appLayout).toContain('title="Manage teams"');
+		expect(appLayout).not.toContain("from '@treeseed/ui'");
+		expect(appLayout).not.toContain('Identity and teams');
+		expect(publicLayout).toContain('SITE_SLOGAN');
+		expect(publicLayout).toContain("from '@treeseed/ui/site-brand'");
+		expect(publicLayout).not.toContain("from '@treeseed/ui'");
+		expect(publicLayout).not.toContain('ShellIconLink');
+	});
+
+	it('assigns every app page to exactly one visible page-header owner', () => {
+		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+		const appPages = filesUnder('src/pages/app').filter((path) => path.endsWith('.astro'));
+
+		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
+		for (const path of appPages) {
+			const source = readFileSync(path, 'utf8');
+			const contentTemplateOwnsHeader = /<(?:DashboardTemplate|SettingsTemplate)\b/u.test(source);
+			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});
 
@@ -104,6 +172,88 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(css).not.toContain('@treeseed/ui/styles/market.css');
 		expect(ADMIN_CAPABILITIES.ecommerce.bundled).toBe(false);
 		expect(Object.keys(ADMIN_ENV_SCHEMA)).toContain('TREESEED_BETTER_AUTH_SECRET');
+	});
+
+	it('uses one password setup interaction for registration, reset, and account changes', () => {
+		const reset = readFileSync('src/pages/auth/reset-password.astro', 'utf8');
+		const accountSettings = readFileSync('src/view-models/account-settings.ts', 'utf8');
+		const registrationScene = readFileSync('guarantees/user/auth/scenes/register-user.scene.yaml', 'utf8');
+
+		expect(reset).toContain("PasswordSetupFields from '@treeseed/ui/components/astro/forms/fields/PasswordSetupFields.astro'");
+		expect(reset).toContain('passwordId="resetPassword"');
+		expect(reset).toContain('confirmLabel="Confirm new password"');
+		expect(accountSettings).toContain("const confirmPassword = String(form.get('confirmPassword') ?? '')");
+		expect(accountSettings).toContain("if (password !== confirmPassword) throw new Error('Passwords do not match.')");
+		expect(accountSettings).toContain('if (!passwordMeetsPolicy(password))');
+		expect(registrationScene).toContain('[data-ts-confirm-password-input]');
+		expect(registrationScene).not.toContain('[data-confirm-password-input]');
+	});
+
+	it('uses one account timezone and timestamp presentation contract', () => {
+		const accountPage = readFileSync('src/pages/app/account/index.astro', 'utf8');
+		const sessionsPage = readFileSync('src/pages/app/account/sessions.astro', 'utf8');
+		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
+		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+		const notifications = readFileSync('../ui/src/astro/account/NotificationPreferencePanel.astro', 'utf8');
+		const sessionManager = readFileSync('../ui/src/astro/account/SessionManager.astro', 'utf8');
+
+		expect(accountPage).toContain('AccountTimeZoneSettings');
+		expect(accountHandler).toContain("intent === 'time-zone'");
+		expect(accountHandler).toContain('updateAccountPreferences');
+		expect(appLayout).toContain('timeZone={preferences.timeZone}');
+		expect(sessionsPage).toContain('timeZone={frame.preferences.timeZone}');
+		expect(notifications).not.toContain('data-time-zone');
+		expect(sessionManager).toContain('data-session-ip');
+		expect(sessionManager).toContain('<Timestamp');
+	});
+
+	it('routes network forms through the UI-owned enhanced submission contract', () => {
+		const astroSources = filesUnder('src')
+			.filter((path) => path.endsWith('.astro'))
+			.map((path) => [path, readFileSync(path, 'utf8')] as const);
+		const postFormConsumers = astroSources.filter(([, source]) => (
+			/<form\b[^>]*\bmethod=(?:["']POST["']|["']post["']|\{[^}]*post[^}]*\})/u.test(source)
+		));
+		for (const [path, source] of postFormConsumers) {
+			expect(source, `${path} should use delegated enhancement`).toContain('data-ts-submit="enhanced"');
+		}
+
+		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
+		const pageHelper = readFileSync('src/lib/forms/page-submission.ts', 'utf8');
+		const memberPage = readFileSync('src/pages/app/teams/[teamId]/members.astro', 'utf8');
+		const authPages = [
+			'src/pages/auth/register.astro',
+			'src/pages/auth/sign-in.astro',
+			'src/pages/auth/forgot-password.astro',
+			'src/pages/auth/reset-password.astro',
+			'src/pages/auth/username.astro',
+		].map((path) => readFileSync(path, 'utf8')).join('\n');
+
+		expect(accountHandler).toContain("from '@treeseed/ui/forms'");
+		expect(accountHandler).not.toContain('Astro.redirect');
+		expect(pageHelper).toContain('formSubmissionResponse');
+		expect(authPages).toContain('pageFormResponse');
+		expect(authPages).toContain('pageFormFailure');
+		expect(memberPage).toContain('data-ts-form-adapter="json"');
+		expect(memberPage).not.toContain('location.reload');
+		expect(memberPage).not.toMatch(/\bfetch\s*\(/u);
+	});
+
+	it('keeps inline guarantee mutations on their route and proves success toasts', () => {
+		const scenePaths = [
+			'guarantees/user/account/scenes/edit-account-settings.scene.yaml',
+			'guarantees/user/account/scenes/manage-appearance.scene.yaml',
+			'guarantees/user/account/scenes/manage-notifications.scene.yaml',
+			'guarantees/user/account/scenes/manage-sessions.scene.yaml',
+			'guarantees/team/scenes/edit-team-settings.scene.yaml',
+			'guarantees/team/membership/scenes/change-member-role.scene.yaml',
+			'guarantees/team/membership/scenes/remove-team-member.scene.yaml',
+		];
+		for (const path of scenePaths) {
+			const scene = readFileSync(path, 'utf8');
+			expect(scene, path).toContain('[data-ts-toast-id][data-tone="success"]');
+			expect(scene, path).not.toMatch(/urlIncludes:\s*(?:saved|updated|removed)=/u);
+		}
 	});
 
 	it('retains domain facades without route-specific UI dependencies', () => {

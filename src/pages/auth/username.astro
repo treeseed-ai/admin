@@ -6,6 +6,7 @@ import { resolveAuthenticatedThemePreference } from '../../lib/auth/accounts/app
 import { normalizeReturnTo } from '../../lib/auth/support/flow';
 import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
 import { createApiFacade, setApiAccessTokenCookie } from '../../lib/market/api-client';
+import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
 export const prerender = false;
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`, 302);
@@ -21,10 +22,12 @@ if (Astro.request.method === 'POST') {
 		requireCsrf(Astro, form.get('csrfToken'));
 		const result = await createApiFacade(Astro).claimUsername(value);
 		if (result.accessToken) setApiAccessTokenCookie(Astro, result.accessToken, Number(result.expiresInSeconds ?? 900));
-		const redirect = Astro.redirect(returnTo, 303);
-		for (const cookie of Astro.cookies.headers()) redirect.headers.append('set-cookie', cookie);
-		return redirect;
-	} catch (caught) { error = caught instanceof Error ? caught.message : 'Username could not be assigned.'; }
+		return pageFormResponse(Astro, { ok: true, code: 'username_claimed', message: 'Username saved.', redirect: returnTo }, Astro.url.pathname + Astro.url.search);
+	} catch (caught) {
+		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, {
+			username: caught instanceof Error ? caught.message : 'Username could not be assigned.',
+		});
+	}
 }
 const appearance = await resolveAuthenticatedThemePreference(Astro);
 ---

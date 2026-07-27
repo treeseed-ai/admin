@@ -10,6 +10,7 @@ journey:
   proves:
     - Edit Account Settings opens the canonical @treeseed/admin full page form workflow.
     - Edit Account Settings exercises a service journey instead of only loading /app/account.
+    - A signed-in user can add an email, consume the delivered confirmation link, and observe its verified state.
     - Edit Account Settings records reviewable evidence for the visible result before activation.
   minimumSteps: 5
   requiresInteractiveAction: true
@@ -88,6 +89,11 @@ workflow:
       urlIncludes: /app/account
       visible:
         - scene: account-identity
+        - css: '[data-page-header-owner="content"] .ts-page-header'
+          internal: true
+      notVisible:
+        - css: '[data-page-header-owner="content"] > .ts-product-shell__body .ts-control-surface > .ts-control-surface__header'
+          internal: true
   - id: edit-first-name
     title: Edit the public first name
     action:
@@ -115,6 +121,9 @@ workflow:
     expect:
       urlIncludes: /app/account
       text: Identity saved.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: reload-profile
     title: Reload the durable profile
     action:
@@ -122,6 +131,75 @@ workflow:
     expect:
       visible:
         - scene: account-identity
+        - scene: account-time-zone
+  - id: select-time-zone
+    title: Select an account-wide display time zone
+    action:
+      select:
+        role: combobox
+        name: Display time zone
+        label: America / New York
+    expect:
+      text: Dates and times across the application use this time zone.
+  - id: save-time-zone
+    title: Save the display time zone without leaving account settings
+    action:
+      click:
+        role: button
+        name: Save time zone
+    expect:
+      urlIncludes: /app/account
+      text: Time zone saved.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
+  - id: reload-time-zone
+    title: Reload the durable account time zone
+    action:
+      goto: /app/account
+    expect:
+      urlIncludes: /app/account
+      visible:
+        - css: '[data-scene="account-time-zone"][data-time-zone="America/New_York"]'
+          internal: true
+  - id: enter-additional-email
+    title: Enter an additional account email
+    action:
+      fill:
+        role: textbox
+        name: Add email
+        value: guarantee-extra-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      visible:
+        - scene: account-identity
+  - id: send-additional-email-verification
+    title: Add the pending email and send its verification message
+    action:
+      click:
+        role: button
+        name: Add and verify
+    expect:
+      urlIncludes: /app/account
+      text: Verification email sent.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
+        - css: '[data-account-email="guarantee-extra-{{runId}}-{{deviceId}}@treeseed.local"][data-account-email-status="pending"]'
+          internal: true
+  - id: confirm-additional-email
+    title: Confirm the additional email while the account session remains active
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: guarantee-extra-{{runId}}-{{deviceId}}@treeseed.local
+        subjectIncludes: Confirm your Treeseed Market email
+        displayInboxSeconds: 1
+        displayMessageSeconds: 1
+    expect:
+      urlIncludes: /app/account
+      visible:
+        - css: '[data-account-email="guarantee-extra-{{runId}}-{{deviceId}}@treeseed.local"][data-account-email-status="verified"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []

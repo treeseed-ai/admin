@@ -7,7 +7,7 @@ import '@treeseed/ui/styles/app-shell.css';
 import '@treeseed/ui/styles/site.css';
 import PublicShell from '@treeseed/ui/components/astro/shell/layout/PublicShell.astro';
 import PublicFooter from '@treeseed/ui/components/astro/shell/chrome/PublicFooter.astro';
-import ShellIconLink from '@treeseed/ui/components/astro/shell/navigation/ShellIconLink.astro';
+import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
 import { resolveAnonymousThemePreference, resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 
 interface Props {
@@ -32,15 +32,12 @@ const appearance = isSignedIn
 	description={description}
 	currentPath={currentPath}
 	appearance={appearance}
-	brand={{ name: 'TreeSeed', tag: 'Identity and teams', href: '/', logoSrc: '/logo.svg', logoAlt: '' }}
+	brand={{ name: 'TreeSeed', tag: SITE_SLOGAN, href: '/', logoSrc: '/logo.svg', logoAlt: '' }}
 	navItems={[{ label: 'Home', href: '/' }]}
 	actions={isSignedIn ? [] : [{ label: 'Sign in', href: '/auth/sign-in', variant: 'ghost' as const }]}
 	showAppearanceControl
 	preferServerAppearance={isSignedIn}
 >
-	<Fragment slot="actions">
-		<ShellIconLink href="/app/" label="Account and teams" icon="manager" />
-	</Fragment>
 	<PublicFooter
 		slot="footer"
 		brandName="TreeSeed"

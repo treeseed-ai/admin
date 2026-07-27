@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireCsrf } from '../../lib/auth/support/csrf';
 import { clearApiAccessTokenCookie, createApiFacade } from '../../lib/market/api-client';
+import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
 export const prerender = false;
 
@@ -12,10 +13,13 @@ export const POST: APIRoute = async (context) => {
 		requireCsrf(context, form.get('csrfToken'));
 		await createApiFacade(context).request('POST', '/v1/auth/logout', { body: {} });
 		clearApiAccessTokenCookie(context);
-		const response = context.redirect('/auth/sign-in?signedOut=1', 303);
-		for (const cookie of context.cookies.headers()) response.headers.append('set-cookie', cookie);
-		return response;
+		return pageFormResponse(context, {
+			ok: true,
+			code: 'signed_out',
+			message: 'You have been signed out.',
+			redirect: '/auth/sign-in?signedOut=1',
+		}, '/auth/sign-in');
 	} catch {
-		return context.redirect('/auth/sign-in?error=Unable%20to%20sign%20out', 303);
+		return pageFormFailure(context, 'Unable to sign out.', '/auth/sign-in');
 	}
 };

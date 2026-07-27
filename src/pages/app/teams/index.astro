@@ -18,6 +18,7 @@ const dashboard = await buildTeamDashboard(context);
 	currentPath={Astro.url.pathname}
 	teams={context.teams}
 	activeTeam={context.activeTeam}
+	contentOwnsPageHeader
 >
 	<DashboardTemplate viewModel={dashboard.viewModel} actions={dashboard.actions} />
 </TreeseedAppLayout>

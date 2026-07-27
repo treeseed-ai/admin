@@ -6,6 +6,7 @@ import { authProviderCapabilities, normalizeReturnTo, redirectAuthenticatedToApp
 import { composeDisplayNameFromParts, normalizeUsername, validateUsername } from '../../lib/auth/support/profile-validation';
 import { passwordMeetsPolicy, passwordPolicyMessage } from '../../lib/auth/accounts/password-policy';
 import { resolveAnonymousThemePreference, setAnonymousThemeCookies } from '../../lib/auth/accounts/appearance';
+import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
 export const prerender = false;
 
@@ -46,13 +47,20 @@ if (Astro.request.method === 'POST') {
 	submittedEmail = email;
 	const usernameValidation = validateUsername(username);
 	if (!firstName || !lastName || !username || !email || !password || !confirmPassword) {
-		error = 'First name, last name, username, email, password, and password confirmation are required.';
+		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, {
+			...(!firstName ? { firstName: 'First name is required.' } : {}),
+			...(!lastName ? { lastName: 'Last name is required.' } : {}),
+			...(!username ? { username: 'Username is required.' } : {}),
+			...(!email ? { email: 'Email is required.' } : {}),
+			...(!password ? { password: 'Password is required.' } : {}),
+			...(!confirmPassword ? { confirmPassword: 'Password confirmation is required.' } : {}),
+		});
 	} else if (!usernameValidation.ok) {
-		error = usernameValidation.message;
+		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, { username: usernameValidation.message });
 	} else if (password !== confirmPassword) {
-		error = 'Passwords do not match.';
+		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, { confirmPassword: 'Passwords do not match.' });
 	} else if (!passwordMeetsPolicy(password)) {
-		error = passwordPolicyMessage();
+		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, { password: passwordPolicyMessage() });
 	} else {
 		const result = await submitMarketEmailAuthFlow(Astro, 'sign-up/email', {
 			name,
@@ -70,23 +78,28 @@ if (Astro.request.method === 'POST') {
 		if (result.ok) {
 			setAnonymousThemeCookies(Astro, appearance);
 			if (result.confirmationRequired) {
-				return Astro.redirect(`/auth/check-email?kind=verify&email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(returnTo)}`, 303);
+				return pageFormResponse(Astro, {
+					ok: true,
+					code: 'registration_confirmation_required',
+					message: 'Account created. Check your email to continue.',
+					redirect: `/auth/check-email?kind=verify&email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(returnTo)}`,
+				}, Astro.url.pathname + Astro.url.search);
 			}
-			const response = Astro.redirect(returnTo, 303);
-			for (const cookie of Astro.cookies.headers()) {
-				response.headers.append('set-cookie', cookie);
-			}
-			return response;
+			return pageFormResponse(Astro, { ok: true, code: 'registration_complete', message: 'Account created.', redirect: returnTo }, Astro.url.pathname + Astro.url.search);
 		}
-		error = result.error;
+		const resultMessage = result.error.toLowerCase();
+		const fieldErrors = {
+			...(resultMessage.includes('username') ? { username: 'This username is not available to register.' } : {}),
+			...(resultMessage.includes('email') || resultMessage.includes('already exists') ? { email: 'This email is not available to register.' } : {}),
+		};
+		return pageFormFailure(Astro, result.error, Astro.url.pathname + Astro.url.search, fieldErrors);
 	}
 }
 ---
 
-<AuthShell title="Create Account | TreeSeed" description="Create an internal login for the market control plane." appearance={appearance}>
+<AuthShell title="Create Account | TreeSeed" appearance={appearance}>
 	<AuthCard
 		title="Create account"
-		description="Create an internal login for the market control plane."
 		error={error}
 		appearance={appearance}
 		showAppearance={false}

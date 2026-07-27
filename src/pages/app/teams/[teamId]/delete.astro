@@ -6,6 +6,7 @@ import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astr
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import PlainTable from '@treeseed/ui/components/astro/app/controls/data/PlainTable.astro';
+import { formSubmissionResponse } from '@treeseed/ui/forms';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
 import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
@@ -33,18 +34,34 @@ const blockerRows = Object.entries(blockers ?? {})
 	.map(([key, value]) => ({ name: esc(key), value: esc(Array.isArray(value) ? value.length : value) }));
 const hasDeletionBlockers = blockerRows.length > 0;
 const confirmation = team ? `DELETE ${team.name}` : '';
-let formError = '';
 const csrfToken = ensureCsrfToken(Astro);
 let confirmationValue = '';
 
 if (Astro.request.method === 'POST' && team && canManageTeam) {
 	const data = await Astro.request.formData();
-	requireCsrf(Astro, data.get('csrfToken'));
+	try {
+		requireCsrf(Astro, data.get('csrfToken'));
+	} catch {
+		return formSubmissionResponse(Astro.request, {
+			ok: false,
+			code: 'csrf_invalid',
+			message: 'Your form session expired. Refresh the page and try again.',
+		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
+	}
 	confirmationValue = String(data.get('confirmation') ?? '');
 	if (hasDeletionBlockers) {
-		formError = 'Blocking records must be removed before this team can be deleted.';
+		return formSubmissionResponse(Astro.request, {
+			ok: false,
+			code: 'team_delete_blocked',
+			message: 'Blocking records must be removed before this team can be deleted.',
+		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
 	} else if (confirmationValue !== confirmation) {
-		formError = `Type "${confirmation}" to delete this team.`;
+		return formSubmissionResponse(Astro.request, {
+			ok: false,
+			code: 'team_delete_confirmation_invalid',
+			message: 'Please correct the highlighted fields.',
+			fieldErrors: { confirmation: `Type "${confirmation}" to delete this team.` },
+		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
 	} else {
 	try {
 		await new ApiClientFacade(Astro).request<any>('DELETE', `/v1/teams/${encodeURIComponent(team.id)}`, {
@@ -54,9 +71,18 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 			path: '/app',
 			secure: Astro.url.protocol === 'https:',
 		});
-		return Astro.redirect('/app/teams', 303);
+		return formSubmissionResponse(Astro.request, {
+			ok: true,
+			code: 'team_deleted',
+			message: 'Team deleted.',
+			redirect: '/app/teams',
+		}, { fallbackRedirect: '/app/teams' });
 	} catch (error) {
-		formError = error instanceof Error ? error.message : 'Team could not be deleted.';
+		return formSubmissionResponse(Astro.request, {
+			ok: false,
+			code: 'team_delete_failed',
+			message: error instanceof Error ? error.message : 'Team could not be deleted.',
+		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
 	}
 	}
 }
@@ -67,9 +93,8 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 		<section class="ts-control-page" aria-label="Delete team">
 			<Panel eyebrow="Team" title="Delete team" description="This action is permanent. Blocking records must be removed first.">
 				<PlainTable columns={[{ key: 'name', label: 'Blocker' }, { key: 'value', label: 'Count' }]} rows={blockerRows} emptyTitle="No blockers found" emptyDescription="This team can be deleted after confirmation." />
-				<form id="team-delete-form" class="ts-form-stack ts-stack-top" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/delete`}>
+				<form id="team-delete-form" class="ts-form-stack ts-stack-top" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/delete`} data-ts-submit="enhanced">
 					<input type="hidden" name="csrfToken" value={csrfToken} />
-					{formError && <p class="ts-form-error" role="alert">{formError}</p>}
 					<Field label={`Type "${confirmation}"`} name="confirmation" required>
 						<TextInput name="confirmation" required value={confirmationValue} data-confirmation-input />
 					</Field>

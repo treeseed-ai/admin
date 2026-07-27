@@ -59,15 +59,50 @@ workflow:
   - id: select-questions
     title: Select questions globally
     action: { click: { role: checkbox, name: Questions } }
-    expect: { text: These choices apply to every project }
+    expect:
+      text: These choices apply to every project
+      visible:
+        - css: '[data-notification-content-choices][data-orientation="vertical"][aria-label="All-project content types"]'
+          internal: true
+  - id: select-project-override
+    title: Expand a project-specific content policy
+    action:
+      click:
+        css: '[data-notification-project-name="TreeSeed Market"] [data-notification-project-toggle]'
+        internal: true
+    expect:
+      text: New research questions and published answers.
+      visible:
+        - css: '[data-notification-project-name="TreeSeed Market"][open] [aria-label="TreeSeed Market content types"]'
+          internal: true
+  - id: select-project-questions
+    title: Select questions for the project override
+    action:
+      click:
+        css: '[data-notification-project-name="TreeSeed Market"] input[name^="projectTypes:"][value="questions"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-notification-project-name="TreeSeed Market"][open] input[name^="projectTypes:"][value="questions"]:checked'
+          internal: true
   - id: save-preferences
     title: Save notification preferences
     action: { click: { role: button, name: Save notification preferences } }
-    expect: { urlIncludes: /app/account/notifications, text: Notification preferences saved. }
+    expect:
+      urlIncludes: /app/account/notifications
+      text: Notification preferences saved.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: reload-preferences
     title: Reload persisted notification preferences
     action: { goto: /app/account/notifications }
-    expect: { urlIncludes: /app/account/notifications, text: Weekly }
+    expect:
+      urlIncludes: /app/account/notifications
+      text: Weekly
+      visible:
+        - css: '[data-notification-project-name="TreeSeed Market"][open] input[name^="projectTypes:"][value="questions"]:checked'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []

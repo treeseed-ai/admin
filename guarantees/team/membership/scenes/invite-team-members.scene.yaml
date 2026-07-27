@@ -113,7 +113,11 @@ workflow:
         role: button
         name: Invite member
     expect:
-      text: Invite sent to invite-{{runId}}-{{deviceId}}@treeseed.local.
+      urlIncludes: /members
+      text: Invitation sent.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: observe-invitation-email
     title: Observe exact invitation delivery in Mailpit
     action:
@@ -124,7 +128,7 @@ workflow:
         navigate: false
     expect:
       urlIncludes: /members
-      text: Invite sent
+      text: Invite member
 chapters: []
 overlays: []
 diagrams: []

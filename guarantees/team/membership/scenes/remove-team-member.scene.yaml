@@ -95,7 +95,11 @@ workflow:
         css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] button[data-remove-member]'
         internal: true
     expect:
-      urlIncludes: removed=
+      urlIncludes: /members
+      text: Member removed.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: verify-member-removed
     title: Verify the member no longer appears
     action:

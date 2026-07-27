@@ -18,6 +18,10 @@ export type AnonymousAppearanceContext = {
 
 export type AppearanceContext = AnonymousAppearanceContext & Pick<APIContext, 'locals' | 'request'>;
 
+export function shouldReloadAppearancePage(pathname: string, persisted: boolean) {
+	return persisted && pathname.replace(/\/+$/u, '') === '/app/account/appearance';
+}
+
 export function resolveAnonymousThemePreference(
 	context: AnonymousAppearanceContext,
 	form?: FormData,

@@ -85,11 +85,11 @@ workflow:
         - css: 'main'
           internal: true
   - id: exercise-anonymous-account-boundary
-    title: Follow the account action from the anonymous profile
+    title: Follow the sign-in action from the anonymous profile
     action:
       click:
-        css: 'a[aria-label="Account and teams"]'
-        internal: true
+        role: link
+        name: Sign in
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in

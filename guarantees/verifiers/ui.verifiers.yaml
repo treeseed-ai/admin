@@ -17,12 +17,12 @@ verifiers:
     kind: apiAcceptanceCase
     caseId: auth.web.sign-up.sends-confirmation-email
     ownerPackage: "@treeseed/api"
-    description: Signup succeeds and emits a verification email into local Mailpit.
+    description: Signup emits a verification email whose confirmation link uses the configured web origin.
   api.auth.password-reset.request.mailpit:
     kind: apiAcceptanceCase
     caseId: auth.password-reset.request.mailpit
     ownerPackage: "@treeseed/api"
-    description: Password reset request succeeds and emits a reset email into local Mailpit.
+    description: Password reset emits an email whose reset link uses the configured web origin.
   api.auth.signin:
     kind: apiAcceptanceCase
     caseId: auth.web.sign-in.site-admin
@@ -43,6 +43,17 @@ verifiers:
     caseId: auth.profile.update.team-owner
     ownerPackage: "@treeseed/api"
     description: Authenticated users can update profile details.
+  api.auth.account-preferences:
+    kind: apiAcceptanceCase
+    caseId: auth.account-preferences.team-owner
+    ownerPackage: "@treeseed/api"
+    description: Authenticated users can persist the IANA time zone used for UI timestamps and notification scheduling.
+  api.auth.email.lifecycle:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/accounts/authentication-and-identity.test.ts
+    testName: supports multiple verified account emails for login, primary selection, deletion, reset, and invite lookup
+    description: A signed-in account can add a pending email, consume its one-time confirmation token, observe verified persistence, and then use the address for authentication.
   api.auth.sessions:
     kind: apiAcceptanceCase
     caseId: auth.sessions.team-owner
@@ -82,7 +93,7 @@ verifiers:
     kind: apiAcceptanceCase
     caseId: teams.invite.team-owner
     ownerPackage: "@treeseed/api"
-    description: Team owner can invite a member and Mailpit receives the invite email.
+    description: Team invitation emits an email whose acceptance link uses the configured web origin.
   api.team.members.nonmember:
     kind: apiAcceptanceCase
     caseId: team-role-matrix.team-members.nonMember

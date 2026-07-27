@@ -99,6 +99,7 @@ workflow:
         expectedStatus: 200
         headers:
           user-agent: Treeseed Guarantee Revocable Session
+          x-forwarded-for: 198.51.100.27
         body:
           email: guarantee-{{runId}}-{{deviceId}}@treeseed.local
           password: TreeSeedGuaranteeReset123!
@@ -113,6 +114,18 @@ workflow:
       visible:
         - scene: account-sessions
       text: Revoke session
+  - id: verify-session-network-and-pretty-time
+    title: Verify the session network origin and formatted time
+    action:
+      goto: /app/account/sessions
+    expect:
+      text: 198.51.100.27
+      notText: T00:00:00.000Z
+      visible:
+        - css: '[data-session-entry="treeseed-guarantee-revocable-session"] [data-session-ip]'
+          internal: true
+        - css: '[data-session-entry="treeseed-guarantee-revocable-session"] .account-session-signed-in'
+          internal: true
   - id: reject-current-session-revocation
     title: Prove no current-session revoke control is exposed
     action:
@@ -130,6 +143,9 @@ workflow:
     expect:
       urlIncludes: /app/account/sessions
       text: Session revoked.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: verify-revoked-session
     title: Verify the revoked session remains observable
     action:

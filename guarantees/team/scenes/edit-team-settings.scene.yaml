@@ -114,8 +114,11 @@ workflow:
         role: button
         name: Save team
     expect:
-      urlIncludes: saved=1
-      text: Saved.
+      urlIncludes: /edit
+      text: Team saved.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
   - id: reload-team
     title: Reload persisted settings
     action:
