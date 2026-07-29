@@ -251,8 +251,21 @@ describe('team management architecture audit', () => {
 		expect(removalScene).toContain('reject-last-owner-leave');
 		expect(removalScene).toContain('A team must keep at least one owner.');
 
-		const correlatedVerifier = source('../api/scripts/guarantees/verify-team-run-state.ts');
-		expect(correlatedVerifier).toContain("hasAudit(state, 'team.ownership.transferred')");
-		expect(correlatedVerifier).toContain("hasAudit(state, 'team.member.left')");
+		const roleGuarantee = source('guarantees/team/membership/change-member-role.guarantee.yaml');
+		const removalGuarantee = source('guarantees/team/membership/remove-team-member.guarantee.yaml');
+		expect(roleGuarantee).toContain('audit:\n  required: true\n  verifierRefs: [api.team.role.correlated]');
+		expect(removalGuarantee).toContain('audit:\n  required: true\n  verifierRefs: [api.team.remove.correlated]');
+
+		const verifierRegistry = source('guarantees/verifiers/ui.verifiers.yaml');
+		for (const [ref, phase] of [
+			['api.team.role.correlated', 'role'],
+			['api.team.remove.correlated', 'remove'],
+		] as const) {
+			const block = verifierRegistry.split(`  ${ref}:`)[1]?.split(/\n  [a-z]/u)[0] ?? '';
+			expect(block, ref).toContain('ownerPackage: "@treeseed/api"');
+			expect(block, ref).toContain('cwd: packages/api');
+			expect(block, ref).toContain('command: scripts/guarantees/verify-team-run-state.ts');
+			expect(block, ref).toContain(`args: [${phase}]`);
+		}
 	});
 });
