@@ -14,14 +14,15 @@ const anonymousAuthPatterns = new Set([
 function adminRoute(pattern: string, resourcePath: string, input: CapabilityInput): SiteRouteContribution {
 	const auth = pattern.startsWith('/auth');
 	const anonymousAuth = anonymousAuthPatterns.has(pattern);
+	const app = pattern === '/app' || pattern.startsWith('/app/');
 	const personal = pattern === '/app' || pattern.startsWith('/app/account');
-	const team = pattern.startsWith('/app/teams') || pattern.startsWith('/t/') || pattern.startsWith('/team-invites');
+	const team = (app && !personal) || pattern.startsWith('/t/') || pattern.startsWith('/team-invites');
 	const support = pattern.startsWith('/v1/');
 	return defineRoute({ pattern, resourcePath, capability: {
 		owner: 'admin',
 		responseKind: support ? 'proxy' : pattern === '/auth/logout' || pattern.startsWith('/team-invites') ? 'redirect' : 'page',
 		archetype: auth ? 'auth-form' : pattern === '/app' ? 'dashboard' : pattern.startsWith('/u/') || pattern.startsWith('/t/') ? 'profile' : pattern.includes('/delete') || personal ? 'settings' : pattern.endsWith('/new') ? 'wizard' : 'collection',
-		shell: auth ? 'AuthShell' : personal || pattern.startsWith('/app/teams') ? 'AuthenticatedAppShell' : support ? 'Standalone' : 'PublicSingleColumnShell',
+		shell: auth ? 'AuthShell' : app ? 'AuthenticatedAppShell' : support ? 'Standalone' : 'PublicSingleColumnShell',
 		template: auth ? 'AuthCard' : pattern === '/app' ? 'DashboardTemplate' : pattern.startsWith('/u/') || pattern.startsWith('/t/') ? 'ProfileTemplate' : support ? 'Standalone' : pattern.endsWith('/new') ? 'WizardTemplate' : pattern.startsWith('/app/account') || pattern.includes('/delete') ? 'SettingsTemplate' : 'CollectionTemplate',
 		surface: auth ? 'auth' : personal ? 'personal' : team ? 'team' : support ? 'system' : 'public',
 		resourceType: auth ? 'auth-session' : personal ? 'account' : team ? 'team' : support ? 'api-proxy' : 'user-profile',
