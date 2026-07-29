@@ -8,10 +8,9 @@ audience:
 journey:
   kind: service
   proves:
-    - Change Member Role opens the canonical @treeseed/admin dashboard read model workflow.
-    - Change Member Role exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
-    - Change Member Role records reviewable evidence for the visible result before activation.
-  minimumSteps: 4
+    - team.member-roles
+    - team.ownership
+  minimumSteps: 18
   requiresInteractiveAction: true
   consumesState:
     - key: auth.primary-session
@@ -21,6 +20,8 @@ journey:
   producesState:
     - key: team.member-role-changed
       kind: marker
+    - key: auth.primary-session-after-role
+      kind: browser-storage
 mode:
   test: true
   demo: true
@@ -85,14 +86,48 @@ workflow:
   - id: open-entry-route
     title: Open Change Member Role
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-members
+    title: Open members for the run-created team
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
     expect:
       text: invite-{{runId}}-{{deviceId}}@treeseed.local
+      visible:
+        - scene: team.navigation
+        - scene: team.roles.reference.open
+  - id: open-role-reference
+    title: Open the role responsibility reference
+    action:
+      click:
+        role: button
+        name: Open role reference
+    expect:
+      text: Roles and responsibilities
+      visible:
+        - css: '#team-role-reference[open] .ts-disclosure-list'
+          internal: true
+  - id: close-role-reference
+    title: Close the role responsibility reference
+    action:
+      click:
+        role: button
+        name: Close dialog
+    expect:
+      notVisible:
+        - css: '#team-role-reference[open]'
+          internal: true
   - id: choose-reviewer-role
     title: Change the invited member to reviewer
     action:
       select:
-        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] select[name="roleKey"]'
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] select[name="roleKey"]'
         internal: true
         value: reviewer
     expect:
@@ -101,21 +136,202 @@ workflow:
     title: Persist the member role
     action:
       click:
-        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="PATCH"] button[type="submit"]'
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="PATCH"] button[type="submit"]'
         internal: true
     expect:
       urlIncludes: /members
       text: Member role updated.
       visible:
-        - css: '[data-ts-toast-id][data-tone="success"]'
+        - css: '[data-ts-toast-id][data-tone="success"]:last-of-type'
           internal: true
   - id: verify-member-role
-    title: Verify role persistence after reload
+    title: Prove the reviewer role persisted after the refreshed member panel
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: reopen-members-after-role-change
+    title: Reopen members and prove the role persisted
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="reviewer"]'
+          internal: true
+        - scene: team.roles.reference.open
+  - id: transfer-ownership-to-invited-member
+    title: Transfer ownership through the visible owner-only control
+    action:
+      click:
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] form[data-scene="team.ownership.transfer"] button[type="submit"]'
+        internal: true
+    expect:
+      text: Ownership transferred.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]:last-of-type'
+          internal: true
+        - css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="team_owner"]'
+          internal: true
+        - css: '[data-member-email="guarantee-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="project_lead"]'
+          internal: true
+  - id: sign-out-former-owner
+    title: End the former owner's browser session before restoring ownership
+    action:
+      clickVisibleSequence:
+        - role: button
+          name: Open team operations
+        - role: button
+          name: Sign out
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: enter-invited-owner-email
+    title: Sign in as the newly transferred owner
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: invite-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Sign in
+  - id: enter-invited-owner-password
+    title: Enter the invited owner's password
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedInviteGuarantee123!
+    expect:
+      text: Sign in
+  - id: sign-in-invited-owner
+    title: Authenticate as the invited owner
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: open-team-as-invited-owner
+    title: Open the same run-created team as its current owner
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-members-as-invited-owner
+    title: Open ownership administration as the invited owner
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-member-email="guarantee-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="project_lead"]'
+          internal: true
+  - id: restore-primary-ownership
+    title: Transfer ownership back through the same visible owner-only control
+    action:
+      click:
+        css: '[data-member-email="guarantee-{{runId}}-{{deviceId}}@treeseed.local"] form[data-scene="team.ownership.transfer"] button[type="submit"]'
+        internal: true
+    expect:
+      text: Ownership transferred.
+      visible:
+        - css: '[data-member-email="guarantee-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="team_owner"]'
+          internal: true
+        - css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="project_lead"]'
+          internal: true
+  - id: sign-out-invited-owner
+    title: End the invited user's session after ownership is restored
+    action:
+      clickVisibleSequence:
+        - role: button
+          name: Open team operations
+        - role: button
+          name: Sign out
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: enter-primary-owner-email
+    title: Enter the restored primary owner's account
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Sign in
+  - id: enter-primary-owner-password
+    title: Enter the primary owner's reset password
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Sign in
+  - id: sign-in-primary-owner
+    title: Authenticate as the restored primary owner
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reopen-members-as-primary-owner
+    title: Reopen membership administration as the restored primary owner
     action:
       goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
     expect:
       visible:
-        - css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"][data-scene-state="reviewer"]'
+        - css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="project_lead"]'
+          internal: true
+  - id: choose-final-reviewer-role
+    title: Remove the invited user's ownership while preserving another owner
+    action:
+      select:
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] select[name="roleKey"]'
+        internal: true
+        value: reviewer
+    expect:
+      text: invite-{{runId}}-{{deviceId}}@treeseed.local
+  - id: save-final-reviewer-role
+    title: Persist the final non-owner role through the rendered form
+    action:
+      click:
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="PATCH"] button[type="submit"]'
+        internal: true
+    expect:
+      text: Member role updated.
+      visible:
+        - css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="reviewer"]'
+          internal: true
+  - id: reload-team-collection-after-role-change
+    title: Reload the team collection after ownership and role changes
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: prove-final-role-after-reload
+    title: Prove the final role remains durable after a fresh page load
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="reviewer"]'
           internal: true
 chapters: []
 overlays: []
@@ -153,4 +369,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

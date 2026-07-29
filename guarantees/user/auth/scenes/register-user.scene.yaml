@@ -63,6 +63,21 @@ devices:
       deviceScaleFactor: 2
       isMobile: true
       hasTouch: true
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport:
+        width: 820
+        height: 1180
+      video:
+        width: 820
+        height: 1180
+      output:
+        width: 820
+        height: 1180
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
     - id: mobile_webkit
       title: Mobile WebKit
       orientation: portrait

@@ -7,12 +7,6 @@ verifiers:
     testFile: tests/integration/api/treedx/repositories/seeds-and-treedx.test.ts
     testName: owns web auth lifecycle and acceptance session seeding in the API
     description: Web identity lifecycle records canonical dotted audit events and durable session evidence.
-  api.team.lifecycle.audit:
-    kind: vitestCase
-    ownerPackage: "@treeseed/api"
-    testFile: tests/integration/api/governance/policy/teams-and-governance.test.ts
-    testName: manages team profiles, invites, member roles, and guarded deletion
-    description: Team identity, invitation, membership, and deletion mutations record canonical dotted audit events.
   api.auth.signup.mailpit:
     kind: apiAcceptanceCase
     caseId: auth.web.sign-up.sends-confirmation-email
@@ -43,6 +37,12 @@ verifiers:
     caseId: auth.profile.update.team-owner
     ownerPackage: "@treeseed/api"
     description: Authenticated users can update profile details.
+  api.auth.public-knowledge-profile:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/profiles/public-knowledge-profiles.test.ts
+    testName: publishes explicit knowledge while redacting memberships and private work
+    description: Public user and team profiles expose only explicitly public knowledge and attribution without leaking memberships or private work.
   api.auth.account-preferences:
     kind: apiAcceptanceCase
     caseId: auth.account-preferences.team-owner
@@ -74,48 +74,147 @@ verifiers:
     caseId: auth.account-blockers.team-viewer
     ownerPackage: "@treeseed/api"
     description: Authenticated users can inspect account deletion blockers.
-  api.team.list.owner:
-    kind: apiAcceptanceCase
-    caseId: teams.list.team-owner
+  api.team.create.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Team owner can list teams for active-team selection.
-  api.team.create:
-    kind: apiAcceptanceCase
-    caseId: teams.create.team-owner
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [create]
+    description: The UI-created run team exists with owner membership and its correlated team.created event.
+  api.team.active.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Authenticated user can create a team.
-  api.team.update:
-    kind: apiAcceptanceCase
-    caseId: teams.update.team-owner
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [active]
+    description: The exact UI-selected run team remains active and accessible.
+  api.team.update.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Team owner can update team identity settings.
-  api.team.invite.mailpit:
-    kind: apiAcceptanceCase
-    caseId: teams.invite.team-owner
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [update]
+    description: The UI-updated run team identity and team.updated event refer to the same record.
+  api.team.overview.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Team invitation emits an email whose acceptance link uses the configured web origin.
-  api.team.members.nonmember:
-    kind: apiAcceptanceCase
-    caseId: team-role-matrix.team-members.nonMember
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [overview]
+    description: Operational overview state resolves for the exact UI-created run team.
+  api.team.public-profile.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Non-members cannot inspect team membership.
-  api.team.member.role:
-    kind: apiAcceptanceCase
-    caseId: teams.member-role.team-owner
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [public-profile]
+    description: The exact run-created team profile exposes its public knowledge projection without private membership or operational fields.
+  api.team.invite.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Team owner can change a member role.
-  api.team.member.remove:
-    kind: apiAcceptanceCase
-    caseId: teams.member-remove.team-owner
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [invite]
+    description: The exact UI invitation remains pending and correlated create/resend/revoke audit events exist.
+  api.team.accept.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Team owner can remove a member.
-  api.team.deletion-blockers:
-    kind: apiAcceptanceCase
-    caseId: teams.deletion-blockers.team-owner
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [accept]
+    description: The invited recipient became a member only after explicit UI acceptance.
+  api.team.role.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Team owner can inspect team deletion blockers.
-  api.team.profile:
-    kind: apiAcceptanceCase
-    caseId: teams.profile.by-name
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [role]
+    description: The exact UI-created membership has its selected role and correlated audit event.
+  api.team.remove.correlated:
+    kind: nodeScript
     ownerPackage: "@treeseed/api"
-    description: Public team identity can be loaded by name.
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [remove]
+    description: The exact UI-created membership is absent and its correlated removal event exists.
+  api.team.delete.correlated:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [delete]
+    description: The UI-deleted run team and owned records are absent while a non-sensitive deletion tombstone remains.
+  admin.team.production-readiness:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-team-run-state.ts
+    args: [cleanup]
+    description: Every run-owned team is gone after the complete UI lifecycle.
+  admin.team.ui-contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/admin"
+    testFile: tests/contract/team-management/team-management-architecture.test.ts
+    description: Admin route, interaction ownership, progressive-enhancement, failure-state, consent, and lifecycle contracts are complete.
+  api.team.lifecycle-contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/teams/lifecycle
+    description: Invitation consent, lifecycle, blocker, cleanup, and transactional last-owner contracts pass.
+  sdk.team.ui-evidence-trust:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/guarantees/trust/ui-evidence-trust.test.ts
+    description: Exact device, per-node status, source closure, release fail-closed, and UI feature-contract evidence rules pass.
+  api.team.create.anonymous-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.create.anonymous-denied
+    ownerPackage: "@treeseed/api"
+  api.team.update.contributor-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.update.contributor-denied
+    ownerPackage: "@treeseed/api"
+  api.team.overview.anonymous-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.overview.anonymous-denied
+    ownerPackage: "@treeseed/api"
+  api.team.overview.nonmember-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.overview.nonmember-denied
+    ownerPackage: "@treeseed/api"
+  api.team.invite.contributor-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.invite.contributor-denied
+    ownerPackage: "@treeseed/api"
+  api.team.invitation.mismatch-denied:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/teams/lifecycle/invitation-consent.test.ts
+    testName: rejects invitation acceptance by a verified mismatched user
+  api.team.invitation.terminal-states:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/teams/lifecycle/invitation-consent.test.ts
+    testName: preserves explicit expired revoked accepted and replay states
+  api.team.role.contributor-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.role.contributor-denied
+    ownerPackage: "@treeseed/api"
+  api.team.remove.contributor-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.remove.contributor-denied
+    ownerPackage: "@treeseed/api"
+  api.team.lifecycle.project-lead-denied:
+    kind: apiAcceptanceCase
+    caseId: teams.lifecycle.project-lead-denied
+    ownerPackage: "@treeseed/api"
+  api.team.public-profile.archived-not-found:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/teams/lifecycle/team-lifecycle.test.ts
+    testName: hides archived and deleted teams from anonymous profiles
+  api.team.public-profile.private-member-access:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/teams/lifecycle/team-lifecycle.test.ts
+    testName: hides private active profiles anonymously and restores member access after archival

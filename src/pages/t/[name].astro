@@ -1,9 +1,12 @@
 ---
 import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
-import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProfileHeader.astro';
-import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
-import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
-import { formatTimestamp } from '@treeseed/ui/timestamps';
+import KnowledgeActivityTrail from '@treeseed/ui/components/astro/public/profile/KnowledgeActivityTrail.astro';
+import KnowledgeProfileCollection from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileCollection.astro';
+import KnowledgeProfileIdentity from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileIdentity.astro';
+import KnowledgeProfileLayout from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileLayout.astro';
+import KnowledgeProfileStats from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileStats.astro';
+import TeamNavigation from '../../components/team/TeamNavigation.astro';
+import { createApiFacade } from '../../lib/market/api-client';
 import { resolvePublicTeamProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;
@@ -16,28 +19,72 @@ const profile: any = await resolvePublicTeamProfile(Astro, normalizedName);
 if (!profile?.team) return new Response('Not found', { status: 404 });
 
 const team = profile.team;
+const knowledge = profile.knowledge ?? { stats: {}, catalog: [], knowledgePacks: [], projects: [], trail: [] };
 const displayName = team.displayName ?? team.name;
-const createdDate = team.createdAt
-	? formatTimestamp(team.createdAt, { style: 'date', timeZone: 'UTC' })
-	: null;
+const principal = Astro.locals.auth?.principal;
+const api = createApiFacade(Astro);
+const [preferences, accessibleTeams] = principal
+	? await Promise.all([
+		api.accountPreferences().catch(() => ({ timeZone: 'UTC' })),
+		api.listTeamsForPrincipal().catch(() => []),
+	])
+	: [{ timeZone: 'UTC' }, []];
+const timeZone = preferences.timeZone;
+const memberTeam = accessibleTeams.find((entry: any) => entry.name === team.name) ?? null;
+const memberRoles = memberTeam?.roles ?? [];
+const canManageTeam = Boolean(memberTeam?.allowedActions?.edit);
+const isOwner = memberRoles.includes('team_owner');
+const publishedBySlug = new Map<string, any>();
+for (const item of [...knowledge.catalog, ...knowledge.knowledgePacks]) {
+	const key = `${item.kind ?? 'knowledge_pack'}:${item.slug}`;
+	if (!publishedBySlug.has(key)) publishedBySlug.set(key, item);
+}
+const published = [...publishedBySlug.values()];
+const projects = knowledge.projects.map((project: any) => ({ ...project, kind: 'project', title: project.name }));
 ---
 
 <TreeseedPublicLayout
 	title={`${displayName} (@${team.name}) | TreeSeed`}
-	description={team.profileSummary ?? `Public TreeSeed team identity for @${team.name}.`}
+	description={team.profileSummary ?? `Public knowledge profile for @${team.name}.`}
 	currentPath={`/t/${team.name}`}
+	profilePage
 >
-	<PublicStack>
-		<PublicProfileHeader
-			eyebrow="Team identity"
+	<KnowledgeProfileLayout>
+		{memberTeam ? (
+			<Fragment slot="navigation">
+				<TeamNavigation team={memberTeam} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} />
+			</Fragment>
+		) : null}
+		<KnowledgeProfileIdentity
+			slot="identity"
+			kind="team"
 			name={displayName}
-			handle={`@${team.name}`}
+			handle={team.name}
 			imageSrc={team.logoUrl}
-			meta={createdDate ? `Created ${createdDate}` : undefined}
-			description={team.profileSummary}
+			summary={team.profileSummary}
+			establishedAt={team.createdAt}
+			timeZone={timeZone}
 		/>
-		<PublicSection title="TreeSeed team" eyebrow="Public identity">
-			<p>This profile confirms the public name and identity of a TreeSeed team.</p>
-		</PublicSection>
-	</PublicStack>
+		<KnowledgeProfileStats slot="stats" items={[
+			{ label: 'Templates', value: knowledge.stats.templates ?? 0 },
+			{ label: 'Knowledge packs', value: knowledge.stats.knowledgePacks ?? 0 },
+			{ label: 'Public projects', value: knowledge.stats.projects ?? 0 },
+			{ label: 'Publications', value: knowledge.stats.publications ?? 0 },
+		]} />
+		<KnowledgeProfileCollection
+			eyebrow="Public catalog"
+			title="Published knowledge"
+			items={published}
+			timeZone={timeZone}
+		/>
+		<KnowledgeProfileCollection
+			eyebrow="Public projects"
+			title="Public projects"
+			items={projects}
+			emptyTitle="No public projects yet"
+			emptyDescription="Projects remain private until the organization explicitly publishes their identity."
+			timeZone={timeZone}
+		/>
+		<KnowledgeActivityTrail items={knowledge.trail} timeZone={timeZone} />
+	</KnowledgeProfileLayout>
 </TreeseedPublicLayout>

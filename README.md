@@ -1,6 +1,6 @@
 # @treeseed/admin
 
-`@treeseed/admin` is the distributable AGPLv3 identity and team administration layer for Treeseed sites. During preparation for the comprehensive UI redesign, its rendered surface is intentionally limited to authentication, account management, team management, active-team selection, invitations, and public user/team identity profiles.
+`@treeseed/admin` is the distributable AGPLv3 identity and team administration layer for Treeseed sites. Its rendered surface includes authentication, account management, team management, active-team selection, invitations, and public user/team knowledge profiles.
 
 The removed pre-redesign surface is archived in the root [legacy route inventory](../../docs/legacy-routes.md). The redesign direction is described in [ui-redesign.md](../../docs/ui-redesign.md).
 
@@ -17,7 +17,7 @@ Add `@treeseed/admin/plugin` to the host `treeseed.site.yaml`, use the config he
 - `/app` and focused account routes for Identity, Sessions, Notifications, Appearance, and Delete
 - `/app/teams`, team creation, edit, delete, membership, and active-team selection
 - registration, verification, sign-in/out, recovery, OAuth callback, username, and device approval
-- `/u/[username]` and `/t/[name]` identity-only public profiles
+- `/u/[username]` and `/t/[name]` public knowledge profiles with explicit attribution and privacy-safe publication trails
 - invitation acceptance and the shared `/v1/[...all]` API facade
 
 `ADMIN_ROUTES` and `ADMIN_SUPPORT_ROUTES` are exported from `@treeseed/admin/routes`, use the SDK route-capability contract, and are tested against the package page tree. Account routes contain only focused controllers and standardized UI-package composition. There are no project, capacity, host, work, knowledge, catalog, seller, commerce, or Markdown-preview routes and no compatibility redirects for them.

@@ -1,0 +1,73 @@
+schemaVersion: treeseed.scene/v1
+id: team.negative.members-contributor
+title: Contributor Member Directory and Administration Denial
+description: Contributors can list and search teammates while invitation, role, ownership, and removal controls stay absent.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [team.member-directory, team.invitations, team.member-roles, team.member-removal]
+  minimumSteps: 3
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: member, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-member-directory
+    title: Show the member directory without administration controls
+    action: { goto: /app/teams/visual-audit-team/members }
+    expect:
+      text: Team members
+      visible:
+        - { css: "#team-member-search", internal: true }
+        - { css: "[data-scene^='team.member.']", internal: true }
+      notVisible:
+        - { role: button, name: Send invitation }
+        - { role: button, name: Save }
+        - { role: button, name: Transfer ownership }
+        - { role: button, name: Confirm removal }
+  - id: search-member-directory
+    title: Search members through the visible directory
+    action:
+      fill:
+        role: searchbox
+        name: Search members
+        value: contributor
+    expect:
+      visible:
+        - { css: "#team-member-search", internal: true }
+  - id: submit-member-search
+    title: Return matching members without exposing mutation controls
+    action:
+      click: { role: button, name: Search }
+    expect:
+      urlIncludes: q=contributor
+      text: Contributor
+      notVisible:
+        - { role: button, name: Send invitation }
+        - { role: button, name: Save }
+        - { role: button, name: Transfer ownership }
+        - { role: button, name: Confirm removal }
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+    capture: { viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, evidenceFit: fixed-browser }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

@@ -8,19 +8,19 @@ audience:
 journey:
   kind: service
   proves:
-    - Delete Team opens the canonical @treeseed/admin destructive confirmation workflow.
-    - Delete Team exercises a service journey instead of only loading /app/teams/visual-audit-team/delete.
-    - Delete Team records reviewable evidence for the visible result before activation.
-  minimumSteps: 5
+    - team.lifecycle
+  minimumSteps: 14
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.primary-session
+    - key: auth.primary-session-after-membership
       kind: browser-storage
     - key: team.member-removed
       kind: marker
   producesState:
     - key: team.deleted
       kind: marker
+      value:
+        name: gt-{{runShort}}-{{deviceId}}
 mode:
   test: true
   demo: true
@@ -83,38 +83,118 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-entry-route
-    title: Open Delete Team
+    title: Open the run-owned team collection
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/delete
+      goto: /app/teams
     expect:
-      text: No blockers found
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-lifecycle
+    title: Open owner-only lifecycle controls
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
+        internal: true
+    expect:
+      text: No active lifecycle blockers were found.
+  - id: archive-team
+    title: Archive the team through the visible lifecycle control
+    action:
+      click:
+        role: button
+        name: Archive team
+    expect:
+      urlIncludes: /app/teams
+      text: Team archived.
+  - id: reopen-archived-lifecycle
+    title: Reopen the archived team and its recovery window
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-ts-countdown]'
+          internal: true
+  - id: prove-archived-deletion-available
+    title: Prove deletion remains a distinct immediate operation while archived
+    action:
+      keyboard: Tab
+    expect:
+      text: Delete team permanently
+  - id: restore-team
+    title: Restore the archived team during its recovery window
+    action:
+      click:
+        role: button
+        name: Restore team
+    expect:
+      urlIncludes: /app/teams/
+      text: Operational overview
+  - id: return-to-collection
+    title: Return to the team collection
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: reopen-active-lifecycle
+    title: Reopen lifecycle after restoration and delete without another archive
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
+        internal: true
+    expect:
+      text: Deletion is immediate
   - id: enter-incorrect-confirmation
     title: Enter an incorrect deletion confirmation
     action:
       fill:
         role: textbox
-        name: Type "DELETE gt-{{runShort}}-{{deviceId}}"
-        value: DELETE wrong-team
+        name: Type "gt-{{runShort}}-{{deviceId}}" exactly
+        value: wrong-team
     expect:
-      text: Delete team
+      text: Delete team permanently
+  - id: enter-reauthentication
+    title: Reauthenticate for the destructive operation
+    action:
+      fill:
+        role: textbox
+        name: Current password
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Delete team permanently
+  - id: reject-incorrect-confirmation
+    title: Reject an incorrect exact-name confirmation
+    action:
+      click:
+        role: button
+        name: Delete team permanently
+    expect:
+      urlIncludes: /delete
+      text: Type
   - id: enter-exact-confirmation
     title: Enter the exact deletion confirmation
     action:
       fill:
         role: textbox
-        name: Type "DELETE gt-{{runShort}}-{{deviceId}}"
-        value: DELETE gt-{{runShort}}-{{deviceId}}
+        name: Type "gt-{{runShort}}-{{deviceId}}" exactly
+        value: gt-{{runShort}}-{{deviceId}}
     expect:
-      text: Delete team
+      text: Delete team permanently
   - id: delete-team
     title: Permanently delete the run-owned team
     action:
       click:
         role: button
-        name: Delete team
+        name: Delete team permanently
     expect:
       urlIncludes: /app/teams
-      notText: Verified {{runShort}} {{deviceId}}
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
   - id: verify-team-lookup-cleared
     title: Verify the deleted team no longer resolves
     action:
@@ -125,7 +205,9 @@ workflow:
         expectedStatus: 404
     expect:
       urlIncludes: /app/teams
-      notText: Verified {{runShort}} {{deviceId}}
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []
@@ -162,4 +244,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

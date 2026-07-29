@@ -1,0 +1,56 @@
+schemaVersion: treeseed.scene/v1
+id: team.negative.anonymous-access
+title: Anonymous Team Administration Denial
+description: Anonymous visitors cannot reach team collection, creation, or operational overview controls.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [team.create, team.active-selection, team.operational-overview]
+  minimumSteps: 3
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, orientation: portrait, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: anonymous, required: false }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: deny-team-collection
+    title: Redirect anonymous collection access
+    action: { goto: /app/teams }
+    expect: { urlIncludes: "/auth/sign-in?returnTo=", text: Sign in }
+  - id: exercise-sign-in-validation
+    title: Keep anonymous access on the sign-in boundary
+    action:
+      click: { role: button, name: Sign in }
+    expect:
+      urlIncludes: "/auth/sign-in?returnTo="
+      visible: [{ role: textbox, name: Email or username }]
+  - id: deny-team-creation
+    title: Redirect anonymous create access without rendering mutation controls
+    action: { goto: /app/teams/new }
+    expect:
+      urlIncludes: "/auth/sign-in?returnTo="
+      notVisible: [{ role: button, name: Create team }]
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+    capture: { viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, evidenceFit: fixed-browser }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

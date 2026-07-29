@@ -1,0 +1,158 @@
+schemaVersion: treeseed.ui-feature/v1
+id: admin.team-management
+ownerPackage: "@treeseed/admin"
+routes:
+  - /app/teams
+  - /app/teams/active
+  - /app/teams/new
+  - /app/teams/[teamId]
+  - /app/teams/[teamId]/edit
+  - /app/teams/[teamId]/members
+  - /app/teams/[teamId]/delete
+  - /team-invites/[token]/accept
+  - /t/[name]
+devices:
+  - desktop_chromium
+  - tablet_chromium
+  - mobile_chromium
+states:
+  - loading
+  - empty
+  - unavailable
+  - forbidden
+  - validation
+  - conflict
+  - success
+  - archived
+  - destructive
+capabilities:
+  - id: team.collection
+    routes: [/app/teams]
+    actions: [open-overview, open-settings, open-members, open-lifecycle]
+    states: [loading, empty, unavailable, active, archived, forbidden]
+    actors:
+      allowed: [team_owner, project_lead, contributor, reviewer, viewer]
+      forbidden: [anonymous_user, non_member]
+    guaranteeIds: [guarantee.team.team.view-team-overview.015]
+  - id: team.create
+    routes: [/app/teams/new]
+    actions: [validate, create]
+    states: [validation, conflict, success, unavailable]
+    actors:
+      allowed: [verified_user]
+      forbidden: [anonymous_user, unverified_user, service_principal]
+    guaranteeIds: [guarantee.team.team.create-team.012]
+  - id: team.active-selection
+    routes: [/app/teams, /app/teams/active, /app]
+    actions: [set-active, clear-invalid-preference]
+    states: [success, forbidden, unavailable]
+    actors:
+      allowed: [team_member]
+      forbidden: [anonymous_user, non_member]
+    guaranteeIds: [guarantee.team.team.switch-active-team.013]
+  - id: team.identity-settings
+    routes: ["/app/teams/[teamId]/edit"]
+    actions: [preview, validate, update]
+    states: [validation, conflict, success, archived, forbidden, unavailable]
+    actors:
+      allowed: [team_owner, project_lead]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.team.edit-team-settings.014]
+  - id: team.operational-overview
+    routes: ["/app/teams/[teamId]"]
+    actions: [inspect-summary, inspect-content-activity, follow-domain-link, inspect-audit]
+    states: [active, archived, forbidden, unavailable, not-found]
+    actors:
+      allowed: [team_member]
+      forbidden: [anonymous_user, non_member]
+    guaranteeIds: [guarantee.team.team.view-team-overview.015]
+  - id: team.public-profile
+    routes: ["/t/[name]"]
+    actions: [view-public-identity, browse-public-knowledge, inspect-public-activity, use-authorized-team-navigation]
+    states: [active, authenticated-member, empty, not-found]
+    actors:
+      allowed: [anonymous_user, team_member]
+      forbidden: [none]
+    guaranteeIds: [guarantee.team.team.view-team-overview.015, guarantee.team.team.view-public-team-profile.021]
+  - id: team.member-directory
+    routes: ["/app/teams/[teamId]/members"]
+    actions: [list-members, search-members, inspect-role]
+    states: [empty, success, archived, forbidden, unavailable]
+    actors:
+      allowed: [team_member]
+      forbidden: [non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.membership.invite-team-members.017]
+  - id: team.invitations
+    routes: ["/app/teams/[teamId]/members"]
+    actions: [validate, create, list, resend, revoke]
+    states: [empty, validation, conflict, success, archived, forbidden, unavailable]
+    actors:
+      allowed: [team_owner, project_lead]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.membership.invite-team-members.017]
+  - id: team.invitation-consent
+    routes: ["/team-invites/[token]/accept"]
+    actions: [preview, sign-in, register, switch-account, accept, select-active]
+    states: [valid, expired, revoked, accepted, invalid, email-mismatch, success]
+    actors:
+      allowed: [invited_user]
+      forbidden: [mismatched_user]
+    guaranteeIds: [guarantee.team.membership.accept-team-invitation.018]
+  - id: team.member-roles
+    routes: ["/app/teams/[teamId]/members"]
+    actions: [change-non-owner-role]
+    states: [validation, conflict, success, last-owner, forbidden]
+    actors:
+      allowed: [team_owner, project_lead]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.membership.change-member-role.019]
+  - id: team.ownership
+    routes: ["/app/teams/[teamId]/members"]
+    actions: [grant-owner, remove-owner, transfer-owner]
+    states: [validation, conflict, success, last-owner, forbidden]
+    actors:
+      allowed: [team_owner]
+      forbidden: [project_lead, contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.membership.change-member-role.019]
+  - id: team.member-removal
+    routes: ["/app/teams/[teamId]/members"]
+    actions: [inspect-blockers, confirm-remove]
+    states: [blocked, confirmation, success, lost-access, forbidden]
+    actors:
+      allowed: [team_owner, project_lead]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.membership.remove-team-member.020]
+  - id: team.member-leave
+    routes: ["/app/teams/[teamId]/members"]
+    actions: [self-leave]
+    states: [confirmation, success, lost-access, last-owner, forbidden]
+    actors:
+      allowed: [current_member]
+      forbidden: [last_owner, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.membership.remove-team-member.020]
+  - id: team.lifecycle
+    routes: ["/app/teams/[teamId]/delete"]
+    actions: [inspect-blockers, archive, inspect-restore-countdown, restore, reauthenticate, delete-permanently]
+    states: [blocked, active, archived, restore-window, validation, success, forbidden, unavailable]
+    actors:
+      allowed: [team_owner]
+      forbidden: [project_lead, contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.team.team.delete-team.016]
+requiredGuarantees:
+  - guarantee.team.team.create-team.012
+  - guarantee.team.team.switch-active-team.013
+  - guarantee.team.team.edit-team-settings.014
+  - guarantee.team.team.view-team-overview.015
+  - guarantee.team.team.delete-team.016
+  - guarantee.team.membership.invite-team-members.017
+  - guarantee.team.membership.accept-team-invitation.018
+  - guarantee.team.membership.change-member-role.019
+  - guarantee.team.membership.remove-team-member.020
+  - guarantee.team.team.view-public-team-profile.021
+requirements:
+  accessibility: true
+  console: true
+  network: true
+  visual: true
+  durableState: true
+  cleanup: true

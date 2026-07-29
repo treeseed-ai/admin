@@ -4,6 +4,8 @@ import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
 import Textarea from '@treeseed/ui/components/astro/forms/fields/Textarea.astro';
+import Select from '@treeseed/ui/components/astro/forms/fields/Select.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
@@ -21,6 +23,7 @@ let formValues = {
 	displayName: '',
 	logoUrl: '',
 	profileSummary: '',
+	visibility: 'private',
 };
 
 if (Astro.request.method === 'POST') {
@@ -39,6 +42,7 @@ if (Astro.request.method === 'POST') {
 		displayName: String(data.get('displayName') ?? '').trim(),
 		logoUrl: String(data.get('logoUrl') ?? '').trim(),
 		profileSummary: String(data.get('profileSummary') ?? '').trim(),
+		visibility: String(data.get('visibility') ?? 'private'),
 	};
 
 	if (!formValues.name) {
@@ -51,27 +55,22 @@ if (Astro.request.method === 'POST') {
 	} else {
 		try {
 			const team = await new ApiClientFacade(Astro).request<any>('POST', '/v1/teams', {
-				body: formValues,
-			});
-			Astro.cookies.set('treeseed_active_team', team.id, {
-				path: '/app',
-				sameSite: 'lax',
-				secure: Astro.url.protocol === 'https:',
-				maxAge: 31_536_000,
+				body: { ...formValues, metadata: { visibility: formValues.visibility } },
 			});
 			return formSubmissionResponse(Astro.request, {
 				ok: true,
 				code: 'team_created',
 				message: 'Team created.',
-				redirect: '/app/teams',
+				redirect: `/app/teams/${team.id}`,
 			}, { fallbackRedirect: '/app/teams' });
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Team could not be created.';
+			const details = (error as any)?.details ?? {};
+			const message = details.message ?? (error instanceof Error ? error.message : 'Team could not be created.');
 			return formSubmissionResponse(Astro.request, {
 				ok: false,
-				code: 'team_create_failed',
+				code: details.code ?? 'team_create_failed',
 				message,
-				fieldErrors: /(?:name|slug|already exists|taken)/iu.test(message) ? { name: message } : undefined,
+				fieldErrors: details.fieldErrors ?? (/(?:name|slug|already exists|taken)/iu.test(message) ? { name: message } : undefined),
 			}, { fallbackRedirect: '/app/teams/new' });
 		}
 	}
@@ -80,10 +79,13 @@ if (Astro.request.method === 'POST') {
 const context = await loadAppContext(Astro);
 ---
 
-<TreeseedAppLayout title="New team" description="Create one team." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam}>
+<TreeseedAppLayout title="New team" description="Create one team." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<PageHeader eyebrow="Team administration" title="Create a team" description="Start a new team workspace for projects, people, knowledge, and operations.">
+		<Button slot="actions" href="/app/teams" variant="secondary">All teams</Button>
+	</PageHeader>
 	<section class="ts-control-page" aria-label="New team">
-		<Panel eyebrow="Team" title="Create team" description="Teams own hosts, projects, capacity, work, and knowledge.">
-			<form id="team-create-form" class="ts-form-stack" method="POST" action="/app/teams/new" data-ts-submit="enhanced">
+		<Panel eyebrow="Identity" title="Team details" description="Choose the identity people will use to find and recognize this team.">
+			<form id="team-create-form" class="ts-form-stack ts-team-form" method="POST" action="/app/teams/new" data-ts-submit="enhanced" data-scene="team.create.form">
 				<input type="hidden" name="csrfToken" value={csrfToken} />
 				<div class="ts-form-grid">
 					<Field label="Name" name="name" required>
@@ -95,9 +97,15 @@ const context = await loadAppContext(Astro);
 					<Field label="Logo URL" name="logoUrl" class="ts-field--full">
 						<TextInput name="logoUrl" type="url" placeholder="https://example.com/logo.svg" value={formValues.logoUrl} />
 					</Field>
-					<Field label="Profile summary" name="profileSummary" class="ts-field--full">
+						<Field label="Profile summary" name="profileSummary" class="ts-field--full">
 						<Textarea name="profileSummary" rows={4} placeholder="What this team builds or manages." value={formValues.profileSummary} />
-					</Field>
+						</Field>
+						<Field label="Profile visibility" name="visibility">
+							<Select name="visibility" value={formValues.visibility} options={[
+								{ label: 'Private', value: 'private' },
+								{ label: 'Public identity', value: 'public' },
+							]} />
+						</Field>
 				</div>
 				<FormActions align="start">
 					<Button type="submit">Create team</Button>

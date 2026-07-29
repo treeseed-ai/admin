@@ -8,14 +8,15 @@ audience:
 journey:
   kind: service
   proves:
-    - Create Team opens the canonical @treeseed/admin full page form workflow.
-    - A verified owner can fill and submit the team creation form.
-    - The created team becomes visible in the authenticated team area for dependent journeys.
-  minimumSteps: 5
+    - team.create
+  minimumSteps: 8
   requiresInteractiveAction: true
   producesState:
     - key: team.primary
       kind: marker
+      value:
+        name: gt-{{runShort}}-{{deviceId}}
+        displayName: Guarantee {{runShort}} {{deviceId}}
   consumesState:
     - key: auth.primary-session
       kind: browser-storage
@@ -49,6 +50,21 @@ devices:
       deviceScaleFactor: 1
       isMobile: false
       hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport:
+        width: 820
+        height: 1180
+      video:
+        width: 820
+        height: 1180
+      output:
+        width: 820
+        height: 1180
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
     - id: mobile_chromium
       title: Mobile Chromium
       orientation: portrait
@@ -86,7 +102,30 @@ workflow:
       goto: /app/teams/new
     expect:
       urlIncludes: /app/teams
-      text: Create team
+      visible:
+        - css: '[data-scene="team.create.form"]'
+          internal: true
+  - id: enter-invalid-team-name
+    title: Enter an invalid team name
+    action:
+      fill:
+        css: '[data-scene="team.create.form"] input[name="name"]'
+        internal: true
+        value: Invalid Team Name
+    expect:
+      urlIncludes: /app/teams/new
+      visible:
+        - css: '[data-scene="team.create.form"]'
+          internal: true
+  - id: reject-invalid-team-name
+    title: Reject invalid input without creating a team
+    action:
+      click:
+        role: button
+        name: Create team
+    expect:
+      urlIncludes: /app/teams/new
+      notText: Team created.
   - id: fill-team-display-name
     title: Fill team display name
     action:
@@ -95,7 +134,9 @@ workflow:
         internal: true
         value: Guarantee {{runShort}} {{deviceId}}
     expect:
-      text: Create team
+      visible:
+        - css: '[data-scene="team.create.form"]'
+          internal: true
   - id: fill-team-summary
     title: Fill team profile summary
     action:
@@ -104,7 +145,9 @@ workflow:
         name: Profile summary
         value: Team created by the guarantee service journey for downstream UI verification.
     expect:
-      text: Create team
+      visible:
+        - css: '[data-scene="team.create.form"]'
+          internal: true
   - id: fill-team-name
     title: Fill team name after dependent identity fields
     action:
@@ -113,7 +156,9 @@ workflow:
         internal: true
         value: gt-{{runShort}}-{{deviceId}}
     expect:
-      text: Create team
+      visible:
+        - css: '[data-scene="team.create.form"]'
+          internal: true
   - id: submit-team
     title: Submit team creation
     action:
@@ -123,14 +168,23 @@ workflow:
     expect:
       urlIncludes: /app/teams
   - id: inspect-service-surface
-    title: Reload the durable team settings
+    title: Prove the run-created team appears in the collection
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/edit
+      goto: /app/teams
     expect:
-      urlIncludes: /edit
+      urlIncludes: /app/teams
       visible:
-        - role: textbox
-          name: Display name
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: inspect-owner-membership
+    title: Open members and prove owner management controls
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      urlIncludes: /members
+      text: Invite a member
 chapters: []
 overlays: []
 diagrams: []
@@ -167,4 +221,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

@@ -1,0 +1,57 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.team.team.view-public-team-profile.021
+type: team
+subtype: team
+journey: View Public Team Profile
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Expose active team identity and explicitly public reusable knowledge anonymously for public teams and to authenticated members for private teams, while redacting private membership and operational context.
+status: active
+dependencies:
+  journeys: [14]
+  guarantees: [guarantee.team.team.edit-team-settings.014]
+actors:
+  allowed: [anonymous_user, team_member]
+  forbidden: []
+devices:
+  required: [desktop_chromium, tablet_chromium, mobile_chromium]
+gates: [core, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes: [The owning team identity must already exist.]
+uiFeature:
+  contract: ../team-management.ui-feature.yaml
+  capabilities: [team.public-profile]
+scene:
+  required: true
+  manifest: ../scenes/view-public-team-profile.scene.yaml
+  executionKey: admin.team.public-profile
+  mode: { acceptance: true, demo: true, training: true }
+  entryRoute: /t/[name]
+  componentContract: anonymous knowledge profile
+  expectedEvidence: [playwright_trace, scene_video, screenshot_on_failure, console_log, network_log]
+api:
+  required: true
+  verifierRefs: [api.team.public-profile.correlated]
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: archived-not-found
+    actor: anonymous_user
+    verifierRefs: [api.team.public-profile.archived-not-found]
+  - id: private-anonymous-not-found
+    actor: anonymous_user
+    verifierRefs: [api.team.public-profile.private-member-access]
+evidence:
+  required: [playwright_trace, scene_video, api_verification_log]
+notes:
+  - This supplemental guarantee intentionally has no CSV journey index.
+  - Public projects, templates, knowledge packs, and their publication trail are explicit public projections, never private operational aggregates.
+  - Private active profiles remain hidden anonymously but are available to authenticated members, including after archive and restore.
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

@@ -18,10 +18,10 @@ actors:
     - team_owner
   forbidden:
     - anonymous_user
-    - unauthorized_user
 devices:
   required:
     - desktop_chromium
+    - tablet_chromium
     - mobile_chromium
 gates:
   - core
@@ -31,6 +31,9 @@ preconditions:
     - integrated_treeseed_project
   notes:
     - "Journey dependencies must be satisfied: 12"
+uiFeature:
+  contract: ../team-management.ui-feature.yaml
+  capabilities: [team.active-selection]
 scene:
   required: true
   manifest: ../scenes/switch-active-team.scene.yaml
@@ -50,7 +53,7 @@ scene:
 api:
   required: true
   verifierRefs:
-    - api.team.list.owner
+    - api.team.active.correlated
 content:
   required: false
   verifierRefs: []
@@ -58,10 +61,11 @@ audit:
   required: false
   verifierRefs: []
 negativeCases:
-  - id: non-member-denied
-    actor: non_member
-    verifierRefs:
-      - api.team.members.nonmember
+  - id: anonymous-denied
+    actor: anonymous_user
+    sceneManifest: ../scenes/negative/anonymous-team-access.scene.yaml
+    executionKey: admin.team.negative.anonymous-access
+    verifierRefs: []
 evidence:
   required:
     - playwright_trace

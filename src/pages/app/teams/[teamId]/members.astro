@@ -2,92 +2,275 @@
 import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
 import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import InlineSearch from '@treeseed/ui/components/astro/forms/search/InlineSearch.astro';
 import Select from '@treeseed/ui/components/astro/forms/fields/Select.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import ActionList from '@treeseed/ui/components/astro/data/ActionList.astro';
+import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
+import ResponsiveTable from '@treeseed/ui/components/astro/data/ResponsiveTable.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import IdentitySummary from '@treeseed/ui/components/astro/patterns/IdentitySummary.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import InlineConfirmation from '@treeseed/ui/components/astro/surface/InlineConfirmation.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import PlainTable from '@treeseed/ui/components/astro/app/controls/data/PlainTable.astro';
+import AccessibleDialog from '@treeseed/ui/components/astro/overlays/AccessibleDialog.astro';
+import Pagination from '@treeseed/ui/components/astro/shell/navigation/Pagination.astro';
+import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro';
+import { formSubmissionResponse } from '@treeseed/ui/forms';
+import TeamAccessDetails from '../../../../components/team/TeamAccessDetails.astro';
+import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
-import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
-import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
-import { ensureCsrfToken } from '../../../../lib/auth/support/csrf';
+import { ApiClientFacade } from '../../../../lib/market/api-client';
+import { capabilitiesForRole, roleDisplay } from '../../../../lib/teams/access-display';
+import { loadAppContext, resolveAppTeam } from '../../../../view-models/app-access.js';
+import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/support/csrf';
 
 const teamParam = String(Astro.params.teamId ?? '');
 if (!Astro.locals.auth?.principal) {
 	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 }
+
 const context = await loadAppContext(Astro);
-const teamResolution = resolveAppTeam(context, teamParam);
-const team = teamResolution.resource;
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
+const resolution = await resolveAppTeam(context, teamParam);
+const team = resolution.resource;
 const csrfToken = ensureCsrfToken(Astro);
-if (teamResolution.team?.id && teamResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, teamResolution.team);
-const manageableRoles = new Set(['team_owner', 'project_lead']);
-const access = team && context.store && typeof context.store.getTeamAccessSummary === 'function'
-	? await context.store.getTeamAccessSummary(team.id, context.principal).catch(() => null)
-	: null;
-const canManageTeam = Boolean(access?.roles?.some((role: string) => manageableRoles.has(role)));
-const members = team && canManageTeam && context.store ? await context.store.listTeamMembers(team.id).catch(() => []) : [];
-if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 : 404;
-else if (!canManageTeam) Astro.response.status = 403;
+const roles = team ? await context.store.getTeamAccessSummary(team.id, context.principal).catch(() => null) : null;
+const canManage = Boolean(roles?.roles?.some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+const isOwner = Boolean(roles?.roles?.includes('team_owner'));
+const query = String(Astro.url.searchParams.get('q') ?? '').trim();
+const page = Math.max(1, Number(Astro.url.searchParams.get('page') ?? 1));
+let memberPage: any = { items: [], page, limit: 25, total: 0 };
+let invitations: any[] = [];
+let unavailable = resolution.status === 'unavailable';
+
+if (Astro.request.method === 'POST' && team) {
+	const data = await Astro.request.formData();
+	try {
+		requireCsrf(Astro, data.get('csrfToken'));
+		if (data.get('action') !== 'leave') throw new Error('Choose a valid membership action.');
+		await api.request('POST', `/v1/teams/${encodeURIComponent(team.id)}/leave`, { body: {} });
+		const fallback = context.teams.find((entry: any) => entry.id !== team.id && (entry.status ?? 'active') === 'active');
+		if (fallback?.id) Astro.cookies.set('treeseed_active_team', fallback.id, {
+			path: '/app', httpOnly: false, sameSite: 'lax',
+			secure: Astro.url.protocol === 'https:', maxAge: 31_536_000,
+		});
+		else Astro.cookies.delete('treeseed_active_team', { path: '/app' });
+		return formSubmissionResponse(Astro.request, {
+			ok: true, code: 'team_left', message: 'You left the team.', redirect: '/app/teams',
+		}, { fallbackRedirect: '/app/teams' });
+	} catch (error) {
+		const details = (error as any)?.details ?? {};
+		return formSubmissionResponse(Astro.request, {
+			ok: false,
+			code: details.code ?? 'team_leave_failed',
+			message: details.message ?? (error instanceof Error ? error.message : 'The team could not be left.'),
+		}, { fallbackRedirect: Astro.url.pathname });
+	}
+}
+
+if (team) {
+	try {
+		memberPage = await api.request(
+			'GET',
+			`/v1/teams/${encodeURIComponent(team.id)}/members?page=${page}&limit=25&q=${encodeURIComponent(query)}`,
+		);
+		if (canManage) {
+			invitations = await api.request('GET', `/v1/teams/${encodeURIComponent(team.id)}/invites`);
+			memberPage.items = await Promise.all(memberPage.items.map(async (member: any) => ({
+				...member,
+				removal: await api.request(
+					'GET',
+					`/v1/teams/${encodeURIComponent(team.id)}/members/${encodeURIComponent(member.id)}/removal-blockers`,
+				).catch(() => ({ eligible: false, blockers: [{ code: 'unavailable', label: 'Removal checks are unavailable.' }] })),
+			})));
+		}
+	} catch {
+		unavailable = true;
+		Astro.response.status = 503;
+	}
+} else if (!team) Astro.response.status = resolution.status === 'forbidden' ? 403 : resolution.status === 'unavailable' ? 503 : 404;
+
 const roleOptions = [
 	{ label: 'Contributor', value: 'contributor' },
 	{ label: 'Reviewer', value: 'reviewer' },
 	{ label: 'Project lead', value: 'project_lead' },
 	{ label: 'Market steward', value: 'market_steward' },
 	{ label: 'Finance', value: 'finance' },
-	{ label: 'Owner', value: 'team_owner' },
+	...(isOwner ? [{ label: 'Owner', value: 'team_owner' }] : []),
 ];
-function roleSelectOptions(roleKey: string) {
-	return roleOptions.map((option) => `<option value="${esc(option.value)}" ${roleKey === option.value ? 'selected' : ''}>${esc(option.label)}</option>`).join('');
-}
-const rows = members.map((member: any) => ({
-	id: `member-${esc(member.id ?? member.userId)}`,
-	sceneId: `team.member.${member.email ?? member.userId ?? member.id ?? 'unknown'}`,
-	sceneState: String(member.roleKey ?? member.role ?? 'contributor'),
-	name: `<strong>${esc(member.displayName ?? member.email ?? member.userId ?? 'Member')}</strong><span>${esc(member.email ?? member.userId ?? '')}</span>`,
-	role: esc(roleOptions.find((option) => option.value === (member.roleKey ?? member.role))?.label ?? member.roleKey ?? member.role ?? 'member'),
-	actions: `<div class="ts-inline-form"><form action="/v1/teams/${encodeURIComponent(team?.id ?? '')}/members/${encodeURIComponent(String(member.id))}" method="post" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="PATCH" data-ts-success-message="Member role updated." data-ts-refresh-target="[data-team-members-panel]"><input type="hidden" name="csrfToken" value="${esc(csrfToken)}"><select class="ts-control" name="roleKey">${roleSelectOptions(String(member.roleKey ?? member.role ?? 'contributor'))}</select><button class="ts-link-button" type="submit">Save</button></form><form action="/v1/teams/${encodeURIComponent(team?.id ?? '')}/members/${encodeURIComponent(String(member.id))}" method="post" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Member removed." data-ts-refresh-target="[data-team-members-panel]"><input type="hidden" name="csrfToken" value="${esc(csrfToken)}"><button class="ts-link-button" type="submit" data-remove-member>Remove</button></form></div>`,
-}));
+const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(memberPage.limit ?? 25)));
 ---
 
-<TreeseedAppLayout title={team ? `${team.displayName ?? team.name} members` : 'Team not found'} description="Invite and manage team members." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
-	{team && canManageTeam ? (
-		<section class="ts-control-page" aria-label="Team members" data-team-members-panel>
-			<Panel eyebrow="Team" title="Invite member" description="Send an invitation to this team.">
-				<form id="invite-form" class="ts-form-stack" method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/invites`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation sent." data-ts-reset-on-success="true" data-ts-refresh-target="[data-team-members-panel]">
-					<input type="hidden" name="csrfToken" value={csrfToken} />
-					<div class="ts-form-grid">
-						<Field label="Email" name="email" required>
-							<TextInput name="email" type="email" required />
-						</Field>
-						<Field label="Role" name="roleKey" required>
-							<Select name="roleKey" required options={[
-								{ label: 'Contributor', value: 'contributor' },
-								{ label: 'Reviewer', value: 'reviewer' },
-								{ label: 'Project lead', value: 'project_lead' },
-								{ label: 'Market steward', value: 'market_steward' },
-								{ label: 'Finance', value: 'finance' },
-								{ label: 'Owner', value: 'team_owner' },
-							]} />
-						</Field>
-					</div>
-					<FormActions align="start">
-						<Button type="submit">Invite member</Button>
-						<Button href="/app/teams" variant="secondary">Back</Button>
-					</FormActions>
-				</form>
-			</Panel>
-			<Panel eyebrow="Team" title="Members" description="Update roles or remove members.">
-				<PlainTable columns={[
-					{ key: 'name', label: 'Member' },
-					{ key: 'role', label: 'Role' },
-					{ key: 'actions', label: 'Actions' },
-				]} rows={rows} emptyTitle="No members listed" emptyDescription="Invite the first member above." />
-			</Panel>
-		</section>
+<TreeseedAppLayout title={team ? `${team.displayName ?? team.name} members` : 'Team unavailable'} description="View team membership and administer access when authorized." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader={Boolean(team)}>
+	{team ? (
+		<>
+			<PageHeader eyebrow="Team access" title="Members" description={canManage ? `@${team.name} · View members and administer invitations, roles, and ownership.` : `@${team.name} · View and search everyone on this team.`} />
+			<TeamNavigation team={team} currentPath={Astro.url.pathname} canManage={canManage} isOwner={isOwner} />
+		</>
+	) : null}
+	{unavailable ? (
+		<EmptyState title="Membership data is temporarily unavailable" description="No empty member or invitation lists have been inferred.">
+			<div slot="actions"><Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button></div>
+		</EmptyState>
 	) : team ? (
-		<EmptyState title="Team controls unavailable" description="Team editing, member management, and deletion require the team owner or project lead role." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+		<section class="ts-template" aria-label="Team membership" data-team-members-panel data-scene="team.members">
+			{canManage && team.status === 'archived' ? (
+				<EmptyState title="Archived teams are read-only" description="Members remain visible, but the team must be restored before changing access." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+			) : canManage ? (
+				<Panel eyebrow="Invitation" title="Invite a member" description="Every recipient must explicitly accept, including existing users.">
+					<form class="ts-form-stack ts-team-form" method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/invites`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation sent." data-ts-reset-on-success="true" data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.create">
+						<input type="hidden" name="csrfToken" value={csrfToken} />
+						<div class="ts-form-grid">
+							<Field label="Recipient email" name="email" required>
+								<TextInput name="email" type="email" required autocomplete="email" />
+							</Field>
+							<Field label="Initial role" name="roleKey" required>
+								<Select name="roleKey" required options={roleOptions.filter((option) => option.value !== 'team_owner')} />
+							</Field>
+						</div>
+						<FormActions align="start"><Button type="submit">Send invitation</Button></FormActions>
+					</form>
+				</Panel>
+			) : null}
+
+			<Panel eyebrow="Directory" title="Team members" description="Search everyone on the team and inspect their role and responsibilities.">
+				<button
+					slot="actions"
+					type="button"
+					class="ts-icon-button ts-icon-button--square"
+					title="Role reference"
+					aria-label="Open role reference"
+					aria-haspopup="dialog"
+					data-dialog-open="team-role-reference"
+					data-scene="team.roles.reference.open"
+				>
+					<ShellIcon name="help" />
+				</button>
+				<InlineSearch action={Astro.url.pathname} id="team-member-search" label="Search members" value={query} />
+				<ResponsiveTable caption="Team members" density="comfortable">
+						<colgroup>
+							<col class="ts-data-table__column--identity" />
+							<col class="ts-data-table__column--details" />
+							<col class="ts-data-table__column--timestamp" />
+							<col class="ts-data-table__column--actions" hidden={!canManage} />
+						</colgroup>
+						<thead><tr><th>Member</th><th>Role and capabilities</th><th>Joined</th><th hidden={!canManage}>Actions</th></tr></thead>
+						<tbody>
+							{memberPage.items.map((member: any) => {
+								const memberIsOwner = member.roles?.includes('team_owner');
+								const isCurrent = member.userId === context.principal?.id;
+								const soleCurrentOwner = isCurrent && memberIsOwner && Number(memberPage.ownerCount ?? 0) === 1;
+								const canChange = canManage && team.status !== 'archived' && (isOwner || !memberIsOwner) && !soleCurrentOwner;
+								return (
+									<tr data-scene={`team.member.${member.id}`} data-member-email={member.email} data-member-role={member.roleKey}>
+										<td data-label="Member" data-layout="stack">
+											<IdentitySummary name={member.displayName ?? member.email} meta={member.email}>
+												{isCurrent ? <Badge slot="badge" tone="info" size="sm">You</Badge> : null}
+											</IdentitySummary>
+										</td>
+										<td data-label="Role and responsibilities" data-layout="stack"><TeamAccessDetails role={member.roleKey ?? 'viewer'} capabilities={member.effectiveCapabilities ?? []} /></td>
+										<td data-label="Joined">{member.joinedAt ? <Timestamp value={member.joinedAt} timeZone={preferences.timeZone} class="ts-data-table__timestamp" /> : '—'}</td>
+										<td data-label="Actions" data-layout="stack" hidden={!canManage}>
+											<div class="ts-table-actions">
+												{canChange || soleCurrentOwner ? (
+													<form class="ts-table-actions__primary" method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/members/${encodeURIComponent(member.id)}`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="PATCH" data-ts-success-message="Member role updated." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.member.role">
+														<input type="hidden" name="csrfToken" value={csrfToken} />
+														<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+														<Select name="roleKey" value={member.roleKey} options={roleOptions} aria-label={`Role for ${member.displayName ?? member.email}`} disabled={soleCurrentOwner} />
+														<Button type="submit" variant="secondary" size="sm" disabled={soleCurrentOwner}>Save</Button>
+														{soleCurrentOwner ? <small class="ts-form-help">Add or transfer ownership before changing your owner role.</small> : null}
+													</form>
+												) : null}
+												<div class="ts-action-bar">
+													{isOwner && !memberIsOwner && !isCurrent ? (
+														<form method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/ownership-transfer`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Ownership transferred." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.ownership.transfer">
+															<input type="hidden" name="csrfToken" value={csrfToken} />
+															<input type="hidden" name="membershipId" value={member.id} />
+															<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+															<Button type="submit" variant="secondary" size="sm">Transfer ownership</Button>
+														</form>
+													) : null}
+													{canChange && !isCurrent ? (
+														<InlineConfirmation label="Remove" tone="danger">
+															<p>Remove {member.displayName ?? member.email} from this team?</p>
+															{member.removal?.blockers?.length ? (
+																<ActionList items={member.removal.blockers.map((blocker: any) => ({
+																	title: blocker.label,
+																	href: blocker.href,
+																	tone: 'danger',
+																}))} />
+															) : <p>No removal blockers were found.</p>}
+															<form method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/members/${encodeURIComponent(member.id)}`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Member removed." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.member.remove">
+																<input type="hidden" name="csrfToken" value={csrfToken} />
+																<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+																<Button type="submit" variant="danger" size="sm" disabled={!member.removal?.eligible}>Confirm removal</Button>
+															</form>
+														</InlineConfirmation>
+													) : null}
+												</div>
+											</div>
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+				</ResponsiveTable>
+				{memberPage.items.length === 0 ? <p>No members match this search.</p> : null}
+				<Pagination
+					current={page}
+					total={totalPages}
+					previousHref={`?q=${encodeURIComponent(query)}&page=${Math.max(1, page - 1)}`}
+					nextHref={`?q=${encodeURIComponent(query)}&page=${Math.min(totalPages, page + 1)}`}
+					label="Member pages"
+				/>
+			</Panel>
+
+			<AccessibleDialog id="team-role-reference" title="Roles and responsibilities" description="Expand a role to understand the access it grants before assigning it.">
+				<div class="ts-template__body" data-scene="team.roles.reference">
+					{roleOptions.map((option) => (
+						<TeamAccessDetails role={option.value} capabilities={capabilitiesForRole(option.value)} />
+					))}
+				</div>
+			</AccessibleDialog>
+
+			{canManage ? (
+				<Panel eyebrow="Consent" title="Pending invitations" description="Resend or revoke invitations that have not been accepted.">
+				<ResponsiveTable caption="Pending team invitations" density="comfortable">
+						<thead><tr><th>Recipient</th><th>Role</th><th>Invited by</th><th>Invited</th><th>Expires</th><th>Actions</th></tr></thead>
+						<tbody>
+							{invitations.map((invite: any) => (
+								<tr data-scene={`team.invitation.${invite.id}`} data-invite-email={invite.email} data-invite-status={invite.status}>
+									<td data-label="Recipient">{invite.email}</td>
+									<td data-label="Role">{roleDisplay(invite.roleKey ?? 'viewer').label}</td>
+									<td data-label="Invited by">{invite.invitedByDisplayName ?? invite.invitedByEmail ?? 'Unknown user'}</td>
+									<td data-label="Invited"><Timestamp value={invite.createdAt} timeZone={preferences.timeZone} class="ts-data-table__timestamp" /></td>
+									<td data-label="Expires"><Timestamp value={invite.expiresAt} timeZone={preferences.timeZone} class="ts-data-table__timestamp" /></td>
+									<td data-label="Actions" data-layout="stack"><div class="ts-action-bar">
+										<form method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/invites/${encodeURIComponent(invite.id)}/resend`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation resent." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.resend"><input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="secondary" size="sm">Resend</Button></form>
+										<form method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/invites/${encodeURIComponent(invite.id)}`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Invitation revoked." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.revoke"><input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="danger" size="sm">Revoke</Button></form>
+									</div></td>
+								</tr>
+							))}
+						</tbody>
+				</ResponsiveTable>
+				{invitations.length === 0 ? <p>No pending invitations.</p> : null}
+				</Panel>
+			) : null}
+
+			{team.status !== 'archived' ? (
+				<Panel eyebrow="Your access" title="Leave team" description={isOwner ? 'Transfer ownership or add another owner before leaving if you are the last owner.' : 'Leaving removes your access immediately.'}>
+					<form method="post" action={Astro.url.pathname} data-ts-submit="enhanced" data-ts-success-message="You left the team." data-scene="team.member.leave">
+						<input type="hidden" name="csrfToken" value={csrfToken} />
+						<input type="hidden" name="action" value="leave" />
+						<Button type="submit" variant="danger">Leave team</Button>
+					</form>
+				</Panel>
+			) : null}
+		</section>
 	) : (
-		<EmptyState title="Team not found" description="This team is not available." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+		<EmptyState title={resolution.status === 'forbidden' ? 'Team access denied' : 'Team not found'} description={resolution.status === 'forbidden' ? 'You do not have access to this team.' : 'This team is not available.'} actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
 	)}
 </TreeseedAppLayout>

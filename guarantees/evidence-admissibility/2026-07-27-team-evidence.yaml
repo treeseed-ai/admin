@@ -1,0 +1,35 @@
+schemaVersion: treeseed.guarantee-evidence-admissibility/v1
+ownerPackage: "@treeseed/admin"
+recordedAt: 2026-07-27T17:00:00.000Z
+scope:
+  guaranteeIds:
+    - guarantee.team.team.create-team.012
+    - guarantee.team.team.switch-active-team.013
+    - guarantee.team.team.edit-team-settings.014
+    - guarantee.team.team.view-team-profile.015
+    - guarantee.team.team.delete-team.016
+    - guarantee.team.membership.invite-team-members.017
+    - guarantee.team.membership.accept-team-invitation.018
+    - guarantee.team.membership.change-member-role.019
+    - guarantee.team.membership.remove-team-member.020
+  runIds:
+    - 2026-07-27T00-25-09-417Z
+    - 2026-07-27T00-27-48-988Z
+    - 2026-07-27T00-34-25-348Z
+    - 2026-07-27T00-50-52-953Z
+    - 2026-07-27T01-00-37-183Z
+    - 2026-07-27T01-09-35-100Z
+decision: inadmissible
+reasons:
+  - Mobile graph nodes were populated from scenes whose reports recorded desktop Chromium device metadata and a 1600x900 desktop viewport.
+  - Per-device graph status copied aggregate guarantee status instead of using the actual result for the requested device.
+  - Several durable verifiers inspected fixture-created records rather than the records created by the corresponding rendered UI journey.
+  - Journey 15 asserted the anonymous public profile instead of the required authenticated operational overview.
+history:
+  immutable: true
+  action: Preserve the original report, graph, scene, trace, screenshot, console, network, and API artifacts as historical diagnostics.
+  acceptanceUse: forbidden
+replacementRequirements:
+  - Exact requested and actual device metadata must match before evidence is accepted.
+  - UI-created record identifiers must flow through run state to API and audit verifiers.
+  - Journeys 12 through 20 and the separate public-profile guarantee must pass from the current source closure.

@@ -8,19 +8,20 @@ audience:
 journey:
   kind: service
   proves:
-    - Remove Team Member opens the canonical @treeseed/admin destructive confirmation workflow.
-    - Remove Team Member exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
-    - Remove Team Member records reviewable evidence for the visible result before activation.
-  minimumSteps: 3
+    - team.member-removal
+    - team.member-leave
+  minimumSteps: 23
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.primary-session
+    - key: auth.primary-session-after-role
       kind: browser-storage
     - key: team.member-role-changed
       kind: marker
   producesState:
     - key: team.member-removed
       kind: marker
+    - key: auth.primary-session-after-membership
+      kind: browser-storage
 mode:
   test: true
   demo: true
@@ -85,27 +86,238 @@ workflow:
   - id: open-entry-route
     title: Open Remove Team Member
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-members
+    title: Open members for the run-created team
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
     expect:
       text: invite-{{runId}}-{{deviceId}}@treeseed.local
   - id: remove-invited-member
     title: Remove the invited member
     action:
       click:
-        css: '[data-scene="team.member.invite-{{runId}}-{{deviceId}}@treeseed.local"] button[data-remove-member]'
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] summary'
         internal: true
     expect:
       urlIncludes: /members
+      text: Confirm removal
+  - id: confirm-member-removal
+    title: Confirm removal through the visible destructive control
+    action:
+      click:
+        role: button
+        name: Confirm removal
+    expect:
       text: Member removed.
       visible:
-        - css: '[data-ts-toast-id][data-tone="success"]'
+        - css: '[data-ts-toast-id][data-tone="success"]:last-of-type'
           internal: true
   - id: verify-member-removed
-    title: Verify the member no longer appears
+    title: Return through the durable team collection
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
+      goto: /app/teams
     expect:
-      notText: invite-{{runId}}-{{deviceId}}@treeseed.local
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: sign-out-removing-owner
+    title: End the owner session before proving the removed user lost access
+    action:
+      clickVisibleSequence:
+        - role: button
+          name: Open team operations
+        - role: button
+          name: Sign out
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: enter-removed-member-email
+    title: Enter the removed member's account
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: invite-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Sign in
+  - id: enter-removed-member-password
+    title: Enter the removed member's password
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedInviteGuarantee123!
+    expect:
+      text: Sign in
+  - id: sign-in-removed-member
+    title: Authenticate the removed user
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+  - id: prove-removed-member-lost-access
+    title: Prove the removed user's team collection no longer exposes the run-created team
+    action:
+      goto: /app/teams
+    expect:
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: sign-out-removed-member
+    title: End the removed user's session
+    action:
+      clickVisibleSequence:
+        - role: button
+          name: Open team operations
+        - role: button
+          name: Sign out
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: enter-existing-member-email
+    title: Enter the existing accepted member's account
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: visual.member@treeseed.io
+    expect:
+      text: Sign in
+  - id: enter-existing-member-password
+    title: Enter the existing accepted member's password
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedVisualAudit!2026
+    expect:
+      text: Sign in
+  - id: sign-in-existing-member
+    title: Authenticate the existing accepted member
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+  - id: open-existing-member-team
+    title: Open the run-created team as the existing member
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-existing-member-access
+    title: Open the existing member's own access controls
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      text: Leave team
+      notVisible:
+        - role: button
+          name: Send invitation
+  - id: leave-as-existing-member
+    title: Leave the team through the visible self-service control
+    action:
+      click:
+        role: button
+        name: Leave team
+    expect:
+      urlIncludes: /app/teams
+      text: You left the team.
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: prove-self-leave-lost-access
+    title: Prove the former member still cannot recover the team through the collection
+    action:
+      goto: /app/teams
+    expect:
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: sign-out-former-member
+    title: End the former member's session
+    action:
+      clickVisibleSequence:
+        - role: button
+          name: Open team operations
+        - role: button
+          name: Sign out
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: enter-primary-owner-email
+    title: Enter the primary owner's account
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Sign in
+  - id: enter-primary-owner-password
+    title: Enter the primary owner's reset password
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Sign in
+  - id: sign-in-primary-owner
+    title: Authenticate as the remaining owner
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /app
+  - id: open-primary-owner-team-collection
+    title: Return to the run-created team as its remaining owner
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-last-owner-membership
+    title: Open the remaining owner's membership controls
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      text: Leave team
+      visible:
+        - css: '[data-member-email="guarantee-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="team_owner"]'
+          internal: true
+  - id: reject-last-owner-leave
+    title: Reject self-leave when it would orphan the team
+    action:
+      click:
+        role: button
+        name: Leave team
+    expect:
+      urlIncludes: /members
+      text: A team must keep at least one owner.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="error"]:last-of-type'
+          internal: true
+        - css: '[data-member-email="guarantee-{{runId}}-{{deviceId}}@treeseed.local"][data-member-role="team_owner"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []
@@ -142,4 +354,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

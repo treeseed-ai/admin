@@ -5,7 +5,7 @@ type: user
 subtype: account
 journey: View User Profile
 ownerPackage: "@treeseed/admin"
-summary: Show public user identity and profile metadata without project, catalog, or knowledge distribution details.
+summary: Show public user identity, expertise, and explicitly attributed reusable knowledge, with canonical account tabs only for the owning signed-in user.
 status: active
 dependencies:
   journeys:
@@ -29,7 +29,8 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - The profile scene follows the authenticated account page's canonical public-profile link.
+    - The authenticated owning user sees canonical account-management tabs above the profile.
+    - Anonymous redaction remains covered by the public API verifier.
     - "Journey dependencies must be satisfied: 1"
 scene:
   required: true
@@ -40,7 +41,7 @@ scene:
     demo: true
     training: true
   entryRoute: /u/[username]
-  componentContract: public identity profile
+  componentContract: public knowledge profile
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -50,7 +51,7 @@ scene:
 api:
   required: true
   verifierRefs:
-    - api.auth.me.site-admin
+    - api.auth.public-knowledge-profile
 content:
   required: false
   verifierRefs: []
@@ -58,10 +59,10 @@ audit:
   required: false
   verifierRefs: []
 negativeCases:
-  - id: anonymous-denied
+  - id: private-context-redacted
     actor: anonymous_user
     verifierRefs:
-      - api.auth.me.requires-user
+      - api.auth.public-knowledge-profile
 evidence:
   required:
     - playwright_trace
@@ -70,7 +71,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Public user profiles are identity-only during the redesign foundation phase.
+  - Public activity is based only on explicit public attribution; team membership never implies authorship.
 surface: admin-ui
 run:
   timeoutSeconds: 300

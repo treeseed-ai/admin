@@ -120,6 +120,7 @@ const adminPlugin: Plugin = definePlugin({
       '@treeseed/ui/styles/forms.css',
       '@treeseed/ui/styles/app-shell.css',
       '@treeseed/ui/styles/app-controls.css',
+      '@treeseed/ui/styles/charts.css',
       '@treeseed/ui/styles/account/forms.css',
       '@treeseed/ui/styles/auth.css',
     ],

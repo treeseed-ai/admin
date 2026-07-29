@@ -1,0 +1,28 @@
+---
+import SurfaceTabs from '@treeseed/ui/components/astro/shell/navigation/SurfaceTabs.astro';
+
+interface Props {
+	team: { id: string; name: string; status?: string };
+	currentPath: string;
+	canManage?: boolean;
+	isOwner?: boolean;
+}
+
+const { team, currentPath, canManage = false, isOwner = false } = Astro.props as Props;
+const root = `/app/teams/${encodeURIComponent(team.id)}`;
+const items = [
+	{ id: 'all-teams', label: 'All teams', href: '/app/teams', visible: true },
+	{ id: 'overview', label: 'Overview', href: root, visible: true },
+	{ id: 'members', label: 'Members', href: `${root}/members`, visible: true },
+	{ id: 'settings', label: 'Settings', href: `${root}/edit`, visible: canManage },
+	{ id: 'lifecycle', label: 'Lifecycle', href: `${root}/delete`, visible: isOwner },
+	{ id: 'public-profile', label: 'Public profile', href: `/t/${encodeURIComponent(team.name)}`, visible: team.status !== 'archived' },
+];
+const normalizedPath = currentPath.replace(/\/+$/u, '');
+const visibleItems = items.filter((item) => item.visible);
+const current = visibleItems.find((item) => normalizedPath === item.href)?.id ?? 'overview';
+---
+
+<div data-scene="team.navigation">
+	<SurfaceTabs items={visibleItems} current={current} label="Team administration" wrap />
+</div>

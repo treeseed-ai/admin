@@ -5,16 +5,11 @@ import { formSubmissionResponse, type FormSubmissionResponse } from '@treeseed/u
 import { isValidTimeZone } from '@treeseed/ui/timestamps';
 import { passwordMeetsPolicy, passwordPolicyMessage } from '../lib/auth/accounts/password-policy';
 import { ensureCsrfToken, requireCsrf } from '../lib/auth/support/csrf';
+import { ACCOUNT_SECTIONS } from '../lib/accounts/navigation';
 import { clearApiAccessTokenCookie, createApiFacade } from '../lib/market/api-client';
 import { loadAppContext } from './app-access';
 
-export const ACCOUNT_SECTIONS = [
-	{ id: 'identity', label: 'Identity', href: '/app/account' },
-	{ id: 'sessions', label: 'Sessions', href: '/app/account/sessions' },
-	{ id: 'notifications', label: 'Notifications', href: '/app/account/notifications' },
-	{ id: 'appearance', label: 'Appearance', href: '/app/account/appearance' },
-	{ id: 'delete', label: 'Delete', href: '/app/account/delete' },
-] as const;
+export { ACCOUNT_SECTIONS } from '../lib/accounts/navigation';
 
 function respond(context: APIContext, route: string, result: FormSubmissionResponse) {
 	return formSubmissionResponse(context.request, result, { fallbackRedirect: route });
@@ -46,7 +41,16 @@ export async function handleIdentityRequest(context: APIContext, api: ReturnType
 	const intent = String(form.get('intent') ?? '');
 	try {
 		requireCsrf(context, form.get('csrfToken'));
-		if (intent === 'profile') await api.updateAccountProfile({ firstName: String(form.get('firstName') ?? ''), lastName: String(form.get('lastName') ?? ''), image: String(form.get('image') ?? '') || null });
+		if (intent === 'profile') await api.updateAccountProfile({
+			firstName: String(form.get('firstName') ?? ''),
+			lastName: String(form.get('lastName') ?? ''),
+			image: String(form.get('image') ?? '') || null,
+			headline: String(form.get('headline') ?? '') || null,
+			profileSummary: String(form.get('profileSummary') ?? '') || null,
+			location: String(form.get('location') ?? '') || null,
+			website: String(form.get('website') ?? '') || null,
+			expertise: String(form.get('expertise') ?? '').split(',').map((entry) => entry.trim()).filter(Boolean),
+		});
 		else if (intent === 'time-zone') {
 			const timeZone = String(form.get('timeZone') ?? '');
 			if (!isValidTimeZone(timeZone)) throw new Error('Select a valid time zone.');

@@ -8,12 +8,14 @@ audience:
 journey:
   kind: service
   proves:
-    - View User Profile opens the public identity-only @treeseed/admin profile.
-    - View User Profile does not expose project, catalog, or knowledge distribution links.
+    - View User Profile opens the public @treeseed/admin knowledge profile.
+    - View User Profile separates explicitly attributed public work from private membership context.
     - View User Profile records reviewable evidence for the visible result before activation.
   minimumSteps: 3
   requiresInteractiveAction: true
   consumesState:
+    - key: auth.primary-session
+      kind: browser-storage
     - key: account.profile-updated
       kind: marker
 mode:
@@ -65,6 +67,9 @@ setup:
   dev:
     required: true
     reuseExisting: true
+  auth:
+    role: owner
+    required: true
 artifacts:
   trace: true
   video: true
@@ -80,9 +85,12 @@ workflow:
       goto: /u/g-{{runShort}}-{{deviceId}}
     expect:
       urlIncludes: /u/g-
-      text: Public TreeSeed account identity.
+      text: Public contributions
       visible:
-        - scene: profile-template
+        - scene: knowledge.profile
+        - scene: knowledge.identity
+        - scene: knowledge.activity
+        - scene: account.navigation
   - id: verify-private-data-redacted
     title: Verify private identity data is redacted
     action:
@@ -95,27 +103,21 @@ workflow:
       goto: /u/g-{{runShort}}-{{deviceId}}
     expect:
       notText: Memberships
-  - id: verify-projects-redacted
-    title: Verify projects are not published
-    action:
-      goto: /u/g-{{runShort}}-{{deviceId}}
-    expect:
-      notText: Projects
   - id: verify-roles-redacted
     title: Verify roles are not published
     action:
       goto: /u/g-{{runShort}}-{{deviceId}}
     expect:
       notText: Roles
-  - id: leave-public-profile
-    title: Follow the public manager link
+  - id: open-account-management
+    title: Open account management through the canonical profile tabs
     action:
       click:
         role: link
-        name: Manager
+        name: Identity
     expect:
-      urlIncludes: /auth/sign-in
-      text: Sign in
+      urlIncludes: /app/account
+      text: Account identity
 chapters: []
 overlays: []
 diagrams: []

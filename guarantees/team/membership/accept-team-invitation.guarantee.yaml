@@ -14,9 +14,9 @@ dependencies:
     - guarantee.team.membership.invite-team-members.017
 actors:
   allowed:
-    - anonymous_user
+    - invited_user
   forbidden:
-    - unauthorized_user
+    - mismatched_user
 devices:
   required:
     - desktop_chromium
@@ -29,6 +29,9 @@ preconditions:
     - integrated_treeseed_project
   notes:
     - "Journey dependencies must be satisfied: 17"
+uiFeature:
+  contract: ../team-management.ui-feature.yaml
+  capabilities: [team.invitation-consent]
 scene:
   required: true
   manifest: ./scenes/accept-team-invitation.scene.yaml
@@ -48,18 +51,21 @@ scene:
 api:
   required: true
   verifierRefs:
-    - api.team.invite.mailpit
+    - api.team.accept.correlated
 content:
   required: false
   verifierRefs: []
 audit:
   required: true
-  verifierRefs: [api.team.lifecycle.audit]
+  verifierRefs: [api.team.accept.correlated]
 negativeCases:
-  - id: non-member-denied
-    actor: non_member
-    verifierRefs:
-      - api.team.members.nonmember
+  - id: mismatched-user-denied
+    actor: mismatched_user
+    sceneManifest: scenes/invitation-mismatched-user.scene.yaml
+    executionKey: admin.team.invitation.mismatched-user
+    verifierRefs: [api.team.invitation.mismatch-denied]
+  - id: invalid-expired-revoked-replay
+    verifierRefs: [api.team.invitation.terminal-states]
 evidence:
   required:
     - playwright_trace

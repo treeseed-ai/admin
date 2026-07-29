@@ -34,5 +34,5 @@ export function resolveMarketPrincipal(contextOrLocals: MarketContext | App.Loca
 
 export async function loadAccessibleTeams(contextOrLocals: MarketContext | App.Locals | Record<string, unknown> | null | undefined) {
 	const store = resolveApiStore(contextOrLocals);
-	return store.listTeamsForPrincipal().catch(() => []);
+	return store.listTeamsForPrincipal();
 }

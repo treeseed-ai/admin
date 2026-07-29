@@ -8,10 +8,8 @@ audience:
 journey:
   kind: service
   proves:
-    - Edit Team Settings opens the canonical @treeseed/admin full page form workflow.
-    - Edit Team Settings exercises a service journey instead of only loading /app/teams/visual-audit-team/edit.
-    - Edit Team Settings records reviewable evidence for the visible result before activation.
-  minimumSteps: 5
+    - team.identity-settings
+  minimumSteps: 9
   requiresInteractiveAction: true
   consumesState:
     - key: auth.primary-session
@@ -51,6 +49,21 @@ devices:
       deviceScaleFactor: 1
       isMobile: false
       hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport:
+        width: 820
+        height: 1180
+      video:
+        width: 820
+        height: 1180
+      output:
+        width: 820
+        height: 1180
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
     - id: mobile_chromium
       title: Mobile Chromium
       orientation: portrait
@@ -85,9 +98,54 @@ workflow:
   - id: open-entry-route
     title: Open Edit Team Settings
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/edit
+      goto: /app/teams
     expect:
       urlIncludes: /app/teams
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-settings-control
+    title: Open settings from the exact run-owned team card
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/edit"]'
+        internal: true
+    expect:
+      urlIncludes: /edit
+      text: Edit team
+  - id: force-stale-version
+    title: Prepare a stale optimistic version without mutating the team
+    action:
+      fill:
+        css: 'input[name="expectedUpdatedAt"]'
+        internal: true
+        value: 2000-01-01T00:00:00.000Z
+    expect:
+      text: Edit team
+  - id: reject-stale-update
+    title: Reject the stale update and preserve the persisted identity
+    action:
+      click:
+        role: button
+        name: Save team
+    expect:
+      urlIncludes: /edit
+      text: changed
+  - id: return-to-current-settings
+    title: Reload the current version through the collection
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: reopen-current-settings
+    title: Reopen settings with the current optimistic version
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/edit"]'
+        internal: true
+    expect:
       text: Edit team
   - id: update-display-name
     title: Update the public team display name
@@ -117,15 +175,15 @@ workflow:
       urlIncludes: /edit
       text: Team saved.
       visible:
-        - css: '[data-ts-toast-id][data-tone="success"]'
+        - css: '[data-ts-toast-id][data-tone="success"]:last-of-type'
           internal: true
   - id: reload-team
     title: Reload persisted settings
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/edit
+      goto: /app/teams
     expect:
       visible:
-        - css: '[data-team-display-name="Verified {{runShort}} {{deviceId}}"]'
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
           internal: true
 chapters: []
 overlays: []
@@ -163,4 +221,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

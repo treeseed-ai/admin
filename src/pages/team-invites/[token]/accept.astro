@@ -1,43 +1,118 @@
 ---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import { formSubmissionResponse } from '@treeseed/ui/forms';
 import TreeseedPublicLayout from '../../../layouts/PublicLayout.astro';
-import { resolveApiStore } from '../../../lib/market/store.js';
+import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/support/csrf';
+import { ApiClientFacade } from '../../../lib/market/api-client';
+import { roleDisplay } from '../../../lib/teams/access-display';
 
 export const prerender = false;
 
 const token = String(Astro.params.token ?? '');
-const store = resolveApiStore(Astro);
-const preview: any = store
-	? await store.getTeamInvite(token).catch((error: any) => ({ ok: false, message: error?.message ?? 'Invite link is invalid or expired.' }))
-	: { ok: false, message: 'Market storage is unavailable.' };
-const inviteEmail = String(preview?.invite?.email ?? '').trim().toLowerCase();
+const api = new ApiClientFacade(Astro);
+const csrfToken = ensureCsrfToken(Astro);
+let preview: any = null;
+let previewStatus = 200;
+try {
+	preview = await api.request<any>('GET', `/v1/team-invites/${encodeURIComponent(token)}`);
+} catch (error) {
+	previewStatus = Number((error as any)?.status ?? 404);
+	preview = { invite: { status: 'invalid' }, message: (error as any)?.details?.message ?? 'This invitation is invalid or no longer available.' };
+}
+
+const invite = preview?.invite ?? {};
+const team = preview?.team ?? null;
+const returnTo = Astro.url.pathname;
 const signedInEmail = String(Astro.locals.auth?.session?.email ?? Astro.locals.auth?.principal?.metadata?.email ?? '').trim().toLowerCase();
+const emailMismatch = Boolean(Astro.locals.auth?.principal && invite.email && signedInEmail && invite.email.toLowerCase() !== signedInEmail);
 
-if (!Astro.locals.auth?.principal) {
-	const email = preview?.invite?.email ?? '';
-	const target = `/auth/register?returnTo=${encodeURIComponent(Astro.url.pathname)}${email ? `&email=${encodeURIComponent(email)}` : ''}&inviteToken=${encodeURIComponent(token)}`;
-	return Astro.redirect(target, 302);
+if (Astro.request.method === 'POST' && Astro.locals.auth?.principal) {
+	const data = await Astro.request.formData();
+	try {
+		requireCsrf(Astro, data.get('csrfToken'));
+	} catch {
+		return formSubmissionResponse(Astro.request, {
+			ok: false, code: 'csrf_invalid', message: 'Your form session expired. Refresh the page and try again.',
+		}, { fallbackRedirect: returnTo });
+	}
+	try {
+		const result = await api.request<any>('POST', `/v1/team-invites/${encodeURIComponent(token)}/accept`, { body: {} });
+		if (data.get('setActive') === 'yes' && result.team?.id) {
+			Astro.cookies.set('treeseed_active_team', result.team.id, {
+				path: '/app', httpOnly: false, sameSite: 'lax', secure: Astro.url.protocol === 'https:', maxAge: 31_536_000,
+			});
+		}
+		return formSubmissionResponse(Astro.request, {
+			ok: true,
+			code: result.alreadyAccepted ? 'invitation_already_accepted' : 'invitation_accepted',
+			message: result.alreadyAccepted ? 'This invitation was already accepted.' : 'Invitation accepted.',
+			redirect: result.team?.id ? `/app/teams/${encodeURIComponent(result.team.id)}` : '/app/teams',
+		}, { fallbackRedirect: '/app/teams' });
+	} catch (error) {
+		const details = (error as any)?.details ?? {};
+		return formSubmissionResponse(Astro.request, {
+			ok: false,
+			code: details.code ?? 'invitation_accept_failed',
+			message: details.message ?? (error instanceof Error ? error.message : 'The invitation could not be accepted.'),
+		}, { fallbackRedirect: returnTo });
+	}
 }
 
-if (inviteEmail && signedInEmail && inviteEmail !== signedInEmail) {
-	return Astro.redirect(`/v1/auth/logout?returnTo=${encodeURIComponent(Astro.url.pathname)}`, 302);
-}
-
-const result: any = store
-	? await store.acceptTeamInvite(token, Astro.locals.auth.principal.id)
-	: { ok: false, message: 'Market storage is unavailable.' };
-
-if (result.ok && result.team) {
-	return Astro.redirect('/app/?invite=accepted', 303);
-}
+const state = String(invite.status ?? 'invalid');
+const canAccept = previewStatus === 200 && state === 'pending' && !emailMismatch;
 ---
 
-<TreeseedPublicLayout title="Team invite" description="Accept a TreeSeed organization invite." currentPath={Astro.url.pathname}>
+<TreeseedPublicLayout title="Team invitation" description="Review and explicitly accept a team invitation." currentPath={Astro.url.pathname}>
 	<main class="ts-section">
-		<section class="ts-panel">
-			<p class="ts-section__eyebrow">Team invite</p>
-			<h1>Invite could not be accepted</h1>
-			<p>{result.message ?? 'The invite link is invalid or expired.'}</p>
-			<a class="ts-button" href="/app/">Open app</a>
+		<section class="ts-panel" data-scene="team.invitation.preview">
+			<p class="ts-section__eyebrow">Team invitation</p>
+			<h1>{team?.displayName ?? team?.name ?? 'Invitation unavailable'}</h1>
+			{previewStatus === 200 ? (
+				<>
+					<KeyValueList items={[
+						{ key: 'Invited email', value: invite.email },
+						{ key: 'Role', value: roleDisplay(String(invite.roleKey ?? 'viewer')).label },
+						{ key: 'Status', value: state },
+					]} />
+					<p>Expires <Timestamp value={invite.expiresAt} /></p>
+					{!Astro.locals.auth?.principal ? (
+						<div class="ts-panel__actions">
+							<Button href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>Sign in to accept</Button>
+							<Button href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}&email=${encodeURIComponent(invite.email ?? '')}&inviteToken=${encodeURIComponent(token)}`} variant="secondary">Create account</Button>
+						</div>
+					) : emailMismatch ? (
+						<>
+							<p>You are signed in as {signedInEmail}. Switch to the invited account before accepting.</p>
+							<form method="post" action="/auth/logout" data-scene="team.invitation.switch-account">
+								<input type="hidden" name="csrfToken" value={csrfToken} />
+								<input type="hidden" name="returnTo" value={returnTo} />
+								<input type="hidden" name="inviteToken" value={token} />
+								<input type="hidden" name="inviteEmail" value={invite.email ?? ''} />
+								<Button type="submit" variant="secondary">Switch account</Button>
+							</form>
+						</>
+					) : canAccept ? (
+						<form class="ts-form-stack" method="post" action={returnTo} data-ts-submit="enhanced" data-scene="team.invitation.accept">
+							<input type="hidden" name="csrfToken" value={csrfToken} />
+							<Field label="After acceptance" name="setActive">
+								<label class="ts-checkbox-row"><input type="checkbox" name="setActive" value="yes" checked /> Make this my active team</label>
+							</Field>
+							<FormActions align="start"><Button type="submit">Accept invitation</Button></FormActions>
+						</form>
+					) : (
+						<p>This invitation is {state}. It cannot be accepted again from another account.</p>
+					)}
+				</>
+			) : (
+				<>
+					<p>{preview.message}</p>
+					<Button href="/app/teams" variant="secondary">Open teams</Button>
+				</>
+			)}
 		</section>
 	</main>
 </TreeseedPublicLayout>

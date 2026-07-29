@@ -8,9 +8,7 @@ audience:
 journey:
   kind: service
   proves:
-    - Switch Active Team opens the canonical @treeseed/admin dashboard read model workflow.
-    - Switch Active Team exercises a service journey instead of only loading /app/teams.
-    - Switch Active Team records reviewable evidence for the visible result before activation.
+    - team.active-selection
   minimumSteps: 4
   requiresInteractiveAction: true
   consumesState:
@@ -51,6 +49,21 @@ devices:
       deviceScaleFactor: 1
       isMobile: false
       hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport:
+        width: 820
+        height: 1180
+      video:
+        width: 820
+        height: 1180
+      output:
+        width: 820
+        height: 1180
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
     - id: mobile_chromium
       title: Mobile Chromium
       orientation: portrait
@@ -89,34 +102,36 @@ workflow:
     expect:
       urlIncludes: /app/teams
       visible:
-        - css: '[data-active-team-label="TreeSeed"]:visible'
+        - css: '[data-scene="team.collection"]'
           internal: true
-        - css: '[data-page-header-owner="content"] .ts-page-header'
+        - css: '[data-team-display-name="Tree Seed"]'
+          internal: true
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+        - css: '[data-scene="team.collection"] > .ts-page-header'
           internal: true
       notVisible:
-        - css: '[data-page-header-owner="content"] > .ts-product-shell__body .ts-control-surface > .ts-control-surface__header'
+        - css: '[data-scene="team.collection"] [data-active="true"]'
           internal: true
   - id: switch-to-personal-team
-    title: Select the personal team through the shell
+    title: Select the personal team through its explicit collection control
     action:
-      select:
-        role: combobox
-        name: Active team
-        label: Tree Seed
+      click:
+        css: '[data-team-display-name="Tree Seed"] [data-scene="team.active.set"] button'
+        internal: true
     expect:
       visible:
-        - css: '[data-active-team-label="Tree Seed"]:visible'
+        - css: '[data-team-display-name="Tree Seed"][data-active="true"]'
           internal: true
   - id: switch-to-created-team
-    title: Select the created team through the shell
+    title: Select the created team through its explicit collection control
     action:
-      select:
-        role: combobox
-        name: Active team
-        label: Guarantee {{runShort}} {{deviceId}}
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] [data-scene="team.active.set"] button'
+        internal: true
     expect:
       visible:
-        - css: '[data-active-team-label="Guarantee {{runShort}} {{deviceId}}"]:visible'
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"][data-active="true"]'
           internal: true
   - id: reload-active-team
     title: Prove active-team cookie persistence after reload
@@ -125,12 +140,11 @@ workflow:
     expect:
       urlIncludes: /app
       visible:
-        - css: '[data-active-team-label="Guarantee {{runShort}} {{deviceId}}"]:visible'
+        - css: '[data-scene="dashboard-template"] .ts-page-header'
           internal: true
-        - css: '[data-page-header-owner="content"] .ts-page-header'
+        - css: '[aria-labelledby="dashboard-section-identity-context"] .ts-dashboard-metric:has-text("Active team"):has-text("Guarantee {{runShort}} {{deviceId}}")'
           internal: true
-      notVisible:
-        - css: '[data-page-header-owner="content"] > .ts-product-shell__body .ts-control-surface > .ts-control-surface__header'
+        - css: '[data-scene="dashboard-template"] a.ts-resource-card:has-text("Current active team"):has-text("Guarantee {{runShort}} {{deviceId}}")'
           internal: true
 chapters: []
 overlays: []
@@ -168,4 +182,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

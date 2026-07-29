@@ -8,4 +8,9 @@ export function updateAccountProfileMethod(this: ApiClientFacade, body: {
     firstName: string;
     lastName: string;
     image?: string | null;
+    headline?: string | null;
+    profileSummary?: string | null;
+    location?: string | null;
+    website?: string | null;
+    expertise?: string[];
 }) { return this.request<AccountMutationResult>('PATCH', '/v1/auth/web/profile', { body }); }

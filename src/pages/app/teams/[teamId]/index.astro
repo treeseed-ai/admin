@@ -1,0 +1,135 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import ActivityFeed from '@treeseed/ui/components/astro/activity/ActivityFeed.astro';
+import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
+import MetricCard from '@treeseed/ui/components/astro/data/metrics/MetricCard.astro';
+import MetricGrid from '@treeseed/ui/components/astro/data/metrics/MetricGrid.astro';
+import Stack from '@treeseed/ui/components/astro/layout/Stack.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart';
+import TeamAccessDetails from '../../../../components/team/TeamAccessDetails.astro';
+import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../../lib/market/api-client';
+import { roleDisplay } from '../../../../lib/teams/access-display';
+import { teamAuditDisplay } from '../../../../lib/teams/audit-display';
+import { loadAppContext, resolveAppTeam } from '../../../../view-models/app-access.js';
+
+const teamId = String(Astro.params.teamId ?? '');
+if (!Astro.locals.auth?.principal) {
+	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+const context = await loadAppContext(Astro);
+const resolution = await resolveAppTeam(context, teamId);
+const team = resolution.resource;
+let summary: any = null;
+let unavailable = resolution.status === 'unavailable';
+if (team) {
+	try {
+		summary = await new ApiClientFacade(Astro).request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/home`);
+	} catch (error) {
+		const status = Number((error as any)?.status ?? 503);
+		if (status === 403) Astro.response.status = 403;
+		else if (status === 404) Astro.response.status = 404;
+		else {
+			Astro.response.status = 503;
+			unavailable = true;
+		}
+	}
+} else {
+	Astro.response.status = resolution.status === 'forbidden' ? 403 : resolution.status === 'unavailable' ? 503 : 404;
+}
+
+const operationalEntries = Object.entries(summary?.operational ?? {}) as Array<[string, any]>;
+const managementRoles = new Set(['team_owner', 'project_lead']);
+const canManageTeam = Boolean(summary?.access?.roles?.some((role: string) => managementRoles.has(role)));
+const isOwner = Boolean(summary?.access?.roles?.includes('team_owner'));
+const operationalLabels: Record<string, string> = {
+	projects: 'Projects',
+	hosts: 'Hosts',
+	capacity: 'Capacity and allocation',
+	knowledge: 'Knowledge',
+	catalog: 'Catalog and billing',
+};
+const auditEvents = summary?.auditEvents ?? [];
+const auditActivity = auditEvents.map((event: any) => teamAuditDisplay(event));
+const contentActivity = Array.isArray(summary?.contentActivity) ? summary.contentActivity : [];
+const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role).label)
+	.join(', ') || 'Member';
+---
+
+<TreeseedAppLayout title={team ? `${team.displayName ?? team.name} overview` : 'Team unavailable'} description="Operational team context and links to the domains that own team work." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader={Boolean(team && summary && !unavailable)}>
+	{unavailable ? (
+		<EmptyState title="Team overview is temporarily unavailable" description="The service did not return operational team data. No empty counts have been inferred.">
+			<div slot="actions"><Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button></div>
+		</EmptyState>
+	) : team && summary ? (
+		<section class="ts-template" aria-label="Team operational overview" data-scene="team.overview">
+			<PageHeader
+				eyebrow={team.status === 'archived' ? 'Archived team' : 'Operational overview'}
+				title={team.displayName ?? team.name}
+				description={`@${team.name} · ${roleLabel}`}
+			/>
+			<TeamNavigation team={team} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} />
+
+			<div class="ts-resource-grid">
+				<Panel eyebrow="Identity" title="Team profile" description={team.profileSummary || 'No team summary has been added.'}>
+					<KeyValueList items={[
+						{ key: 'Status', value: team.status ?? 'active' },
+						{ key: 'Members', value: summary.counts?.members ?? 0 },
+						{ key: 'Pending invitations', value: summary.counts?.pendingInvitations ?? 0 },
+					]} />
+				</Panel>
+				<Panel eyebrow="Access" title="Your team role" description="These responsibilities come from your team role, not separate per-user permission settings.">
+					<Stack>
+						<TeamAccessDetails
+							role={summary.access?.roles?.[0] ?? 'viewer'}
+							capabilities={summary.access?.capabilities ?? []}
+						/>
+						{canManageTeam ? <Button href={`/app/teams/${encodeURIComponent(team.id)}/members`} variant="secondary" size="sm">Manage team roles</Button> : null}
+					</Stack>
+				</Panel>
+			</div>
+
+			<Panel eyebrow="Operations" title="Owned domain summaries" description="Open the canonical domain page to make changes.">
+				<MetricGrid min="14rem">
+					{operationalEntries.map(([key, item]) => (
+						<MetricCard
+							href={item.href}
+							ariaLabel={`View ${(item.label ?? operationalLabels[key] ?? key.replaceAll('_', ' ')).toLowerCase()}`}
+							label={item.label ?? operationalLabels[key] ?? key.replaceAll('_', ' ')}
+							value={item.count ?? '—'}
+							description="Open domain"
+							dataScene={`team.overview.${key}`}
+						/>
+					))}
+				</MetricGrid>
+			</Panel>
+
+			<div data-scene="team.overview.content-activity">
+				<ProjectActivityChart
+					client:load
+					title="Project content activity"
+					description="Created and updated published content across this team’s projects."
+					eyebrow="Knowledge work"
+					initialEvents={contentActivity}
+					initialBucketSizeMs={604_800_000}
+					initialDisplayMode="period"
+					pollIntervalMs={null}
+					showPollingControl={false}
+				/>
+			</div>
+
+			<Panel eyebrow="Security" title="Recent team audit activity" description="Security-sensitive team changes recorded by the API.">
+				<div data-scene="team.overview.audit">
+					<ActivityFeed items={auditActivity} emptyLabel="No recent security-sensitive activity." />
+				</div>
+			</Panel>
+		</section>
+	) : (
+		<EmptyState title={Astro.response.status === 403 ? 'Team access denied' : 'Team not found'} description={Astro.response.status === 403 ? 'You do not have access to this team.' : 'This team does not exist or is no longer available.'} actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+	)}
+</TreeseedAppLayout>

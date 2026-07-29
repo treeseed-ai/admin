@@ -26,6 +26,11 @@ if (authenticatedRedirect) {
 }
 
 const returnTo = normalizeReturnTo(Astro);
+const inviteToken = Astro.url.searchParams.get('inviteToken') ?? '';
+const inviteEmail = Astro.url.searchParams.get('inviteEmail') ?? '';
+const registrationParams = new URLSearchParams({ returnTo });
+if (inviteToken) registrationParams.set('inviteToken', inviteToken);
+if (inviteEmail) registrationParams.set('email', inviteEmail);
 const capabilities = authProviderCapabilities(Astro);
 const provider = Astro.url.searchParams.get('provider');
 let error = Astro.url.searchParams.get('error') ?? '';
@@ -95,7 +100,7 @@ const appearance = resolveAnonymousThemePreference(Astro);
 				<a href={`/auth/forgot-password?returnTo=${encodeURIComponent(returnTo)}`}>Forgot password?</a>
 			) : null}
 			{capabilities.internal.signupEnabled ? (
-				<a href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}`}>Create account</a>
+				<a href={`/auth/register?${registrationParams.toString()}`}>Create account</a>
 			) : null}
 		</Fragment>
 		{capabilities.internal.enabled ? (

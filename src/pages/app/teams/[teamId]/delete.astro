@@ -1,125 +1,204 @@
 ---
 import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import ActionList from '@treeseed/ui/components/astro/data/ActionList.astro';
+import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
+import Countdown from '@treeseed/ui/components/astro/data/Countdown.astro';
 import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import PlainTable from '@treeseed/ui/components/astro/app/controls/data/PlainTable.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
+import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
-import { escapeHtml as esc } from '../../../../lib/market/control-ui.js';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
-import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
+import { loadAppContext, resolveAppTeam } from '../../../../view-models/app-access.js';
 import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/support/csrf';
 
-const teamParam = String(Astro.params.teamId ?? '');
-if (!Astro.locals.auth?.principal) {
-	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
-}
-const context = await loadAppContext(Astro);
-const teamResolution = resolveAppTeam(context, teamParam);
-const team = teamResolution.resource;
-if (teamResolution.team?.id && teamResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, teamResolution.team);
-const manageableRoles = new Set(['team_owner', 'project_lead']);
-const access = team && context.store && typeof context.store.getTeamAccessSummary === 'function'
-	? await context.store.getTeamAccessSummary(team.id, context.principal).catch(() => null)
-	: null;
-const canManageTeam = Boolean(access?.roles?.some((role: string) => manageableRoles.has(role)));
-const blockers = team && canManageTeam && context.store ? await context.store.evaluateTeamDeletionBlockers(team.id).catch(() => null) : null;
-if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 : 404;
-else if (!canManageTeam) Astro.response.status = 403;
-const blockerRows = Object.entries(blockers ?? {})
-	.filter(([, value]) => Array.isArray(value) ? value.length > 0 : Number(value) > 0)
-	.map(([key, value]) => ({ name: esc(key), value: esc(Array.isArray(value) ? value.length : value) }));
-const hasDeletionBlockers = blockerRows.length > 0;
-const confirmation = team ? `DELETE ${team.name}` : '';
-const csrfToken = ensureCsrfToken(Astro);
-let confirmationValue = '';
+const teamId = String(Astro.params.teamId ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 
-if (Astro.request.method === 'POST' && team && canManageTeam) {
+const context = await loadAppContext(Astro);
+const resolution = await resolveAppTeam(context, teamId);
+const team = resolution.resource;
+const access = team ? await context.store.getTeamAccessSummary(team.id, context.principal).catch(() => null) : null;
+const isOwner = Boolean(access?.roles?.includes('team_owner'));
+const csrfToken = ensureCsrfToken(Astro);
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
+let readiness: any = null;
+let unavailable = resolution.status === 'unavailable';
+
+if (team && isOwner) {
+	try {
+		readiness = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/deletion-readiness`);
+	} catch {
+		unavailable = true;
+		Astro.response.status = 503;
+	}
+} else if (!team) Astro.response.status = resolution.status === 'forbidden' ? 403 : resolution.status === 'unavailable' ? 503 : 404;
+else Astro.response.status = 403;
+
+if (Astro.request.method === 'POST' && team && isOwner) {
 	const data = await Astro.request.formData();
 	try {
 		requireCsrf(Astro, data.get('csrfToken'));
 	} catch {
 		return formSubmissionResponse(Astro.request, {
-			ok: false,
-			code: 'csrf_invalid',
-			message: 'Your form session expired. Refresh the page and try again.',
-		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
+			ok: false, code: 'csrf_invalid', message: 'Your form session expired. Refresh the page and try again.',
+		}, { fallbackRedirect: Astro.url.pathname });
 	}
-	confirmationValue = String(data.get('confirmation') ?? '');
-	if (hasDeletionBlockers) {
-		return formSubmissionResponse(Astro.request, {
-			ok: false,
-			code: 'team_delete_blocked',
-			message: 'Blocking records must be removed before this team can be deleted.',
-		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
-	} else if (confirmationValue !== confirmation) {
-		return formSubmissionResponse(Astro.request, {
-			ok: false,
-			code: 'team_delete_confirmation_invalid',
-			message: 'Please correct the highlighted fields.',
-			fieldErrors: { confirmation: `Type "${confirmation}" to delete this team.` },
-		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
-	} else {
+	const action = String(data.get('action') ?? '');
 	try {
-		await new ApiClientFacade(Astro).request<any>('DELETE', `/v1/teams/${encodeURIComponent(team.id)}`, {
-			body: { confirmation: confirmationValue },
-		});
-		Astro.cookies.delete('treeseed_active_team', {
-			path: '/app',
-			secure: Astro.url.protocol === 'https:',
-		});
+		if (action === 'archive') {
+			await api.request('POST', `/v1/teams/${encodeURIComponent(team.id)}/archive`, {
+				body: { lifecycleVersion: Number(data.get('lifecycleVersion')) },
+			});
+			if (context.activeTeam?.id === team.id) Astro.cookies.delete('treeseed_active_team', { path: '/app' });
+			return formSubmissionResponse(Astro.request, {
+				ok: true, code: 'team_archived', message: 'Team archived.', redirect: '/app/teams',
+			}, { fallbackRedirect: '/app/teams' });
+		}
+		if (action === 'restore') {
+			await api.request('POST', `/v1/teams/${encodeURIComponent(team.id)}/restore`, {
+				body: { lifecycleVersion: Number(data.get('lifecycleVersion')) },
+			});
+			return formSubmissionResponse(Astro.request, {
+				ok: true, code: 'team_restored', message: 'Team restored.', redirect: `/app/teams/${team.id}`,
+			}, { fallbackRedirect: `/app/teams/${team.id}` });
+		}
+		if (action === 'delete') {
+			await api.request('DELETE', `/v1/teams/${encodeURIComponent(team.id)}/permanent-delete`, {
+				body: {
+					confirmation: String(data.get('confirmation') ?? ''),
+					currentPassword: String(data.get('currentPassword') ?? ''),
+				},
+			});
+			if (context.activeTeam?.id === team.id) Astro.cookies.delete('treeseed_active_team', { path: '/app' });
+			return formSubmissionResponse(Astro.request, {
+				ok: true, code: 'team_deleted', message: 'Team permanently deleted.', redirect: '/app/teams',
+			}, { fallbackRedirect: '/app/teams' });
+		}
 		return formSubmissionResponse(Astro.request, {
-			ok: true,
-			code: 'team_deleted',
-			message: 'Team deleted.',
-			redirect: '/app/teams',
-		}, { fallbackRedirect: '/app/teams' });
+			ok: false, code: 'invalid_action', message: 'Choose a valid lifecycle action.',
+		}, { fallbackRedirect: Astro.url.pathname });
 	} catch (error) {
+		const details = (error as any)?.details ?? {};
 		return formSubmissionResponse(Astro.request, {
 			ok: false,
-			code: 'team_delete_failed',
-			message: error instanceof Error ? error.message : 'Team could not be deleted.',
-		}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/delete` });
-	}
+			code: details.code ?? 'team_lifecycle_failed',
+			message: details.message ?? (error instanceof Error ? error.message : 'The lifecycle action failed.'),
+			fieldErrors: details.code === 'confirmation'
+				? { confirmation: `Type "${team.name}" exactly.` }
+				: details.code === 'reauthentication_required'
+					? { currentPassword: 'Enter your current password.' }
+					: undefined,
+		}, { fallbackRedirect: Astro.url.pathname });
 	}
 }
+
+const blockers = Array.isArray(readiness?.blockers) ? readiness.blockers : [];
+const archiveBlockers = Array.isArray(readiness?.archiveBlockers) ? readiness.archiveBlockers : [];
+const restoreDeadline = team?.restoreDeadlineAt ? Date.parse(team.restoreDeadlineAt) : Number.NaN;
+const restoreAvailable = team?.status === 'archived' && Number.isFinite(restoreDeadline) && restoreDeadline > Date.now();
 ---
 
-<TreeseedAppLayout title={team ? `Delete ${team.displayName ?? team.name}` : 'Team not found'} description="Remove one team when it has no blocking records." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
-	{team && canManageTeam ? (
-		<section class="ts-control-page" aria-label="Delete team">
-			<Panel eyebrow="Team" title="Delete team" description="This action is permanent. Blocking records must be removed first.">
-				<PlainTable columns={[{ key: 'name', label: 'Blocker' }, { key: 'value', label: 'Count' }]} rows={blockerRows} emptyTitle="No blockers found" emptyDescription="This team can be deleted after confirmation." />
-				<form id="team-delete-form" class="ts-form-stack ts-stack-top" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/delete`} data-ts-submit="enhanced">
-					<input type="hidden" name="csrfToken" value={csrfToken} />
-					<Field label={`Type "${confirmation}"`} name="confirmation" required>
-						<TextInput name="confirmation" required value={confirmationValue} data-confirmation-input />
-					</Field>
-					<FormActions align="start">
-						<Button type="submit" variant="danger" disabled={hasDeletionBlockers || confirmationValue !== confirmation}>Delete team</Button>
-						<Button href="/app/teams" variant="secondary">Cancel</Button>
-					</FormActions>
-				</form>
-			</Panel>
+<TreeseedAppLayout title={team ? `${team.displayName ?? team.name} lifecycle` : 'Team unavailable'} description="Archive, restore, or permanently delete a team." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader={Boolean(team)} timeZone={preferences.timeZone}>
+	{team ? (
+		<>
+			<PageHeader eyebrow="Team administration" title="Lifecycle" description={`@${team.name} · Pause team activity, restore access, or permanently delete this team.`} />
+			<TeamNavigation team={team} currentPath={Astro.url.pathname} canManage={Boolean(access?.roles?.some((role: string) => ['team_owner', 'project_lead'].includes(role)))} isOwner={isOwner} />
+		</>
+	) : null}
+	{unavailable ? (
+		<EmptyState title="Lifecycle checks are unavailable" description="Team lifecycle actions fail closed when blockers cannot be evaluated.">
+			<div slot="actions"><Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button></div>
+		</EmptyState>
+	) : team && isOwner ? (
+		<section class="ts-template" aria-label="Team lifecycle" data-scene="team.lifecycle">
+			<div class="ts-lifecycle-grid">
+				<Panel
+					eyebrow="Reversible"
+					title={team.status === 'archived' ? 'Team archived' : 'Archive team'}
+					description={team.status === 'archived'
+						? 'The team is read-only. Restore it before the recovery window ends to resume normal work.'
+						: 'Archiving pauses team-scoped changes and removes the team from active selectors without deleting its records.'}
+				>
+					<div class="ts-lifecycle-summary">
+						<div class="ts-lifecycle-summary__status">
+							<Badge tone={team.status === 'archived' ? 'warning' : 'success'}>{team.status === 'archived' ? 'Archived' : 'Active'}</Badge>
+							<p>{team.status === 'archived' ? 'Team mutations are paused.' : 'Team work remains available.'}</p>
+						</div>
+						{team.status === 'archived' && team.restoreDeadlineAt ? (
+							<Countdown
+								target={team.restoreDeadlineAt}
+								startedAt={team.archivedAt}
+								timeZone={preferences.timeZone}
+								label="Restore window"
+								completeLabel="Restore window ended"
+							/>
+						) : null}
+						{team.status === 'active' && archiveBlockers.length > 0 ? (
+							<ActionList items={archiveBlockers.map((blocker: any) => ({
+								title: blocker.label,
+								href: blocker.href,
+								meta: String(blocker.code).replaceAll('_', ' '),
+								tone: 'danger',
+							}))} />
+						) : team.status === 'active' ? <p>No active archive blockers were found.</p> : null}
+						{team.status === 'active' ? (
+							<form class="ts-team-form" method="post" action={Astro.url.pathname} data-ts-submit="enhanced" data-ts-success-message="Team archived." data-scene="team.archive">
+								<input type="hidden" name="csrfToken" value={csrfToken} />
+								<input type="hidden" name="action" value="archive" />
+								<input type="hidden" name="lifecycleVersion" value={team.lifecycleVersion} />
+								<FormActions align="start"><Button type="submit" variant="secondary" disabled={archiveBlockers.length > 0}>Archive team</Button></FormActions>
+							</form>
+						) : (
+							<form class="ts-team-form" method="post" action={Astro.url.pathname} data-ts-submit="enhanced" data-ts-success-message="Team restored." data-scene="team.restore">
+								<input type="hidden" name="csrfToken" value={csrfToken} />
+								<input type="hidden" name="action" value="restore" />
+								<input type="hidden" name="lifecycleVersion" value={team.lifecycleVersion} />
+								<FormActions align="start"><Button type="submit" disabled={!restoreAvailable}>Restore team</Button></FormActions>
+								{!restoreAvailable ? <p class="ts-form-help">The restore window has ended. You can still permanently delete this archived team.</p> : null}
+							</form>
+						)}
+					</div>
+				</Panel>
+
+				<Panel eyebrow="Irreversible" title="Delete team permanently" description="Deletion is immediate and retains only non-sensitive audit tombstones." tone="danger">
+					<div class="ts-danger-zone">
+						<p class="ts-danger-zone__intro">This operation cannot be undone. It is available for active or archived teams after every owned resource and obligation is resolved.</p>
+						{blockers.length > 0 ? (
+							<ActionList items={blockers.map((blocker: any) => ({
+								title: blocker.label,
+								href: blocker.href,
+								meta: String(blocker.code).replaceAll('_', ' '),
+								tone: 'danger',
+							}))} />
+						) : <p>No deletion blockers were found.</p>}
+						<p class="ts-danger-zone__confirmation">To confirm, type <code>{team.name}</code> and enter your current password.</p>
+						<form class="ts-team-form" method="post" action={Astro.url.pathname} data-ts-submit="enhanced" data-ts-success-message="Team permanently deleted." data-scene="team.delete">
+							<input type="hidden" name="csrfToken" value={csrfToken} />
+							<input type="hidden" name="action" value="delete" />
+							<Field label={`Type "${team.name}" exactly`} name="confirmation" required>
+								<TextInput name="confirmation" required autocomplete="off" />
+							</Field>
+							<Field label="Current password" name="currentPassword" required>
+								<TextInput name="currentPassword" type="password" required autocomplete="current-password" />
+							</Field>
+							<FormActions align="start">
+								<Button type="submit" variant="danger" disabled={!readiness?.ready}>Delete team permanently</Button>
+							</FormActions>
+							{!readiness?.ready ? <p class="ts-form-help">Resolve every deletion blocker before deleting this team.</p> : null}
+						</form>
+					</div>
+				</Panel>
+			</div>
 		</section>
 	) : team ? (
-		<EmptyState title="Team controls unavailable" description="Team editing, member management, and deletion require the team owner or project lead role." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+		<EmptyState title="Owner access required" description="Only team owners can archive, restore, or permanently delete a team." actions={[{ label: 'Team overview', href: `/app/teams/${team.id}` }]} />
 	) : (
-		<EmptyState title="Team not found" description="This team is not available." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+		<EmptyState title={resolution.status === 'forbidden' ? 'Team access denied' : 'Team not found'} description={resolution.status === 'forbidden' ? 'You do not have access to this team.' : 'This team does not exist.'} actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
 	)}
 </TreeseedAppLayout>
-
-<script is:inline define:vars={{ confirmation, hasDeletionBlockers }}>
-	const form = document.getElementById('team-delete-form');
-	const input = form?.querySelector('[data-confirmation-input]');
-	const button = form?.querySelector('button[type="submit"]');
-	function updateDeleteState() {
-		if (!button || !input) return;
-		button.disabled = Boolean(hasDeletionBlockers) || input.value !== confirmation;
-	}
-	input?.addEventListener('input', updateDeleteState);
-	updateDeleteState();
-</script>

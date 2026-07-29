@@ -1,0 +1,55 @@
+schemaVersion: treeseed.scene/v1
+id: team.membership.invitation-mismatched-user
+title: Mismatched Invitation Account Denial
+description: A signed-in user whose email does not match the invitation cannot render or submit acceptance.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [team.invitation-consent]
+  minimumSteps: 2
+  requiresInteractiveAction: true
+  consumesState:
+    - { key: auth.primary-session, kind: browser-storage }
+    - { key: team.invitation, kind: marker }
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: prove-primary-session
+    title: Begin from the authenticated primary account
+    action: { goto: /app/ }
+    expect: { urlIncludes: /app, visible: [{ scene: app-shell }] }
+  - id: open-mismatched-invitation
+    title: Open the exact pending invitation while signed in as a different account
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: mismatch-{{runId}}-{{deviceId}}@treeseed.local
+        subjectIncludes: You're invited to join Verified {{runShort}} {{deviceId}}
+    expect:
+      urlIncludes: /team-invites/
+      text: Switch to the invited account
+      notVisible: [{ role: button, name: Accept invitation }]
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+    capture: { viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, evidenceFit: fixed-browser }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

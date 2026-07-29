@@ -19,6 +19,7 @@ actors:
 devices:
   required:
     - desktop_chromium
+    - tablet_chromium
     - mobile_chromium
   optional:
     - mobile_webkit

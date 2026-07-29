@@ -9,6 +9,17 @@ export const GET: APIRoute = async (context) => context.redirect(context.locals.
 
 export const POST: APIRoute = async (context) => {
 	const form = await context.request.formData();
+	const requestedReturnTo = String(form.get('returnTo') ?? '');
+	const inviteToken = String(form.get('inviteToken') ?? '').trim();
+	const inviteEmail = String(form.get('inviteEmail') ?? '').trim();
+	const returnTo = requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')
+		? requestedReturnTo
+		: '';
+	const signInParams = new URLSearchParams({ signedOut: '1' });
+	if (returnTo) signInParams.set('returnTo', returnTo);
+	if (inviteToken && inviteToken.length <= 512) signInParams.set('inviteToken', inviteToken);
+	if (inviteEmail && inviteEmail.length <= 320) signInParams.set('inviteEmail', inviteEmail);
+	const signInPath = `/auth/sign-in?${signInParams.toString()}`;
 	try {
 		requireCsrf(context, form.get('csrfToken'));
 		await createApiFacade(context).request('POST', '/v1/auth/logout', { body: {} });
@@ -17,8 +28,8 @@ export const POST: APIRoute = async (context) => {
 			ok: true,
 			code: 'signed_out',
 			message: 'You have been signed out.',
-			redirect: '/auth/sign-in?signedOut=1',
-		}, '/auth/sign-in');
+			redirect: signInPath,
+		}, signInPath);
 	} catch {
 		return pageFormFailure(context, 'Unable to sign out.', '/auth/sign-in');
 	}

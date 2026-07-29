@@ -1,0 +1,18 @@
+---
+import SurfaceTabs from '@treeseed/ui/components/astro/shell/navigation/SurfaceTabs.astro';
+import { ACCOUNT_SECTIONS } from '../../lib/accounts/navigation';
+
+interface Props {
+	profileHref: string;
+}
+
+const { profileHref } = Astro.props as Props;
+const items = [
+	...ACCOUNT_SECTIONS,
+	{ id: 'public-profile', label: 'Public profile', href: profileHref },
+];
+---
+
+<div data-scene="account.navigation">
+	<SurfaceTabs items={items} current="public-profile" label="Account management" wrap />
+</div>

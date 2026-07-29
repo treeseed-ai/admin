@@ -8,10 +8,9 @@ audience:
 journey:
   kind: service
   proves:
-    - Invite Team Members opens the canonical @treeseed/admin record modal form workflow.
-    - Invite Team Members exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
-    - Invite Team Members records reviewable evidence for the visible result before activation.
-  minimumSteps: 5
+    - team.member-directory
+    - team.invitations
+  minimumSteps: 16
   requiresInteractiveAction: true
   consumesState:
     - key: auth.primary-session
@@ -21,6 +20,11 @@ journey:
   producesState:
     - key: team.invitation
       kind: marker
+      value:
+        recipient: invite-{{runId}}-{{deviceId}}@treeseed.local
+        existingRecipient: visual.member@treeseed.io
+        revokedRecipient: revoke-{{runId}}-{{deviceId}}@treeseed.local
+        mismatchRecipient: mismatch-{{runId}}-{{deviceId}}@treeseed.local
 mode:
   test: true
   demo: true
@@ -85,38 +89,67 @@ workflow:
   - id: open-entry-route
     title: Open Invite Team Members
     action:
-      goto: /app/teams/gt-{{runShort}}-{{deviceId}}/members
+      goto: /app/teams
     expect:
-      text: Invite member
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-members
+    title: Open membership administration from the run-owned team
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      urlIncludes: /members
+      text: Invite a member
+  - id: enter-invalid-recipient
+    title: Enter an invalid recipient address
+    action:
+      fill:
+        role: textbox
+        name: Recipient email
+        value: not-an-email
+    expect:
+      urlIncludes: /members
+  - id: reject-invalid-recipient
+    title: Reject the invalid recipient without creating pending state
+    action:
+      click:
+        role: button
+        name: Send invitation
+    expect:
+      urlIncludes: /members
+      notText: Invitation sent.
   - id: fill-recipient
     title: Enter a unique invited user
     action:
       fill:
         role: textbox
-        name: Email
+        name: Recipient email
         value: invite-{{runId}}-{{deviceId}}@treeseed.local
     expect:
-      text: Invite member
+      text: Invite a member
   - id: choose-role
     title: Select the initial contributor role
     action:
       select:
         role: combobox
-        name: Role
+        name: Initial role
         value: contributor
     expect:
-      text: Invite member
+      text: Invite a member
   - id: send-invitation
     title: Send the invitation through the member UI
     action:
       click:
         role: button
-        name: Invite member
+        name: Send invitation
     expect:
       urlIncludes: /members
       text: Invitation sent.
       visible:
-        - css: '[data-ts-toast-id][data-tone="success"]'
+        - css: '[data-ts-toast-id][data-tone="success"]:last-of-type'
           internal: true
   - id: observe-invitation-email
     title: Observe exact invitation delivery in Mailpit
@@ -128,7 +161,104 @@ workflow:
         navigate: false
     expect:
       urlIncludes: /members
-      text: Invite member
+      text: Pending invitations
+  - id: fill-existing-recipient
+    title: Enter the existing verified fixture user
+    action:
+      fill:
+        role: textbox
+        name: Recipient email
+        value: visual.member@treeseed.io
+    expect:
+      text: Invite a member
+  - id: send-existing-user-invitation
+    title: Send an invitation without silently adding the existing user
+    action:
+      click:
+        role: button
+        name: Send invitation
+    expect:
+      visible:
+        - css: '[data-invite-email="visual.member@treeseed.io"]'
+          internal: true
+      notVisible:
+        - css: '[data-member-email="visual.member@treeseed.io"]'
+          internal: true
+  - id: fill-revocable-recipient
+    title: Enter a second run-scoped recipient for resend and revoke
+    action:
+      fill:
+        role: textbox
+        name: Recipient email
+        value: revoke-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Invite a member
+  - id: send-revocable-invitation
+    title: Create the second pending invitation through the UI
+    action:
+      click:
+        role: button
+        name: Send invitation
+    expect:
+      visible:
+        - css: '[data-invite-email="revoke-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
+  - id: resend-pending-invitation
+    title: Resend the exact pending invitation
+    action:
+      click:
+        css: '[data-invite-email="revoke-{{runId}}-{{deviceId}}@treeseed.local"] form[action$="/resend"] button'
+        internal: true
+    expect:
+      text: Invitation resent.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]:last-of-type'
+          internal: true
+  - id: revoke-pending-invitation
+    title: Revoke the exact pending invitation
+    action:
+      click:
+        css: '[data-invite-email="revoke-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="DELETE"] button'
+        internal: true
+    expect:
+      text: Invitation revoked.
+  - id: reload-after-revocation
+    title: Reload through the durable team collection after revocation
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: reopen-members-after-revocation
+    title: Reopen pending invitations and prove the revoked record stays absent
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      notVisible:
+        - css: '[data-invite-email="revoke-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
+  - id: fill-mismatched-recipient
+    title: Enter a pending recipient used by the mismatched-account denial journey
+    action:
+      fill:
+        role: textbox
+        name: Recipient email
+        value: mismatch-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Invite a member
+  - id: send-mismatched-invitation
+    title: Create the exact pending invitation used by the browser denial scene
+    action:
+      click:
+        role: button
+        name: Send invitation
+    expect:
+      visible:
+        - css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []
@@ -165,4 +295,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

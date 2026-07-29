@@ -1,24 +1,128 @@
 ---
-import DashboardTemplate from '@treeseed/ui/components/astro/templates/DashboardTemplate.astro';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
+import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import Card from '@treeseed/ui/components/astro/surface/Card.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
 import { loadAppContext } from '../../../view-models/app-access.js';
-import { buildTeamDashboard } from '../../../view-models/contextual-dashboard.vm.js';
+import { roleDisplay } from '../../../lib/teams/access-display';
 
 if (!Astro.locals.auth?.principal) {
 	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/teams')}`);
 }
 
 const context = await loadAppContext(Astro);
-const dashboard = await buildTeamDashboard(context);
+const csrfToken = ensureCsrfToken(Astro);
+const activeTeams = context.teams.filter((team: any) => (team.status ?? 'active') === 'active');
+const archivedTeams = context.teams.filter((team: any) => team.status === 'archived');
+
+function roleLabel(team: any) {
+	return roleDisplay(String(team.currentUserRole ?? team.roles?.[0] ?? 'viewer')).label;
+}
+
+function teamActions(team: any) {
+	const actions = team.allowedActions ?? {};
+	return [
+		{ label: 'Overview', href: `/app/teams/${encodeURIComponent(team.id)}`, visible: actions.viewOverview !== false },
+		{ label: 'Settings', href: `/app/teams/${encodeURIComponent(team.id)}/edit`, visible: actions.edit === true },
+		{ label: 'Members', href: `/app/teams/${encodeURIComponent(team.id)}/members`, visible: actions.manageMembers === true },
+		{ label: 'Public profile', href: `/t/${encodeURIComponent(team.name)}`, visible: team.status === 'active' },
+	];
+}
 ---
 
-<TreeseedAppLayout
-	title={dashboard.viewModel.title}
-	description={dashboard.viewModel.description}
-	currentPath={Astro.url.pathname}
-	teams={context.teams}
-	activeTeam={context.activeTeam}
-	contentOwnsPageHeader
->
-	<DashboardTemplate viewModel={dashboard.viewModel} actions={dashboard.actions} />
+<TreeseedAppLayout title="Teams" description="Manage team identity, access, membership, and lifecycle." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Team management" data-scene="team.collection">
+		<PageHeader
+			eyebrow="Administration"
+			title="Teams"
+			description="Manage team identity, access, membership, and lifecycle. Set the active team explicitly; opening a team never changes that preference."
+		>
+			<Button slot="actions" href="/app/teams/new" data-scene="team.create.open">Create team</Button>
+		</PageHeader>
+
+		{context.teamsStatus === 'unavailable' ? (
+			<EmptyState title="Teams are temporarily unavailable" description={context.teamsError ?? 'The team service did not respond.'}>
+				<div slot="actions"><Button href="/app/teams" variant="secondary" reload>Retry</Button></div>
+			</EmptyState>
+		) : context.teams.length === 0 ? (
+			<EmptyState title="No teams yet" description="Create a team to organize projects, people, and operations." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
+		) : (
+			<>
+				<Panel eyebrow="Available" title="Active teams" description="Teams available for work and active selection.">
+					<div class="ts-resource-grid" data-spacing="roomy">
+						{activeTeams.map((team: any) => (
+							<div data-scene={`team.card.${team.id}`} data-team-name={team.name} data-team-display-name={team.displayName ?? team.name} data-active={context.activeTeam?.id === team.id ? 'true' : 'false'}>
+								<Card
+									title={team.displayName ?? team.name}
+									description={`@${team.name} · ${roleLabel(team)}`}
+									tone={context.activeTeam?.id === team.id ? 'success' : 'default'}
+									emphasis="strong"
+								>
+									<Badge tone={context.activeTeam?.id === team.id ? 'success' : 'muted'} size="sm">
+										{context.activeTeam?.id === team.id ? 'Active' : 'Available'}
+									</Badge>
+									<p>{team.profileSummary || 'No public summary has been added.'}</p>
+									<KeyValueList items={[
+										{ key: 'Projects', value: team.counts?.projects ?? 0 },
+										{ key: 'Capacity providers', value: team.counts?.capacityProviders ?? 0 },
+										{ key: 'Members', value: team.counts?.members ?? 0 },
+										{ key: 'Pending invites', value: team.counts?.pendingInvitations ?? 0 },
+									]} />
+									<div class="ts-action-bar">
+									{context.activeTeam?.id !== team.id && team.allowedActions?.setActive ? (
+										<form method="post" action="/app/teams/active" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Active team updated." data-scene="team.active.set">
+											<input type="hidden" name="csrfToken" value={csrfToken} />
+											<input type="hidden" name="teamId" value={team.id} />
+											<Button type="submit" size="sm">Set active</Button>
+										</form>
+									) : null}
+									{teamActions(team).filter((action) => action.visible).map((action) => (
+										<Button href={action.href} variant="secondary" size="sm">{action.label}</Button>
+									))}
+									</div>
+								</Card>
+							</div>
+						))}
+					</div>
+				</Panel>
+
+				{archivedTeams.length > 0 ? (
+					<Panel eyebrow="Recovery" title="Archived teams" description="Archived teams are read-only and can be restored during their recovery window.">
+						<div class="ts-resource-grid" data-spacing="roomy">
+							{archivedTeams.map((team: any) => (
+								<div
+									data-scene={`team.archived.${team.id}`}
+									data-team-name={team.name}
+									data-team-display-name={team.displayName ?? team.name}
+									data-active="false"
+								>
+									<Card title={team.displayName ?? team.name} description={`@${team.name}`} tone="warning">
+										<Badge tone="warning" size="sm">Archived</Badge>
+										<p>Archived {team.archivedAt ? <Timestamp value={team.archivedAt} /> : null}</p>
+										<p>Restore before {team.restoreDeadlineAt ? <Timestamp value={team.restoreDeadlineAt} /> : 'the recovery window ends'}.</p>
+										<div class="ts-action-bar">
+										<Button href={`/app/teams/${encodeURIComponent(team.id)}`} variant="secondary" size="sm">Overview</Button>
+										{team.allowedActions?.restore ? <Button href={`/app/teams/${encodeURIComponent(team.id)}/delete`} variant="secondary" size="sm">Restore</Button> : null}
+										</div>
+									</Card>
+								</div>
+							))}
+						</div>
+					</Panel>
+				) : null}
+			</>
+		)}
+	</section>
 </TreeseedAppLayout>
+
+<script>
+	document.querySelectorAll('[data-scene="team.active.set"]').forEach((form) => {
+		form.addEventListener('treeseed:form-success', () => window.location.reload(), { once: true });
+	});
+</script>

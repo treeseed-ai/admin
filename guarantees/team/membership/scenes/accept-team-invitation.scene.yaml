@@ -8,10 +8,8 @@ audience:
 journey:
   kind: service
   proves:
-    - Accept Team Invitation opens the canonical @treeseed/admin dashboard read model workflow.
-    - Accept Team Invitation exercises a service journey instead of only loading /app/teams/visual-audit-team/members.
-    - Accept Team Invitation records reviewable evidence for the visible result before activation.
-  minimumSteps: 5
+    - team.invitation-consent
+  minimumSteps: 17
   requiresInteractiveAction: true
   consumesState:
     - key: team.invitation
@@ -19,6 +17,8 @@ journey:
   producesState:
     - key: team.membership-accepted
       kind: marker
+      value:
+        recipient: invite-{{runId}}-{{deviceId}}@treeseed.local
 mode:
   test: true
   demo: true
@@ -85,6 +85,24 @@ workflow:
         email: invite-{{runId}}-{{deviceId}}@treeseed.local
         subjectIncludes: You're invited to join Verified {{runShort}} {{deviceId}}
     expect:
+      urlIncludes: /team-invites/
+      text: Team invitation
+  - id: open-invited-registration
+    title: Safely sign out while preserving the invitation token
+    action:
+      click:
+        role: button
+        name: Switch account
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: choose-invited-registration
+    title: Choose registration while preserving the invitation token
+    action:
+      click:
+        role: link
+        name: Create account
+    expect:
       urlIncludes: /auth/register
       text: Create account
   - id: fill-invited-first-name
@@ -133,15 +151,92 @@ workflow:
     expect:
       text: Create account
   - id: submit-invited-registration
-    title: Register and accept as the invited principal
+    title: Register the invited principal without silently accepting membership
     action:
       click:
         role: button
         name: Create account
     expect:
-      urlIncludes: /app
+      urlIncludes: /auth/check-email
+      text: Check your email
+  - id: confirm-invited-email
+    title: Confirm the invited user's email through Mailpit
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: invite-{{runId}}-{{deviceId}}@treeseed.local
+        subjectIncludes: Confirm your Treeseed Market email
+        displayInboxSeconds: 1
+        displayMessageSeconds: 1
+    expect:
+      urlIncludes: /team-invites/
+      text: Accept invitation
+  - id: explicitly-accept-invitation
+    title: Explicitly accept the invitation through the CSRF-protected form
+    action:
+      click:
+        role: button
+        name: Accept invitation
+    expect:
+      urlIncludes: /app/teams/
+      text: Operational overview
       visible:
         - scene: app-shell
+  - id: open-existing-user-invitation
+    title: Open the existing verified user's exact invitation
+    action:
+      mailpitConfirmLatest:
+        mailpitUrl: http://127.0.0.1:8025
+        email: visual.member@treeseed.io
+        subjectIncludes: You're invited to join Verified {{runShort}} {{deviceId}}
+    expect:
+      urlIncludes: /team-invites/
+      text: Switch to the invited account before accepting.
+  - id: switch-to-existing-user
+    title: Use the safe POST account switch while preserving the invitation
+    action:
+      click:
+        role: button
+        name: Switch account
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
+  - id: fill-existing-user-login
+    title: Enter the existing verified user's email
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: visual.member@treeseed.io
+    expect:
+      text: Sign in
+  - id: fill-existing-user-password
+    title: Enter the existing verified user's password
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedVisualAudit!2026
+    expect:
+      text: Sign in
+  - id: sign-in-existing-user
+    title: Sign in and return to the preserved invitation token
+    action:
+      click:
+        role: button
+        name: Sign in
+    expect:
+      urlIncludes: /team-invites/
+      text: Accept invitation
+  - id: explicitly-accept-as-existing-user
+    title: Accept explicitly as the existing verified user
+    action:
+      click:
+        role: button
+        name: Accept invitation
+    expect:
+      urlIncludes: /app/teams/
+      text: Operational overview
 chapters: []
 overlays: []
 diagrams: []
@@ -178,4 +273,4 @@ runtime:
     continueOnFailure: false
 training: {}
 visualAudit:
-  enabled: false
+  enabled: true

@@ -5,6 +5,7 @@ import '@treeseed/ui/styles/ui.css';
 import '@treeseed/ui/styles/forms.css';
 import '@treeseed/ui/styles/app-shell.css';
 import '@treeseed/ui/styles/app-controls.css';
+import '@treeseed/ui/styles/charts.css';
 import '@treeseed/ui/styles/account/forms.css';
 import '@treeseed/ui/styles/auth.css';
 import ProductShell from '@treeseed/ui/components/astro/shell/layout/ProductShell.astro';
@@ -20,6 +21,10 @@ interface TeamEntry {
 	name: string;
 	slug?: string;
 	displayName?: string | null;
+	allowedActions?: {
+		edit?: boolean;
+		viewOverview?: boolean;
+	};
 }
 
 interface Props {
@@ -56,7 +61,7 @@ const themeConfig = {
 	schemeNames: Object.fromEntries(personalThemes.map((theme) => [theme.schemeId, theme.name])),
 };
 const csrfToken = ensureCsrfToken(Astro);
-const teamOptions = teams.map((team) => ({
+const teamOptions = teams.filter((team: TeamEntry & { status?: string }) => (team.status ?? 'active') === 'active').map((team) => ({
 	id: team.id,
 	label: team.displayName ?? team.name ?? team.slug ?? team.id,
 }));
@@ -83,8 +88,8 @@ const teamOptions = teams.map((team) => ({
 	siteItems={[{ label: 'Home', href: '/' }]}
 	quickActions={[
 		activeTeam
-			? { label: 'Manage team', href: `/app/teams/${encodeURIComponent(activeTeam.id)}/edit`, variant: 'primary' as const, icon: 'team-settings' as const }
-			: { label: 'Create team', href: '/app/teams/new', variant: 'primary' as const, icon: 'create' as const },
+			? { label: 'Team overview', href: `/app/teams/${encodeURIComponent(activeTeam.id)}`, variant: 'primary' as const, icon: 'teams' as const }
+			: { label: 'Manage teams', href: '/app/teams', variant: 'primary' as const, icon: 'teams' as const },
 	]}
 	accountActions={[
 		{ label: 'Account', href: '/app/account', variant: 'secondary' as const, icon: 'account' as const },
@@ -94,7 +99,8 @@ const teamOptions = teams.map((team) => ({
 	<div slot="railContext" class="ts-team-switcher" data-active-team-label={activeTeam ? (activeTeam.displayName ?? activeTeam.name ?? activeTeam.slug ?? activeTeam.id) : ''}>
 		<div class="ts-section__eyebrow">Active team</div>
 		{teams.length > 0 ? (
-			<form class="ts-team-selector" aria-label="Active team" data-team-switcher>
+			<form class="ts-team-selector" aria-label="Active team" method="post" action="/app/teams/active" data-team-switcher data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Active team updated.">
+				<input type="hidden" name="csrfToken" value={csrfToken} />
 				<label class="ts-field ts-team-selector__label">
 					<select class="ts-control" name="teamId" aria-label="Active team">
 						{teamOptions.map((team) => (
@@ -122,8 +128,10 @@ const teamOptions = teams.map((team) => ({
 		select?.addEventListener('change', () => {
 			const url = new URL(window.location.href);
 			url.searchParams.delete('teamId');
-			document.cookie = `treeseed_active_team=${encodeURIComponent(select.value)}; path=/app; max-age=31536000; SameSite=Lax`;
-			window.location.href = url.toString();
+			form.addEventListener('treeseed:form-success', () => {
+				window.location.href = url.toString();
+			}, { once: true });
+			form.requestSubmit();
 		});
 	});
 </script>

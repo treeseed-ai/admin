@@ -15,8 +15,15 @@ const EXPECTED_ROUTES = [
 	'/app/account/notifications',
 	'/app/account/appearance',
 	'/app/account/delete',
+	'/app/capacity',
+	'/app/hosts',
+	'/app/knowledge',
+	'/app/market',
+	'/app/projects',
 	'/app/teams',
+	'/app/teams/active',
 	'/app/teams/new',
+	'/app/teams/[teamId]',
 	'/app/teams/[teamId]/edit',
 	'/app/teams/[teamId]/delete',
 	'/app/teams/[teamId]/members',
@@ -35,6 +42,7 @@ const EXPECTED_ROUTES = [
 	'/team-invites/[token]/accept',
 ].sort();
 const EXPECTED_SUPPORT_ROUTES = ['/v1/[...all]'];
+const DOMAIN_ROUTES = ['/app/capacity', '/app/hosts', '/app/knowledge', '/app/market', '/app/projects'];
 
 function filesUnder(root: string): string[] {
 	if (!existsSync(root)) return [];
@@ -71,10 +79,15 @@ function resolveSiteHooks(): SiteExtensionContribution {
 describe('@treeseed/admin identity and team surface', () => {
 	it('registers exactly the retained routes and resources', () => {
 		const pageFiles = filesUnder('src/pages').filter((path) => /\.(astro|ts)$/u.test(path));
+		const expectedPageRoutes = [
+			...EXPECTED_ROUTES.filter((route) => !DOMAIN_ROUTES.includes(route)),
+			'/app/domain-overview',
+			...EXPECTED_SUPPORT_ROUTES,
+		].sort();
 		expect(ADMIN_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_ROUTES);
 		expect(ADMIN_SUPPORT_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_SUPPORT_ROUTES);
-		expect(pageFiles.map(routePatternFromPage).sort()).toEqual([...EXPECTED_ROUTES, ...EXPECTED_SUPPORT_ROUTES].sort());
-		expect([...ADMIN_ROUTES, ...ADMIN_SUPPORT_ROUTES].map((route) => route.resourcePath).sort()).toEqual(
+		expect(pageFiles.map(routePatternFromPage).sort()).toEqual(expectedPageRoutes);
+		expect([...new Set([...ADMIN_ROUTES, ...ADMIN_SUPPORT_ROUTES].map((route) => route.resourcePath))].sort()).toEqual(
 			pageFiles.map((path) => path.replace(/^src\//u, '')).sort(),
 		);
 	});
@@ -130,7 +143,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('SITE_SLOGAN');
 		expect(appLayout).toContain("from '@treeseed/ui/site-brand'");
 		expect(appLayout).toContain("from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro'");
-		for (const icon of ['start', 'team-settings', 'account', 'sign-out']) {
+		for (const icon of ['start', 'teams', 'account', 'sign-out']) {
 			expect(appLayout).toContain(`icon: '${icon}'`);
 		}
 		expect(appLayout).not.toContain("{ label: 'Teams'");
@@ -152,7 +165,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
 		for (const path of appPages) {
 			const source = readFileSync(path, 'utf8');
-			const contentTemplateOwnsHeader = /<(?:DashboardTemplate|SettingsTemplate)\b/u.test(source);
+			const contentTemplateOwnsHeader = /<(?:DashboardTemplate|PageHeader|SettingsTemplate)\b/u.test(source);
 			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});

@@ -3,6 +3,8 @@ export interface OperationalContext {
 	principal: any | null;
 	teams: any[];
 	activeTeam: any | null;
+	teamsStatus?: 'ready' | 'unavailable';
+	teamsError?: string | null;
 }
 
 export function safeArray<T = any>(value: unknown): T[] {

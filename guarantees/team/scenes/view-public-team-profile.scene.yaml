@@ -1,0 +1,100 @@
+schemaVersion: treeseed.scene/v1
+id: team.team.view-public-team-profile.021
+title: View Public Team Profile
+description: Anonymous public-knowledge and redaction journey for the active run-owned team.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [team.public-profile]
+  minimumSteps: 3
+  requiresInteractiveAction: true
+  consumesState:
+    - key: team.updated
+      kind: marker
+mode: { test: true, demo: true, training: true }
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport: { width: 1600, height: 900 }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      orientation: landscape
+      viewport: { width: 1600, height: 900 }
+      video: { width: 1600, height: 900 }
+      output: { width: 1920, height: 1080 }
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport: { width: 820, height: 1180 }
+      video: { width: 820, height: 1180 }
+      output: { width: 820, height: 1180 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+    - id: mobile_chromium
+      title: Mobile Chromium
+      orientation: portrait
+      viewport: { width: 390, height: 844 }
+      video: { width: 390, height: 844 }
+      output: { width: 390, height: 844 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: anonymous, required: false }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-public-profile
+    title: Open the anonymous team knowledge profile
+    action: { goto: "/t/gt-{{runShort}}-{{deviceId}}" }
+    expect:
+      urlIncludes: /t/gt-
+      text: Verified {{runShort}} {{deviceId}}
+      visible:
+        - { scene: knowledge.profile }
+        - { scene: knowledge.identity }
+        - { scene: knowledge.collection }
+        - { scene: knowledge.activity }
+  - id: follow-sign-in
+    title: Exercise the public sign-in action
+    action:
+      click: { role: link, name: Sign in }
+    expect: { urlIncludes: /auth/sign-in, text: Sign in }
+  - id: prove-redaction
+    title: Prove private operations remain absent while public knowledge sections render
+    action: { goto: "/t/gt-{{runShort}}-{{deviceId}}" }
+    expect:
+      text: Published knowledge
+      notText: "@treeseed.local"
+      notVisible:
+        - { scene: team.navigation }
+        - { role: link, name: Manage members }
+        - { role: link, name: View projects }
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+    capture:
+      viewport: { width: 1600, height: 900 }
+      video: { width: 1600, height: 900 }
+      evidenceFit: fixed-browser
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

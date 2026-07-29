@@ -1,8 +1,13 @@
 ---
 import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
-import ProfileTemplate from '@treeseed/ui/components/astro/templates/ProfileTemplate.astro';
-import { formatTimestamp } from '@treeseed/ui/timestamps';
+import KnowledgeActivityTrail from '@treeseed/ui/components/astro/public/profile/KnowledgeActivityTrail.astro';
+import KnowledgeProfileCollection from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileCollection.astro';
+import KnowledgeProfileIdentity from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileIdentity.astro';
+import KnowledgeProfileLayout from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileLayout.astro';
+import KnowledgeProfileStats from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileStats.astro';
+import AccountNavigation from '../../components/account/AccountNavigation.astro';
 import { normalizeUsername, validateUsername } from '../../lib/auth/support/profile-validation';
+import { createApiFacade } from '../../lib/market/api-client';
 import { resolvePublicUserProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;
@@ -16,18 +21,60 @@ const profile: any = await resolvePublicUserProfile(Astro, normalizedUsername);
 if (!profile?.user) return new Response('Not found', { status: 404 });
 
 const user = profile.user;
+const knowledge = profile.knowledge ?? { stats: {}, contributions: [], trail: [] };
 const displayName = user.displayName || `@${user.username}`;
-const joinedDate = user.joinedAt
-	? formatTimestamp(user.joinedAt, { style: 'date', timeZone: 'UTC' })
-	: null;
+const principal = Astro.locals.auth?.principal;
+const isOwnProfile = String(principal?.metadata?.username ?? '').trim().toLowerCase() === user.username;
+const timeZone = principal
+	? (await createApiFacade(Astro).accountPreferences().catch(() => ({ timeZone: 'UTC' }))).timeZone
+	: 'UTC';
+const contributions = knowledge.contributions.map((entry: any) => ({
+	...entry.item,
+	meta: entry.role ? `Contributed as ${entry.role}` : 'Public contribution',
+	updatedAt: entry.effectiveAt,
+}));
 ---
 
 <TreeseedPublicLayout
 	title={`${displayName} (@${user.username}) | TreeSeed`}
-	description={`Public TreeSeed identity for @${user.username}.`}
+	description={user.profileSummary ?? user.headline ?? `Public knowledge profile for @${user.username}.`}
 	currentPath={`/u/${user.username}`}
+	profilePage
 >
-	<ProfileTemplate title={displayName} description="Public TreeSeed account identity." handle={user.username} image={user.image} metadata={joinedDate ? [{ label: 'Joined', value: joinedDate }] : []}>
-		<p>This profile confirms the public username and display identity associated with a TreeSeed account.</p>
-	</ProfileTemplate>
+	<KnowledgeProfileLayout>
+		{isOwnProfile ? (
+			<Fragment slot="navigation">
+				<AccountNavigation profileHref={`/u/${encodeURIComponent(user.username)}`} />
+			</Fragment>
+		) : null}
+		<KnowledgeProfileIdentity
+			slot="identity"
+			kind="person"
+			name={displayName}
+			handle={user.username}
+			imageSrc={user.image}
+			headline={user.headline}
+			summary={user.profileSummary}
+			location={user.location}
+			website={user.website}
+			expertise={user.expertise ?? []}
+			establishedAt={user.joinedAt}
+			timeZone={timeZone}
+		/>
+		<KnowledgeProfileStats slot="stats" items={[
+			{ label: 'Contributions', value: knowledge.stats.contributions ?? 0 },
+			{ label: 'Templates', value: knowledge.stats.templates ?? 0 },
+			{ label: 'Knowledge packs', value: knowledge.stats.knowledgePacks ?? 0 },
+			{ label: 'Areas of knowledge', value: (user.expertise ?? []).length },
+		]} />
+		<KnowledgeProfileCollection
+			eyebrow="Public attribution"
+			title="Public contributions"
+			items={contributions}
+			emptyTitle="No attributed publications yet"
+			emptyDescription="Team membership stays private. This space grows only through explicit public attribution."
+			timeZone={timeZone}
+		/>
+		<KnowledgeActivityTrail items={knowledge.trail} timeZone={timeZone} />
+	</KnowledgeProfileLayout>
 </TreeseedPublicLayout>

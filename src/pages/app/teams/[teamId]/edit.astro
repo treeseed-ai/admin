@@ -4,12 +4,16 @@ import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
 import Textarea from '@treeseed/ui/components/astro/forms/fields/Textarea.astro';
+import Select from '@treeseed/ui/components/astro/forms/fields/Select.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import Card from '@treeseed/ui/components/astro/surface/Card.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
+import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
-import { loadAppContext, persistActiveTeamSelection, resolveAppTeam } from '../../../../view-models/app-access.js';
+import { loadAppContext, resolveAppTeam } from '../../../../view-models/app-access.js';
 import { ensureCsrfToken, requireCsrf } from '../../../../lib/auth/support/csrf';
 
 const teamId = String(Astro.params.teamId ?? '');
@@ -17,15 +21,15 @@ if (!Astro.locals.auth?.principal) {
 	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 }
 const context = await loadAppContext(Astro);
-const teamResolution = resolveAppTeam(context, teamId);
+const teamResolution = await resolveAppTeam(context, teamId);
 const team = teamResolution.resource;
-if (teamResolution.team?.id && teamResolution.team.id !== context.activeTeam?.id) persistActiveTeamSelection(Astro, teamResolution.team);
 const manageableRoles = new Set(['team_owner', 'project_lead']);
 const access = team && context.store && typeof context.store.getTeamAccessSummary === 'function'
 	? await context.store.getTeamAccessSummary(team.id, context.principal).catch(() => null)
 	: null;
 const canManageTeam = Boolean(access?.roles?.some((role: string) => manageableRoles.has(role)));
-if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 : 404;
+const canEdit = canManageTeam && team?.status !== 'archived';
+if (!team) Astro.response.status = teamResolution.status === 'forbidden' ? 403 : teamResolution.status === 'unavailable' ? 503 : 404;
 else if (!canManageTeam) Astro.response.status = 403;
 
 const csrfToken = ensureCsrfToken(Astro);
@@ -34,9 +38,10 @@ const formValues = {
 	displayName: team?.displayName ?? '',
 	logoUrl: team?.logoUrl ?? '',
 	profileSummary: team?.profileSummary ?? '',
+	visibility: team?.metadata?.visibility ?? 'private',
 };
 
-if (Astro.request.method === 'POST' && team && canManageTeam) {
+if (Astro.request.method === 'POST' && team && canEdit) {
 	const data = await Astro.request.formData();
 	try {
 		requireCsrf(Astro, data.get('csrfToken'));
@@ -52,6 +57,9 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 		displayName: String(data.get('displayName') ?? '').trim(),
 		logoUrl: String(data.get('logoUrl') ?? '').trim(),
 		profileSummary: String(data.get('profileSummary') ?? '').trim(),
+		visibility: String(data.get('visibility') ?? 'private'),
+		expectedUpdatedAt: String(data.get('expectedUpdatedAt') ?? ''),
+		metadata: { visibility: String(data.get('visibility') ?? 'private') },
 	};
 
 	if (!body.name) {
@@ -70,24 +78,32 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 				message: 'Team saved.',
 			}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/edit` });
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Team could not be saved.';
+			const details = (error as any)?.details ?? {};
+			const message = details.message ?? (error instanceof Error ? error.message : 'Team could not be saved.');
 			return formSubmissionResponse(Astro.request, {
 				ok: false,
-				code: 'team_update_failed',
+				code: details.code ?? 'team_update_failed',
 				message,
-				fieldErrors: /(?:name|slug|already exists|taken)/iu.test(message) ? { name: message } : undefined,
+				fieldErrors: details.fieldErrors ?? (/(?:name|slug|already exists|taken)/iu.test(message) ? { name: message } : undefined),
 			}, { fallbackRedirect: `/app/teams/${encodeURIComponent(team.id)}/edit` });
 		}
 	}
 }
 ---
 
-<TreeseedAppLayout title={team ? `Edit ${team.displayName ?? team.name}` : 'Team not found'} description="Edit one team." currentPath="/app/teams" teams={context.teams} activeTeam={team ?? context.activeTeam}>
-	{team && canManageTeam ? (
+<TreeseedAppLayout title={team ? `Edit ${team.displayName ?? team.name}` : 'Team not found'} description="Edit one team." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader={Boolean(team)}>
+	{team ? (
+		<>
+			<PageHeader eyebrow="Team administration" title="Settings" description={`@${team.name} · Manage team identity and public profile settings.`} />
+			<TeamNavigation team={team} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={Boolean(access?.roles?.includes('team_owner'))} />
+		</>
+	) : null}
+	{team && canEdit ? (
 		<section class="ts-control-page" aria-label="Edit team" data-team-display-name={formValues.displayName} data-team-edit-panel>
-			<Panel eyebrow="Team" title="Edit team" description="Update the team fields.">
-				<form id="team-edit-form" class="ts-form-stack" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/edit`} data-ts-submit="enhanced" data-ts-refresh-target="[data-team-edit-panel]">
+			<Panel eyebrow="Identity" title="Team profile" description="Update the name and public identity fields.">
+				<form id="team-edit-form" class="ts-form-stack ts-team-form" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/edit`} data-ts-submit="enhanced" data-ts-refresh-target="[data-team-edit-panel]">
 					<input type="hidden" name="csrfToken" value={csrfToken} />
+					<input type="hidden" name="expectedUpdatedAt" value={team.updatedAt} />
 					<div class="ts-form-grid">
 						<Field label="Name" name="name" required>
 							<TextInput name="name" required value={formValues.name} pattern="[a-z0-9](?:[a-z0-9\\-]{0,61}[a-z0-9])?" />
@@ -98,6 +114,12 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 						<Field label="Logo URL" name="logoUrl" class="ts-field--full">
 							<TextInput name="logoUrl" type="url" value={formValues.logoUrl} />
 						</Field>
+						<Field label="Profile visibility" name="visibility">
+							<Select name="visibility" value={formValues.visibility} options={[
+								{ label: 'Private', value: 'private' },
+								{ label: 'Public identity', value: 'public' },
+							]} />
+						</Field>
 						<Field label="Profile summary" name="profileSummary" class="ts-field--full">
 							<Textarea name="profileSummary" rows={4} value={formValues.profileSummary} />
 						</Field>
@@ -107,11 +129,43 @@ if (Astro.request.method === 'POST' && team && canManageTeam) {
 						<Button href="/app/teams" variant="secondary">Back</Button>
 					</FormActions>
 				</form>
+				<aside aria-label="Public profile preview" data-team-profile-preview data-scene="team.settings.preview">
+					<Card eyebrow="Public preview">
+						<h3 class="ts-card__title" data-team-preview-name>{formValues.displayName || formValues.name}</h3>
+						<p data-team-preview-handle>@{formValues.name}</p>
+						<p data-team-preview-summary>{formValues.profileSummary || 'No public summary has been added.'}</p>
+					</Card>
+				</aside>
+			</Panel>
+			<Panel eyebrow="Access" title="Roles and permissions" description="Team permissions are assigned through roles so every member with the same role has consistent responsibilities.">
+				<Button href={`/app/teams/${encodeURIComponent(team.id)}/members`} variant="secondary">Manage member roles</Button>
 			</Panel>
 		</section>
+	) : team?.status === 'archived' ? (
+		<EmptyState title="Archived teams are read-only" description="Restore this team before changing its identity settings." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+	) : teamResolution.status === 'unavailable' ? (
+		<EmptyState title="Team settings are temporarily unavailable" description="The team service did not respond. No editable state has been inferred." actions={[{ label: 'Retry', href: Astro.url.pathname }]} />
 	) : team ? (
 		<EmptyState title="Team controls unavailable" description="Team editing, member management, and deletion require the team owner or project lead role." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
 	) : (
-		<EmptyState title="Team not found" description="This team is not available." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
+		<EmptyState title={teamResolution.status === 'forbidden' ? 'Team access denied' : 'Team not found'} description={teamResolution.status === 'forbidden' ? 'You do not have access to this team.' : 'This team is not available.'} actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
 	)}
 </TreeseedAppLayout>
+
+<script>
+	const form = document.querySelector<HTMLFormElement>('#team-edit-form');
+	const updatePreview = () => {
+		if (!form) return;
+		const data = new FormData(form);
+		const name = String(data.get('name') ?? '');
+		const displayName = String(data.get('displayName') ?? '');
+		const summary = String(data.get('profileSummary') ?? '');
+		const previewName = document.querySelector('[data-team-preview-name]');
+		const previewHandle = document.querySelector('[data-team-preview-handle]');
+		const previewSummary = document.querySelector('[data-team-preview-summary]');
+		if (previewName) previewName.textContent = displayName || name;
+		if (previewHandle) previewHandle.textContent = `@${name}`;
+		if (previewSummary) previewSummary.textContent = summary || 'No public summary has been added.';
+	};
+	form?.addEventListener('input', updatePreview);
+</script>
