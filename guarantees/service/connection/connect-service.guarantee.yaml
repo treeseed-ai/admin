@@ -1,0 +1,53 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.service.connection.connect-service.023
+journeyIndex: 23
+type: service
+subtype: connection
+journey: Connect Service
+ownerPackage: "@treeseed/admin"
+summary: Connect a provider account through the rendered UI and enable independent service capabilities.
+status: blocked
+dependencies:
+  journeys: [22]
+  guarantees: [guarantee.service.vault.recover-vault-access.022]
+actors:
+  allowed: [team_owner, project_lead, service_admin]
+  forbidden: [anonymous_user, non_member, contributor, viewer]
+devices:
+  required: [desktop_chromium, tablet_chromium, mobile_chromium]
+gates: [security, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes: [An active team and initialized service vault exist.]
+notes:
+  - Blocked because the shared lifecycle scene still targets the removed manual GitHub App credential path; current-source Connector and token-authority scenes must pass before reactivation.
+uiFeature:
+  contract: ../service-management.ui-feature.yaml
+  capabilities: [service.navigation, service.connect]
+scene:
+  required: true
+  manifest: ./scenes/service-lifecycle.scene.yaml
+  executionKey: admin.services.connection-lifecycle
+  entryRoute: /app/services
+  componentContract: provider-first connection service journey
+  expectedEvidence: [playwright_trace, scene_video, screenshot_on_failure, console_log, network_log]
+api:
+  required: true
+  verifierRefs: [api.service.management.contracts]
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: true
+  verifierRefs: [api.service.management.contracts]
+negativeCases:
+  - { id: anonymous-denied, actor: anonymous_user, sceneManifest: ../scenes/negative/anonymous-services.scene.yaml, executionKey: admin.services.negative.anonymous, verifierRefs: [api.service.management.contracts] }
+  - { id: nonmember-denied, actor: non_member, sceneManifest: ../scenes/negative/nonmember-services.scene.yaml, executionKey: admin.services.negative.nonmember, verifierRefs: [api.service.management.contracts] }
+  - { id: contributor-denied, actor: contributor, sceneManifest: ../scenes/negative/readonly-services.scene.yaml, executionKey: admin.services.negative.contributor, verifierRefs: [api.service.management.contracts] }
+  - { id: viewer-denied, actor: viewer, sceneManifest: ../scenes/negative/viewer-services.scene.yaml, executionKey: admin.services.negative.viewer, verifierRefs: [api.service.management.contracts] }
+evidence:
+  required: [playwright_trace, scene_video, api_verification_log]
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

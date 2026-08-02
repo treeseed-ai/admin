@@ -124,6 +124,7 @@ const restoreAvailable = team?.status === 'archived' && Number.isFinite(restoreD
 					description={team.status === 'archived'
 						? 'The team is read-only. Restore it before the recovery window ends to resume normal work.'
 						: 'Archiving pauses team-scoped changes and removes the team from active selectors without deleting its records.'}
+					knowledgePageId="team.lifecycle"
 				>
 					<div class="ts-lifecycle-summary">
 						<div class="ts-lifecycle-summary__status">
@@ -166,7 +167,7 @@ const restoreAvailable = team?.status === 'archived' && Number.isFinite(restoreD
 					</div>
 				</Panel>
 
-				<Panel eyebrow="Irreversible" title="Delete team permanently" description="Deletion is immediate and retains only non-sensitive audit tombstones." tone="danger">
+				<Panel eyebrow="Irreversible" title="Delete team permanently" description="Deletion is immediate and retains only non-sensitive audit tombstones." tone="danger" knowledgePageId="team.lifecycle">
 					<div class="ts-danger-zone">
 						<p class="ts-danger-zone__intro">This operation cannot be undone. It is available for active or archived teams after every owned resource and obligation is resolved.</p>
 						{blockers.length > 0 ? (

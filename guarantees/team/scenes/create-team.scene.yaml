@@ -167,10 +167,20 @@ workflow:
         name: Create team
     expect:
       urlIncludes: /app/teams
+      visible:
+        - scene: team.overview
   - id: inspect-service-surface
     title: Prove the run-created team appears in the collection
     action:
       goto: /app/teams
+    expect:
+      urlIncludes: /app/teams
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: await-team-collection-navigation
+    title: Let the team collection navigation settle before opening members
+    action: { pause: { mode: timed, durationSeconds: 1 } }
     expect:
       urlIncludes: /app/teams
       visible:

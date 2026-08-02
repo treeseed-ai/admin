@@ -11,6 +11,7 @@ import PublicFooter from '@treeseed/ui/components/astro/shell/chrome/PublicFoote
 import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
 import { resolveAnonymousThemePreference, resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 import { createApiFacade } from '../lib/market/api-client';
+import { loadRouteHelpContext } from '../lib/help/context';
 
 interface Props {
 	title?: string;
@@ -32,6 +33,10 @@ const appearance = isSignedIn
 const timeZone = isSignedIn
 	? (await createApiFacade(Astro).accountPreferences().catch(() => ({ timeZone: 'UTC' }))).timeZone
 	: 'UTC';
+const helpContext = await loadRouteHelpContext(Astro, currentPath, undefined, {
+	shell: 'public',
+	context: 'public',
+});
 ---
 
 <PublicShell
@@ -45,6 +50,7 @@ const timeZone = isSignedIn
 	showAppearanceControl
 	preferServerAppearance={isSignedIn}
 	timeZone={timeZone}
+	helpContext={helpContext}
 	showFooter={!profilePage}
 >
 	{!profilePage ? (

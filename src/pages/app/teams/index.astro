@@ -54,7 +54,7 @@ function teamActions(team: any) {
 			<EmptyState title="No teams yet" description="Create a team to organize projects, people, and operations." actions={[{ label: 'Create team', href: '/app/teams/new' }]} />
 		) : (
 			<>
-				<Panel eyebrow="Available" title="Active teams" description="Teams available for work and active selection.">
+				<Panel eyebrow="Available" title="Active teams" description="Teams available for work and active selection." knowledgePageId="teams.collection">
 					<div class="ts-resource-grid" data-spacing="roomy">
 						{activeTeams.map((team: any) => (
 							<div data-scene={`team.card.${team.id}`} data-team-name={team.name} data-team-display-name={team.displayName ?? team.name} data-active={context.activeTeam?.id === team.id ? 'true' : 'false'}>
@@ -93,7 +93,7 @@ function teamActions(team: any) {
 				</Panel>
 
 				{archivedTeams.length > 0 ? (
-					<Panel eyebrow="Recovery" title="Archived teams" description="Archived teams are read-only and can be restored during their recovery window.">
+					<Panel eyebrow="Recovery" title="Archived teams" description="Archived teams are read-only and can be restored during their recovery window." knowledgePageId="team.lifecycle">
 						<div class="ts-resource-grid" data-spacing="roomy">
 							{archivedTeams.map((team: any) => (
 								<div

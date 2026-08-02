@@ -49,7 +49,7 @@ const canManageTeam = Boolean(summary?.access?.roles?.some((role: string) => man
 const isOwner = Boolean(summary?.access?.roles?.includes('team_owner'));
 const operationalLabels: Record<string, string> = {
 	projects: 'Projects',
-	hosts: 'Hosts',
+	services: 'Services',
 	capacity: 'Capacity and allocation',
 	knowledge: 'Knowledge',
 	catalog: 'Catalog and billing',
@@ -76,14 +76,14 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 			<TeamNavigation team={team} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} />
 
 			<div class="ts-resource-grid">
-				<Panel eyebrow="Identity" title="Team profile" description={team.profileSummary || 'No team summary has been added.'}>
+				<Panel eyebrow="Identity" title="Team profile" description={team.profileSummary || 'No team summary has been added.'} knowledgePageId="team.settings">
 					<KeyValueList items={[
 						{ key: 'Status', value: team.status ?? 'active' },
 						{ key: 'Members', value: summary.counts?.members ?? 0 },
 						{ key: 'Pending invitations', value: summary.counts?.pendingInvitations ?? 0 },
 					]} />
 				</Panel>
-				<Panel eyebrow="Access" title="Your team role" description="These responsibilities come from your team role, not separate per-user permission settings.">
+				<Panel eyebrow="Access" title="Your team role" description="These responsibilities come from your team role, not separate per-user permission settings." knowledgePageId="team.roles">
 					<Stack>
 						<TeamAccessDetails
 							role={summary.access?.roles?.[0] ?? 'viewer'}
@@ -94,7 +94,7 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 				</Panel>
 			</div>
 
-			<Panel eyebrow="Operations" title="Owned domain summaries" description="Open the canonical domain page to make changes.">
+			<Panel eyebrow="Operations" title="Owned domain summaries" description="Open the canonical domain page to make changes." knowledgePageId="team.overview">
 				<MetricGrid min="14rem">
 					{operationalEntries.map(([key, item]) => (
 						<MetricCard
@@ -123,7 +123,7 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 				/>
 			</div>
 
-			<Panel eyebrow="Security" title="Recent team audit activity" description="Security-sensitive team changes recorded by the API.">
+			<Panel eyebrow="Security" title="Recent team audit activity" description="Security-sensitive team changes recorded by the API." knowledgePageId="team.activity">
 				<div data-scene="team.overview.audit">
 					<ActivityFeed items={auditActivity} emptyLabel="No recent security-sensitive activity." />
 				</div>

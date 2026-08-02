@@ -27,7 +27,7 @@ workflow:
       text: Team members
       visible:
         - { css: "#team-member-search", internal: true }
-        - { css: "[data-scene^='team.member.']", internal: true }
+        - { css: '[data-member-email="visual.member@treeseed.io"]', internal: true }
       notVisible:
         - { role: button, name: Send invitation }
         - { role: button, name: Save }

@@ -1,0 +1,25 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.book.search-books.068
+journeyIndex: 68
+type: project
+subtype: book
+journey: Search Books
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Search the authorized federated book library through TreeDX without filesystem scanning or metadata leakage.
+status: active
+dependencies: { journeys: [65], guarantees: [guarantee.project.book.create-book.065] }
+actors: { allowed: [anonymous_user, authenticated_user, authorized_private_viewer], forbidden: [unauthorized_private_viewer] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.library, knowledge.reader] }
+scene: { required: true, manifest: scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /books, componentContract: federated knowledge search }
+api: { required: true, verifierRefs: [api.knowledge.contextual-policy] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content, core.knowledge.starlight-reader] }
+audit: { required: false, verifierRefs: [] }
+negativeCases:
+  - { id: private-library-isolation, actor: unauthorized_private_viewer, sceneManifest: scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.contextual-policy] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref] }
+notes: [The shared execution searches the authorized federated runtime and opens the exact atomic Starlight revision.]
+run: { requiredForRelease: true }

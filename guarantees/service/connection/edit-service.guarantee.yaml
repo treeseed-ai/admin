@@ -1,0 +1,54 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.service.connection.edit-service.024
+journeyIndex: 24
+type: service
+subtype: connection
+journey: Edit Service
+ownerPackage: "@treeseed/admin"
+summary: Edit service metadata and capability bindings and store only context-bound browser-encrypted credentials.
+status: blocked
+dependencies:
+  journeys: [23]
+  guarantees: [guarantee.service.connection.connect-service.023]
+actors:
+  allowed: [team_owner, project_lead, service_admin]
+  forbidden: [anonymous_user, non_member, contributor, viewer, ungranted_service_admin]
+devices:
+  required: [desktop_chromium, tablet_chromium, mobile_chromium]
+gates: [security, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes: [A run-owned provider connection exists.]
+notes:
+  - Blocked until the rendered capability-profile selector, managed Connector flow, and explicit token authority are exercised by current-source scenes.
+uiFeature:
+  contract: ../service-management.ui-feature.yaml
+  capabilities: [service.edit, service.credentials]
+scene:
+  required: true
+  manifest: ./scenes/service-lifecycle.scene.yaml
+  executionKey: admin.services.connection-lifecycle
+  entryRoute: /app/services
+  componentContract: encrypted connection editing service journey
+  expectedEvidence: [playwright_trace, scene_video, screenshot_on_failure, console_log, network_log]
+api:
+  required: true
+  verifierRefs: [api.service.management.contracts, sdk.service.vault.crypto]
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: true
+  verifierRefs: [api.service.management.contracts]
+negativeCases:
+  - { id: anonymous-denied, actor: anonymous_user, sceneManifest: ../scenes/negative/anonymous-services.scene.yaml, executionKey: admin.services.negative.anonymous, verifierRefs: [api.service.management.contracts] }
+  - { id: nonmember-denied, actor: non_member, sceneManifest: ../scenes/negative/nonmember-services.scene.yaml, executionKey: admin.services.negative.nonmember, verifierRefs: [api.service.management.contracts] }
+  - { id: contributor-denied, actor: contributor, sceneManifest: ../scenes/negative/readonly-services.scene.yaml, executionKey: admin.services.negative.contributor, verifierRefs: [api.service.management.contracts] }
+  - { id: viewer-denied, actor: viewer, sceneManifest: ../scenes/negative/viewer-services.scene.yaml, executionKey: admin.services.negative.viewer, verifierRefs: [api.service.management.contracts] }
+  - { id: ungranted-admin-denied, actor: ungranted_service_admin, sceneManifest: ../scenes/negative/vault-administrator-denial.scene.yaml, executionKey: admin.services.negative.ungranted-admin, verifierRefs: [api.service.management.contracts] }
+evidence:
+  required: [playwright_trace, scene_video, api_verification_log]
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

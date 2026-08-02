@@ -1,0 +1,260 @@
+schemaVersion: treeseed.scene/v1
+id: service.connection.service-lifecycle.023-025
+title: Connect, configure, encrypt, and disconnect a provider service
+description: Exercises one run-owned GitHub connection through the complete rendered UI lifecycle.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [service.navigation, service.connect, service.edit, service.credentials, service.disconnect]
+  minimumSteps: 21
+  requiresInteractiveAction: true
+  consumesState:
+    - key: team.active-session
+      kind: browser-storage
+    - key: team.primary
+      kind: marker
+    - key: services.team-vault
+      kind: marker
+  producesState:
+    - key: services.primary-connection
+      kind: marker
+      value:
+        provider: github
+        displayName: Guarantee GitHub {{runShort}} {{deviceId}}
+        status: disconnected
+mode:
+  test: true
+  demo: true
+  training: true
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      viewport: { width: 1600, height: 900 }
+      video: { width: 1600, height: 900 }
+      output: { width: 1920, height: 1080 }
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      viewport: { width: 820, height: 1180 }
+      video: { width: 820, height: 1180 }
+      output: { width: 820, height: 1180 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+    - id: mobile_chromium
+      title: Mobile Chromium
+      viewport: { width: 390, height: 844 }
+      video: { width: 390, height: 844 }
+      output: { width: 390, height: 844 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: owner, required: true }
+artifacts:
+  trace: true
+  video: true
+  screenshots: true
+  console: true
+  network: true
+  timeline: true
+  appLogs: true
+workflow:
+  - id: open-provider
+    title: Choose GitHub from the provider gallery
+    action: { goto: /app/services/new?provider=github }
+    expect:
+      urlIncludes: /app/services/new
+      visible:
+        - { css: '[data-scene="service.create.submit"]', internal: true }
+  - id: reject-empty-connection
+    title: Reject missing provider identity fields
+    action:
+      click: { role: button, name: Connect service }
+    expect:
+      urlIncludes: /app/services/new
+      notText: Service connected.
+  - id: fill-connection-name
+    title: Name the run-owned provider connection
+    action:
+      fill:
+        css: '[data-scene="service.create.submit"] input[name="displayName"]'
+        internal: true
+        value: Guarantee GitHub {{runShort}} {{deviceId}}
+    expect:
+      visible:
+        - { css: '[data-scene="service.create.submit"]', internal: true }
+  - id: fill-organization
+    title: Enter non-sensitive provider identity metadata
+    action:
+      fill:
+        css: 'input[name="config.organization"]'
+        internal: true
+        value: guarantee-{{runShort}}
+    expect:
+      visible:
+        - { css: 'input[name="config.organization"]', internal: true }
+  - id: fill-app-id
+    title: Enter the public GitHub App identifier
+    action:
+      fill:
+        css: 'input[name="config.appId"]'
+        internal: true
+        value: "123456"
+    expect:
+      visible:
+        - { css: 'input[name="config.appId"]', internal: true }
+  - id: fill-installation-id
+    title: Enter the public installation identifier
+    action:
+      fill:
+        css: 'input[name="config.installationId"]'
+        internal: true
+        value: "654321"
+    expect:
+      visible:
+        - { css: 'input[name="config.installationId"]', internal: true }
+  - id: select-repository-capability
+    title: Enable repository hosting independently
+    action:
+      click:
+        css: 'input[name="capabilities"][value="repository-hosting"]'
+        internal: true
+    expect:
+      visible:
+        - { css: 'input[name="capabilities"][value="repository-hosting"]:checked', internal: true }
+  - id: select-workflow-capability
+    title: Enable workflow execution independently
+    action:
+      click:
+        css: 'input[name="capabilities"][value="workflow-execution"]'
+        internal: true
+    expect:
+      visible:
+        - { css: 'input[name="capabilities"][value="workflow-execution"]:checked', internal: true }
+  - id: connect-service
+    title: Persist provider metadata through the UI
+    action:
+      click: { role: button, name: Connect service }
+    expect:
+      urlIncludes: /app/services
+      text: Guarantee GitHub {{runShort}} {{deviceId}}
+  - id: open-service
+    title: Open the run-owned service
+    action:
+      click: { text: "Guarantee GitHub {{runShort}} {{deviceId}}" }
+    expect:
+      visible:
+        - { css: '[data-scene="service.detail"]', internal: true }
+  - id: open-credentials
+    title: Open the protected credentials tab
+    action:
+      click: { role: tab, name: Credentials }
+    expect:
+      visible:
+        - { css: '[data-scene="service.credential.github-app.privateKey"]', internal: true }
+  - id: enter-provider-credential
+    title: Enter a run-only provider credential into the local encryption form
+    action:
+      fill:
+        css: '[data-scene="service.credential.github-app.privateKey"] input[name="credentialValue"]'
+        internal: true
+        value: github-app-test-{{runShort}}-{{deviceId}}
+    expect:
+      visible:
+        - { css: '[data-scene="service.credential.github-app.privateKey"]', internal: true }
+  - id: unlock-team-vault
+    title: Unlock the administrator key locally
+    action:
+      fill:
+        css: '[data-scene="service.credential.github-app.privateKey"] input[name="passphrase"]'
+        internal: true
+        value: RotatedVault-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { css: '[data-scene="service.credential.github-app.privateKey"] button[type="submit"]', internal: true }
+  - id: encrypt-provider-credential
+    title: Encrypt and persist only a context-bound envelope
+    action:
+      click: { css: '[data-scene="service.credential.github-app.privateKey"] button[type="submit"]', internal: true }
+    expect:
+      urlIncludes: /app/services/
+      text: GitHub App authority saved securely.
+  - id: open-operation-authorization
+    title: Review the one-use read-only validation lease
+    action:
+      click: { css: '[data-scene="service.validation.github-app"] summary', internal: true }
+    expect:
+      text: Only these fields are decrypted in this browser
+  - id: unlock-validation-credential
+    title: Unlock only the required credential locally
+    action:
+      fill:
+        css: '[data-scene="service.validation.github-app"] input[name="passphrase"]'
+        internal: true
+        value: RotatedVault-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { css: '[data-scene="service.validation.github-app"] button[type="submit"]', internal: true }
+  - id: authorize-read-only-validation
+    title: Seal the credential to the runner-issued ephemeral key
+    action:
+      click: { css: '[data-scene="service.validation.github-app"] button[type="submit"]', internal: true }
+    expect:
+      text: Read-only provider validation authorized.
+  - id: open-settings
+    title: Open canonical service settings tab
+    action:
+      click: { role: tab, name: Settings }
+    expect:
+      visible:
+        - { role: button, name: Save settings }
+  - id: edit-service-name
+    title: Change non-sensitive connection metadata
+    action:
+      fill:
+        css: '#service-panel-settings input[name="displayName"]'
+        internal: true
+        value: Guarantee GitHub updated {{runShort}} {{deviceId}}
+    expect:
+      visible:
+        - { role: button, name: Save settings }
+  - id: save-service-settings
+    title: Save the optimistic-versioned update without navigation
+    action:
+      click: { role: button, name: Save settings }
+    expect:
+      visible:
+        - { text: Service settings updated. }
+  - id: disconnect-service
+    title: Disconnect through the deliberate danger-zone control
+    action:
+      click: { role: button, name: Disconnect service }
+    expect:
+      urlIncludes: /app/services
+      notText: Guarantee GitHub updated {{runShort}} {{deviceId}}
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

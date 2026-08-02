@@ -1,0 +1,100 @@
+---
+import BookList from '@treeseed/ui/components/astro/site/content/BookList.astro';
+import KnowledgeOutline from '@treeseed/ui/components/astro/knowledge/KnowledgeOutline.astro';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import RepositoryConnectionPanel from '@treeseed/ui/components/astro/project/RepositoryConnectionPanel.astro';
+import TreeseedAppLayout from '../../../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../../../lib/auth/support/csrf';
+import { ApiClientFacade } from '../../../../../lib/market/api-client';
+import { loadAppContext } from '../../../../../view-models/app-access.js';
+
+const projectId = String(Astro.params.projectId ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(`/app/projects/${projectId}/books`)}`);
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
+let access: any = null;
+let accessUnavailable = false;
+if (context.activeTeam) {
+	try { access = await api.getTeamAccessSummary(context.activeTeam.id); }
+	catch { accessUnavailable = true; Astro.response.status = 503; }
+}
+const permissions = new Set<string>(access?.permissions ?? []);
+const canRead = permissions.has('knowledge:read');
+const canAuthor = permissions.has('knowledge:author');
+const canReview = permissions.has('knowledge:review') || permissions.has('knowledge:publish');
+const canManageProject = permissions.has('projects:manage:team');
+let project: any = null;
+let catalog: any = null;
+let topology: any = null;
+let repositoryCandidates: any[] = [];
+let unavailable = false;
+try {
+	project = await api.getProjectDetails(projectId);
+	[catalog, topology] = await Promise.all([
+		api.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/knowledge/catalog`),
+		api.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/repository-topology`),
+	]);
+	if (canManageProject && context.activeTeam) {
+		const connections = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/services`);
+		for (const connection of connections.filter((item: any) => item.providerId === 'github')) {
+			const authorities = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/services/${encodeURIComponent(connection.id)}/credential-authorities`).catch(() => []);
+			for (const binding of connection.capabilities.filter((item: any) => item.capabilityType === 'repository-hosting' && item.status === 'configured')) {
+				const authority = authorities.find((item: any) => item.credentialProfileId === binding.credentialProfileId);
+				if (authority && ['ready', 'interactive-only'].includes(authority.status)) repositoryCandidates.push({
+					value: `${connection.id}|${binding.id}|${authority.id}|${authority.status}`,
+					label: `${connection.displayName} — ${binding.credentialProfileId}`, status: authority.status,
+				});
+			}
+		}
+	}
+} catch (error) {
+	Astro.response.status = Number((error as any)?.status ?? 503);
+	unavailable = Astro.response.status >= 500;
+}
+const sections = [
+	canRead ? { id: 'overview', label: 'Books', href: `/app/projects/${encodeURIComponent(projectId)}/books`, active: true } : null,
+	canAuthor ? { id: 'author', label: 'Author', href: `/app/knowledge?project=${encodeURIComponent(projectId)}` } : null,
+	canReview ? { id: 'reviews', label: 'Reviews', href: `/app/knowledge?project=${encodeURIComponent(projectId)}&view=reviews` } : null,
+	canManageProject ? { id: 'workflows', label: 'Automation', href: `/app/projects/${encodeURIComponent(projectId)}/workflows` } : null,
+].filter((section): section is NonNullable<typeof section> => Boolean(section));
+const csrfToken = ensureCsrfToken(Astro);
+---
+
+<TreeseedAppLayout title={project?.project?.name ? `${project.project.name} books` : 'Project books'} description="Manage repository-native books and their ordered knowledge pages." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<SettingsTemplate title={project?.project?.name ?? 'Project books'} description="Books are versioned in this project's Git repository and indexed through TreeDX." sections={sections} knowledgePageId="knowledge.authoring" actions={project && canAuthor ? [{ id: 'knowledge.author', label: 'Create book or page', href: `/app/knowledge?project=${encodeURIComponent(projectId)}`, state: 'allowed', auditSensitivity: 'normal' }] : []}>
+		{accessUnavailable ? (
+			<EmptyState title="Knowledge access is unavailable" description="Permissions could not be verified. Project knowledge controls remain unavailable until access can be confirmed." actions={[{ label: 'Retry', href: Astro.url.pathname }]} />
+		) : !canRead ? (
+			<EmptyState title="Project not found" description="The project does not exist or you do not have access to it." actions={[{ label: 'Projects', href: '/app/projects' }]} />
+		) : unavailable ? (
+			<EmptyState title="Project knowledge is temporarily unavailable" description="TreeDX or the project repository did not respond. No empty catalog has been inferred."><div slot="actions"><Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button></div></EmptyState>
+		) : !project ? (
+			<EmptyState title="Project not found" description="The project does not exist or you do not have access to it." actions={[{ label: 'Projects', href: '/app/projects' }]} />
+		) : (
+			<>
+			{canManageProject && topology ? <RepositoryConnectionPanel topology={topology}
+				remote={topology.contentRepository?.remote} candidates={repositoryCandidates} csrfToken={csrfToken}
+				action={`/v1/projects/${encodeURIComponent(projectId)}/repository-topology`} /> : null}
+			<Panel title="Book collection" description={`${catalog?.books?.length ?? 0} books at the repository publication ref.`}>
+				{catalog?.books?.length ? <BookList items={catalog.books.map((book: any) => ({ ...book, pageCount: catalog.pages.filter((page: any) => page.bookId === book.id).length, teamSlug: book.source.teamSlug,
+					manageHref: canAuthor ? `/app/knowledge?project=${encodeURIComponent(projectId)}&sourcePath=${encodeURIComponent(book.source.path)}&kind=book` : undefined }))} />
+					: <EmptyState title="No books yet" description="No repository-native books have been published for this project." actions={canAuthor ? [{ label: 'Create a book', href: `/app/knowledge?project=${encodeURIComponent(projectId)}` }] : []} />}
+			</Panel>
+			{catalog?.books?.length ? <Panel title="Book outlines" description="Inspect ordered pages and open an existing page in a recoverable TreeDX workspace.">
+				<KnowledgeOutline books={catalog.books.map((book: any) => ({ ...book, pages: catalog.pages.filter((page: any) => page.bookId === book.id)
+					.map((page: any) => ({ ...page, manageHref: canAuthor ? `/app/knowledge?project=${encodeURIComponent(projectId)}&sourcePath=${encodeURIComponent(page.source.path)}&kind=page` : undefined })) }))} />
+			</Panel> : null}
+			</>
+		)}
+	</SettingsTemplate>
+</TreeseedAppLayout>
+
+<script>
+	import { registerRepositoryFormAdapters } from '../../../../../lib/projects/repository-form-adapters';
+	const dispose = registerRepositoryFormAdapters();
+	document.addEventListener('astro:before-swap', dispose, { once: true });
+</script>

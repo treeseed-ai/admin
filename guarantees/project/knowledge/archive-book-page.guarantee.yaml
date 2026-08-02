@@ -1,0 +1,28 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.knowledge.delete-book-page.072
+journeyIndex: 72
+type: project
+subtype: knowledge
+journey: Archive And Restore Book Page
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Archive and restore a knowledge page after inspecting backlinks and affected packs.
+status: active
+dependencies: { journeys: [69], guarantees: [guarantee.project.knowledge.create-book-page.069] }
+actors: { allowed: [project_manager], forbidden: [anonymous_user, non_member, project_viewer, project_contributor] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [security, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.page-lifecycle] }
+scene: { required: true, manifest: ../book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: destructive backlink review }
+api: { required: true, verifierRefs: [api.knowledge.control-plane, api.knowledge.lifecycle.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content, core.knowledge.starlight-reader] }
+audit: { required: true, verifierRefs: [api.knowledge.lifecycle.run-correlated] }
+negativeCases:
+  - { id: anonymous-page-lifecycle-denied, actor: anonymous_user, sceneManifest: ../book/scenes/negative/anonymous-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.anonymous, verifierRefs: [api.knowledge.control-plane] }
+  - { id: nonmember-page-lifecycle-denied, actor: non_member, sceneManifest: ../book/scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.control-plane] }
+  - { id: readonly-page-lifecycle-denied, actor: project_viewer, sceneManifest: ../book/scenes/negative/readonly-knowledge-controls.scene.yaml, executionKey: admin.knowledge.negative.readonly, verifierRefs: [api.knowledge.control-plane] }
+  - { id: contributor-page-lifecycle-denied, actor: project_contributor, sceneManifest: ../book/scenes/negative/contributor-knowledge-lifecycle.scene.yaml, executionKey: admin.knowledge.negative.contributor, verifierRefs: [api.knowledge.control-plane] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref, audit_event_id] }
+notes: [The shared execution proves backlink and pack blockers followed by independently reviewed archive and restore publications.]
+run: { requiredForRelease: true }

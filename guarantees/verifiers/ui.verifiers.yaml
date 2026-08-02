@@ -1,6 +1,152 @@
 schemaVersion: treeseed.guarantee-verifiers/v1
 ownerPackage: "@treeseed/admin"
 verifiers:
+  admin.knowledge.ui-contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/admin"
+    testFile: tests/contract/knowledge-management/knowledge-management-architecture.test.ts
+    description: The authoring, lifecycle, review, publication, reader, search, and pack UI composes canonical shared components and stable scene controls.
+  api.knowledge.control-plane:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/unit/knowledge
+    description: Exact-ref catalogs, permissions, platform ownership, atomic publication, rollback, and immutable pack execution pass.
+  api.knowledge.run-correlated:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-knowledge-run-state.ts
+    args: [publication]
+    description: The exact UI-authored book and page resolve to one TreeDX workspace, independent review, Git commit, atomic manifest revision, operation, and metadata-only audits.
+  api.knowledge.pack.run-correlated:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-knowledge-run-state.ts
+    args: [pack]
+    description: The exact run book and page are present in the same completed immutable single-book pack, publication revision, private artifact, and audit event.
+  api.knowledge.collection.run-correlated:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-knowledge-run-state.ts
+    args: [collection]
+    description: The UI-created saved collection and completed pack contain exactly the two explicitly selected run-authorized books.
+  api.knowledge.lifecycle.run-correlated:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-knowledge-run-state.ts
+    args: [lifecycle]
+    description: The exact UI-created page and book each archive and restore through distinct independently reviewed Git, TreeDX, manifest, and audit correlations.
+  api.knowledge.contextual-policy:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/contract/api/contextual-knowledge-api.test.ts
+    description: Federated contextual lookup and TreeDX search authorize before returning knowledge or relationships.
+  sdk.knowledge.safe-content:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/content/knowledge-catalog.test.ts
+    description: AST validation accepts fenced source examples and rejects executable MDX, raw HTML, unsafe links, and unsupported JSX.
+  sdk.knowledge.pack-integrity:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/content/knowledge-pack-snapshot.test.ts
+    description: Selected-book artifacts are deterministic and preserve exact atomic publication source closure.
+  sdk.knowledge.content-sync:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/content/content-sync.test.ts
+    description: Local, upstream, TreeDX, and atomic publication refs must agree before a safe fast-forward.
+  core.knowledge.starlight-reader:
+    kind: packageScript
+    ownerPackage: "@treeseed/core"
+    cwd: packages/core
+    command: check
+    description: Canonical Starlight reader routes compile for the federated published knowledge runtime.
+  sdk.contextual-help.content:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/content/contextual-help.test.ts
+    description: Help topic schemas, relationships, safe Markdown rendering, revisioning, context resolution, and search indexing pass.
+  api.contextual-help.policy:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/contract/api/contextual-help-api.test.ts
+    description: Public and protected help topics, related relationships, search, and unavailable runtime behavior fail closed without policy leakage.
+  ui.contextual-help.dialog:
+    kind: vitestCase
+    ownerPackage: "@treeseed/ui"
+    testFile: tests/unit/foundation.test.ts
+    testName: keeps contextual help shell-level and search lazy
+    description: One shell-owned dialog and trigger transport owns lazy help loading, scoped search, and shared modal behavior.
+  admin.contextual-help.coverage:
+    kind: vitestCase
+    ownerPackage: "@treeseed/admin"
+    testFile: tests/contract/contextual-help/contextual-help-architecture.test.ts
+    description: Every active account, team, invitation, service, and vault route and trigger resolves to canonical Admin Markdown content.
+  sdk.feedback.contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/feedback/feedback-contracts.test.ts
+    description: Feedback types, lifecycle states, privacy schemas, and platform-only permissions remain stable.
+  api.feedback.management:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/feedback/feedback-management.test.ts
+    description: Authenticated persistence, redacted PNG validation, platform administration, metadata-only audit, and privacy-safe export contracts pass.
+  api.feedback.run-correlated:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-feedback-run-state.ts
+    args: [verify]
+    description: The exact UI-created reports, private capture, status history, metadata-only audits, and runner-generated export resolve to the same run records.
+  api.feedback.run-cleanup:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/verify-feedback-run-state.ts
+    args: [cleanup]
+    description: Run-owned feedback, attachments, exports, runner records, and correlated audit fixtures are removed from local acceptance storage.
+  ui.feedback.system:
+    kind: vitestCase
+    ownerPackage: "@treeseed/ui"
+    testFile: tests/unit/foundation.test.ts
+    testName: keeps feedback non-modal, responsive, private, and shell-owned
+    description: The shared shell-owned feedback panel is non-modal, responsive, idempotent, and free from private client persistence.
+  admin.feedback.ui-contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/admin"
+    testFile: tests/contract/feedback-management/feedback-management-architecture.test.ts
+    description: Authenticated launcher, platform-only routes, shared UI composition, help, triage, and private attachment views remain canonical.
+  sdk.service.vault.crypto:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/secrets-capability/service-vault-crypto.test.ts
+    description: Argon2id, XChaCha20-Poly1305, X25519 grants, contextual binding, passphrase rotation, and provider schemas pass real cryptographic tests.
+  sdk.scene.secret-evidence-redaction:
+    kind: vitestCase
+    ownerPackage: "@treeseed/sdk"
+    testFile: tests/unit/scenes/evidence/scenes-evidence.test.ts
+    description: Persisted normalized scenes and Playwright trace archives retain useful evidence while replacing passphrases, credentials, tokens, and private keys.
+  api.service.management.contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/api"
+    testFile: tests/integration/api/teams/services/service-management.test.ts
+    description: Provider metadata, ciphertext persistence, plaintext rejection, grants, audit correlation, and operation-lease replay protection pass through the real API.
+  api.service.management.run-cleanup:
+    kind: nodeScript
+    ownerPackage: "@treeseed/api"
+    cwd: packages/api
+    command: scripts/guarantees/cleanup-service-run-state.ts
+    description: The exact UI-disconnected run services retain no connection-owned records, after which local fixture-only team vault state is removed.
+  admin.service.ui-contracts:
+    kind: vitestCase
+    ownerPackage: "@treeseed/admin"
+    testFile: tests/contract/service-management/service-management-architecture.test.ts
+    description: Service routes use the shared UI/form system, active-team scoping, timezone timestamps, and client-only cryptographic adapters.
   api.auth.lifecycle.audit:
     kind: vitestCase
     ownerPackage: "@treeseed/api"

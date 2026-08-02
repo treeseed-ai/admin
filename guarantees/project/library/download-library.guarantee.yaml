@@ -1,0 +1,27 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.library.download-library.073
+journeyIndex: 73
+type: project
+subtype: library
+journey: Build Selected Book Collection Pack
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Build a pack containing exactly a selected saved or ad hoc set of authorized books.
+status: active
+dependencies: { journeys: [65, 69], guarantees: [guarantee.project.book.create-book.065, guarantee.project.knowledge.create-book-page.069] }
+actors: { allowed: [project_contributor, project_manager], forbidden: [anonymous_user, non_member, unauthorized_project_viewer] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.packs] }
+scene: { required: true, manifest: ../book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: book collection pack builder }
+api: { required: true, verifierRefs: [api.knowledge.control-plane, api.knowledge.collection.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.pack-integrity] }
+audit: { required: true, verifierRefs: [api.knowledge.collection.run-correlated] }
+negativeCases:
+  - { id: anonymous-collection-pack-denied, actor: anonymous_user, sceneManifest: ../book/scenes/negative/anonymous-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.anonymous, verifierRefs: [api.knowledge.control-plane] }
+  - { id: nonmember-collection-pack-denied, actor: non_member, sceneManifest: ../book/scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.control-plane] }
+  - { id: private-collection-pack-isolation, actor: unauthorized_project_viewer, sceneManifest: ../book/scenes/negative/readonly-knowledge-controls.scene.yaml, executionKey: admin.knowledge.negative.readonly, verifierRefs: [api.knowledge.contextual-policy] }
+evidence: { required: [playwright_trace, api_verification_log, knowledge_pack_artifact, audit_event_id] }
+notes: [The shared execution creates a saved two-book collection and the correlated verifier proves exact selected scope.]
+run: { requiredForRelease: true }

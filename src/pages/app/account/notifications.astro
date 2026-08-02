@@ -12,7 +12,7 @@ const [preferences, projects] = await Promise.all([frame.api.notificationPrefere
 ---
 
 <TreeseedAppLayout title="Notifications" description="Choose project content notifications and email cadence." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
-	<SettingsTemplate title="Notification preferences" description="One global content policy with focused project overrides." sections={frame.sections}>
+	<SettingsTemplate title="Notification preferences" description="One global content policy with focused project overrides." sections={frame.sections} knowledgePageId="account.notifications">
 		<NotificationPreferencePanel preferences={preferences} capabilities={NOTIFICATION_CONTENT_CAPABILITIES} projects={projects} csrfToken={frame.csrfToken} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

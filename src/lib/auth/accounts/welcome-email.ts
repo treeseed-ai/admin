@@ -79,7 +79,7 @@ function WelcomeEmail({ displayName, signInUrl }: { displayName: string; signInU
 					fontSize: 15,
 					lineHeight: '23px',
 				},
-			}, 'Your account is ready. Treeseed Market is where teams launch, connect, and manage working Treeseed projects.')),
+			}, 'Your account is ready. TreeSeed is where teams connect services and manage knowledge work.')),
 			React.createElement('div', { style: { padding: '28px 32px 32px' } },
 				React.createElement('p', {
 					style: {

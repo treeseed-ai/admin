@@ -12,7 +12,7 @@ journey:
     - Edit Account Settings exercises a service journey instead of only loading /app/account.
     - A signed-in user can add an email, consume the delivered confirmation link, and observe its verified state.
     - Edit Account Settings records reviewable evidence for the visible result before activation.
-  minimumSteps: 5
+  minimumSteps: 7
   requiresInteractiveAction: true
   consumesState:
     - key: auth.primary-session
@@ -94,6 +94,23 @@ workflow:
       notVisible:
         - css: '[data-page-header-owner="content"] > .ts-product-shell__body .ts-control-surface > .ts-control-surface__header'
           internal: true
+  - id: open-account-help
+    title: Open account identity guidance without leaving the form
+    action:
+      click: { css: '.ts-template--settings > .ts-page-header button[data-ts-help-knowledge-page-id="account.identity"]', internal: true }
+    expect:
+      urlIncludes: /app/account
+      visible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      text: Public identity
+  - id: close-account-help
+    title: Close account guidance and restore focus
+    action:
+      click: { role: button, name: Close help }
+    expect:
+      notVisible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      focused: { css: '.ts-template--settings > .ts-page-header button[data-ts-help-knowledge-page-id="account.identity"]', internal: true }
   - id: edit-first-name
     title: Edit the public first name
     action:

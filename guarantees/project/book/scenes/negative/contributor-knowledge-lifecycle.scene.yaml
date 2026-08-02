@@ -1,0 +1,64 @@
+schemaVersion: treeseed.scene/v1
+id: knowledge.negative.contributor-lifecycle
+title: Contributor Knowledge Lifecycle Denial
+description: A contributor can author knowledge but cannot render review, publication, lifecycle, or pack administration controls.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [knowledge.book-lifecycle, knowledge.page-lifecycle, knowledge.review-publication, knowledge.packs]
+  minimumSteps: 4
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: member, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-team-collection
+    title: Open the contributor team collection
+    action: { goto: /app/teams }
+    expect: { visible: [{ css: ':nth-match([data-scene="team.active.set"], 1)', internal: true }] }
+  - id: select-team-context
+    title: Select the contributor team
+    action: { click: { css: ':nth-match([data-scene="team.active.set"] button, 1)', internal: true } }
+    expect: { visible: [{ css: '[data-active="true"]', internal: true }] }
+  - id: inspect-authoring-boundary
+    title: Retain authoring while omitting elevated controls
+    action: { goto: /app/knowledge }
+    expect:
+      visible: [{ css: '.ts-surface-tab[href*="view=author"]', internal: true }]
+      notVisible:
+        - { css: '.ts-surface-tab[href*="view=reviews"]', internal: true }
+        - { css: '.ts-surface-tab[href*="view=packs"]', internal: true }
+        - { role: button, name: Archive }
+        - { role: button, name: Restore }
+  - id: deny-direct-review-view
+    title: Fail closed on a direct review URL
+    action: { goto: "/app/knowledge?view=reviews" }
+    expect:
+      text: Knowledge controls unavailable
+      notVisible:
+        - { role: button, name: Approve }
+        - { role: button, name: Publish }
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 240, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

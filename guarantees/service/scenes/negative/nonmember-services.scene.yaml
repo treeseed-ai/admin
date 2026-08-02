@@ -1,0 +1,61 @@
+schemaVersion: treeseed.scene/v1
+id: service.negative.nonmember-services
+title: Nonmember Service Isolation
+description: An authenticated nonmember cannot select another team's services or render its mutation controls.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [service.navigation, service.connect, service.edit, service.credentials, service.disconnect, service.vault, service.vault-recovery]
+  minimumSteps: 2
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: nonmember, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: isolate-service-collection
+    title: Open service availability without inferring an inaccessible team
+    action: { goto: /app/services }
+    expect:
+      urlIncludes: /app/services
+      text: Select an active team
+      notVisible: [{ role: link, name: Add connection }]
+  - id: isolate-service-vault
+    title: Do not expose another team's vault
+    action: { goto: /app/services/vault }
+    expect:
+      text: Select an active team
+      notVisible: [{ role: button, name: Initialize team vault }]
+  - id: exercise-empty-team-boundary
+    title: Use the visible team-management action without exposing another team
+    action:
+      clickVisibleSequence:
+        - { role: button, name: Open team operations }
+        - { css: '.ts-product-shell__desktop-operations a[aria-label="Manage teams"]', internal: true }
+        - { css: '#team-operations-drawer a[aria-label="Manage teams"]', internal: true }
+    expect:
+      urlIncludes: /app/teams
+      text: No teams yet
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 180, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

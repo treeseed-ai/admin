@@ -13,7 +13,8 @@ if (!Astro.locals.auth?.principal) {
 
 const domains = {
 	'/app/projects': { key: 'projects', title: 'Projects', description: 'Project workspaces and their operational state.' },
-	'/app/hosts': { key: 'hosts', title: 'Hosts', description: 'Team hosting resources and service state.' },
+	'/app/services': { key: 'services', title: 'Services', description: 'Connected provider accounts and capability state.' },
+	'/app/work': { key: 'work', title: 'Work', description: 'Team work streams and operational activity.' },
 	'/app/capacity': { key: 'capacity', title: 'Capacity and allocation', description: 'Agent capacity available to the active team.' },
 	'/app/knowledge': { key: 'knowledge', title: 'Knowledge', description: 'Knowledge activity and review work for the active team.' },
 	'/app/market': { key: 'catalog', title: 'Catalog and billing', description: 'Published catalog and commerce activity for the active team.' },

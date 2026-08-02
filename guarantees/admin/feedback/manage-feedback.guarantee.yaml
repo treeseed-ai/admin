@@ -1,0 +1,22 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.admin.feedback.manage-feedback.030
+type: admin
+subtype: feedback
+journey: Platform Administrator Feedback Management
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: A platform administrator can find the exact submitted feedback, inspect its private context, and triage, resolve, and reopen it with durable notes.
+status: active
+dependencies: { journeys: [], guarantees: [guarantee.admin.feedback.screenshot-privacy.029] }
+actors: { allowed: [platform_admin], forbidden: [market_admin, team_owner, anonymous_user] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, security, release]
+preconditions: { fixtures: [platform_admin], notes: [Run-correlated feedback IDs were produced through the UI.] }
+scene: { required: true, manifest: ./scenes/manage-feedback.scene.yaml, executionKey: admin.feedback.manage, mode: { acceptance: true, demo: true, training: true }, entryRoute: /app/feedback, componentContract: admin.feedback-management, expectedEvidence: [playwright_trace, screenshot_on_failure, console_log, network_log] }
+api: { required: true, verifierRefs: [api.feedback.management, api.feedback.run-correlated] }
+content: { required: false, verifierRefs: [] }
+audit: { required: true, verifierRefs: [api.feedback.run-correlated] }
+negativeCases: [{ id: non-platform-admin-denied, actor: market_admin, verifierRefs: [api.feedback.management] }]
+evidence: { required: [execution_graph, playwright_trace, api_verification_log] }
+notes: [This release-required guarantee intentionally has no CSV journey index.]
+run: { timeoutSeconds: 900, requiredForRelease: true }

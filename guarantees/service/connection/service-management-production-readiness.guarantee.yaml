@@ -1,0 +1,52 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.service.connection.service-management-production-readiness.026
+type: service
+subtype: connection
+journey: Service Management Production Readiness
+ownerPackage: "@treeseed/admin"
+surface: scene
+summary: Fail-closed aggregate for every service route, client custody contract, permission boundary, real device, durable postcondition, audit event, and cleanup requirement.
+status: blocked
+dependencies:
+  journeys: [21, 22, 23, 24, 25]
+  guarantees:
+    - guarantee.service.vault.initialize-personal-vault.021
+    - guarantee.service.vault.recover-vault-access.022
+    - guarantee.service.connection.connect-service.023
+    - guarantee.service.connection.edit-service.024
+    - guarantee.service.connection.disconnect-service.025
+actors:
+  allowed: [release_operator]
+  forbidden: []
+devices:
+  required: [desktop_chromium, tablet_chromium, mobile_chromium]
+gates: [security, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes:
+    - Every required service feature guarantee must pass against the same current source closure.
+uiFeature:
+  contract: ../service-management.ui-feature.yaml
+  capabilities: []
+api:
+  required: true
+  verifierRefs: [sdk.service.vault.crypto, sdk.scene.secret-evidence-redaction, api.service.management.contracts, admin.service.ui-contracts]
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: plaintext-or-context-substitution-denied
+    verifierRefs: [sdk.service.vault.crypto, sdk.scene.secret-evidence-redaction, api.service.management.contracts]
+    notes:
+      - Plaintext persistence, cross-context ciphertext, replay, or missing vault grants fail closed.
+evidence:
+  required: [execution_graph, api_verification_log, cleanup_report]
+notes:
+  - Blocked while journeys 23-25 and remote-provider management lack current-source real-provider scene evidence.
+  - Provider mutation and deployment guarantees remain blocked and cannot be satisfied by connection metadata.
+run:
+  timeoutSeconds: 900
+  requiredForRelease: true

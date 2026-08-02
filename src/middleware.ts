@@ -16,7 +16,6 @@ const PUBLIC_ROUTE_PREFIXES = [
 	'/books',
 	'/contact',
 	'/decisions',
-	'/docs-runtime',
 	'/notes',
 	'/objectives',
 	'/people',

@@ -13,8 +13,10 @@ import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.
 import { resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 import { compileGuidedThemePalette } from '@treeseed/ui/theme';
 import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
+import { principalHasPlatformPermission } from '@treeseed/sdk/api/auth/rbac';
 import { createApiFacade } from '../lib/market/api-client';
 import { ensureCsrfToken } from '../lib/auth/support/csrf';
+import { loadRouteHelpContext } from '../lib/help/context';
 
 interface TeamEntry {
 	id: string;
@@ -65,6 +67,27 @@ const teamOptions = teams.filter((team: TeamEntry & { status?: string }) => (tea
 	id: team.id,
 	label: team.displayName ?? team.name ?? team.slug ?? team.id,
 }));
+const helpContext = await loadRouteHelpContext(Astro, Astro.url.pathname, activeTeam?.id);
+const principal = api.currentPrincipal;
+const canReadFeedback = principalHasPlatformPermission(principal, 'feedback:read:global');
+const feedbackContext = principal ? {
+	canonicalPath: `${Astro.url.pathname}${Astro.url.search}`,
+	title,
+	capabilityId: 'admin.feedback.submit',
+	shell: 'product' as const,
+	context: activeTeam ? 'team' as const : 'personal' as const,
+	teamId: activeTeam?.id,
+	identityLabel: principal.displayName ?? principal.email ?? 'Current account',
+	teamLabel: activeTeam ? (activeTeam.displayName ?? activeTeam.name ?? activeTeam.slug ?? activeTeam.id) : undefined,
+	environment: (import.meta.env.MODE === 'production' ? 'production' : 'local') as 'local' | 'production',
+	submissionEndpoint: '/v1/feedback',
+	screenshotPolicy: 'optional' as const,
+	buildId: import.meta.env.PUBLIC_TREESEED_BUILD_ID,
+	revision: import.meta.env.PUBLIC_TREESEED_REVISION,
+	routePattern: Astro.url.pathname,
+	policy: 'authenticated' as const,
+	source: 'page' as const,
+} : undefined;
 ---
 
 <ProductShell
@@ -75,6 +98,8 @@ const teamOptions = teams.filter((team: TeamEntry & { status?: string }) => (tea
 	contentOwnsPageHeader={contentOwnsPageHeader}
 	themeConfig={themeConfig}
 	timeZone={preferences.timeZone}
+	helpContext={helpContext}
+	feedbackContext={feedbackContext}
 	brand={{
 		name: 'TreeSeed',
 		tag: SITE_SLOGAN,
@@ -84,6 +109,12 @@ const teamOptions = teams.filter((team: TeamEntry & { status?: string }) => (tea
 	}}
 	navItems={[
 		{ label: 'Start', href: '/app/', icon: 'start' },
+		...(canReadFeedback ? [{ label: 'Feedback', href: '/app/feedback', icon: 'feedback' as const }] : []),
+		{ label: 'Services', href: '/app/services', icon: 'services' },
+		{ label: 'Projects', href: '/app/projects', icon: 'projects' },
+		{ label: 'Capacity', href: '/app/capacity', icon: 'capacity' },
+		{ label: 'Work', href: '/app/work', icon: 'work' },
+		{ label: 'Knowledge', href: '/app/knowledge', icon: 'knowledge' },
 	]}
 	siteItems={[{ label: 'Home', href: '/' }]}
 	quickActions={[

@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.security.authentication.throttle-repeated-authentication-failures.614
+journeyIndex: 614
+type: security
+subtype: authentication
+journey: "Throttle repeated authentication failures"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "Guarantee that TreeSeed can throttle repeated authentication failures."
+status: planned
+dependencies: { journeys: [], guarantees: [] }
+actors: { allowed: [authenticated_user, team_owner, platform_admin], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: [] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: []
+evidence: { required: [guarantee_report] }
+notes: ["Planned from the TreeSeed Guide platform coverage audit."]

@@ -100,7 +100,7 @@ if (Astro.request.method === 'POST' && team && canEdit) {
 	) : null}
 	{team && canEdit ? (
 		<section class="ts-control-page" aria-label="Edit team" data-team-display-name={formValues.displayName} data-team-edit-panel>
-			<Panel eyebrow="Identity" title="Team profile" description="Update the name and public identity fields.">
+			<Panel eyebrow="Identity" title="Team profile" description="Update the name and public identity fields." knowledgePageId="team.settings">
 				<form id="team-edit-form" class="ts-form-stack ts-team-form" method="POST" action={`/app/teams/${encodeURIComponent(team.id)}/edit`} data-ts-submit="enhanced" data-ts-refresh-target="[data-team-edit-panel]">
 					<input type="hidden" name="csrfToken" value={csrfToken} />
 					<input type="hidden" name="expectedUpdatedAt" value={team.updatedAt} />
@@ -114,7 +114,7 @@ if (Astro.request.method === 'POST' && team && canEdit) {
 						<Field label="Logo URL" name="logoUrl" class="ts-field--full">
 							<TextInput name="logoUrl" type="url" value={formValues.logoUrl} />
 						</Field>
-						<Field label="Profile visibility" name="visibility">
+						<Field label="Profile visibility" name="visibility" knowledgePageId="team.visibility">
 							<Select name="visibility" value={formValues.visibility} options={[
 								{ label: 'Private', value: 'private' },
 								{ label: 'Public identity', value: 'public' },
@@ -137,7 +137,7 @@ if (Astro.request.method === 'POST' && team && canEdit) {
 					</Card>
 				</aside>
 			</Panel>
-			<Panel eyebrow="Access" title="Roles and permissions" description="Team permissions are assigned through roles so every member with the same role has consistent responsibilities.">
+			<Panel eyebrow="Access" title="Roles and permissions" description="Team permissions are assigned through roles so every member with the same role has consistent responsibilities." knowledgePageId="team.roles">
 				<Button href={`/app/teams/${encodeURIComponent(team.id)}/members`} variant="secondary">Manage member roles</Button>
 			</Panel>
 		</section>

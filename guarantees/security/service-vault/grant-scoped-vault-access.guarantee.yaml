@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.security.service-vault.grant-scoped-vault-access.626
+journeyIndex: 626
+type: security
+subtype: service-vault
+journey: "Grant scoped vault access"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "Guarantee that TreeSeed can grant scoped vault access."
+status: planned
+dependencies: { journeys: [], guarantees: [] }
+actors: { allowed: [authenticated_user, team_owner, platform_admin], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: [] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: []
+evidence: { required: [guarantee_report] }
+notes: ["Planned from the TreeSeed Guide platform coverage audit."]

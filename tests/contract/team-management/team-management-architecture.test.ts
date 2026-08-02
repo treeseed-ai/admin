@@ -17,7 +17,7 @@ describe('team management architecture audit', () => {
 			'/app/teams/[teamId]/members',
 			'/app/teams/[teamId]/delete',
 			'/app/projects',
-			'/app/hosts',
+			'/app/services',
 			'/app/capacity',
 			'/app/knowledge',
 			'/app/market',
@@ -59,7 +59,7 @@ describe('team management architecture audit', () => {
 
 	it('keeps overview, settings, membership, consent, and lifecycle responsibilities complete', () => {
 		const overview = source('src/pages/app/teams/[teamId]/index.astro');
-		for (const label of ['Members', 'Pending invitations', 'Projects', 'Hosts', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity']) {
+		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity']) {
 			expect(overview, label).toContain(label);
 		}
 		expect(overview).toContain("import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart'");
@@ -72,7 +72,7 @@ describe('team management architecture audit', () => {
 		expect(overviewHeader).not.toContain('slot="actions"');
 		expect(overviewHeader).not.toMatch(/>(?:Settings|Members)</u);
 		const domainOverview = source('src/pages/app/domain-overview.astro');
-		for (const path of ['/app/projects', '/app/hosts', '/app/capacity', '/app/knowledge', '/app/market']) {
+		for (const path of ['/app/projects', '/app/services', '/app/capacity', '/app/knowledge', '/app/market']) {
 			expect(domainOverview, path).toContain(`'${path}'`);
 		}
 		expect(domainOverview).toContain('This bounded landing page preserves domain ownership.');
@@ -154,7 +154,7 @@ describe('team management architecture audit', () => {
 			expect(source(path), path).not.toContain('data-ts-time');
 		}
 		const access = source('src/lib/teams/access-display.ts');
-		expect(access).toContain('Create projects');
+		expect(access).toContain('Manage projects');
 		expect(access).toContain('Manage workstreams');
 		const navigation = source('src/components/team/TeamNavigation.astro');
 		expect(navigation).toContain("import SurfaceTabs from '@treeseed/ui/components/astro/shell/navigation/SurfaceTabs.astro'");

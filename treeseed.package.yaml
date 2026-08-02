@@ -29,3 +29,10 @@ projectArchitecture:
   contentPublishTarget:
     kind: cloudflare_r2
     prefix: packages/admin
+contentContributions:
+  - model: books
+    path: docs/src/content/books
+    runtime: published
+  - model: docs
+    path: docs/src/content/knowledge
+    runtime: published

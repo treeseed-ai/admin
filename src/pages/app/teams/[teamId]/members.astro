@@ -97,6 +97,10 @@ const roleOptions = [
 	{ label: 'Contributor', value: 'contributor' },
 	{ label: 'Reviewer', value: 'reviewer' },
 	{ label: 'Project lead', value: 'project_lead' },
+	{ label: 'Service administrator', value: 'service_admin' },
+	{ label: 'Knowledge administrator', value: 'knowledge_admin' },
+	{ label: 'Knowledge author', value: 'knowledge_author' },
+	{ label: 'Knowledge reviewer', value: 'knowledge_reviewer' },
 	{ label: 'Market steward', value: 'market_steward' },
 	{ label: 'Finance', value: 'finance' },
 	...(isOwner ? [{ label: 'Owner', value: 'team_owner' }] : []),
@@ -120,7 +124,7 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 			{canManage && team.status === 'archived' ? (
 				<EmptyState title="Archived teams are read-only" description="Members remain visible, but the team must be restored before changing access." actions={[{ label: 'Back to teams', href: '/app/teams' }]} />
 			) : canManage ? (
-				<Panel eyebrow="Invitation" title="Invite a member" description="Every recipient must explicitly accept, including existing users.">
+				<Panel eyebrow="Invitation" title="Invite a member" description="Every recipient must explicitly accept, including existing users." knowledgePageId="team.invitation">
 					<form class="ts-form-stack ts-team-form" method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/invites`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation sent." data-ts-reset-on-success="true" data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.create">
 						<input type="hidden" name="csrfToken" value={csrfToken} />
 						<div class="ts-form-grid">
@@ -136,7 +140,7 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 				</Panel>
 			) : null}
 
-			<Panel eyebrow="Directory" title="Team members" description="Search everyone on the team and inspect their role and responsibilities.">
+			<Panel eyebrow="Directory" title="Team members" description="Search everyone on the team and inspect their role and responsibilities." knowledgePageId="team.member-search">
 				<button
 					slot="actions"
 					type="button"
@@ -237,7 +241,7 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 			</AccessibleDialog>
 
 			{canManage ? (
-				<Panel eyebrow="Consent" title="Pending invitations" description="Resend or revoke invitations that have not been accepted.">
+				<Panel eyebrow="Consent" title="Pending invitations" description="Resend or revoke invitations that have not been accepted." knowledgePageId="team.invitation">
 				<ResponsiveTable caption="Pending team invitations" density="comfortable">
 						<thead><tr><th>Recipient</th><th>Role</th><th>Invited by</th><th>Invited</th><th>Expires</th><th>Actions</th></tr></thead>
 						<tbody>
@@ -261,7 +265,7 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 			) : null}
 
 			{team.status !== 'archived' ? (
-				<Panel eyebrow="Your access" title="Leave team" description={isOwner ? 'Transfer ownership or add another owner before leaving if you are the last owner.' : 'Leaving removes your access immediately.'}>
+				<Panel eyebrow="Your access" title="Leave team" description={isOwner ? 'Transfer ownership or add another owner before leaving if you are the last owner.' : 'Leaving removes your access immediately.'} knowledgePageId="team.removal">
 					<form method="post" action={Astro.url.pathname} data-ts-submit="enhanced" data-ts-success-message="You left the team." data-scene="team.member.leave">
 						<input type="hidden" name="csrfToken" value={csrfToken} />
 						<input type="hidden" name="action" value="leave" />

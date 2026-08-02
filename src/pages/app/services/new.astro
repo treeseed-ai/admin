@@ -1,0 +1,106 @@
+---
+import { SERVICE_PROVIDER_CATALOG, getServiceProviderDefinition } from '@treeseed/sdk/secrets-capability';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
+import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
+import CapabilitySelector from '@treeseed/ui/components/astro/service/CapabilitySelector.astro';
+import PermissionChecklist from '@treeseed/ui/components/astro/service/PermissionChecklist.astro';
+import ProviderCard from '@treeseed/ui/components/astro/service/ProviderCard.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
+import { serviceSections } from '../../../lib/services/navigation';
+import { loadAppContext } from '../../../view-models/app-access.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/services/new')}`);
+const context = await loadAppContext(Astro);
+const team = context.activeTeam;
+const selectedProvider = Astro.url.searchParams.get('provider') ?? '';
+const provider = getServiceProviderDefinition(selectedProvider);
+const csrfToken = ensureCsrfToken(Astro);
+const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin']);
+const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.has(role)) || team?.currentUserRole && managementRoles.has(team.currentUserRole));
+const permissions = provider ? [...new Set(provider.credentialProfiles.flatMap((profile) => profile.permissions))] : [];
+---
+
+<TreeseedAppLayout title="Connect service" description="Add a provider account to the active team." currentPath="/app/services" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+	<SettingsTemplate
+		title="Connect a provider"
+		description="Choose the provider account first, then enable only the capabilities this team needs."
+		sections={serviceSections({ current: 'connections' })}
+		knowledgePageId="services.connect"
+		class="ts-service-workspace"
+	>
+		<section class="ts-stack" data-scene="service.create">
+		{!team ? (
+			<EmptyState title="Select an active team" description="A provider connection must belong to one team." actions={[{ label: 'Manage teams', href: '/app/teams' }]} />
+		) : !canManage ? (
+			<EmptyState title="Service administration required" description="Your role can view service availability but cannot connect provider accounts." actions={[{ label: 'Back to services', href: '/app/services' }]} />
+		) : !provider ? (
+			<div class="ts-resource-grid">
+				{SERVICE_PROVIDER_CATALOG.map((item) => (
+					<ProviderCard
+						provider={item.id}
+						label={item.label}
+						description={item.description}
+						href={`/app/services/new?provider=${encodeURIComponent(item.id)}`}
+					>
+						<p>{item.capabilities.filter((capability) => capability.status === 'available').map((capability) => capability.label).join(' · ')}</p>
+					</ProviderCard>
+				))}
+			</div>
+		) : (
+			<div class="ts-resource-grid ts-resource-grid--sidebar">
+				<Panel eyebrow={provider.label} title="Connection details" description="Account identifiers remain readable metadata. Credentials are added after the connection is created." knowledgePageId={provider.knowledgePageIds[0]}>
+					<form
+						method="post"
+						action={`/v1/teams/${encodeURIComponent(team.id)}/services`}
+						data-ts-submit="enhanced"
+						data-ts-form-adapter="service-connection"
+						data-ts-success-message="Service connected."
+						data-scene="service.create.submit"
+					>
+						<input type="hidden" name="csrfToken" value={csrfToken} />
+						<input type="hidden" name="providerId" value={provider.id} />
+						<div class="ts-form-grid">
+							<Field label="Connection name" name="displayName" help="A concise name administrators will recognize." required>
+								<TextInput name="displayName" placeholder={`${provider.label} team account`} maxlength={80} required />
+							</Field>
+							{provider.connectionFields.map((item) => (
+								<Field label={item.label} name={`config.${item.key}`} help={item.description} required={item.required}>
+									<TextInput name={`config.${item.key}`} placeholder={item.placeholder} required={item.required} />
+								</Field>
+							))}
+						</div>
+						<CapabilitySelector capabilities={provider.capabilities.map((capability) => ({ ...capability,
+							credentialProfileId: capability.credentialProfileIds[0],
+							credentialProfiles: capability.credentialProfileIds.map((id) => ({ id,
+								label: provider.credentialProfiles.find((profile) => profile.id === id)?.label ?? id })),
+						}))} />
+						<div class="ts-form-actions">
+							<Button type="submit">Connect service</Button>
+							<Button href="/app/services/new" variant="secondary">Choose another provider</Button>
+						</div>
+					</form>
+				</Panel>
+				<Panel eyebrow="Setup help" title={`Configure ${provider.label} safely`} description="Review the minimum permissions before creating provider credentials." knowledgePageId={provider.knowledgePageIds[0]}>
+					<PermissionChecklist permissions={permissions} open />
+					{provider.credentialProfiles.map((profile) => <p><strong>{profile.label}:</strong> {profile.description}</p>)}
+					<p><a href={provider.documentationUrl} rel="noreferrer" target="_blank">Open authoritative {provider.label} setup documentation</a></p>
+				</Panel>
+			</div>
+		)}
+		</section>
+	</SettingsTemplate>
+</TreeseedAppLayout>
+
+<script>
+	import { registerServiceFormAdapters } from '../../../lib/services/form-adapters';
+	const dispose = registerServiceFormAdapters();
+	document.addEventListener('astro:before-swap', dispose, { once: true });
+	document.querySelector('[data-scene="service.create.submit"]')?.addEventListener('treeseed:form-success', () => {
+		window.location.assign('/app/services');
+	}, { once: true });
+</script>

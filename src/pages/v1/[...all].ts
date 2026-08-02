@@ -34,6 +34,7 @@ function copyClientHeaders(request: Request) {
 		if (hopByHopHeaders.has(lower)) continue;
 		if (lower === 'cookie') continue;
 		if (lower === 'authorization') continue;
+		if (lower === 'x-treeseed-feedback-path') continue;
 		headers.set(name, value);
 	}
 	return headers;
@@ -78,6 +79,12 @@ export const ALL: APIRoute = async (context) => {
 	upstream.search = context.url.search;
 
 	const headers = copyClientHeaders(context.request);
+	if (path === 'feedback') {
+		try {
+			const referrer = new URL(context.request.headers.get('referer') ?? '', context.url.origin);
+			if (referrer.origin === context.url.origin) headers.set('x-treeseed-feedback-path', `${referrer.pathname}${referrer.search}`.slice(0, 600));
+		} catch { /* A missing or malformed referrer leaves the API's safe root fallback. */ }
+	}
 	const incomingMethod = context.request.method.toUpperCase();
 	if (!['GET', 'HEAD', 'OPTIONS'].includes(incomingMethod)) {
 		const candidate = context.request.headers.get(WEB_CSRF_HEADER);

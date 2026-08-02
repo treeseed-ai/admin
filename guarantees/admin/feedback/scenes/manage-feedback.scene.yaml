@@ -1,0 +1,134 @@
+schemaVersion: treeseed.scene/v1
+id: admin.feedback.manage
+title: Administer and Export Product Feedback
+description: A platform administrator finds the exact UI-created report, manages its status history, and generates a privacy-safe export.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [feedback.administration, feedback.status-history, feedback.privacy-safe-export]
+  minimumSteps: 19
+  requiresInteractiveAction: true
+  consumesState: [{ key: feedback.submitted, kind: marker }]
+  producesState: [{ key: feedback.exported, kind: marker, value: { status: ready } }]
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, orientation: portrait, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup: { dev: { required: true, reuseExisting: true }, auth: { role: platform_admin, required: true } }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-feedback
+    title: Open the platform feedback collection
+    action: { goto: /app/feedback }
+    expect: { urlIncludes: /app/feedback, text: Investigate reports }
+  - id: search-run-feedback
+    title: Search for the exact run-created report
+    action: { fill: { role: searchbox, name: Search feedback, value: "Feedback run {{runId}} {{deviceId}}" } }
+    expect: { text: Submitted feedback }
+  - id: apply-search
+    title: Apply the bounded server search
+    action: { click: { role: button, name: Apply filters } }
+    expect: { visible: [{ scene: feedback.admin.collection }] }
+  - id: open-result
+    title: Inspect the exact private record
+    action: { click: { css: '.ts-feedback-collection a[href^="/app/feedback/"]:visible', internal: true } }
+    expect: { text: "Feedback run {{runId}} {{deviceId}}", visible: [{ css: '[data-feedback-detail]', internal: true }] }
+  - id: triage
+    title: Mark the report triaged
+    action: { select: { role: combobox, name: Status, value: triaged } }
+    expect: { text: Triage and resolve }
+  - id: save-triage
+    title: Persist triage inline
+    action: { click: { role: button, name: Update status } }
+    expect: { text: Feedback status updated. }
+  - id: dismiss-triage-toast
+    title: Dismiss the completed triage notification
+    action: { click: { css: '[data-ts-toast-id]:last-of-type .ts-toast__dismiss', internal: true } }
+    expect: { text: Status history }
+  - id: choose-progress
+    title: Move the report into progress
+    action: { select: { role: combobox, name: Status, value: in_progress } }
+    expect: { text: Status history }
+  - id: save-progress
+    title: Persist progress inline
+    action: { click: { role: button, name: Update status } }
+    expect: { text: Feedback status updated. }
+  - id: dismiss-progress-toast
+    title: Dismiss the completed progress notification
+    action: { click: { css: '[data-ts-toast-id]:last-of-type .ts-toast__dismiss', internal: true } }
+    expect: { text: Status history }
+  - id: choose-resolution
+    title: Choose resolved status
+    action: { select: { role: combobox, name: Status, value: resolved } }
+    expect: { text: Administrator note }
+  - id: enter-resolution-note
+    title: Explain the resolution
+    action: { fill: { role: textbox, name: Administrator note, value: "Resolved during guarantee {{runId}} on {{deviceId}}." } }
+    expect: { text: Triage and resolve }
+  - id: resolve
+    title: Resolve with a durable note
+    action: { click: { role: button, name: Update status } }
+    expect: { text: Feedback status updated. }
+  - id: dismiss-resolution-toast
+    title: Dismiss the completed resolution notification
+    action: { click: { css: '[data-ts-toast-id]:last-of-type .ts-toast__dismiss', internal: true } }
+    expect: { text: Reopen feedback }
+  - id: choose-reopen
+    title: Reopen the resolved report
+    action: { select: { role: combobox, name: Status, value: in_progress } }
+    expect: { text: Reopen feedback }
+  - id: enter-reopen-note
+    title: Explain why work is continuing
+    action: { fill: { role: textbox, name: Administrator note, value: "Reopened during guarantee {{runId}} on {{deviceId}}." } }
+    expect: { text: Resolution and reopening require }
+  - id: reopen
+    title: Persist the reopening and its audit trail
+    action: { click: { role: button, name: Update status } }
+    expect: { text: Feedback status updated. }
+  - id: dismiss-reopen-toast
+    title: Dismiss the completed reopening notification
+    action: { click: { css: '[data-ts-toast-id]:last-of-type .ts-toast__dismiss', internal: true } }
+    expect: { text: Triage and resolve }
+  - id: choose-final-resolution
+    title: Resolve the reopened report
+    action: { select: { role: combobox, name: Status, value: resolved } }
+    expect: { text: Administrator note }
+  - id: enter-final-resolution-note
+    title: Record the final resolution
+    action: { fill: { role: textbox, name: Administrator note, value: "Final resolution during guarantee {{runId}} on {{deviceId}}." } }
+    expect: { text: Triage and resolve }
+  - id: resolve-again
+    title: Persist the final resolution
+    action: { click: { role: button, name: Update status } }
+    expect: { text: Feedback status updated. }
+  - id: dismiss-final-resolution-toast
+    title: Dismiss the final resolution notification
+    action: { click: { css: '[data-ts-toast-id]:last-of-type .ts-toast__dismiss', internal: true } }
+    expect: { text: Reopen feedback }
+  - id: return-collection
+    title: Return to the collection
+    action: { click: { role: link, name: Back to feedback } }
+    expect: { urlIncludes: /app/feedback }
+  - id: search-for-export
+    title: Bound the export to the exact run report
+    action: { fill: { role: searchbox, name: Search feedback, value: "Feedback run {{runId}} {{deviceId}}" } }
+    expect: { text: Export current results }
+  - id: apply-export-search
+    title: Apply the export filter
+    action: { click: { role: button, name: Apply filters } }
+    expect: { visible: [{ scene: feedback.admin.collection }] }
+  - id: export
+    title: Generate the privacy-safe bundle through the operations runner
+    action: { click: { role: button, name: Export current results } }
+    expect: { text: Privacy-safe feedback export is ready., visible: [{ role: link, name: Download export }] }
+chapters: []
+overlays: []
+diagrams: []
+render: { remotion: { composition: treeseed-training-default, output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }, capture: { viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, evidenceFit: fixed-browser } } }
+runtime: { mode: training, timeouts: { sceneSeconds: 900, chapterSeconds: 120, stepSeconds: 120 }, checkpoints: { enabled: true, defaultResumable: true, everyStep: true }, progress: { heartbeatSeconds: 15 }, failure: { continueOnFailure: false } }
+training: {}
+visualAudit: { enabled: true }

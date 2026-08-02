@@ -84,7 +84,7 @@ const context = await loadAppContext(Astro);
 		<Button slot="actions" href="/app/teams" variant="secondary">All teams</Button>
 	</PageHeader>
 	<section class="ts-control-page" aria-label="New team">
-		<Panel eyebrow="Identity" title="Team details" description="Choose the identity people will use to find and recognize this team.">
+		<Panel eyebrow="Identity" title="Team details" description="Choose the identity people will use to find and recognize this team." knowledgePageId="team.creation">
 			<form id="team-create-form" class="ts-form-stack ts-team-form" method="POST" action="/app/teams/new" data-ts-submit="enhanced" data-scene="team.create.form">
 				<input type="hidden" name="csrfToken" value={csrfToken} />
 				<div class="ts-form-grid">

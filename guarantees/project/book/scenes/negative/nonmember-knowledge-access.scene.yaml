@@ -1,0 +1,61 @@
+schemaVersion: treeseed.scene/v1
+id: knowledge.negative.nonmember-access
+title: Nonmember Knowledge Isolation
+description: An authenticated nonmember cannot select another team's knowledge or render authoring controls.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [knowledge.library, knowledge.book-authoring, knowledge.book-lifecycle, knowledge.page-authoring, knowledge.page-lifecycle, knowledge.relationships, knowledge.review-publication, knowledge.packs, knowledge.reader]
+  minimumSteps: 3
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: nonmember, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: isolate-workbench
+    title: Require an accessible active team
+    action: { goto: /app/knowledge }
+    expect:
+      urlIncludes: /app/knowledge
+      text: Choose an active team
+      notVisible:
+        - { role: link, name: Author }
+        - { role: link, name: Reviews }
+        - { role: link, name: Packs }
+        - { role: button, name: Create draft workspace }
+  - id: deny-authoring-view
+    title: Keep the authoring view outside another team
+    action: { goto: "/app/knowledge?view=author" }
+    expect:
+      text: Choose an active team
+      notVisible: [{ role: button, name: Continue }]
+  - id: exercise-team-boundary
+    title: Open the team collection without another team's records
+    action: { click: { css: '#main-content a[href="/app/teams"]', internal: true } }
+    expect:
+      urlIncludes: /app/teams
+      text: No teams yet
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 180, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

@@ -1,0 +1,70 @@
+---
+import { randomUUID } from 'node:crypto';
+import WorkflowConfigurationPanel from '@treeseed/ui/components/astro/workflow/WorkflowConfigurationPanel.astro';
+import WorkflowDefinitionPanel from '@treeseed/ui/components/astro/workflow/WorkflowDefinitionPanel.astro';
+import WorkflowExecutionPanel from '@treeseed/ui/components/astro/workflow/WorkflowExecutionPanel.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../../lib/auth/support/csrf';
+import { ApiClientFacade } from '../../../../lib/market/api-client';
+import { loadAppContext } from '../../../../view-models/app-access.js';
+
+const projectId = String(Astro.params.projectId ?? '');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
+let project: any = null; let topology: any = null; let connection: any = null; let operations: any[] = []; let runs: any[] = [];
+let permissions = new Set<string>(); let unavailable = false;
+try {
+	if (context.activeTeam) permissions = new Set((await api.getTeamAccessSummary(context.activeTeam.id)).permissions ?? []);
+	[project, topology, operations, runs] = await Promise.all([
+		api.getProjectDetails(projectId), api.request<any>('GET', `/v1/projects/${encodeURIComponent(projectId)}/repository-topology`),
+		api.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/workflow-operations`),
+		api.request<any[]>('GET', `/v1/projects/${encodeURIComponent(projectId)}/workflow-operation-runs?limit=50`),
+	]);
+	if (context.activeTeam && topology?.contentRepository?.remote?.serviceConnectionId) connection = await api.request<any>('GET',
+		`/v1/teams/${encodeURIComponent(context.activeTeam.id)}/services/${encodeURIComponent(topology.contentRepository.remote.serviceConnectionId)}`);
+} catch (error) { Astro.response.status = Number((error as any)?.status ?? 503); unavailable = Astro.response.status >= 500; }
+const canManage = permissions.has('projects:manage:team');
+const canOperate = permissions.has('operations:authorize');
+const remote = topology?.contentRepository?.remote;
+const workflowBinding = connection?.capabilities?.find((item: any) => item.capabilityType === 'workflow-execution' && item.status === 'configured');
+const secretBinding = connection?.capabilities?.find((item: any) => item.capabilityType === 'secret-enclave' && item.status === 'configured');
+const variableBinding = connection?.capabilities?.find((item: any) => item.capabilityType === 'workflow-configuration' && item.status === 'configured');
+const csrfToken = ensureCsrfToken(Astro);
+const sections = [
+	{ id: 'books', label: 'Books', href: `/app/projects/${encodeURIComponent(projectId)}/books` },
+	{ id: 'workflows', label: 'Automation', href: `/app/projects/${encodeURIComponent(projectId)}/workflows`, active: true },
+];
+---
+
+<TreeseedAppLayout title="Project automation" description="Configure provider-neutral remote workflow operations." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<SettingsTemplate title={project?.project?.name ?? 'Project automation'} description="Bind reviewed GitHub Actions workflows without exposing provider credentials to capacity providers." sections={sections} knowledgePageId="services.workflow-execution">
+		{unavailable ? <EmptyState title="Workflow management unavailable" description="The project, repository binding, or provider service could not be loaded." actions={[{ label: 'Retry', href: Astro.url.pathname }]} />
+			: !remote || remote.grantStatus !== 'ready' ? <EmptyState title="Repository binding required" description="Verify a remote repository binding before configuring workflows." actions={[{ label: 'Configure repository', href: `/app/projects/${encodeURIComponent(projectId)}/books` }]} />
+			: !workflowBinding ? <EmptyState title="Workflow capability required" description="Enable workflow execution on the same provider connection used by this repository." actions={[{ label: 'Manage service', href: `/app/services/${encodeURIComponent(remote.serviceConnectionId)}` }]} />
+			: <div class="ts-stack">
+				{operations.length ? operations.map((definition) => <WorkflowExecutionPanel projectId={projectId} definition={definition}
+					runs={runs.filter((run) => run.operationId === definition.id)} csrfToken={csrfToken} sourceSha={remote.observedHead}
+					canOperate={canOperate} timeZone={preferences.timeZone} />)
+					: <EmptyState title="No workflow operations" description={canManage ? 'Add a reviewed workflow definition below before dispatching remote work.' : 'A project administrator has not configured remote workflow operations yet.'} />}
+				{canManage ? <>
+					{operations.map((definition) => <WorkflowDefinitionPanel definition={definition} csrfToken={csrfToken}
+						repositoryBindingId={remote.bindingId} workflowBindingId={workflowBinding.id}
+						action={`/v1/projects/${encodeURIComponent(projectId)}/workflow-operations/${encodeURIComponent(definition.id)}`} />)}
+					<WorkflowDefinitionPanel csrfToken={csrfToken} repositoryBindingId={remote.bindingId}
+						workflowBindingId={workflowBinding.id} action={`/v1/projects/${encodeURIComponent(projectId)}/workflow-operations/${randomUUID()}`} />
+					<WorkflowConfigurationPanel projectId={projectId} repositoryBindingId={remote.bindingId}
+						secretBindingId={secretBinding?.id} variableBindingId={variableBinding?.id} csrfToken={csrfToken} />
+				</> : null}
+			</div>}
+	</SettingsTemplate>
+</TreeseedAppLayout>
+
+<script>
+	import { registerWorkflowFormAdapters } from '../../../../lib/projects/workflow-form-adapters';
+	const disposers = registerWorkflowFormAdapters();
+	document.addEventListener('astro:before-swap', () => disposers.forEach((dispose) => dispose()), { once: true });
+</script>

@@ -1,0 +1,27 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.knowledge.edit-book-page.071
+journeyIndex: 71
+type: project
+subtype: knowledge
+journey: Edit Book Page
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Edit page Markdown and metadata without losing relationships or overwriting a newer source revision.
+status: active
+dependencies: { journeys: [69], guarantees: [guarantee.project.knowledge.create-book-page.069] }
+actors: { allowed: [project_contributor, project_manager], forbidden: [anonymous_user, non_member, project_viewer] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.page-authoring] }
+scene: { required: true, manifest: ../book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: conflict-safe rich knowledge editor }
+api: { required: true, verifierRefs: [api.knowledge.control-plane, api.knowledge.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content] }
+audit: { required: true, verifierRefs: [api.knowledge.run-correlated] }
+negativeCases:
+  - { id: anonymous-page-edit-denied, actor: anonymous_user, sceneManifest: ../book/scenes/negative/anonymous-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.anonymous, verifierRefs: [api.knowledge.control-plane] }
+  - { id: nonmember-page-edit-denied, actor: non_member, sceneManifest: ../book/scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.control-plane] }
+  - { id: readonly-page-edit-denied, actor: project_viewer, sceneManifest: ../book/scenes/negative/readonly-knowledge-controls.scene.yaml, executionKey: admin.knowledge.negative.readonly, verifierRefs: [api.knowledge.control-plane] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref, audit_event_id] }
+notes: [The shared execution proves revision, review, exact commit publication, and persisted relationships.]
+run: { requiredForRelease: true }

@@ -112,7 +112,7 @@ workflow:
         internal: true
     expect:
       urlIncludes: /edit
-      text: Edit team
+      text: Settings
   - id: force-stale-version
     title: Prepare a stale optimistic version without mutating the team
     action:
@@ -121,7 +121,7 @@ workflow:
         internal: true
         value: 2000-01-01T00:00:00.000Z
     expect:
-      text: Edit team
+      text: Settings
   - id: reject-stale-update
     title: Reject the stale update and preserve the persisted identity
     action:
@@ -146,7 +146,7 @@ workflow:
         css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/edit"]'
         internal: true
     expect:
-      text: Edit team
+      text: Settings
   - id: update-display-name
     title: Update the public team display name
     action:
@@ -163,6 +163,15 @@ workflow:
         role: textbox
         name: Profile summary
         value: Public identity verified by a complete team settings service journey.
+    expect:
+      text: Save team
+  - id: publish-team-identity
+    title: Make the team identity publicly discoverable
+    action:
+      select:
+        role: combobox
+        name: Profile visibility
+        value: public
     expect:
       text: Save team
   - id: save-team

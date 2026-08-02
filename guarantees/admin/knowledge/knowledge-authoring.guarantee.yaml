@@ -1,0 +1,28 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.admin.knowledge.knowledge-authoring.565
+type: admin
+subtype: knowledge
+journey: Knowledge Authoring Production Readiness
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Require complete book and page authoring, linking, review, publication, lifecycle, and pack workflows through rendered controls.
+status: active
+dependencies:
+  journeys: [65, 66, 67, 68, 69, 70, 71, 72, 73, 90, 91]
+  guarantees: []
+actors: { allowed: [knowledge_author, knowledge_reviewer, project_manager, team_owner], forbidden: [anonymous_user, non_member] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, security, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.library, knowledge.book-authoring, knowledge.book-lifecycle, knowledge.page-authoring, knowledge.relationships, knowledge.page-lifecycle, knowledge.review-publication, knowledge.packs, knowledge.reader] }
+scene: { required: true, manifest: ../../project/book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: complete knowledge workbench }
+api: { required: true, verifierRefs: [api.knowledge.control-plane, api.knowledge.run-correlated, api.knowledge.pack.run-correlated, api.knowledge.collection.run-correlated, api.knowledge.lifecycle.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content, sdk.knowledge.content-sync, sdk.knowledge.pack-integrity, core.knowledge.starlight-reader, admin.knowledge.ui-contracts] }
+audit: { required: true, verifierRefs: [api.knowledge.run-correlated, api.knowledge.lifecycle.run-correlated, api.knowledge.pack.run-correlated, api.knowledge.collection.run-correlated] }
+negativeCases:
+  - { id: anonymous-knowledge-administration-denied, actor: anonymous_user, sceneManifest: ../../project/book/scenes/negative/anonymous-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.anonymous, verifierRefs: [api.knowledge.control-plane] }
+  - { id: nonmember-knowledge-administration-denied, actor: non_member, sceneManifest: ../../project/book/scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.control-plane] }
+evidence: { required: [execution_graph, playwright_trace, api_verification_log, treedx_content_ref, audit_event_id] }
+notes:
+  - No-index release aggregate; it depends on journeys 65 through 73 and 90 through 91 sharing one exact per-device execution.
+run: { requiredForRelease: true }

@@ -134,7 +134,7 @@ export function getSiteAuthConfig(context?: Pick<APIContext, 'locals'> & Partial
 		betterAuthBaseUrl,
 		apiServiceId: firstEnvValue(env, 'TREESEED_WEB_SERVICE_ID', 'TREESEED_API_WEB_SERVICE_ID') || 'web',
 		apiServiceSecret: firstEnvValue(env, 'TREESEED_WEB_SERVICE_SECRET', 'TREESEED_API_WEB_SERVICE_SECRET') || 'treeseed-web-service-dev-secret',
-		apiAssertionSecret: firstEnvValue(env, 'TREESEED_WEB_ASSERTION_SECRET', 'TREESEED_API_WEB_ASSERTION_SECRET') || 'treeseed-web-assertion-dev-secret',
+		apiAssertionSecret: firstEnvValue(env, 'TREESEED_API_WEB_ASSERTION_SECRET', 'TREESEED_WEB_ASSERTION_SECRET') || 'treeseed-web-assertion-dev-secret',
 		csrfSecret: envValue('TREESEED_WEB_CSRF_SECRET', env) || 'treeseed-web-csrf-dev-secret',
 		sessionTtlSeconds: parseIntEnv('TREESEED_WEB_SESSION_TTL', DEFAULT_WEB_SESSION_TTL_SECONDS, env),
 		passwordResetTtlSeconds: parseIntEnv('TREESEED_AUTH_PASSWORD_RESET_TTL', DEFAULT_EMAIL_TOKEN_TTL_SECONDS, env),

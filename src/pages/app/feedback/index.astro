@@ -1,0 +1,54 @@
+---
+import FeedbackCollection from '@treeseed/ui/components/astro/feedback/management/FeedbackCollection.astro';
+import FeedbackFilterToolbar from '@treeseed/ui/components/astro/feedback/management/FeedbackFilterToolbar.astro';
+import FeedbackStatusBadge from '@treeseed/ui/components/astro/feedback/management/FeedbackStatusBadge.astro';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import { principalHasPlatformPermission } from '@treeseed/sdk/api/auth/rbac';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
+import { ApiClientFacade } from '../../../lib/market/api-client';
+import { loadAppContext } from '../../../view-models/app-access.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/feedback')}`);
+const principal = Astro.locals.auth.principal;
+const allowed = principalHasPlatformPermission(principal, 'feedback:read:global');
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
+const filterKeys = ['query','status','type','teamId','hasScreenshot','exported','from','to','cursor'] as const;
+const values = Object.fromEntries(filterKeys.map((key) => [key, Astro.url.searchParams.get(key) ?? '']));
+let collection: any = { items: [], counts: { new: 0, triaged: 0, in_progress: 0, resolved: 0 } };
+let unavailable = false;
+if (allowed) {
+	try { collection = await api.listFeedback(values as any); }
+	catch { unavailable = true; Astro.response.status = 503; }
+} else Astro.response.status = 403;
+const csrfToken = ensureCsrfToken(Astro);
+---
+
+<TreeseedAppLayout title="Feedback" description="Review, investigate, and resolve product feedback." currentPath="/app/feedback" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<section class="ts-template ts-stack" data-scene="feedback.admin.collection">
+		<PageHeader eyebrow="Platform administration" title="Feedback" description="Investigate reports with their verified context, then leave a durable resolution trail." />
+		{!allowed ? <EmptyState title="Platform administrator access required" description="Feedback contains private user context and is not available to team or market administrators." />
+		: unavailable ? <EmptyState title="Feedback is temporarily unavailable" description="The feedback API did not respond. No empty state has been inferred."><div slot="actions"><Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button></div></EmptyState>
+		: <>
+			<div class="ts-dashboard-grid" data-columns="four">
+				{Object.entries(collection.counts).map(([status, count]) => <Panel title={String(count)} description={status.replaceAll('_', ' ')}><FeedbackStatusBadge status={status as any} /></Panel>)}
+			</div>
+			<FeedbackFilterToolbar values={values} teams={collection.teams ?? []} />
+			<Panel title="Submitted feedback" description={`${collection.items.length} record${collection.items.length === 1 ? '' : 's'} on this page.`}>
+				{collection.items.length ? <FeedbackCollection items={collection.items} timeZone={preferences.timeZone} /> : <EmptyState title="No feedback matches these filters" description="Change or reset the filters to inspect other reports." />}
+			</Panel>
+			<form method="post" action="/v1/admin/feedback/exports" data-ts-submit="enhanced" data-ts-form-adapter="feedback-export">
+				<input type="hidden" name="csrfToken" value={csrfToken} />{Object.entries(values).map(([key, value]) => value ? <input type="hidden" name={key} value={value} /> : null)}
+				<label class="ts-choice"><input type="checkbox" name="includeScreenshots" value="true" /><span>Include redacted screenshots</span></label>
+				<Button type="submit" variant="secondary">Export current results</Button>
+			</form>
+			<div class="ts-action-bar" data-feedback-export-result aria-live="polite"></div>
+			{collection.nextCursor ? <div class="ts-action-bar"><Button href={`${Astro.url.pathname}?${new URLSearchParams({ ...values, cursor: collection.nextCursor }).toString()}`} variant="secondary">Next page</Button></div> : null}
+		</>}
+	</section>
+</TreeseedAppLayout>

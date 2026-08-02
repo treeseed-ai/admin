@@ -1,0 +1,297 @@
+schemaVersion: treeseed.scene/v1
+id: service.vault.vault-lifecycle.021-022
+title: Initialize and rotate service vault access
+description: Creates personal and team vault access through rendered controls, rotates the personal passphrase, and proves the page remains usable.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [service.vault, service.vault-recovery, service.contextual-help]
+  minimumSteps: 24
+  requiresInteractiveAction: true
+  consumesState:
+    - key: team.active-session
+      kind: browser-storage
+    - key: team.primary
+      kind: marker
+  producesState:
+    - key: services.team-vault
+      kind: marker
+      value:
+        status: active
+        custody: client-encrypted-vault
+mode:
+  test: true
+  demo: true
+  training: true
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      viewport: { width: 1600, height: 900 }
+      video: { width: 1600, height: 900 }
+      output: { width: 1920, height: 1080 }
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      viewport: { width: 820, height: 1180 }
+      video: { width: 820, height: 1180 }
+      output: { width: 820, height: 1180 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+    - id: mobile_chromium
+      title: Mobile Chromium
+      viewport: { width: 390, height: 844 }
+      video: { width: 390, height: 844 }
+      output: { width: 390, height: 844 }
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: owner, required: true }
+artifacts:
+  trace: true
+  video: true
+  screenshots: true
+  console: true
+  network: true
+  timeline: true
+  appLogs: true
+workflow:
+  - id: open-vault
+    title: Open service vault
+    action: { goto: /app/services/vault }
+    expect:
+      urlIncludes: /app/services/vault
+      visible:
+        - { css: '[data-scene="service.vault"]', internal: true }
+        - { css: '[data-scene="service.vault.personal.initialize"]', internal: true }
+      text: Credentials stay under your control
+  - id: open-personal-key-help
+    title: Open the personal administrator key guidance
+    action:
+      click: { css: '.ts-setup-progress button[data-ts-help-knowledge-page-id="vault.personal-key"]', internal: true }
+    expect:
+      visible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      text: Step 1 creates a public/private encryption keypair in your browser.
+  - id: close-personal-key-help
+    title: Close personal key guidance and restore focus
+    action:
+      click: { role: button, name: Close help }
+    expect:
+      notVisible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      focused: { css: '.ts-setup-progress button[data-ts-help-knowledge-page-id="vault.personal-key"]', internal: true }
+  - id: open-team-custody-help
+    title: Open team credential custody guidance
+    action:
+      click: { css: '.ts-setup-progress button[data-ts-help-knowledge-page-id="vault.team-custody"]', internal: true }
+    expect:
+      visible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      text: Enter the same personal vault passphrase you created in step 1.
+  - id: close-team-custody-help
+    title: Close team custody guidance and restore focus
+    action:
+      click: { role: button, name: Close help }
+    expect:
+      notVisible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      focused: { css: '.ts-setup-progress button[data-ts-help-knowledge-page-id="vault.team-custody"]', internal: true }
+  - id: open-recovery-help
+    title: Open recovery and administrator grant guidance
+    action:
+      click: { css: '.ts-setup-progress button[data-ts-help-knowledge-page-id="vault.recovery"]', internal: true }
+    expect:
+      visible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      text: Another currently authorized credential administrator can grant a replacement personal key access after you forget your passphrase.
+  - id: close-recovery-help
+    title: Close recovery guidance and restore focus
+    action:
+      click: { role: button, name: Close help }
+    expect:
+      notVisible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      focused: { css: '.ts-setup-progress button[data-ts-help-knowledge-page-id="vault.recovery"]', internal: true }
+  - id: enter-personal-passphrase
+    title: Enter a personal passphrase and confirmation
+    action:
+      fill:
+        css: '[data-scene="service.vault.personal.initialize"] input[name="passphrase"]'
+        internal: true
+        value: VaultGuarantee-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { css: '[data-scene="service.vault.personal.initialize"]', internal: true }
+  - id: confirm-personal-passphrase
+    title: Confirm the personal passphrase
+    action:
+      fill:
+        css: '[data-scene="service.vault.personal.initialize"] input[name="confirmPassphrase"]'
+        internal: true
+        value: VaultGuarantee-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { role: button, name: Create personal vault key }
+  - id: create-personal-key
+    title: Create the browser-encrypted administrator key
+    action:
+      click: { role: button, name: Create personal vault key }
+    expect:
+      urlIncludes: /app/services/vault
+      text: Administrator key ready
+  - id: enter-team-vault-passphrase
+    title: Unlock the administrator key for team initialization
+    action:
+      fill:
+        css: '[data-scene="service.vault.team.initialize"] input[name="passphrase"]'
+        internal: true
+        value: VaultGuarantee-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { role: button, name: Initialize team vault }
+  - id: initialize-team-vault
+    title: Create and wrap a random team vault key
+    action:
+      click: { role: button, name: Initialize team vault }
+    expect:
+      urlIncludes: /app/services/vault
+      text: Team vault active
+  - id: open-passphrase-rotation
+    title: Open personal passphrase rotation
+    action:
+      click: { text: Change personal passphrase }
+    expect:
+      text: Provider credentials are not decrypted or rewritten.
+  - id: fill-current-passphrase
+    title: Unlock the existing personal key locally
+    action:
+      fill:
+        css: 'form[data-ts-form-adapter="personal-vault-rotate"] input[name="currentPassphrase"]'
+        internal: true
+        value: VaultGuarantee-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { css: 'form[data-ts-form-adapter="personal-vault-rotate"]', internal: true }
+  - id: fill-new-passphrase
+    title: Enter and confirm the replacement passphrase
+    action:
+      fill:
+        css: 'form[data-ts-form-adapter="personal-vault-rotate"] input[name="passphrase"]'
+        internal: true
+        value: RotatedVault-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { role: button, name: Change passphrase }
+  - id: confirm-new-passphrase
+    title: Confirm the replacement passphrase
+    action:
+      fill:
+        css: 'form[data-ts-form-adapter="personal-vault-rotate"] input[name="confirmPassphrase"]'
+        internal: true
+        value: RotatedVault-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { role: button, name: Change passphrase }
+  - id: rotate-personal-passphrase
+    title: Re-encrypt only the personal private-key envelope
+    action:
+      click: { role: button, name: Change passphrase }
+    expect:
+      urlIncludes: /app/services/vault
+      text: Personal vault passphrase changed.
+  - id: reload-after-personal-rotation
+    title: Reload persisted vault state before team-key rotation
+    action: { goto: /app/services/vault }
+    expect:
+      text: Team vault active
+  - id: open-team-key-rotation
+    title: Open the team vault key rotation ceremony
+    action:
+      click: { text: Rotate the team vault key }
+    expect:
+      text: Rewrap every credential key and administrator grant
+  - id: unlock-team-key-rotation
+    title: Unlock the current team key locally
+    action:
+      fill:
+        css: '[data-scene="service.vault.rotate"] input[name="passphrase"]'
+        internal: true
+        value: RotatedVault-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { role: button, name: Rotate team vault key }
+  - id: rotate-team-key
+    title: Rewrap the active administrator grants without credential plaintext
+    action:
+      click: { role: button, name: Rotate team vault key }
+    expect:
+      text: Team vault key rotated.
+  - id: reload-after-team-rotation
+    title: Load the replacement team vault grant
+    action: { goto: /app/services/vault }
+    expect:
+      visible:
+        - { css: '[data-scene="service.vault.reset"]', internal: true }
+  - id: unlock-vault-reset
+    title: Unlock the administrator key for unrecoverable reset
+    action:
+      fill:
+        css: '[data-scene="service.vault.reset"] input[name="passphrase"]'
+        internal: true
+        value: RotatedVault-{{runShort}}-{{deviceId}}!
+    expect:
+      visible:
+        - { role: button, name: Reset vault and discard credentials }
+  - id: confirm-vault-reset
+    title: Enter the exact destructive vault reset confirmation
+    action:
+      fill:
+        css: '[data-scene="service.vault.reset"] input[name="confirmation"]'
+        internal: true
+        value: RESET gt-{{runShort}}-{{deviceId}}
+    expect:
+      visible:
+        - { css: '[data-scene="service.vault.reset"] input[name="currentPassword"]', internal: true }
+  - id: reauthenticate-vault-reset
+    title: Reauthenticate the owner for destructive recovery
+    action:
+      fill:
+        css: '[data-scene="service.vault.reset"] input[name="currentPassword"]'
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      visible:
+        - { role: button, name: Reset vault and discard credentials }
+  - id: reset-unrecoverable-vault
+    title: Replace the inaccessible team vault and require credential reentry
+    action:
+      click: { role: button, name: Reset vault and discard credentials }
+    expect:
+      text: Vault reset. Reenter every protected provider credential.
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

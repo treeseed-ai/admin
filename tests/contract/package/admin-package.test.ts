@@ -5,7 +5,6 @@ import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../../../src/
 import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../../../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
-import { DEFAULT_SECRET_MANAGER_PROVIDERS } from '../../../src/secret-managers';
 import { authenticatedAuthRedirect, isAnonymousAuthRoute } from '../../../src/lib/auth/support/access-policy';
 
 const EXPECTED_ROUTES = [
@@ -16,10 +15,19 @@ const EXPECTED_ROUTES = [
 	'/app/account/appearance',
 	'/app/account/delete',
 	'/app/capacity',
-	'/app/hosts',
+	'/app/feedback',
+	'/app/feedback/[feedbackId]',
+	'/app/services',
+	'/app/services/new',
+	'/app/services/vault',
+	'/app/services/[connectionId]',
 	'/app/knowledge',
+	'/app/knowledge/packs/[buildId]/download',
 	'/app/market',
 	'/app/projects',
+	'/app/projects/[projectId]/books',
+	'/app/projects/[projectId]/workflows',
+	'/app/work',
 	'/app/teams',
 	'/app/teams/active',
 	'/app/teams/new',
@@ -42,7 +50,7 @@ const EXPECTED_ROUTES = [
 	'/team-invites/[token]/accept',
 ].sort();
 const EXPECTED_SUPPORT_ROUTES = ['/v1/[...all]'];
-const DOMAIN_ROUTES = ['/app/capacity', '/app/hosts', '/app/knowledge', '/app/market', '/app/projects'];
+const DOMAIN_ROUTES = ['/app/capacity', '/app/market', '/app/projects', '/app/work'];
 
 function filesUnder(root: string): string[] {
 	if (!existsSync(root)) return [];
@@ -128,13 +136,13 @@ describe('@treeseed/admin identity and team surface', () => {
 		]));
 	});
 
-	it('keeps navigation limited to identity and team management', () => {
+	it('keeps navigation focused on active-team work and identity management', () => {
 		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
 		const publicLayout = readFileSync('src/layouts/PublicLayout.astro', 'utf8');
-		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new']) {
+		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/services', '/app/projects', '/app/capacity', '/app/work', '/app/knowledge']) {
 			expect(appLayout).toContain(target);
 		}
-		for (const target of ['/app/projects', '/app/capacity', '/app/work', '/app/knowledge', '/market', '/cart', '/seller']) {
+		for (const target of ['/market', '/cart', '/seller']) {
 			const escaped = target.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 			expect(appLayout).not.toMatch(new RegExp(`(?:href|action)\\s*[:=]\\s*['"\\x60]${escaped}`, 'u'));
 		}
@@ -277,7 +285,6 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(packageJson.dependencies).not.toHaveProperty('libsodium-wrappers-sumo');
 		expect(packageJson.dependencies).not.toHaveProperty('@treeseed/api');
 		expect(DEFAULT_ADMIN_COMMERCE_PROVIDER.id).toBe('none');
-		expect(DEFAULT_SECRET_MANAGER_PROVIDERS[0]?.id).toBe('treeseed-local-encrypted');
 		expect(readFileSync('src/lib/market/api-client/commerce/vendors/queries/get-commerce-vendor-sales-summary.ts', 'utf8')).toContain('getCommerceVendorSalesSummaryMethod');
 	});
 

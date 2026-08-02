@@ -1,0 +1,90 @@
+schemaVersion: treeseed.ui-feature/v1
+id: admin.service-management
+ownerPackage: "@treeseed/admin"
+routes:
+  - /app/services
+  - /app/services/new
+  - /app/services/[connectionId]
+  - /app/services/vault
+devices: [desktop_chromium, tablet_chromium, mobile_chromium]
+states: [loading, empty, unavailable, forbidden, validation, conflict, success, reentry-required, destructive]
+capabilities:
+  - id: service.navigation
+    routes: ["/app/services", "/app/services/new", "/app/services/[connectionId]", "/app/services/vault"]
+    actions: [open-services, scope-to-active-team, use-canonical-routed-tabs]
+    states: [empty, success, unavailable, forbidden]
+    actors:
+      allowed: [team_member]
+      forbidden: [anonymous_user, non_member]
+    guaranteeIds: [guarantee.service.connection.connect-service.023]
+  - id: service.vault
+    routes: [/app/services/vault]
+    actions: [review-custody-boundaries, follow-guided-setup, initialize-personal-key, initialize-team-vault, grant-access, revoke-access]
+    states: [validation, success, forbidden]
+    actors:
+      allowed: [team_owner]
+      forbidden: [project_lead, contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.service.vault.initialize-personal-vault.021]
+  - id: service.vault-recovery
+    routes: [/app/services/vault]
+    actions: [rotate-personal-passphrase, recover-by-grant, reset-vault]
+    states: [validation, success, destructive, forbidden]
+    actors:
+      allowed: [team_owner]
+      forbidden: [service_admin, project_lead, contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.service.vault.recover-vault-access.022]
+  - id: service.connect
+    routes: [/app/services/new]
+    actions: [choose-provider, inspect-help, select-capabilities, validate, connect]
+    states: [validation, conflict, success, unavailable, forbidden]
+    actors:
+      allowed: [team_owner, project_lead, service_admin]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.service.connection.connect-service.023]
+  - id: service.credentials
+    routes: ["/app/services/[connectionId]"]
+    actions: [encrypt-field, save-envelope, inspect-custody, authorize-operation]
+    states: [validation, success, reentry-required, forbidden]
+    actors:
+      allowed: [credential_grantee]
+      forbidden: [ungranted_service_admin, contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.service.connection.edit-service.024]
+  - id: service.edit
+    routes: ["/app/services/[connectionId]"]
+    actions: [edit-metadata, change-capabilities, persist-conflict-safe]
+    states: [validation, conflict, success, unavailable, forbidden]
+    actors:
+      allowed: [team_owner, project_lead, service_admin]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.service.connection.edit-service.024]
+  - id: service.disconnect
+    routes: ["/app/services/[connectionId]"]
+    actions: [inspect-dependencies, disconnect, clean-ciphertext]
+    states: [blocked, destructive, success, forbidden]
+    actors:
+      allowed: [team_owner, project_lead, service_admin]
+      forbidden: [contributor, viewer, non_member, anonymous_user]
+    guaranteeIds: [guarantee.service.connection.disconnect-service.025]
+  - id: service.contextual-help
+    routes: ["/app/services", "/app/services/new", "/app/services/[connectionId]", "/app/services/vault"]
+    actions: [open-route-help, open-section-help, navigate-related-topics, search-authorized-topics, close-and-restore-focus]
+    states: [loading, success, unavailable, forbidden]
+    actors:
+      allowed: [team_member, credential_grantee]
+      forbidden: [anonymous_user, non_member]
+    guaranteeIds:
+      - guarantee.service.vault.initialize-personal-vault.021
+      - guarantee.service.vault.recover-vault-access.022
+requiredGuarantees:
+  - guarantee.service.vault.initialize-personal-vault.021
+  - guarantee.service.vault.recover-vault-access.022
+  - guarantee.service.connection.connect-service.023
+  - guarantee.service.connection.edit-service.024
+  - guarantee.service.connection.disconnect-service.025
+requirements:
+  accessibility: true
+  console: true
+  network: true
+  visual: true
+  durableState: true
+  cleanup: true

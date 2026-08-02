@@ -1,0 +1,705 @@
+schemaVersion: treeseed.scene/v1
+id: project.knowledge.author-publish
+title: Author, review, publish, read, and package knowledge
+description: Creates a run-scoped book and page through the rendered workbench, uses a different reviewer, publishes atomically, searches TreeDX, opens Starlight, and builds an immutable pack.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [knowledge.book-authoring, knowledge.book-lifecycle, knowledge.page-authoring, knowledge.page-lifecycle, knowledge.relationships, knowledge.review-publication, knowledge.library, knowledge.reader, knowledge.packs]
+  minimumSteps: 20
+  requiresInteractiveAction: true
+  producesState:
+    - key: knowledge.published
+      kind: marker
+      value: { bookId: "guarantee-book-{{runShort}}-{{deviceId}}", pageId: "guarantee-page-{{runShort}}-{{deviceId}}" }
+    - key: knowledge.platform-admin-session
+      kind: browser-storage
+mode: { test: true, demo: true, training: true }
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport: { width: 1600, height: 900 }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, orientation: portrait, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: platform_admin, fixtureRoles: [knowledge_reviewer], required: true }
+artifacts: { trace: true, video: true, screenshots: true, fullPageScreenshots: false, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-workbench
+    title: Open the active-team knowledge workbench
+    action: { goto: /app/knowledge }
+    expect: { urlIncludes: /app/knowledge, visible: [{ scene: app-shell }] }
+  - id: select-central-team
+    title: Scope knowledge work to the central TreeSeed team
+    action: { select: { css: ':nth-match([data-team-switcher] select[name="teamId"], 1)', internal: true, label: TreeSeed } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: await-central-team-navigation
+    title: Let the progressive-enhancement team selection finish
+    action: { pause: { mode: timed, durationSeconds: 1 } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: reload-central-library
+    title: Load the central federated library after explicit selection
+    action: { goto: /app/knowledge }
+    expect: { text: Knowledge repositories, visible: [{ css: '[data-project-name="TreeSeed Admin"]', internal: true }] }
+  - id: choose-admin-project
+    title: Author in the Admin repository through its visible project control
+    action: { click: { css: '[data-project-name="TreeSeed Admin"] a[href^="/app/knowledge?project="]', internal: true } }
+    expect: { text: Start an authoring workspace }
+  - id: start-workspace
+    title: Create an isolated TreeDX workspace
+    action: { click: { css: '[data-scene="knowledge.workspace.start"] button[type="submit"]', internal: true } }
+    expect: { text: Start an authoring workspace }
+  - id: await-workspace-editor
+    title: Wait for the federated workspace editor to finish loading
+    action: { pause: { mode: timed, durationSeconds: 8 } }
+    expect: { urlIncludes: workspace=, visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: reject-empty-book
+    title: Reject an incomplete book without a repository mutation
+    action: { select: { css: '[data-scene="knowledge.editor.form"] select[name="kind"]', internal: true, label: Book } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: submit-empty-book
+    title: Exercise adjacent native validation
+    action: { click: { role: button, name: Save draft } }
+    expect: { urlIncludes: workspace=, notText: Draft saved. }
+  - id: fill-book-id
+    title: Enter a stable run-scoped book identifier
+    action: { fill: { css: 'input[name="id"]', internal: true, value: "guarantee-book-{{runShort}}-{{deviceId}}" } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-book-slug
+    title: Enter the canonical book slug
+    action: { fill: { css: 'input[name="slug"]', internal: true, value: "guarantee-book-{{runShort}}-{{deviceId}}" } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-book-title
+    title: Enter the human book title
+    action: { fill: { role: textbox, name: Title, value: "Guarantee Book {{runShort}} {{deviceId}}" } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-book-summary
+    title: Explain the book in the federated catalog
+    action: { fill: { role: textbox, name: Summary, value: "Run-scoped knowledge proving repository authoring and atomic publication." } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-book-description
+    title: Add complete book metadata
+    action: { fill: { role: textbox, name: Description, value: "A real acceptance book created in TreeDX and reviewed before publication." } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: save-book
+    title: Save the book through the enhanced form
+    action: { click: { role: button, name: Save draft } }
+    expect: { text: Draft saved., visible: [{ css: '[data-ts-toast-id][data-tone="success"]', internal: true }] }
+  - id: choose-page
+    title: Add a page to the same isolated workspace
+    action: { select: { css: '[data-scene="knowledge.editor.form"] select[name="kind"]', internal: true, label: Knowledge page } }
+    expect: { visible: [{ css: 'input[name="bookId"]', internal: true }] }
+  - id: fill-page-fields
+    title: Enter page ownership
+    action: { fill: { css: 'input[name="bookId"]', internal: true, value: "guarantee-book-{{runShort}}-{{deviceId}}" } }
+    expect: { visible: [{ css: 'textarea[name="bodyMarkdown"]', internal: true }] }
+  - id: fill-page-id
+    title: Enter the stable page identifier
+    action: { fill: { css: 'input[name="id"]', internal: true, value: "guarantee-page-{{runShort}}-{{deviceId}}" } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-page-slug
+    title: Enter the ordered page slug
+    action: { fill: { css: 'input[name="slug"]', internal: true, value: getting-started } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-page-title
+    title: Enter the page title
+    action: { fill: { role: textbox, name: Title, value: Getting started } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-page-summary
+    title: Enter the page summary
+    action: { fill: { role: textbox, name: Summary, value: "A searchable page with safe fenced TypeScript examples." } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: fill-page-markdown
+    title: Author Markdown containing fenced export syntax
+    action:
+      fill:
+        css: 'textarea[name="bodyMarkdown"]'
+        internal: true
+        value: "# Getting started\n\nThis page is published from an exact TreeDX commit.\n\n```ts\nexport const safeExample = true;\n```"
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: search-related-note
+    title: Find a real repository note through the TreeDX relationship graph
+    action: { fill: { css: '[data-knowledge-relation-field="relatedNoteIds"] input[type="search"]', internal: true, value: "knowledge authoring traceability" } }
+    expect:
+      visible:
+        - { css: '[data-knowledge-relation-results="relatedNoteIds"] button:has-text("Knowledge authoring traceability")', internal: true }
+  - id: link-related-note
+    title: Link the note through the rendered relationship picker
+    action: { click: { css: '[data-knowledge-relation-results="relatedNoteIds"] button:has-text("Knowledge authoring traceability")', internal: true } }
+    expect: { visible: [{ css: '[data-knowledge-relation-field="relatedNoteIds"] .ts-knowledge-relations__chip:has-text("Knowledge authoring traceability")', internal: true }] }
+  - id: search-related-question
+    title: Find a real repository question through the TreeDX relationship graph
+    action: { fill: { css: '[data-knowledge-relation-field="relatedQuestionIds"] input[type="search"]', internal: true, value: "knowledge publication stay trustworthy" } }
+    expect:
+      visible:
+        - { css: '[data-knowledge-relation-results="relatedQuestionIds"] button:has-text("How should knowledge publication stay trustworthy?")', internal: true }
+  - id: link-related-question
+    title: Link the question through the rendered relationship picker
+    action: { click: { css: '[data-knowledge-relation-results="relatedQuestionIds"] button:has-text("How should knowledge publication stay trustworthy?")', internal: true } }
+    expect: { visible: [{ css: '[data-knowledge-relation-field="relatedQuestionIds"] .ts-knowledge-relations__chip:has-text("How should knowledge publication stay trustworthy?")', internal: true }] }
+  - id: submit-knowledge-review
+    title: Save and submit the book and page for independent review
+    action: { click: { role: button, name: Submit for review } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: await-review-navigation
+    title: Wait for the TreeDX commit and submitted review queue to finish loading
+    action: { pause: { mode: timed, durationSeconds: 10 } }
+    expect: { urlIncludes: view=reviews }
+  - id: prove-self-review-denied
+    title: Prove the author cannot approve the submission
+    action: { goto: /app/knowledge?view=reviews }
+    expect:
+      text: A different authorized reviewer must decide this submission.
+      visible:
+        - { css: '[data-review-status="open"][data-review-decision="forbidden"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"]', internal: true }
+  - id: sign-out-author
+    title: End the author session before independent review
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in, text: Sign in }
+  - id: enter-reviewer-email
+    title: Enter the independent reviewer's identity
+    action: { fill: { role: textbox, name: Email or username, value: visual.knowledge-reviewer@treeseed.io } }
+    expect: { text: Sign in }
+  - id: enter-reviewer-password
+    title: Enter the independent reviewer's fixture password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: sign-in-reviewer
+    title: Authenticate as the different authorized reviewer
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app, visible: [{ scene: app-shell }] }
+  - id: open-review-queue
+    title: Open the exact submitted review
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: enter-review-comment
+    title: Attach an actionable comment to the exact changed file
+    action: { fill: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] form:has(input[value="review-comment"]) textarea[name="body"]', internal: true, value: "Clarify that this revision completed independent review." } }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] form:has(input[value="review-comment"])', internal: true }] }
+  - id: add-review-comment
+    title: Persist the line-aware review observation
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] form:has(input[value="review-comment"]) button[type="submit"]', internal: true } }
+    expect: { text: Review comment added. }
+  - id: enter-request-change-notes
+    title: Explain the requested revision
+    action: { fill: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.decision"] textarea[name="notes"]', internal: true, value: "Address the review comment and resubmit the same workspace." } }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: request-review-changes
+    title: Return the exact submission to its author
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.decision"] button[value="request-changes"]', internal: true } }
+    expect: { text: Review decision recorded. }
+  - id: sign-out-reviewer-for-revision
+    title: End the reviewer session before author revision
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in, text: Sign in }
+  - id: enter-revision-author-email
+    title: Return to the original knowledge author
+    action: { fill: { role: textbox, name: Email or username, value: visual.platform-admin@treeseed.io } }
+    expect: { text: Sign in }
+  - id: enter-revision-author-password
+    title: Enter the author fixture password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: sign-in-revision-author
+    title: Authenticate the original author
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app, visible: [{ scene: app-shell }] }
+  - id: open-requested-changes
+    title: Open the exact returned review
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="changes-requested"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"]', internal: true }] }
+  - id: resolve-review-comment
+    title: Resolve the review comment as the workspace author
+    action: { click: { css: '[data-review-status="changes-requested"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] form:has(input[value="resolve-review-comment"]) button[type="submit"]', internal: true } }
+    expect: { text: Review comment resolved. }
+  - id: open-revision-draft
+    title: Return to the same recoverable TreeDX workspace
+    action: { click: { css: '[data-review-status="changes-requested"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("View draft")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: revise-book-summary
+    title: Apply the requested clarification
+    action: { fill: { role: textbox, name: Summary, value: "Run-scoped knowledge proving repository authoring, revision, independent review, and atomic publication." } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: resubmit-knowledge-review
+    title: Save and resubmit the revised workspace
+    action: { click: { role: button, name: Submit for review } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: await-revision-navigation
+    title: Wait for the revised commit and review queue
+    action: { pause: { mode: timed, durationSeconds: 8 } }
+    expect: { urlIncludes: view=reviews }
+  - id: sign-out-revision-author
+    title: End the author session before the second review
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in, text: Sign in }
+  - id: enter-returning-reviewer-email
+    title: Return to the independent reviewer
+    action: { fill: { role: textbox, name: Email or username, value: visual.knowledge-reviewer@treeseed.io } }
+    expect: { text: Sign in }
+  - id: enter-returning-reviewer-password
+    title: Enter the reviewer fixture password again
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: sign-in-returning-reviewer
+    title: Authenticate the reviewer for the revised submission
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app, visible: [{ scene: app-shell }] }
+  - id: open-revised-review
+    title: Open the new exact review record
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: approve-review
+    title: Approve the exact TreeDX diff as a different user
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.decision"] button[value="approve"]', internal: true } }
+    expect: { text: Review decision recorded. }
+  - id: reload-approved-review
+    title: Reload the durable review state before publication
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="approved"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.publish"]', internal: true }] }
+  - id: publish-approved-review
+    title: Queue atomic publication through the rendered control
+    action: { click: { css: '[data-review-status="approved"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}"] [data-scene="knowledge.review.publish"] button[type="submit"]', internal: true } }
+    expect: { text: Approved knowledge publication queued. }
+  - id: await-publication
+    title: Wait for Git, TreeDX graph, object, and manifest publication
+    action: { waitForOperation: { kind: "knowledge:publish_review", source: linked, status: [succeeded], timeoutSeconds: 180, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: sign-out-reviewer
+    title: End the review-only session after its independent decision
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in, text: Sign in }
+  - id: enter-platform-admin-email
+    title: Return to the authorized TreeSeed team administrator
+    action: { fill: { role: textbox, name: Email or username, value: visual.platform-admin@treeseed.io } }
+    expect: { text: Sign in }
+  - id: enter-platform-admin-password
+    title: Enter the platform administrator fixture password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: sign-in-platform-admin
+    title: Authenticate as a reader and pack builder for the central team
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app, visible: [{ scene: app-shell }] }
+  - id: search-library
+    title: Search the federated library through TreeDX
+    action: { goto: /books }
+    expect: { visible: [{ css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"]', internal: true }] }
+  - id: enter-search-query
+    title: Search for the published run book
+    action: { fill: { role: searchbox, name: Search books, value: "Guarantee Book {{runShort}}" } }
+    expect: { visible: [{ css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"]', internal: true }] }
+  - id: open-starlight-book
+    title: Open the published book overview
+    action: { click: { css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Open book")', internal: true } }
+    expect: { urlIncludes: /books/guarantee-book-, text: Getting started }
+  - id: open-starlight-page
+    title: Render the exact page revision in Starlight
+    action: { click: { text: Getting started } }
+    expect: { urlIncludes: /getting-started, text: This page is published from an exact TreeDX commit. }
+  - id: open-contextual-knowledge
+    title: Resolve published book knowledge in the shared help dialog
+    action: { click: { role: button, name: Open help } }
+    expect:
+      text: TreeSeed Help
+      visible:
+        - { css: '[data-ts-help-dialog][open] .ts-help-article__body:has-text("This page is published from an exact TreeDX commit.")', internal: true }
+        - { css: '[data-ts-help-dialog][open] a:has-text("Open full page")[href*="/guarantee-book-{{runShort}}-{{deviceId}}/getting-started"]', internal: true }
+  - id: search-contextual-knowledge
+    title: Search the federated knowledge graph from contextual help
+    action: { fill: { role: searchbox, name: Search help, value: "Guarantee Book {{runShort}}" } }
+    expect: { visible: [{ css: '[data-ts-help-search-results] button[data-ts-help-knowledge-page-id="guarantee-page-{{runShort}}-{{deviceId}}"]', internal: true }] }
+  - id: choose-contextual-search-result
+    title: Load the exact authorized search result without leaving the reader
+    action: { click: { css: '[data-ts-help-search-results] button[data-ts-help-knowledge-page-id="guarantee-page-{{runShort}}-{{deviceId}}"]', internal: true } }
+    expect:
+      urlIncludes: /getting-started
+      visible: [{ css: '[data-ts-help-dialog][open] .ts-help-article__body:has-text("This page is published from an exact TreeDX commit.")', internal: true }]
+  - id: return-to-packs
+    title: Open pack creation for the same publication
+    action: { goto: /app/knowledge?view=packs }
+    expect: { visible: [{ css: '[data-scene="knowledge.pack.build"]', internal: true }] }
+  - id: select-run-book
+    title: Select exactly the run-created book
+    action: { click: { css: '[data-scene="knowledge.pack.build"] input[value="guarantee-book-{{runShort}}-{{deviceId}}"]', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.pack.build"] input[value="guarantee-book-{{runShort}}-{{deviceId}}"]:checked', internal: true }] }
+  - id: build-pack
+    title: Build the immutable one-book artifact
+    action: { click: { css: '[data-scene="knowledge.pack.build"] button[type="submit"]', internal: true } }
+    expect: { text: Knowledge-pack build queued. }
+  - id: await-pack
+    title: Wait for immutable artifact generation
+    action: { waitForOperation: { kind: "knowledge:build_pack", source: linked, status: [succeeded], timeoutSeconds: 120, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: view=packs }
+  - id: verify-pack-download
+    title: Reload and prove the pack is downloadable
+    action: { goto: /app/knowledge?view=packs }
+    expect:
+      visible:
+        - { css: 'article[data-knowledge-pack-book-ids="guarantee-book-{{runShort}}-{{deviceId}}"][data-knowledge-pack-latest="true"] a:has-text("Download")', internal: true }
+  - id: name-selected-collection
+    title: Name a repeatable selected-book collection
+    action: { fill: { css: 'form:has(input[name="action"][value="create-collection"]) input[name="name"]', internal: true, value: "Guarantee Collection {{runShort}} {{deviceId}}" } }
+    expect: { visible: [{ css: 'form:has(input[name="action"][value="create-collection"])', internal: true }] }
+  - id: select-run-book-for-collection
+    title: Add the run-created book to the collection
+    action: { click: { css: 'form:has(input[name="action"][value="create-collection"]) input[value="guarantee-book-{{runShort}}-{{deviceId}}"]', internal: true } }
+    expect: { visible: [{ css: 'form:has(input[name="action"][value="create-collection"]) input[value="guarantee-book-{{runShort}}-{{deviceId}}"]:checked', internal: true }] }
+  - id: select-platform-book-for-collection
+    title: Add a second explicit platform book without expanding relationship scope
+    action: { click: { css: 'form:has(input[name="action"][value="create-collection"]) input[value="treeseed-accounts-and-identity"]', internal: true } }
+    expect: { visible: [{ css: 'form:has(input[name="action"][value="create-collection"]) input[value="treeseed-accounts-and-identity"]:checked', internal: true }] }
+  - id: save-selected-collection
+    title: Persist the deliberate book selection
+    action: { click: { css: 'form:has(input[name="action"][value="create-collection"]) button[type="submit"]', internal: true } }
+    expect: { text: Book collection saved. }
+  - id: reload-selected-collection
+    title: Reload the durable collection
+    action: { goto: /app/knowledge?view=packs }
+    expect: { text: "Guarantee Collection {{runShort}} {{deviceId}}" }
+  - id: build-selected-collection
+    title: Build the exact saved collection through its rendered action
+    action: { click: { css: 'article:has-text("Guarantee Collection {{runShort}} {{deviceId}}") button:has-text("Build latest")', internal: true } }
+    expect: { text: Knowledge-pack build queued. }
+  - id: await-selected-pack
+    title: Wait for selected-book artifact generation
+    action: { waitForOperation: { kind: "knowledge:build_pack", source: linked, status: [succeeded], timeoutSeconds: 120, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: view=packs }
+  - id: verify-selected-pack
+    title: Prove the selected-book pack is complete and downloadable
+    action: { goto: /app/knowledge?view=packs }
+    expect:
+      visible:
+        - { css: 'article[data-knowledge-pack-book-ids~="guarantee-book-{{runShort}}-{{deviceId}}"][data-knowledge-pack-book-ids~="treeseed-accounts-and-identity"][data-knowledge-pack-latest="true"] a:has-text("Download")', internal: true }
+  - id: open-book-lifecycle-blockers
+    title: Open lifecycle controls for the exact run-created book
+    action: { goto: /app/knowledge }
+    expect: { visible: [{ css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Manage")', internal: true }] }
+  - id: manage-blocked-book
+    title: Inspect the book through its rendered management control
+    action: { click: { css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Manage")', internal: true } }
+    expect:
+      visible:
+        - { css: '[data-scene="knowledge.lifecycle"][data-knowledge-kind="book"][data-knowledge-blocker-count="2"]', internal: true }
+  - id: disclose-blocked-book-archive
+    title: Expose the disabled archive action after reviewing its dependencies
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] summary:has-text("Archive book")', internal: true } }
+    expect:
+      visible:
+        - { css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare archive for review"):disabled', internal: true }
+  - id: remove-run-collection
+    title: Remove the saved collection through its rendered destructive control
+    action: { goto: /app/knowledge?view=packs }
+    expect: { visible: [{ css: 'article:has-text("Guarantee Collection {{runShort}} {{deviceId}}") button:has-text("Delete")', internal: true }] }
+  - id: delete-run-collection
+    title: Resolve the saved-collection blocker
+    action: { click: { css: 'article:has-text("Guarantee Collection {{runShort}} {{deviceId}}") button:has-text("Delete")', internal: true } }
+    expect: { text: Book collection deleted. }
+  - id: open-run-page-outline
+    title: Open the run book outline before archiving its page
+    action: { goto: /app/knowledge }
+    expect: { visible: [{ css: 'details[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] summary', internal: true }] }
+  - id: expand-run-page-outline
+    title: Expand the exact run book outline
+    action: { click: { css: 'details[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] summary', internal: true } }
+    expect: { visible: [{ css: '[data-page-id="guarantee-page-{{runShort}}-{{deviceId}}"] a:has-text("Edit page")', internal: true }] }
+  - id: manage-run-page-lifecycle
+    title: Open the page lifecycle controls
+    action: { click: { css: '[data-page-id="guarantee-page-{{runShort}}-{{deviceId}}"] a:has-text("Edit page")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.lifecycle"][data-knowledge-kind="page"][data-knowledge-blocker-count="0"]', internal: true }] }
+  - id: disclose-page-archive
+    title: Open the deliberate page archive confirmation
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] summary:has-text("Archive page")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare archive for review")', internal: true }] }
+  - id: prepare-page-archive
+    title: Create the page archive draft through the rendered control
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare archive for review")', internal: true } }
+    expect: { urlIncludes: workspace=, visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: submit-page-archive
+    title: Submit the archived page document for independent review
+    action: { click: { role: button, name: Submit for review } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: await-page-archive-review-navigation
+    title: Wait for the archived page review queue to finish loading
+    action: { pause: { mode: timed, durationSeconds: 10 } }
+    expect: { urlIncludes: view=reviews }
+  - id: sign-out-page-archive-author
+    title: End the archive author's session
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: sign-in-page-archive-reviewer
+    title: Enter the independent reviewer identity for page archive
+    action: { fill: { role: textbox, name: Email or username, value: visual.knowledge-reviewer@treeseed.io } }
+    expect: { text: Sign in }
+  - id: password-page-archive-reviewer
+    title: Enter the reviewer password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-page-archive-reviewer
+    title: Authenticate the page archive reviewer
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: approve-page-archive
+    title: Approve the exact archived page diff
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: decide-page-archive
+    title: Record independent approval for the page archive
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] button[value="approve"]', internal: true } }
+    expect: { text: Review decision recorded. }
+  - id: reload-page-archive
+    title: Reload the durable page archive approval
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="approved"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] [data-scene="knowledge.review.publish"]', internal: true }] }
+  - id: publish-page-archive
+    title: Publish the approved page archive
+    action: { click: { css: '[data-review-status="approved"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] [data-scene="knowledge.review.publish"] button', internal: true } }
+    expect: { text: Approved knowledge publication queued. }
+  - id: await-page-archive
+    title: Wait for atomic archived-page publication
+    action: { waitForOperation: { kind: "knowledge:publish_review", source: linked, status: [succeeded], timeoutSeconds: 180, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: return-to-book-author
+    title: Sign out the reviewer before the book archive mutation
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-book-author
+    title: Return to the authorized lifecycle author
+    action: { fill: { role: textbox, name: Email or username, value: visual.platform-admin@treeseed.io } }
+    expect: { text: Sign in }
+  - id: enter-book-author-password
+    title: Enter the lifecycle author's password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-book-author
+    title: Authenticate the book lifecycle author
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: reopen-book-lifecycle
+    title: Reopen the exact book after resolving all blockers
+    action: { goto: /app/knowledge }
+    expect: { visible: [{ css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Manage")', internal: true }] }
+  - id: manage-unblocked-book
+    title: Prove the book archive is now unblocked
+    action: { click: { css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Manage")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.lifecycle"][data-knowledge-kind="book"][data-knowledge-blocker-count="0"]', internal: true }] }
+  - id: disclose-book-archive
+    title: Open the deliberate book archive confirmation
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] summary:has-text("Archive book")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare archive for review")', internal: true }] }
+  - id: prepare-book-archive
+    title: Create the book archive draft through the rendered control
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare archive for review")', internal: true } }
+    expect: { urlIncludes: workspace=, visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: submit-book-archive
+    title: Submit the archived book for independent review
+    action: { click: { role: button, name: Submit for review } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: await-book-archive-review-navigation
+    title: Wait for the archived book review queue to finish loading
+    action: { pause: { mode: timed, durationSeconds: 10 } }
+    expect: { urlIncludes: view=reviews }
+  - id: sign-out-book-archive-author
+    title: End the book archive author's session
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-book-archive-reviewer
+    title: Enter the independent book archive reviewer
+    action: { fill: { role: textbox, name: Email or username, value: visual.knowledge-reviewer@treeseed.io } }
+    expect: { text: Sign in }
+  - id: password-book-archive-reviewer
+    title: Enter the reviewer password for book archive
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-book-archive-reviewer
+    title: Authenticate the book archive reviewer
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: approve-book-archive
+    title: Open the exact book archive review
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: decide-book-archive
+    title: Approve the book archive as a different user
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] button[value="approve"]', internal: true } }
+    expect: { text: Review decision recorded. }
+  - id: reload-book-archive
+    title: Reload the durable book archive approval
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="approved"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] [data-scene="knowledge.review.publish"]', internal: true }] }
+  - id: publish-book-archive
+    title: Publish the approved book archive
+    action: { click: { css: '[data-review-status="approved"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] [data-scene="knowledge.review.publish"] button', internal: true } }
+    expect: { text: Approved knowledge publication queued. }
+  - id: await-book-archive
+    title: Wait for atomic archived-book publication
+    action: { waitForOperation: { kind: "knowledge:publish_review", source: linked, status: [succeeded], timeoutSeconds: 180, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: sign-out-book-archive-reviewer
+    title: End the reviewer session before restoration
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-restore-author
+    title: Return to the lifecycle author for restoration
+    action: { fill: { role: textbox, name: Email or username, value: visual.platform-admin@treeseed.io } }
+    expect: { text: Sign in }
+  - id: password-restore-author
+    title: Enter the restore author's password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-restore-author
+    title: Authenticate the restore author
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: open-archived-book
+    title: Open the archived book management surface
+    action: { goto: /app/knowledge }
+    expect: { visible: [{ css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Manage")', internal: true }] }
+  - id: manage-archived-book
+    title: Open the archived book restore controls
+    action: { click: { css: '[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] a:has-text("Manage")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.lifecycle"][data-knowledge-status="archived"] button:has-text("Prepare restore for review")', internal: true }] }
+  - id: prepare-book-restore
+    title: Create the book restore draft
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare restore for review")', internal: true } }
+    expect: { urlIncludes: workspace= }
+  - id: submit-book-restore
+    title: Submit the restored book for independent review
+    action: { click: { role: button, name: Submit for review } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: await-book-restore-review-navigation
+    title: Wait for the restored book review queue to finish loading
+    action: { pause: { mode: timed, durationSeconds: 10 } }
+    expect: { urlIncludes: view=reviews }
+  - id: sign-out-book-restore-author
+    title: End the book restore author's session
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-book-restore-reviewer
+    title: Enter the independent restore reviewer
+    action: { fill: { role: textbox, name: Email or username, value: visual.knowledge-reviewer@treeseed.io } }
+    expect: { text: Sign in }
+  - id: password-book-restore-reviewer
+    title: Enter the restore reviewer password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-book-restore-reviewer
+    title: Authenticate the book restore reviewer
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: approve-book-restore
+    title: Open and approve the exact book restore review
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: decide-book-restore
+    title: Approve the book restore independently
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] button[value="approve"]', internal: true } }
+    expect: { text: Review decision recorded. }
+  - id: reload-book-restore
+    title: Reload the durable book restore approval
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="approved"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] [data-scene="knowledge.review.publish"]', internal: true }] }
+  - id: publish-book-restore
+    title: Publish the approved book restoration
+    action: { click: { css: '[data-review-status="approved"][data-review-paths*="books/guarantee-book-{{runShort}}-{{deviceId}}.md"] [data-scene="knowledge.review.publish"] button', internal: true } }
+    expect: { text: Approved knowledge publication queued. }
+  - id: await-book-restore
+    title: Wait for atomic restored-book publication
+    action: { waitForOperation: { kind: "knowledge:publish_review", source: linked, status: [succeeded], timeoutSeconds: 180, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: sign-out-book-restore-reviewer
+    title: End the reviewer session before restoring the page
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-page-restore-author
+    title: Return to the authorized page restore author
+    action: { fill: { role: textbox, name: Email or username, value: visual.platform-admin@treeseed.io } }
+    expect: { text: Sign in }
+  - id: password-page-restore-author
+    title: Enter the page restore author's password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-page-restore-author
+    title: Authenticate the page restore author
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: reopen-restored-book-outline
+    title: Open the restored book outline containing the archived page
+    action: { goto: /app/knowledge }
+    expect: { visible: [{ css: 'details[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] summary', internal: true }] }
+  - id: expand-restored-book-outline
+    title: Expand the restored book outline
+    action: { click: { css: 'details[data-book-id="guarantee-book-{{runShort}}-{{deviceId}}"] summary', internal: true } }
+    expect: { visible: [{ css: '[data-page-id="guarantee-page-{{runShort}}-{{deviceId}}"] a:has-text("Edit page")', internal: true }] }
+  - id: manage-archived-page
+    title: Open the archived page restore controls
+    action: { click: { css: '[data-page-id="guarantee-page-{{runShort}}-{{deviceId}}"] a:has-text("Edit page")', internal: true } }
+    expect: { visible: [{ css: '[data-scene="knowledge.lifecycle"][data-knowledge-kind="page"][data-knowledge-status="archived"]', internal: true }] }
+  - id: prepare-page-restore
+    title: Prepare the page restoration through the rendered control
+    action: { click: { css: '[data-scene="knowledge.lifecycle.form"] button:has-text("Prepare restore for review")', internal: true } }
+    expect: { urlIncludes: workspace=, visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: submit-page-restore
+    title: Submit the restored page for independent review
+    action: { click: { role: button, name: Submit for review } }
+    expect: { visible: [{ css: '[data-scene="knowledge.editor.form"]', internal: true }] }
+  - id: await-page-restore-review-navigation
+    title: Wait for the restored page review queue to finish loading
+    action: { pause: { mode: timed, durationSeconds: 10 } }
+    expect: { urlIncludes: view=reviews }
+  - id: sign-out-page-restore-author
+    title: End the page restore author's session
+    action: { clickVisibleSequence: [{ role: button, name: Open team operations }, { role: button, name: Sign out }] }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-page-restore-reviewer
+    title: Enter the independent page restore reviewer
+    action: { fill: { role: textbox, name: Email or username, value: visual.knowledge-reviewer@treeseed.io } }
+    expect: { text: Sign in }
+  - id: password-page-restore-reviewer
+    title: Enter the page restore reviewer password
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "TreeSeedVisualAudit!2026" } }
+    expect: { text: Sign in }
+  - id: authenticate-page-restore-reviewer
+    title: Authenticate the page restore reviewer
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app }
+  - id: approve-page-restore
+    title: Open the exact page restore review
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] [data-scene="knowledge.review.decision"]', internal: true }] }
+  - id: decide-page-restore
+    title: Approve the page restoration independently
+    action: { click: { css: '[data-review-status="open"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] button[value="approve"]', internal: true } }
+    expect: { text: Review decision recorded. }
+  - id: reload-page-restore
+    title: Reload the durable page restore approval
+    action: { goto: /app/knowledge?view=reviews }
+    expect: { visible: [{ css: '[data-review-status="approved"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] [data-scene="knowledge.review.publish"]', internal: true }] }
+  - id: publish-page-restore
+    title: Publish the approved page restoration
+    action: { click: { css: '[data-review-status="approved"][data-review-paths*="guarantee-book-{{runShort}}-{{deviceId}}/getting-started.md"] [data-scene="knowledge.review.publish"] button', internal: true } }
+    expect: { text: Approved knowledge publication queued. }
+  - id: await-page-restore
+    title: Wait for atomic restored-page publication
+    action: { waitForOperation: { kind: "knowledge:publish_review", source: linked, status: [succeeded], timeoutSeconds: 180, pollIntervalSeconds: 2 } }
+    expect: { urlIncludes: /app/knowledge }
+  - id: verify-restored-page
+    title: Prove the restored page is served from the final atomic revision
+    action: { goto: "/t/treeseed/books/guarantee-book-{{runShort}}-{{deviceId}}/getting-started" }
+    expect: { text: This page is published from an exact TreeDX commit., urlIncludes: /getting-started }
+chapters:
+  - { id: workspace, title: Create an isolated authoring workspace, startsAt: open-workbench }
+  - { id: book, title: Validate and author a repository-native book, startsAt: reject-empty-book }
+  - { id: page, title: Author safe book knowledge, startsAt: choose-page }
+  - { id: review, title: Enforce independent review and atomic publication, startsAt: submit-knowledge-review }
+  - { id: reader, title: Search and render the exact published revision, startsAt: search-library }
+  - { id: pack, title: Build immutable single-book and selected-book packs, startsAt: return-to-packs }
+  - { id: lifecycle, title: Resolve dependencies and archive and restore knowledge, startsAt: open-book-lifecycle-blockers }
+runtime: { mode: training, timeouts: { sceneSeconds: 1800, chapterSeconds: 900, stepSeconds: 90 }, checkpoints: { enabled: true, defaultResumable: false, everyStep: true }, progress: { heartbeatSeconds: 15 }, failure: { continueOnFailure: false } }
+visualAudit: { enabled: true }

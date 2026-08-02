@@ -11,7 +11,7 @@ journey:
     - team.collection
     - team.operational-overview
     - team.public-profile
-  minimumSteps: 4
+  minimumSteps: 6
   requiresInteractiveAction: true
   consumesState:
     - key: auth.primary-session
@@ -123,6 +123,22 @@ workflow:
         - scene: team.overview.content-activity
         - css: '[data-testid="project-activity-chart"]'
           internal: true
+  - id: open-team-activity-help
+    title: Open team activity guidance from the audit panel
+    action:
+      click: { css: 'button[data-ts-help-knowledge-page-id="team.activity"]', internal: true }
+    expect:
+      visible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      text: Activity entries identify what happened
+  - id: close-team-activity-help
+    title: Close team activity guidance and restore focus
+    action:
+      click: { role: button, name: Close help }
+    expect:
+      notVisible:
+        - { css: '[data-ts-help-dialog][open]', internal: true }
+      focused: { css: 'button[data-ts-help-knowledge-page-id="team.activity"]', internal: true }
   - id: inspect-domain-summaries
     title: Inspect bounded operational summaries and canonical links
     action:

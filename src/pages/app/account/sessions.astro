@@ -12,7 +12,7 @@ const sessions = await frame.api.accountSessions();
 ---
 
 <TreeseedAppLayout title="Sessions" description="Review and revoke account sessions." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
-	<SettingsTemplate title="Account sessions" description="The current device signs out through the dedicated logout flow." sections={frame.sections}>
+	<SettingsTemplate title="Account sessions" description="The current device signs out through the dedicated logout flow." sections={frame.sections} knowledgePageId="account.sessions">
 		<SessionManager sessions={sessions} csrfToken={frame.csrfToken} timeZone={frame.preferences.timeZone} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

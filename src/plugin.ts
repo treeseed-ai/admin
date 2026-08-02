@@ -3,7 +3,6 @@ import { definePlugin } from '@treeseed/sdk/platform/plugin';
 import type { Plugin } from '@treeseed/sdk/platform/plugin';
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from './routes.js';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from './commerce.js';
-import { DEFAULT_SECRET_MANAGER_PROVIDERS } from './secret-managers.js';
 
 export const ADMIN_ENV_METADATA = {
   TREESEED_BETTER_AUTH_SECRET: {
@@ -68,13 +67,6 @@ export const ADMIN_ENV_METADATA = {
     description: 'Optional ordered API base URLs used for catalog/profile reads.',
     required: false,
   },
-  TREESEED_ADMIN_SECRET_MANAGER_PROVIDER: {
-    group: 'secret-managers',
-    sensitivity: 'plain',
-    description: 'Selected linked secret manager provider for admin credential and secret workflows.',
-    values: DEFAULT_SECRET_MANAGER_PROVIDERS.map((provider) => provider.id),
-    required: false,
-  },
 };
 
 export const ADMIN_ENV_SCHEMA: Record<string, unknown> = {
@@ -88,12 +80,6 @@ export const ADMIN_ENV_SCHEMA: Record<string, unknown> = {
   TREESEED_MARKET_API_BASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
   TREESEED_CENTRAL_MARKET_API_BASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
   TREESEED_CATALOG_MARKET_API_BASE_URLS: envField.string({ context: 'server', access: 'secret', optional: true }),
-  TREESEED_ADMIN_SECRET_MANAGER_PROVIDER: envField.enum({
-    values: DEFAULT_SECRET_MANAGER_PROVIDERS.map((provider) => provider.id) as [string, ...string[]],
-    context: 'server',
-    access: 'secret',
-    optional: true,
-  }),
 };
 
 export const ADMIN_CAPABILITIES = {
@@ -101,11 +87,6 @@ export const ADMIN_CAPABILITIES = {
     bundled: false,
     defaultProvider: DEFAULT_ADMIN_COMMERCE_PROVIDER.id,
   },
-  secretManagers: DEFAULT_SECRET_MANAGER_PROVIDERS.map((provider) => ({
-    id: provider.id,
-    label: provider.label,
-    capabilities: provider.capabilities,
-  })),
 };
 
 const adminPlugin: Plugin = definePlugin({
@@ -118,6 +99,7 @@ const adminPlugin: Plugin = definePlugin({
       '@treeseed/ui/styles/theme.css',
       '@treeseed/ui/styles/ui.css',
       '@treeseed/ui/styles/forms.css',
+      '@treeseed/ui/styles/knowledge.css',
       '@treeseed/ui/styles/app-shell.css',
       '@treeseed/ui/styles/app-controls.css',
       '@treeseed/ui/styles/charts.css',
@@ -128,7 +110,6 @@ const adminPlugin: Plugin = definePlugin({
   },
   adminCapabilities: ADMIN_CAPABILITIES,
   commerceProvider: DEFAULT_ADMIN_COMMERCE_PROVIDER,
-  secretManagers: DEFAULT_SECRET_MANAGER_PROVIDERS,
 });
 
 export default adminPlugin;

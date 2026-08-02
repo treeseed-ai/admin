@@ -1,0 +1,27 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.service.connection.remote-provider-management.731
+journeyIndex: 731
+type: service
+subtype: connection
+journey: Remote Provider Management
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Team service administrators authorize independent GitHub Repository and Workflow Connectors through rendered controls and inspect exact readiness and drift.
+status: blocked
+dependencies:
+  guarantees: [guarantee.service.connection.connect-service.023]
+actors:
+  allowed: [team_owner, service_admin]
+  forbidden: [anonymous_user, non_member, contributor, viewer]
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [security, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes: [Dedicated acceptance GitHub App installations and a reconciled callback tunnel are required.]
+scene: { required: false }
+api: { required: true, verifierRefs: [] }
+audit: { required: true, verifierRefs: [] }
+negativeCases: []
+evidence: { required: [playwright_trace, api_verification_log, audit_log, cleanup_report] }
+notes:
+  - Blocked until the live disposable-repository connector scene and run-correlated provider verifiers are implemented and pass twice.

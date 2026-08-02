@@ -15,6 +15,9 @@ export const prerender = false;
 const token = String(Astro.params.token ?? '');
 const api = new ApiClientFacade(Astro);
 const csrfToken = ensureCsrfToken(Astro);
+const timeZone = Astro.locals.auth?.principal
+	? (await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }))).timeZone
+	: 'UTC';
 let preview: any = null;
 let previewStatus = 200;
 try {
@@ -78,7 +81,7 @@ const canAccept = previewStatus === 200 && state === 'pending' && !emailMismatch
 						{ key: 'Role', value: roleDisplay(String(invite.roleKey ?? 'viewer')).label },
 						{ key: 'Status', value: state },
 					]} />
-					<p>Expires <Timestamp value={invite.expiresAt} /></p>
+					<p>Expires <Timestamp value={invite.expiresAt} timeZone={timeZone} /></p>
 					{!Astro.locals.auth?.principal ? (
 						<div class="ts-panel__actions">
 							<Button href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>Sign in to accept</Button>

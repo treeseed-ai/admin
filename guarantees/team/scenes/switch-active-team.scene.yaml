@@ -17,6 +17,8 @@ journey:
     - key: team.primary
       kind: marker
   producesState:
+    - key: team.active-session
+      kind: browser-storage
     - key: team.active
       kind: marker
 mode:

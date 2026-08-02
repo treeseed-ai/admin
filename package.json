@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.59-dev.staging.20260716T154320Z",
+  "version": "0.12.59-dev.feature-treeseed-guide-editorial-agents.20260802T174455Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -49,9 +49,9 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#95a4ac840472233b1ad3a513def1b97e07652776",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#062bdabb6038a98c56f90e3bbf774817f27db2f7",
-    "@treeseed/ui": "github:treeseed-ai/ui#8f850b33e8b0a64c047cd787c87dd1e12e8a3e5b",
+    "@treeseed/core": "github:treeseed-ai/core#6d2b5fda5284e447feb038269b718610748f3bb3",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#b16d4476d5482807dacb290065cfd6d8bdc8fd87",
+    "@treeseed/ui": "github:treeseed-ai/ui#ba0d45bde60841b2f4575ffda7d5acd113853df6",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
@@ -96,10 +96,6 @@
     "./commerce": {
       "types": "./dist/commerce.d.ts",
       "default": "./dist/commerce.js"
-    },
-    "./secret-managers": {
-      "types": "./dist/secret-managers.d.ts",
-      "default": "./dist/secret-managers.js"
     },
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",

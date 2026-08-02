@@ -1,0 +1,28 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.book.create-book.065
+journeyIndex: 65
+type: project
+subtype: book
+journey: Create Book
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Create a repository-native book through rendered controls and a correlated TreeDX authoring workspace.
+status: active
+actors: { allowed: [project_contributor, project_manager], forbidden: [anonymous_user, non_member, project_viewer] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.book-authoring, knowledge.review-publication] }
+scene: { required: true, manifest: scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: "/app/projects/[projectId]/books", componentContract: knowledge authoring workflow }
+api: { required: true, verifierRefs: [api.knowledge.control-plane, api.knowledge.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content] }
+audit: { required: true, verifierRefs: [api.knowledge.run-correlated] }
+negativeCases:
+  - { id: anonymous-authoring-denied, actor: anonymous_user, sceneManifest: scenes/negative/anonymous-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.anonymous, verifierRefs: [api.knowledge.control-plane] }
+  - { id: nonmember-authoring-denied, actor: non_member, sceneManifest: scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.control-plane] }
+  - { id: readonly-authoring-denied, actor: project_viewer, sceneManifest: scenes/negative/readonly-knowledge-controls.scene.yaml, executionKey: admin.knowledge.negative.readonly, verifierRefs: [api.knowledge.control-plane] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref, audit_event_id] }
+notes:
+  - The shared execution performs the mutation through rendered controls and publishes run-scoped correlation identifiers.
+  - July evidence remains inadmissible because it reused an unrelated read-only role verifier.
+run: { requiredForRelease: true }

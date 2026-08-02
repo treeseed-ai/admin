@@ -1,0 +1,103 @@
+schemaVersion: treeseed.scene/v1
+id: admin.feedback.submit
+title: Submit Product Feedback
+description: Submit feedback with and without a browser-redacted screenshot while contextual help remains open.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [feedback.submission, feedback.screenshot-privacy, feedback.overlay-coexistence]
+  minimumSteps: 18
+  requiresInteractiveAction: true
+  consumesState: [{ key: auth.primary-session, kind: browser-storage }]
+  producesState:
+    - { key: feedback.submitted, kind: marker, value: { message: "Feedback run {{runId}} {{deviceId}}" } }
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, orientation: portrait, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup: { dev: { required: true, reuseExisting: true } }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-account-password
+    title: Open an authenticated page with a sensitive form
+    action: { goto: "/app/account?tab=password" }
+    expect: { urlIncludes: /app/account, text: Change password }
+  - id: plant-private-canary
+    title: Enter a private canary that screenshot capture must mask
+    action: { fill: { css: 'input[name="password"]', internal: true, value: "feedback-secret-{{runId}}-{{deviceId}}" } }
+    expect: { text: Change password }
+  - id: open-help
+    title: Keep contextual help open beneath feedback
+    action: { click: { css: '.ts-help-trigger[data-ts-help-open="shell-help"][data-ts-help-knowledge-page-id="account.security"]', internal: true } }
+    expect: { text: TreeSeed Help }
+  - id: open-feedback-over-help
+    title: Open the non-modal feedback panel without closing help
+    action: { click: { css: '[data-ts-help-dialog][open] [data-ts-feedback-open]', internal: true } }
+    expect: { text: Tell us what could be better, visible: [{ scene: feedback.panel }] }
+  - id: choose-bug
+    title: Classify the report
+    action: { select: { role: combobox, name: Feedback type, value: bug } }
+    expect: { text: Context attached }
+  - id: reject-empty-details
+    title: Reject a report without the required details
+    action: { click: { css: '[data-scene="feedback.panel"] button[type="submit"]', internal: true } }
+    expect: { text: Please correct the highlighted fields. }
+  - id: prove-adjacent-validation
+    title: Prove the required error is displayed beside the details field
+    action: { click: { role: textbox, name: Details } }
+    expect: { text: This field is required. }
+  - id: enter-feedback
+    title: Describe the text-only run-correlated issue
+    action: { fill: { role: textbox, name: Details, value: "Feedback text run {{runId}} {{deviceId}}" } }
+    expect: { text: Context attached }
+  - id: submit-without-screenshot
+    title: Submit text-only feedback through the shared enhanced form
+    action: { click: { css: '[data-scene="feedback.panel"] button[type="submit"]', internal: true } }
+    expect: { urlIncludes: /app/account, text: Feedback sent. Reference }
+  - id: prove-help-remained-open
+    title: Verify the underlying help state survived feedback submission
+    action: { click: { css: '[data-ts-help-dialog][open] [data-ts-feedback-open]', internal: true } }
+    expect: { text: TreeSeed Help, visible: [{ scene: feedback.panel }] }
+  - id: enter-screenshot-feedback
+    title: Describe the run-correlated screenshot report
+    action: { fill: { role: textbox, name: Details, value: "Feedback run {{runId}} {{deviceId}}" } }
+    expect: { text: Context attached }
+  - id: capture-preview
+    title: Capture the complete page and still-open help dialog without the feedback panel
+    action: { click: { css: '[data-scene="feedback.panel"] [data-ts-feedback-capture]', internal: true } }
+    expect: { text: Preview ready, visible: [{ css: '[data-ts-feedback-preview-open]:not([hidden])', internal: true }] }
+  - id: expand-capture-preview
+    title: Expand the complete full-page screenshot for review
+    action: { click: { role: button, name: Expand complete screenshot preview } }
+    expect: { text: Complete screenshot preview, visible: [{ css: '[data-ts-image-lightbox-image][src]', internal: true }] }
+  - id: close-expanded-preview
+    title: Close the expanded screenshot and return focus to the thumbnail
+    action: { click: { role: button, name: Close dialog } }
+    expect: { text: Preview ready, visible: [{ role: button, name: Expand complete screenshot preview }] }
+  - id: remove-preview
+    title: Remove the optional screenshot before submission
+    action: { click: { css: '[data-scene="feedback.panel"] [data-ts-feedback-remove]', internal: true } }
+    expect: { text: Screenshot removed. }
+  - id: replace-preview
+    title: Capture a replacement redacted preview
+    action: { click: { css: '[data-scene="feedback.panel"] [data-ts-feedback-capture]', internal: true } }
+    expect: { text: Preview ready, visible: [{ role: button, name: Replace screenshot }] }
+  - id: submit-with-screenshot
+    title: Submit through the enhanced form without page navigation
+    action: { click: { css: '[data-scene="feedback.panel"] button[type="submit"]', internal: true } }
+    expect: { urlIncludes: /app/account, text: Feedback sent. Reference, visible: [{ css: '[data-ts-toast-id][data-tone="success"]:last-of-type', internal: true }] }
+  - id: close-help
+    title: Close only contextual help and restore page focus
+    action: { click: { role: button, name: Close help } }
+    expect: { urlIncludes: /app/account }
+chapters: []
+overlays: []
+diagrams: []
+render: { remotion: { composition: treeseed-training-default, output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }, capture: { viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, evidenceFit: fixed-browser } } }
+runtime: { mode: training, timeouts: { sceneSeconds: 600, chapterSeconds: 120, stepSeconds: 90 }, checkpoints: { enabled: true, defaultResumable: true, everyStep: true }, progress: { heartbeatSeconds: 15 }, failure: { continueOnFailure: false } }
+training: {}
+visualAudit: { enabled: true }
