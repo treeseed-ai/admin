@@ -78,9 +78,6 @@ capabilities:
 requiredGuarantees:
   - guarantee.service.vault.initialize-personal-vault.021
   - guarantee.service.vault.recover-vault-access.022
-  - guarantee.service.connection.connect-service.023
-  - guarantee.service.connection.edit-service.024
-  - guarantee.service.connection.disconnect-service.025
 requirements:
   accessibility: true
   console: true
