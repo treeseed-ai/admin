@@ -1,0 +1,21 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
+import ModeNavigation from '../../../../components/modes/ModeNavigation.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../../lib/market/api-client.ts';
+import { items, statusTone, text } from '../../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../../view-models/app-access.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro); const projects = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])) : [];
+const rosters = await Promise.all(projects.slice(0, 30).map(async (project) => ({ project, classes: items(await api.request('GET', `/v1/projects/${encodeURIComponent(String(project.id))}/agent-classes?limit=100`).catch(() => null)), runs: items(await api.request('GET', `/v1/projects/${encodeURIComponent(String(project.id))}/agent-mode-runs?projection=activity&limit=100`).catch(() => null)) })));
+---
+<TreeseedAppLayout title="Command agents" description="Portfolio agent roster grouped by project and current activity." currentPath="/app/command" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Agent roster" data-scene="command.agents"><PageHeader eyebrow="Command · Agents" title="Agent field roster" description="Understand each configured role, its current activity, and its recent execution evidence."><Button slot="actions" href="/app/command" variant="secondary">Command overview</Button></PageHeader><ModeNavigation mode="command" current="agents" />
+		{!context.activeTeam ? <EmptyState title="Choose an active team" description="Agents belong to projects in the active team." /> : !rosters.length ? <EmptyState title="No projects with agents" description="Project agent definitions will appear here after they are synchronized into the control plane." /> : rosters.map(({ project, classes, runs }) => <Panel eyebrow="Project roster" title={text(project.displayName, project.name, project.slug, 'Project')} description={`${classes.length} agent classes · ${runs.length} recent mode runs`}><div class="ts-resource-grid">{classes.map((agent) => { const recent = runs.find((run) => String(run.agentClassId ?? run.agent_class_id) === String(agent.id)); return <ResourceCard title={text(agent.displayName, agent.name, agent.slug, String(agent.id))} description={text(agent.description, agent.handler, 'Configured project agent class')} status={String(recent?.status ?? agent.status ?? 'configured')} tone={statusTone(recent?.status ?? agent.status)} href={`/app/projects/${encodeURIComponent(String(project.id))}/agents/${encodeURIComponent(String(agent.id))}`} />; })}</div><Button href={`/app/projects/${encodeURIComponent(String(project.id))}/agents`} variant="secondary">Open project roster</Button></Panel>)}
+	</section>
+</TreeseedAppLayout>

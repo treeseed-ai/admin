@@ -29,7 +29,7 @@ export async function loadAccountFrame(context: APIContext, section: typeof ACCO
 	return {
 		app,
 		api,
-		preferences: await api.accountPreferences().catch(() => ({ timeZone: 'UTC' })),
+		preferences: await api.accountPreferences().catch(() => ({ timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const })),
 		csrfToken: ensureCsrfToken(context),
 		sections: ACCOUNT_SECTIONS.map((entry) => ({ ...entry, current: entry.id === section })),
 	};
@@ -144,8 +144,12 @@ export async function handleAppearanceRequest(context: APIContext, api: ReturnTy
 		if (intent === 'create-theme') await api.createPersonalTheme(themeDraft(form));
 		else if (intent === 'update-theme') await api.updatePersonalTheme(String(form.get('themeId') ?? ''), themeDraft(form));
 		else if (intent === 'delete-theme') await api.deletePersonalTheme(String(form.get('themeId') ?? ''));
+		else if (intent === 'realtime') await api.updateAccountPreferences({
+			realTimeUpdates: String(form.get('realTimeUpdates') ?? 'true') === 'true',
+			realTimePollingIntervalSeconds: Number(form.get('realTimePollingIntervalSeconds') ?? 5) as 2 | 5 | 15 | 30,
+		});
 		else throw new Error('Unknown appearance action.');
-		return respond(context, '/app/account/appearance', { ok: true, code: intent === 'delete-theme' ? 'theme_deleted' : 'theme_saved', message: intent === 'delete-theme' ? 'Theme deleted.' : 'Theme saved.' });
+		return respond(context, '/app/account/appearance', { ok: true, code: intent === 'delete-theme' ? 'theme_deleted' : intent === 'realtime' ? 'realtime_saved' : 'theme_saved', message: intent === 'delete-theme' ? 'Theme deleted.' : intent === 'realtime' ? 'Real-time experience saved.' : 'Theme saved.' });
 	} catch (error) { return respond(context, '/app/account/appearance', failure(error)); }
 }
 

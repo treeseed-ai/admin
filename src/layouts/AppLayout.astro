@@ -77,7 +77,7 @@ const feedbackContext = principal ? {
 	shell: 'product' as const,
 	context: activeTeam ? 'team' as const : 'personal' as const,
 	teamId: activeTeam?.id,
-	identityLabel: principal.displayName ?? principal.email ?? 'Current account',
+	identityLabel: principal.displayName ?? 'Current account',
 	teamLabel: activeTeam ? (activeTeam.displayName ?? activeTeam.name ?? activeTeam.slug ?? activeTeam.id) : undefined,
 	environment: (import.meta.env.MODE === 'production' ? 'production' : 'local') as 'local' | 'production',
 	submissionEndpoint: '/v1/feedback',
@@ -109,14 +109,14 @@ const feedbackContext = principal ? {
 	}}
 	navItems={[
 		{ label: 'Start', href: '/app/', icon: 'start' },
+		{ label: 'Command', href: '/app/command', icon: 'capacity' },
+		{ label: 'Focus', href: '/app/focus', icon: 'work' },
 		...(canReadFeedback ? [{ label: 'Feedback', href: '/app/feedback', icon: 'feedback' as const }] : []),
-		{ label: 'Services', href: '/app/services', icon: 'services' },
 		{ label: 'Projects', href: '/app/projects', icon: 'projects' },
-		{ label: 'Capacity', href: '/app/capacity', icon: 'capacity' },
-		{ label: 'Work', href: '/app/work', icon: 'work' },
+		{ label: 'Services', href: '/app/services', icon: 'services' },
 		{ label: 'Knowledge', href: '/app/knowledge', icon: 'knowledge' },
 	]}
-	siteItems={[{ label: 'Home', href: '/' }]}
+	siteItems={[{ label: 'Home', href: '/' }, { label: 'Guide', href: '/knowledge/market/' }, { label: 'Status', href: '/status/' }]}
 	quickActions={[
 		activeTeam
 			? { label: 'Team overview', href: `/app/teams/${encodeURIComponent(activeTeam.id)}`, variant: 'primary' as const, icon: 'teams' as const }
@@ -162,7 +162,7 @@ const feedbackContext = principal ? {
 			form.addEventListener('treeseed:form-success', () => {
 				window.location.href = url.toString();
 			}, { once: true });
-			form.requestSubmit();
+			(form as HTMLFormElement).requestSubmit();
 		});
 	});
 </script>

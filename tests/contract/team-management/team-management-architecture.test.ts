@@ -17,6 +17,8 @@ describe('team management architecture audit', () => {
 			'/app/teams/[teamId]/members',
 			'/app/teams/[teamId]/delete',
 			'/app/projects',
+			'/app/command',
+			'/app/focus',
 			'/app/services',
 			'/app/capacity',
 			'/app/knowledge',
@@ -59,7 +61,7 @@ describe('team management architecture audit', () => {
 
 	it('keeps overview, settings, membership, consent, and lifecycle responsibilities complete', () => {
 		const overview = source('src/pages/app/teams/[teamId]/index.astro');
-		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity']) {
+		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity', 'Command', 'Focus']) {
 			expect(overview, label).toContain(label);
 		}
 		expect(overview).toContain("import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart'");
@@ -72,7 +74,7 @@ describe('team management architecture audit', () => {
 		expect(overviewHeader).not.toContain('slot="actions"');
 		expect(overviewHeader).not.toMatch(/>(?:Settings|Members)</u);
 		const domainOverview = source('src/pages/app/domain-overview.astro');
-		for (const path of ['/app/projects', '/app/services', '/app/capacity', '/app/knowledge', '/app/market']) {
+		for (const path of ['/app/services', '/app/knowledge', '/app/market']) {
 			expect(domainOverview, path).toContain(`'${path}'`);
 		}
 		expect(domainOverview).toContain('This bounded landing page preserves domain ownership.');

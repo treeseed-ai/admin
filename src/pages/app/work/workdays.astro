@@ -1,0 +1,35 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import EntityCollection from '@treeseed/ui/components/astro/data/entities/EntityCollection.astro';
+import OperationsDisplayContainer from '@treeseed/ui/components/astro/operating/navigation/OperationsDisplayContainer.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import AgentLabChrome from '../../../components/agent-lab/AgentLabChrome.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { loadAgentLabEntityPage } from '../../../view-models/agent-lab/entity-page.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const frame = await loadAgentLabEntityPage(Astro, 'workdays');
+const api = new ApiClientFacade(Astro);
+const access = frame.app.activeTeam ? await api.getTeamAccessSummary(frame.app.activeTeam.id).catch(() => null) : null;
+const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+const csrfToken = ensureCsrfToken(Astro);
+const action = frame.app.activeTeam ? `/v1/teams/${encodeURIComponent(frame.app.activeTeam.id)}/workday-runs` : '';
+---
+
+<TreeseedAppLayout title="Agent Lab · Workdays" description="Create and inspect bounded team operating sessions." currentPath="/app/command" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
+	<section class="ts-agent-lab-page" data-scene="agent-lab.workdays">
+		{frame.monitor ? <AgentLabChrome frame={frame.monitor} /> : null}
+		{!frame.app.activeTeam ? <EmptyState title="Choose an active team" description="Workdays are team-scoped." /> : <OperationsDisplayContainer title="Workdays" description="Create a bounded operating window or inspect a recorded workday.">
+			{canManage ? <details class="ts-agent-lab-create"><summary>Open a new workday</summary><form class="ts-form-stack" method="post" {action} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-reset-on-success="true" data-ts-success-message="Workday created and ready for its authorized start transition.">
+				<input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="status" value="queued" />
+				<label class="ts-field"><span class="ts-field__label">Scenario</span><input class="ts-control" name="scenarioId" required /></label>
+				<label class="ts-field"><span class="ts-field__label">Environment</span><select class="ts-control" name="environment"><option value="local">Local</option><option value="staging">Staging</option></select></label>
+				<label class="ts-field"><span class="ts-field__label">Duration in seconds</span><input class="ts-control" name="durationSeconds" type="number" min="60" value="3600" required /></label>
+				<Button type="submit">Create workday</Button>
+			</form></details> : null}
+			<EntityCollection items={frame.items} query={frame.query} status={frame.status} action={Astro.url.pathname} emptyTitle="No workdays found" nextHref={frame.nextHref} />
+		</OperationsDisplayContainer>}
+	</section>
+</TreeseedAppLayout>

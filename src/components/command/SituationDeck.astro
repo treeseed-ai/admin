@@ -1,0 +1,21 @@
+---
+import ActionList from '@treeseed/ui/components/astro/data/ActionList.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import type { CommandSituation } from '../../view-models/command/situations.ts';
+
+interface Props { situations: CommandSituation[] }
+const { situations } = Astro.props as Props;
+---
+
+<Panel eyebrow="Situational awareness" title="Conditions requiring attention" description="Events are grouped into operational conditions so activity does not become noise.">
+	{situations.length ? (
+		<div class="ts-situation-deck" data-scene="command.situations">
+			<ActionList items={situations.map((item) => ({ title: item.title, description: item.description, href: item.href, meta: item.status, tone: item.tone, actionLabel: item.actionLabel }))} />
+			<ol class="ts-sr-only" aria-label="Situation evidence timestamps">
+				{situations.map((item) => <li>{item.title}: {item.evidence}{item.inferred ? ', inferred condition' : ''}{item.timestamp ? <> at <Timestamp value={item.timestamp} /></> : null}</li>)}
+			</ol>
+		</div>
+	) : <EmptyState title="No active situations" description="Current evidence does not indicate an operational condition requiring intervention." />}
+</Panel>

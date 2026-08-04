@@ -1,0 +1,7 @@
+---
+import AgentLabCommandPage from '../../../components/agent-lab/AgentLabCommandPage.astro';
+import { loadAgentLabCommandPage } from '../../../view-models/agent-lab/command-page.ts';
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const frame = await loadAgentLabCommandPage(Astro, 'find');
+---
+<AgentLabCommandPage {...frame} current="find" />

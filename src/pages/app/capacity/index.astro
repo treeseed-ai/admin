@@ -1,0 +1,32 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import MetricCard from '@treeseed/ui/components/astro/data/metrics/MetricCard.astro';
+import MetricGrid from '@treeseed/ui/components/astro/data/metrics/MetricGrid.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
+import ModeNavigation from '../../../components/modes/ModeNavigation.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { items, statusTone, text } from '../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
+import { loadCommandSnapshot } from '../../../view-models/command/command-state.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro); const team = context.activeTeam; const base = team ? `/v1/teams/${encodeURIComponent(team.id)}/capacity` : '';
+const [snapshot, access] = await Promise.all([team ? loadCommandSnapshot(api, team.id) : null, team ? api.getTeamAccessSummary(team.id).catch(() => null) : null]);
+const usagePages = team && snapshot ? await Promise.all(snapshot.projects.map((project) => api.request('GET', `${base}/usage?projectId=${encodeURIComponent(String(project.id))}&limit=100`).catch(() => null))) : [];
+const reservationItems = snapshot?.reservations ?? []; const usageItems = usagePages.flatMap(items); const ledgerItems = snapshot?.ledger ?? [];
+const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role))); const csrfToken = ensureCsrfToken(Astro);
+---
+<TreeseedAppLayout title="Command capacity" description="Provider availability, allocation, reservations, usage, routing, and settlement." currentPath="/app/command" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Capacity operations" data-scene="command.capacity"><PageHeader eyebrow="Command · Capacity" title="Capacity and routing" description="Understand supply, commitments, actual usage, and pressure without supervising provider internals."><Button slot="actions" href="/app/command" variant="secondary">Command overview</Button></PageHeader><ModeNavigation mode="command" current="capacity" />
+		{!team ? <EmptyState title="Choose an active team" description="Capacity evidence is team-scoped." /> : <>
+			<MetricGrid min="12rem"><MetricCard label="Provider sessions" value={snapshot?.providers.length ?? 0} description="Availability reports" /><MetricCard label="Reservations" value={reservationItems.length} description="Committed capacity" /><MetricCard label="Usage records" value={usageItems.length} description="Reported actuals" /><MetricCard label="Ledger entries" value={ledgerItems.length} description="Settled accounting evidence" /></MetricGrid>
+			<div class="ts-resource-grid"><Panel eyebrow="Supply" title="Provider availability" description="Capacity providers report native budgets, concurrency, windows, and capabilities.">{snapshot?.providers.map((provider) => <ResourceCard title={text(provider.providerName, provider.providerId, 'Capacity provider')} description={text(provider.capabilitySummary, provider.lifecycleReason, 'Availability session')} status={String(provider.status ?? 'unknown')} tone={statusTone(provider.status)} />)}{!snapshot?.providers.length ? <p>No provider sessions were returned.</p> : null}</Panel><Panel eyebrow="Demand" title="Reservations and pressure" description="Open an assignment for routing evidence or review an overrun through its existing authorized action.">{reservationItems.map((reservation) => <div><ResourceCard title={text(reservation.projectName, reservation.projectId, 'Capacity reservation')} description={text(reservation.reason, reservation.status, 'Reserved capacity')} status={String(reservation.overrunStatus ?? reservation.status ?? 'reserved')} tone={statusTone(reservation.overrunStatus ?? reservation.status)} href={reservation.assignmentId ? `/app/command/assignments/${encodeURIComponent(String(reservation.assignmentId))}` : undefined} />{canManage && ['requested', 'pending'].includes(String(reservation.overrunStatus ?? reservation.overrun_status ?? '')) ? <div class="ts-button-row">{['approve', 'reject'].map((decision) => <form method="post" action={`${base}/reservations/${encodeURIComponent(String(reservation.id))}/overrun/${decision}`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-confirm={`${decision === 'approve' ? 'Approve' : 'Reject'} this overrun request?`} data-ts-refresh-target='[data-scene="command.capacity"]' data-ts-success-message={`Overrun ${decision === 'approve' ? 'approved and available to scheduling' : 'rejected; dependent work remains constrained'}.`}><input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="idempotencyKey" value={`${reservation.id}:${decision}:${reservation.updatedAt ?? reservation.createdAt ?? 'current'}`} /><label class="ts-field"><span class="ts-field__label">Reason</span><input class="ts-control" name="reason" required /></label><Button type="submit" variant={decision === 'reject' ? 'danger' : 'secondary'}>{decision === 'approve' ? 'Approve overrun' : 'Reject overrun'}</Button></form>)}</div> : null}</div>)}{!reservationItems.length ? <p>No reservation evidence was returned.</p> : null}</Panel></div>
+			<Panel eyebrow="Accounting" title="Usage and ledger" description="Actuals and settlement remain durable API control-plane records, not reconciled infrastructure."><p>{usageItems.length} usage records and {ledgerItems.length} ledger entries are visible in the current bounded snapshot.</p></Panel>
+		</>}
+	</section>
+</TreeseedAppLayout>

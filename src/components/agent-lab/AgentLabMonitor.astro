@@ -1,0 +1,25 @@
+---
+import { OperationsMonitorHeader } from '@treeseed/ui/components/react/OperationsMonitor';
+import { agentLabMetricDestinations, type loadAgentLabFrame } from '../../view-models/agent-lab/agent-lab-frame.ts';
+import { ensureCsrfToken } from '../../lib/auth/support/csrf.ts';
+interface Props { frame: Awaited<ReturnType<typeof loadAgentLabFrame>>; }
+const { frame } = Astro.props as Props;
+const csrfToken = ensureCsrfToken(Astro);
+const selection = new URLSearchParams();
+if (frame.overview.workdayContext.selectedDate) selection.set('date', frame.overview.workdayContext.selectedDate);
+if (frame.overview.workdayContext.selectedWorkdayId) selection.set('workday', frame.overview.workdayContext.selectedWorkdayId);
+const withSelection = (href: string) => `${href}${href.includes('?') ? '&' : '?'}${selection}`;
+const destinations = Object.fromEntries(Object.entries(agentLabMetricDestinations).map(([key, href]) => [key, withSelection(href)]));
+---
+<OperationsMonitorHeader
+	client:load
+	initialOverview={frame.overview}
+	initialActivity={frame.activity}
+	initialSeries={frame.series}
+	initialAllocation={frame.allocation}
+	endpoints={frame.endpoints}
+	preference={frame.preference}
+	metricDestinations={destinations}
+	csrfToken={csrfToken}
+	logoSrc="/logo.svg"
+/>

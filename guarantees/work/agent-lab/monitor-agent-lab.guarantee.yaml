@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.work.agent-lab.monitor-agent-lab.035
+journeyIndex: 741
+type: work
+subtype: agent-lab
+journey: "Monitor the team Agent Lab"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "A team member sees one compact, responsive, revisioned monitoring header across the Agent Lab and can inspect command records through a human-first Readability view or an integrity-first Debug view that exposes missing data without live updates disturbing their interaction state."
+status: planned
+dependencies: { journeys: [738], guarantees: [guarantee.work.command.monitor-team-operations.033] }
+actors: { allowed: [authenticated_user, team_owner, project_lead], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: ["An active team is selected and the API projection is available."] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: ["Snapshot mode makes no background requests.", "Closed charts do not poll.", "Stale responses and cursor corrections cannot restore removed records.", "Unreadable durable IDs are not primary interface labels.", "Polling does not reset the selected detail view or close cascading note and question overlays.", "Advanced forensic fields never displace the primary human-readable content by default."]
+evidence: { required: [guarantee_report] }
+notes: ["Planned until light/dark, dense, idle, degraded, offline, side-by-side, narrow, dual-view overlay, and cascading discussion scenes produce repeatable evidence."]

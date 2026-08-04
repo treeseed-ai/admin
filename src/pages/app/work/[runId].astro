@@ -1,0 +1,36 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import OperationsDisplayContainer from '@treeseed/ui/components/astro/operating/navigation/OperationsDisplayContainer.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import AgentLabChrome from '../../../components/agent-lab/AgentLabChrome.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { dateValue, items, record, text } from '../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
+import { loadAgentLabFrame } from '../../../view-models/agent-lab/agent-lab-frame.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const runId = String(Astro.params.runId ?? ''); const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro); const team = context.activeTeam;
+const base = team ? `/v1/teams/${encodeURIComponent(team.id)}` : '';
+const [detail, preferences, access] = await Promise.all([team ? api.request('GET', `${base}/workday-runs/${encodeURIComponent(runId)}`).catch(() => null) : null, api.accountPreferences().catch(() => ({ timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const })), team ? api.getTeamAccessSummary(team.id).catch(() => null) : null]);
+const payload = record(detail); const run = record(payload.run); const events = items(payload.events); const csrfToken = ensureCsrfToken(Astro);
+const monitor = team ? await loadAgentLabFrame(api, team, preferences, { date: Astro.url.searchParams.get('date'), workday: runId }) : null;
+const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+if (team && !run.id) Astro.response.status = 404;
+const transitions: Record<string, string[]> = { queued: ['running', 'cancelled', 'failed'], running: ['completed', 'degraded', 'cancelled', 'failed'] };
+---
+<TreeseedAppLayout title={run.id ? text(run.name, run.scenarioId, 'Workday') : 'Workday unavailable'} description="Live workday control and historical execution replay." currentPath="/app/command" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Workday detail" data-scene="command.workday.detail">
+		{monitor ? <AgentLabChrome frame={monitor} /> : null}
+		{!team ? <EmptyState title="Choose an active team" description="Workdays are team-scoped." /> : !run.id ? <EmptyState title="Workday not found" description="The run is unavailable or outside the active team." /> : <OperationsDisplayContainer eyebrow={`Workday · ${String(run.status ?? 'unknown')}`} title={text(run.name, run.scenarioId, 'Workday')} description="Inspect the run, durable events, and its legal lifecycle actions.">
+			<Button slot="actions" href="/app/work/workdays" variant="secondary">All workdays</Button>
+			<div class="ts-resource-grid"><Panel eyebrow="Run state" title={String(run.status ?? 'unknown')} description="The control plane remains authoritative for every transition."><KeyValueList items={[{ key: 'Scenario', value: text(run.scenarioId, '—') }, { key: 'Duration', value: run.durationSeconds ? `${run.durationSeconds}s` : 'Bounded by plan' }]} /><details><summary>Technical identifiers</summary><KeyValueList items={[{ key: 'Workday', value: String(run.id) }, { key: 'Provider', value: text(run.providerId, 'Unassigned') }]} /></details>{dateValue(run.startedAt, run.createdAt) ? <p>Started <Timestamp value={dateValue(run.startedAt, run.createdAt)!} timeZone={preferences.timeZone} /></p> : null}</Panel>
+			<Panel eyebrow="Lifecycle" title="Authorized transitions" description="Disruptive terminal changes require an operator reason.">{canManage ? (transitions[String(run.status)] ?? []).map((status) => <form class="ts-form-stack" method="post" action={`${base}/workday-runs/${encodeURIComponent(runId)}`} data-ts-method="PATCH" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-refresh-target='[data-scene="command.workday.detail"]' data-ts-confirm={['cancelled', 'failed'].includes(status) ? `Transition this workday to ${status}?` : undefined} data-ts-success-message={`Workday is now ${status}; the execution field has been refreshed.`}><input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="status" value={status} /><label class="ts-field"><span class="ts-field__label">Reason</span><input class="ts-control" name="reason" required={['cancelled', 'failed', 'degraded'].includes(status)} /></label><Button type="submit" variant={['cancelled', 'failed'].includes(status) ? 'danger' : 'secondary'}>{status[0].toUpperCase() + status.slice(1)}</Button></form>) : <p>Your role can inspect this run but cannot transition it.</p>}</Panel></div>
+			<Panel eyebrow="Forensic record" title="Workday events" description="Durable events explain how the operating state changed.">{events.length ? <ol>{events.map((event) => <li><strong>{text(event.type, event.eventType, 'Event')}</strong> — {text(event.message, event.summary, 'Recorded state change')} {dateValue(event.createdAt) ? <Timestamp value={dateValue(event.createdAt)!} timeZone={preferences.timeZone} /> : null}</li>)}</ol> : <p>No workday events were returned.</p>}</Panel>
+		</OperationsDisplayContainer>}
+	</section>
+</TreeseedAppLayout>

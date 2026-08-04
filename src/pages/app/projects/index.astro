@@ -1,0 +1,20 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
+import ModeNavigation from '../../../components/modes/ModeNavigation.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { items, statusTone, text } from '../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro); const projects = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])) : [];
+const summaries = await Promise.all(projects.slice(0, 50).map(async (project) => ({ project, summary: await api.getProjectSummary(String(project.id)).catch(() => ({})) })));
+---
+<TreeseedAppLayout title="Command projects" description="The active-team portfolio and each project’s operating state." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Project portfolio" data-scene="command.projects"><PageHeader eyebrow="Command · Projects" title="Project portfolio" description="See operational posture, pending judgment, agent activity, and release pressure by project."><Button slot="actions" href="/app/command" variant="secondary">Command overview</Button></PageHeader><ModeNavigation mode="command" current="projects" />
+		{!context.activeTeam ? <EmptyState title="Choose an active team" description="Projects are scoped to the active team." /> : !summaries.length ? <EmptyState title="No projects in this team" description="Projects will appear here after they are created or imported through the canonical project workflow." /> : <div class="ts-resource-grid">{summaries.map(({ project, summary }) => <ResourceCard title={text(project.displayName, project.name, project.slug, 'Project')} description={text(summary.operatingState?.summary, summary.description, project.description, 'Open the project command overview.')} status={String(summary.status ?? project.status ?? 'active')} tone={statusTone(summary.status ?? project.status)} meta={`${Number(summary.pendingApprovals ?? 0)} approvals · ${Number(summary.activeAgents ?? 0)} active agents`} href={`/app/projects/${encodeURIComponent(String(project.id))}`} />)}</div>}
+	</section>
+</TreeseedAppLayout>

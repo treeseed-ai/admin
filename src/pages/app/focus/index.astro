@@ -1,0 +1,51 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import MetricCard from '@treeseed/ui/components/astro/data/metrics/MetricCard.astro';
+import MetricGrid from '@treeseed/ui/components/astro/data/metrics/MetricGrid.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
+import ModeNavigation from '../../../components/modes/ModeNavigation.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { text, statusTone } from '../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
+import { loadFocusSnapshot } from '../../../view-models/focus/focus-state.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const snapshot = context.activeTeam ? await loadFocusSnapshot(api, context.activeTeam.id) : null;
+const openQuestions = snapshot?.questions.filter((item) => ['open', 'pending', 'unanswered'].includes(String(item.status ?? 'open'))) ?? [];
+const pendingProposals = snapshot?.proposals.filter((item) => !['approved', 'rejected', 'withdrawn', 'decided'].includes(String(item.status ?? ''))) ?? [];
+---
+<TreeseedAppLayout title="Focus" description="Research and govern without operational distraction." currentPath="/app/focus" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Focus mode" data-scene="focus.overview">
+		<PageHeader eyebrow="Deliberation mode" title="Focus" description="Build understanding, test assumptions, and make traceable decisions from a stable snapshot.">
+			<Button slot="actions" href="/app/command" variant="secondary">Return to Command</Button>
+		</PageHeader>
+		<ModeNavigation mode="focus" current="overview" />
+		{!context.activeTeam ? <EmptyState title="Choose an active team" description="Focus is scoped to one team’s questions, proposals, decisions, and evidence." actions={[{ label: 'Manage teams', href: '/app/teams' }]} /> : snapshot ? <>
+			<MetricGrid min="12rem">
+				<MetricCard label="Open inquiries" value={openQuestions.length} description="Questions needing evidence" href="/app/focus/questions" />
+				<MetricCard label="Awaiting judgment" value={pendingProposals.length} description="Proposals still moving" href="/app/focus/proposals" />
+				<MetricCard label="Decision record" value={snapshot.decisions.length} description="Recorded outcomes" href="/app/focus/decisions" />
+				<MetricCard label="Snapshot gaps" value={snapshot.unavailable.length} description={snapshot.unavailable.length ? snapshot.unavailable.join(', ') : 'All sources available'} />
+			</MetricGrid>
+			<div class="ts-resource-grid">
+				<Panel eyebrow="Inquiry" title="Questions worth resolving" description="Uncertainty is kept explicit until evidence supports an answer.">
+					{openQuestions.slice(0, 5).map((item) => <ResourceCard title={text(item.title, item.question, 'Untitled question')} description={text(item.summary, item.description, 'Open inquiry')} status={String(item.status ?? 'open')} tone={statusTone(item.status)} href={`/app/focus/questions?question=${encodeURIComponent(String(item.id))}`} />)}
+					{!openQuestions.length ? <p>No open questions in this snapshot.</p> : null}
+				</Panel>
+				<Panel eyebrow="Governance" title="Proposals awaiting judgment" description="Review rationale and consequences before changing operational state.">
+					{pendingProposals.slice(0, 5).map((item) => <ResourceCard title={text(item.title, 'Untitled proposal')} description={text(item.summary, 'No summary supplied.')} status={String(item.status ?? 'draft')} tone={statusTone(item.status)} href={`/app/focus/proposals/${encodeURIComponent(String(item.id))}`} />)}
+					{!pendingProposals.length ? <p>No proposals currently require judgment.</p> : null}
+				</Panel>
+			</div>
+			<Panel eyebrow="Research paths" title="Continue the investigation" description="Open repository-native knowledge or follow the governance record without introducing live operational movement.">
+				<div class="ts-resource-grid"><ResourceCard title="Knowledge workbench" description="Inspect source material and durable project knowledge." href="/app/knowledge" /><ResourceCard title="Decision consequences" description="Connect recorded judgments to planning readiness." href="/app/focus/decisions" /></div>
+			</Panel>
+		</> : null}
+	</section>
+</TreeseedAppLayout>

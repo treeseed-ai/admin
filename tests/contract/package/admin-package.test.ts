@@ -15,6 +15,9 @@ const EXPECTED_ROUTES = [
 	'/app/account/appearance',
 	'/app/account/delete',
 	'/app/capacity',
+	'/app/command',
+	'/app/command/agents',
+	'/app/command/assignments/[assignmentId]',
 	'/app/feedback',
 	'/app/feedback/[feedbackId]',
 	'/app/services',
@@ -24,10 +27,31 @@ const EXPECTED_ROUTES = [
 	'/app/knowledge',
 	'/app/knowledge/packs/[buildId]/download',
 	'/app/market',
+	'/app/focus',
+	'/app/focus/questions',
+	'/app/focus/proposals',
+	'/app/focus/proposals/[proposalId]',
+	'/app/focus/decisions',
 	'/app/projects',
+	'/app/projects/[projectId]',
+	'/app/projects/[projectId]/agents',
+	'/app/projects/[projectId]/agents/[agentId]',
 	'/app/projects/[projectId]/books',
 	'/app/projects/[projectId]/workflows',
 	'/app/work',
+	'/app/work/inbox',
+	'/app/work/decisions',
+	'/app/work/build',
+	'/app/work/direction',
+	'/app/work/results',
+	'/app/work/find',
+	'/app/work/agents',
+	'/app/work/workdays',
+	'/app/work/events',
+	'/app/work/assignments',
+	'/app/work/executions',
+	'/app/work/artifacts',
+	'/app/work/[runId]',
 	'/app/teams',
 	'/app/teams/active',
 	'/app/teams/new',
@@ -50,7 +74,7 @@ const EXPECTED_ROUTES = [
 	'/team-invites/[token]/accept',
 ].sort();
 const EXPECTED_SUPPORT_ROUTES = ['/v1/[...all]'];
-const DOMAIN_ROUTES = ['/app/capacity', '/app/market', '/app/projects', '/app/work'];
+const DOMAIN_ROUTES = ['/app/market'];
 
 function filesUnder(root: string): string[] {
 	if (!existsSync(root)) return [];
@@ -139,7 +163,7 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('keeps navigation focused on active-team work and identity management', () => {
 		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
 		const publicLayout = readFileSync('src/layouts/PublicLayout.astro', 'utf8');
-		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/services', '/app/projects', '/app/capacity', '/app/work', '/app/knowledge']) {
+		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/services', '/app/projects', '/app/command', '/app/focus', '/app/knowledge', '/knowledge/market/', '/status/']) {
 			expect(appLayout).toContain(target);
 		}
 		for (const target of ['/market', '/cart', '/seller']) {
@@ -154,6 +178,8 @@ describe('@treeseed/admin identity and team surface', () => {
 		for (const icon of ['start', 'teams', 'account', 'sign-out']) {
 			expect(appLayout).toContain(`icon: '${icon}'`);
 		}
+		expect(appLayout).not.toContain("{ label: 'Capacity'");
+		expect(appLayout).not.toContain("{ label: 'Work'");
 		expect(appLayout).not.toContain("{ label: 'Teams'");
 		expect(appLayout).toContain('<ShellIcon name="teams"');
 		expect(appLayout).toContain('iconOnly: true');
@@ -173,7 +199,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
 		for (const path of appPages) {
 			const source = readFileSync(path, 'utf8');
-			const contentTemplateOwnsHeader = /<(?:DashboardTemplate|PageHeader|SettingsTemplate)\b/u.test(source);
+			const contentTemplateOwnsHeader = /<(?:AgentLabChrome|DashboardTemplate|PageHeader|SettingsTemplate)\b/u.test(source);
 			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});

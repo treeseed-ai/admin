@@ -1,0 +1,51 @@
+---
+import { MetricHistoryDashboard } from '@treeseed/ui/components/react/OperationsMonitor';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import AgentLabChrome from '../../../components/agent-lab/AgentLabChrome.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
+import { agentLabMetricDestinations, loadAgentLabFrame } from '../../../view-models/agent-lab/agent-lab-frame.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const app = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const }));
+const selection = { date: Astro.url.searchParams.get('date'), workday: Astro.url.searchParams.get('workday') };
+const [frame, access] = await Promise.all([
+	app.activeTeam ? loadAgentLabFrame(api, app.activeTeam, preferences, selection) : null,
+	app.activeTeam ? api.getTeamAccessSummary(app.activeTeam.id).catch(() => null) : null,
+]);
+const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+const labels: Record<string, string> = { agents: 'Agents', workdays: 'Workdays', systemEvents: 'System events', assignments: 'Assignments', executions: 'Executions', artifacts: 'Artifacts', passed: 'Passed', failed: 'Failed', running: 'Running' };
+const selected = new URLSearchParams();
+if (frame?.overview.workdayContext.selectedDate) selected.set('date', frame.overview.workdayContext.selectedDate);
+if (frame?.overview.workdayContext.selectedWorkdayId) selected.set('workday', frame.overview.workdayContext.selectedWorkdayId);
+const metrics = frame?.overview.metrics.map((metric) => {
+	const destination = agentLabMetricDestinations[metric.key as keyof typeof agentLabMetricDestinations];
+	return { ...metric, label: labels[metric.key] ?? metric.key, href: `${destination}${destination.includes('?') ? '&' : '?'}${selected}`, tone: metric.key === 'failed' && metric.value ? 'danger' as const : metric.key === 'running' && metric.value ? 'positive' as const : 'default' as const };
+}) ?? [];
+const csrfToken = ensureCsrfToken(Astro);
+---
+
+<TreeseedAppLayout title="Agent Lab" description="See the operating field, understand its signals, and direct agent work." currentPath="/app/command" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<section class="ts-agent-lab-page" aria-label="Agent Lab" data-scene="agent-lab.home">
+		{frame ? <>
+			<AgentLabChrome {frame} />
+			<MetricHistoryDashboard
+				client:load
+				initialSeries={frame.series}
+				endpoint={frame.endpoints.metricSeries}
+				{metrics}
+				timeZone={frame.overview.timeZone}
+				targets={frame.overview.metricTargets}
+				targetRevision={frame.overview.targetRevision}
+				targetEndpoint={frame.targetEndpoint}
+				{csrfToken}
+				{canManage}
+				realtime={{ enabled: frame.preference.enabled, intervalMs: Math.max(10_000, frame.preference.intervalSeconds * 2_000) }}
+			/>
+		</> : <EmptyState title="Choose an active team" description="Agent Lab operations are team-scoped." />}
+	</section>
+</TreeseedAppLayout>

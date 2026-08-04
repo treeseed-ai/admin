@@ -1,24 +1,46 @@
 ---
-import DashboardTemplate from '@treeseed/ui/components/astro/templates/DashboardTemplate.astro';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import MetricCard from '@treeseed/ui/components/astro/data/metrics/MetricCard.astro';
+import MetricGrid from '@treeseed/ui/components/astro/data/metrics/MetricGrid.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
 import TreeseedAppLayout from '../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../lib/market/api-client.ts';
+import { statusTone, text } from '../../lib/operations/records.ts';
 import { loadAppContext } from '../../view-models/app-access.js';
-import { buildPersonalDashboard } from '../../view-models/contextual-dashboard.vm.js';
+import { activeWorkday, loadCommandSnapshot } from '../../view-models/command/command-state.ts';
+import { deriveCommandSituations } from '../../view-models/command/situations.ts';
+import { loadFocusSnapshot } from '../../view-models/focus/focus-state.ts';
 
 if (!Astro.locals.auth?.principal) {
 	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/')}`);
 }
 
 const context = await loadAppContext(Astro);
-const dashboard = buildPersonalDashboard(context);
+const api = new ApiClientFacade(Astro);
+const [focus, command] = context.activeTeam ? await Promise.all([loadFocusSnapshot(api, context.activeTeam.id), loadCommandSnapshot(api, context.activeTeam.id)]) : [null, null];
+const workday = command ? activeWorkday(command) : null; const situations = command ? deriveCommandSituations(command) : [];
 ---
 
 <TreeseedAppLayout
-	title={dashboard.viewModel.title}
-	description={dashboard.viewModel.description}
+	title="Start"
+	description="Orient to the active team and choose the right cognitive mode."
 	currentPath={Astro.url.pathname}
 	teams={context.teams}
 	activeTeam={context.activeTeam}
 	contentOwnsPageHeader
 >
-	<DashboardTemplate viewModel={dashboard.viewModel} actions={dashboard.actions} />
+	<section class="ts-template" aria-label="Operating orientation" data-scene="start.orientation">
+		<PageHeader eyebrow="Operating orientation" title={context.activeTeam ? `Choose how to engage with ${context.activeTeam.displayName ?? context.activeTeam.name}` : 'Choose an active team'} description="Focus protects deliberation. Command compresses the live operational field into meaningful situations." />
+		{!context.activeTeam ? <EmptyState title="No active team selected" description="Select or create a team before entering its operational world." actions={[{ label: 'Manage teams', href: '/app/teams' }]} /> : <>
+			<div class="ts-resource-grid">
+				<Panel eyebrow="Perceive and act" title="Command" description="Monitor workdays, agent activity, situations, capacity, and projects in near real time."><Button href="/app/command">Enter Command</Button></Panel>
+				<Panel eyebrow="Believe and decide" title="Focus" description="Research questions, inspect evidence, review proposals, and record decisions without live distraction."><Button href="/app/focus">Enter Focus</Button></Panel>
+			</div>
+			<MetricGrid min="12rem"><MetricCard label="Operating state" value={workday ? 'Executing' : 'Standing by'} description={workday ? text(workday.scenarioId, 'Active workday') : 'No active workday'} href={workday ? `/app/work/${encodeURIComponent(String(workday.id))}` : '/app/work'} /><MetricCard label="Situations" value={situations.length} description="Material conditions" href="/app/command" /><MetricCard label="Open questions" value={focus?.questions.length ?? 0} description="Research paths" href="/app/focus/questions" /><MetricCard label="Decisions" value={focus?.decisions.length ?? 0} description="Recorded governance" href="/app/focus/decisions" /></MetricGrid>
+			<Panel eyebrow="Since your last orientation" title="Meaningful changes" description="The system prioritizes interpreted state over a raw event stream.">{situations.slice(0, 5).map((item) => <ResourceCard title={item.title} description={item.description} status={item.status} tone={statusTone(item.status)} href={item.href} />)}{!situations.length ? <p>No current evidence indicates an operational condition requiring intervention.</p> : null}</Panel>
+		</>}
+	</section>
 </TreeseedAppLayout>

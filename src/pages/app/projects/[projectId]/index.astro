@@ -1,0 +1,29 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
+import ModeNavigation from '../../../../components/modes/ModeNavigation.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../../lib/market/api-client.ts';
+import { items, record, statusTone, text } from '../../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../../view-models/app-access.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const projectId = String(Astro.params.projectId ?? ''); const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro);
+const owned = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])).some((project) => String(project.id) === projectId) : false;
+const [details, summary, agents, capacity, releases, repository, approvals] = owned ? await Promise.all([api.getProjectDetails(projectId).catch(() => null), api.getProjectSummary(projectId).catch(() => null), api.getProjectAgentsSummary(projectId).catch(() => null), api.getProjectCapacitySummary(projectId).catch(() => null), api.getProjectReleasesSummary(projectId).catch(() => null), api.getProjectRepositoryTopology(projectId).catch(() => null), api.listApprovalRequestsForTeam(context.activeTeam!.id, { limit: 100 }).catch(() => null)]) : [null, null, null, null, null, null, null];
+const project = record(details); if (context.activeTeam && (!owned || !project.id)) Astro.response.status = 404;
+const projectApprovals = items(approvals).filter((entry) => String(entry.projectId ?? entry.project_id ?? '') === projectId);
+---
+<TreeseedAppLayout title={project.id ? text(project.displayName, project.name, 'Project') : 'Project unavailable'} description="Project command overview across approvals, releases, capacity, agents, and repository state." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Project command overview" data-scene="command.project.overview"><PageHeader eyebrow="Command · Project" title={text(project.displayName, project.name, 'Project unavailable')} description={text(project.description, record(summary).description, 'Operational project context.')}><Button slot="actions" href="/app/projects" variant="secondary">Portfolio</Button><Button slot="actions" href={`/app/projects/${encodeURIComponent(projectId)}/agents`}>Inspect agents</Button></PageHeader><ModeNavigation mode="command" current="projects" />
+		{!context.activeTeam ? <EmptyState title="Choose an active team" description="Project command is team-scoped." /> : !project.id ? <EmptyState title="Project not found" description="The project is unavailable or outside the active team." /> : <>
+			<div class="ts-resource-grid"><Panel eyebrow="Operating state" title={String(project.status ?? 'active')} description="Current project posture and pending governance."><KeyValueList items={[{ key: 'Project ID', value: String(project.id) }, { key: 'Approvals', value: projectApprovals.length }, { key: 'Agent classes', value: Number(record(agents).count ?? items(record(agents).agents).length) }, { key: 'Release state', value: text(record(releases).status, 'No active release') }]} /></Panel><Panel eyebrow="Capacity" title={text(record(capacity).status, 'Capacity summary')} description={text(record(capacity).summary, 'Inspect team-level reservations, usage, and provider availability.')}><Button href={`/app/capacity?projectId=${encodeURIComponent(projectId)}`} variant="secondary">Open capacity</Button></Panel></div>
+			<Panel eyebrow="Situations" title="Project attention queue" description="Existing approvals and release evidence become visible operational conditions.">{projectApprovals.map((approval) => <ResourceCard title={text(approval.title, 'Approval required')} description={text(approval.summary, approval.reason, 'Work is waiting for judgment.')} status={String(approval.status ?? 'pending')} tone={statusTone(approval.status)} href="/app/focus/proposals" />)}{!projectApprovals.length ? <p>No pending approval records were returned.</p> : null}</Panel>
+			<Panel eyebrow="Repository and delivery" title="Execution context" description="Repository topology and release state remain read-only projections on this surface."><pre class="ts-code-block">{JSON.stringify({ repository, releases }, null, 2)}</pre></Panel>
+		</>}
+	</section>
+</TreeseedAppLayout>

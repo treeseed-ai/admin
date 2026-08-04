@@ -1,0 +1,61 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import CommonsDecisionTimeline from '@treeseed/ui/components/astro/governance/CommonsDecisionTimeline.astro';
+import CommonsProposalPipeline from '@treeseed/ui/components/astro/governance/CommonsProposalPipeline.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import ModeNavigation from '../../../../components/modes/ModeNavigation.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../../lib/market/api-client.ts';
+import { dateValue, items, record, safeReturnTo, text } from '../../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../../view-models/app-access.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const proposalId = String(Astro.params.proposalId ?? ''); const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro);
+const [detail, events, preferences, commonsSummary] = await Promise.all([api.getCommonsProposal(proposalId).catch(() => null), api.request('GET', `/v1/commons/proposals/${encodeURIComponent(proposalId)}/events?limit=100`).catch(() => null), api.accountPreferences().catch(() => ({ timeZone: 'UTC' })), api.getCommonsSummary().catch(() => null)]);
+const payload = record(detail); const proposal = record(payload.proposal ?? payload); const governanceEvents = items(events); const csrfToken = ensureCsrfToken(Astro);
+const commonsTeamId = text(record(record(commonsSummary).team).id); const access = commonsTeamId ? await api.getTeamAccessSummary(commonsTeamId).catch(() => null) : null;
+const canSteward = Boolean((api.currentPrincipal?.roles ?? []).some((role: string) => ['seed_admin', 'platform_admin'].includes(role)) || (access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+if (!proposal.id) Astro.response.status = 404;
+const returnTo = safeReturnTo(Astro.url.searchParams.get('returnTo'), '/app/focus/proposals');
+---
+<TreeseedAppLayout title={proposal.id ? text(proposal.title, 'Proposal') : 'Proposal not found'} description="A protected chamber for rationale, evidence, objections, and consequence." currentPath="/app/focus" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<section class="ts-template" aria-label="Proposal reading chamber" data-scene="focus.proposal.review">
+		<PageHeader eyebrow={`Focus · ${String(proposal.status ?? 'proposal')}`} title={text(proposal.title, 'Proposal not found')} description={text(proposal.summary, 'Review the complete governance record before acting.')}>
+			<Button slot="actions" href={returnTo} variant="secondary">Back to proposals</Button>
+			<Button slot="actions" href={`/app/command?proposal=${encodeURIComponent(proposalId)}`}>View operational impact</Button>
+		</PageHeader>
+		<ModeNavigation mode="focus" current="proposals" />
+		{!proposal.id ? <EmptyState title="Proposal not found" description="The proposal is unavailable or outside your authorized scope." /> : <>
+			<div class="ts-resource-grid">
+				<Panel eyebrow="Deliberation" title="Rationale and consequences" description="The durable proposal body is presented without live operational interruption.">
+					<div class="ts-prose"><p>{text(proposal.body, proposal.rationale, proposal.summary, 'No rationale supplied.')}</p></div>
+					<KeyValueList items={[{ key: 'Scope', value: text(proposal.scope, 'commons') }, { key: 'Decision type', value: text(proposal.decisionType, proposal.decision_type, 'governance') }, { key: 'Backers', value: proposal.backingCount ?? 0 }, { key: 'Affected objective', value: text(proposal.objectiveId, 'Not explicitly linked') }]} />
+					{dateValue(proposal.updatedAt, proposal.createdAt) ? <p>Snapshot at <Timestamp value={dateValue(proposal.updatedAt, proposal.createdAt)!} timeZone={preferences.timeZone} /></p> : null}
+				</Panel>
+				<CommonsProposalPipeline status={String(proposal.status ?? 'draft')} />
+			</div>
+			<div class="ts-resource-grid">
+				{canSteward ? <Panel eyebrow="Judgment" title="Governance controls" description="The API reauthorizes every transition; unavailable actions remain rejected at the control plane.">
+					<div class="ts-button-row">
+						<form method="post" action={`/v1/commons/proposals/${encodeURIComponent(proposalId)}/review`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-refresh-target='[data-scene="focus.proposal.review"]' data-ts-success-message="Proposal entered review."><input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="secondary">Begin review</Button></form>
+						<form method="post" action={`/v1/commons/proposals/${encodeURIComponent(proposalId)}/start-voting`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-refresh-target='[data-scene="focus.proposal.review"]' data-ts-success-message="Voting opened; dependent work can now observe the governance state."><input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit">Start voting</Button></form>
+					</div>
+					<form class="ts-form-stack" method="post" action={`/v1/commons/proposals/${encodeURIComponent(proposalId)}/steward-decision`} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-refresh-target='[data-scene="focus.proposal.review"]' data-ts-success-message="Decision recorded; operational planning can now observe the outcome.">
+						<input type="hidden" name="csrfToken" value={csrfToken} /><label class="ts-field"><span class="ts-field__label">Authorized outcome</span><select class="ts-control" name="status"><option value="accepted">Accept</option><option value="rejected">Reject</option><option value="deferred">Defer</option></select></label><label class="ts-field"><span class="ts-field__label">Reason</span><textarea class="ts-control" name="reason" required rows="4"></textarea></label><label class="ts-field"><span class="ts-field__label">Capacity budget, when applicable</span><input class="ts-control" name="capacityBudget" /></label><Button type="submit">Record steward decision</Button>
+					</form>
+				</Panel> : <Panel eyebrow="Judgment" title="Read-only governance" description="Your current role can inspect this proposal but cannot perform steward transitions." />}
+				<Panel eyebrow="Evidence" title="Assumptions, objections, and alternatives" description="Structured governance evidence remains attributable.">
+					{items(payload.objections).map((entry) => <p><strong>Objection:</strong> {text(entry.body, entry.summary)}</p>)}
+					{items(payload.alternatives).map((entry) => <p><strong>Alternative:</strong> {text(entry.body, entry.summary)}</p>)}
+					{!items(payload.objections).length && !items(payload.alternatives).length ? <p>No structured objections or alternatives were returned.</p> : null}
+				</Panel>
+			</div>
+			<CommonsDecisionTimeline events={governanceEvents as any} />
+		</>}
+	</section>
+</TreeseedAppLayout>
