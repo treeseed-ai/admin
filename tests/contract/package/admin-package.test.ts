@@ -112,8 +112,9 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('registers exactly the retained routes and resources', () => {
 		const pageFiles = filesUnder('src/pages').filter((path) => /\.(astro|ts)$/u.test(path));
 		const expectedPageRoutes = [
-			...EXPECTED_ROUTES.filter((route) => !DOMAIN_ROUTES.includes(route)),
-			'/app/domain-overview',
+			...EXPECTED_ROUTES.filter((route) => !DOMAIN_ROUTES.includes(route) && !['/app/work/agents', '/app/work/artifacts', '/app/work/assignments', '/app/work/events', '/app/work/executions'].includes(route)),
+			'/app/market',
+			'/app/work/entity-overview',
 			...EXPECTED_SUPPORT_ROUTES,
 		].sort();
 		expect(ADMIN_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_ROUTES);

@@ -73,7 +73,7 @@ describe('team management architecture audit', () => {
 		const overviewHeader = overview.slice(overview.indexOf('<PageHeader'), overview.indexOf('<TeamNavigation'));
 		expect(overviewHeader).not.toContain('slot="actions"');
 		expect(overviewHeader).not.toMatch(/>(?:Settings|Members)</u);
-		const domainOverview = source('src/pages/app/domain-overview.astro');
+		const domainOverview = source('src/pages/app/market.astro');
 		for (const path of ['/app/services', '/app/knowledge', '/app/market']) {
 			expect(domainOverview, path).toContain(`'${path}'`);
 		}
