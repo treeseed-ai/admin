@@ -1,5 +1,7 @@
 import {
+	normalizeAppearancePreference,
 	normalizeThemePreference,
+	type AppearancePreference,
 	type ThemePreference,
 } from '@treeseed/ui/theme';
 import type { APIContext } from 'astro';
@@ -54,17 +56,17 @@ export function setAnonymousThemeCookies(
 	context.cookies.set(THEME_MODE_COOKIE, preference.mode, options);
 }
 
-function appearanceFromPrincipal(context: Pick<AppearanceContext, 'locals'>): ThemePreference | null {
+function appearanceFromPrincipal(context: Pick<AppearanceContext, 'locals'>): AppearancePreference | null {
 	const principal = context.locals.auth?.principal;
 	const appearance = principal?.metadata?.appearance;
 	if (!appearance || typeof appearance !== 'object') return null;
-	return normalizeThemePreference(appearance);
+	return normalizeAppearancePreference(appearance);
 }
 
-export function themePreferenceFromPrincipal(principal: { metadata?: Record<string, unknown> | null } | null | undefined): ThemePreference | null {
+export function themePreferenceFromPrincipal(principal: { metadata?: Record<string, unknown> | null } | null | undefined): AppearancePreference | null {
 	const appearance = principal?.metadata?.appearance;
 	if (!appearance || typeof appearance !== 'object') return null;
-	return normalizeThemePreference(appearance);
+	return normalizeAppearancePreference(appearance);
 }
 
 export function setPrincipalThemeCookies(
@@ -77,19 +79,19 @@ export function setPrincipalThemeCookies(
 	return preference;
 }
 
-export async function resolveAuthenticatedThemePreference(context: AppearanceContext): Promise<ThemePreference> {
-	return appearanceFromPrincipal(context) ?? resolveAnonymousThemePreference(context);
+export async function resolveAuthenticatedThemePreference(context: AppearanceContext): Promise<AppearancePreference> {
+	return appearanceFromPrincipal(context) ?? normalizeAppearancePreference(resolveAnonymousThemePreference(context));
 }
 
 export async function resolveUserThemePreference(
 	context: AppearanceContext,
 	userId: string,
-): Promise<ThemePreference> {
+): Promise<AppearancePreference> {
 	const principal = context.locals.auth?.principal;
 	if (principal?.id === userId) {
-		return appearanceFromPrincipal(context) ?? resolveAnonymousThemePreference(context);
+		return appearanceFromPrincipal(context) ?? normalizeAppearancePreference(resolveAnonymousThemePreference(context));
 	}
-	return resolveAnonymousThemePreference(context);
+	return normalizeAppearancePreference(resolveAnonymousThemePreference(context));
 }
 
 export async function setUserThemeCookies(
