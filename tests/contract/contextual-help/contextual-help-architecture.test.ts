@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
+const readDependency = (name: string, path: string) => readFileSync(resolve(root, 'node_modules', name, path), 'utf8');
 const pages = loadKnowledgeCatalog(resolve(root, 'docs/src/content/knowledge'), '@treeseed/admin');
 const pageIds = new Set(pages.map((page) => page.id));
 
@@ -28,11 +29,12 @@ describe('Admin contextual help architecture', () => {
 
 	it('resolves every local help trigger to the canonical Markdown catalog', () => {
 		const sources = [
-			'../ui/src/astro/account/AccountDeletionPanel.astro',
-			'../ui/src/astro/account/AccountIdentitySettings.astro',
-			'../ui/src/astro/account/AccountTimeZoneSettings.astro',
-			'../ui/src/astro/account/NotificationPreferencePanel.astro',
-			'../ui/src/astro/account/PersonalThemeManager.astro',
+			'AccountDeletionPanel.astro',
+			'AccountIdentitySettings.astro',
+			'AccountTimeZoneSettings.astro',
+			'NotificationPreferencePanel.astro',
+			'PersonalThemeManager.astro',
+		].map((path) => readDependency('@treeseed/ui', `dist/astro/account/${path}`)).concat([
 			'src/pages/app/teams/index.astro',
 			'src/pages/app/teams/new.astro',
 			'src/pages/app/teams/[teamId]/index.astro',
@@ -43,7 +45,7 @@ describe('Admin contextual help architecture', () => {
 			'src/pages/app/services/new.astro',
 			'src/pages/app/services/[connectionId].astro',
 			'src/pages/app/services/vault.astro',
-		].map(read).join('\n');
+		].map(read)).join('\n');
 		const literalIds = [...sources.matchAll(/knowledgePageId="([^"]+)"/gu)].map((match) => match[1]);
 		expect(literalIds.length).toBeGreaterThan(20);
 		for (const id of literalIds) expect(pageIds.has(id), `${id} must be published`).toBe(true);
@@ -60,9 +62,9 @@ describe('Admin contextual help architecture', () => {
 	});
 
 	it('has one shared dialog transport and no legacy help implementation', () => {
-		const uiPackage = read('../ui/package.json');
+		const uiPackage = readDependency('@treeseed/ui', 'package.json');
 		const helpContext = read('src/lib/help/context.ts');
-		const providerContracts = read('../sdk/src/secrets-capability/service-provider-contracts.ts');
+		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
 		for (const legacy of ['HelpDrawer', 'HelpPopover', 'ContextualHelpPanel', 'ContentFieldHelp']) {
 			expect(uiPackage).not.toContain(legacy);
 		}
