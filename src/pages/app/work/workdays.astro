@@ -18,7 +18,7 @@ const csrfToken = ensureCsrfToken(Astro);
 const action = frame.app.activeTeam ? `/v1/teams/${encodeURIComponent(frame.app.activeTeam.id)}/workday-runs` : '';
 ---
 
-<TreeseedAppLayout title="Agent Lab · Workdays" description="Create and inspect bounded team operating sessions." currentPath="/app/command" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
+<TreeseedAppLayout title="Agent Lab · Workdays" description="Create and inspect bounded team operating sessions." currentPath="/app/work" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
 	<section class="ts-agent-lab-page" data-scene="agent-lab.workdays">
 		{frame.monitor ? <AgentLabChrome frame={frame.monitor} /> : null}
 		{!frame.app.activeTeam ? <EmptyState title="Choose an active team" description="Workdays are team-scoped." /> : <OperationsDisplayContainer title="Workdays" description="Create a bounded operating window or inspect a recorded workday.">

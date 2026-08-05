@@ -97,8 +97,7 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 
 			<Panel eyebrow="Operations" title="Owned domain summaries" description="Open the canonical domain page to make changes." knowledgePageId="team.overview">
 				<div class="ts-resource-grid">
-					<ResourceCard title="Command" description="Monitor situations, workdays, agents, capacity, and projects." href="/app/command" status="Live operations" tone="success" />
-					<ResourceCard title="Focus" description="Research questions, deliberate on proposals, and inspect decisions." href="/app/focus" status="Protected attention" tone="info" />
+					<ResourceCard title="Agent Lab" description="Design agents, govern proposals, allocate time, launch simulations, and monitor production work." href="/app/work" status="Operational workspace" tone="success" />
 				</div>
 				<MetricGrid min="14rem">
 					{operationalEntries.map(([key, item]) => (

@@ -8,7 +8,7 @@ import type { loadAgentLabEntityPage } from '../../view-models/agent-lab/entity-
 interface Props { frame: Awaited<ReturnType<typeof loadAgentLabEntityPage>>; label: string; description: string; }
 const { frame, label, description } = Astro.props as Props;
 ---
-<TreeseedAppLayout title={`Agent Lab · ${label}`} description={description} currentPath="/app/command" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
+<TreeseedAppLayout title={`Agent Lab · ${label}`} description={description} currentPath="/app/work" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
 	<section class="ts-agent-lab-page" data-scene={`agent-lab.${label.toLowerCase().replaceAll(' ', '-')}`}>
 		{frame.monitor ? <AgentLabChrome frame={frame.monitor} /> : null}
 		{!frame.app.activeTeam ? <EmptyState title="Choose an active team" description="Agent Lab records are team-scoped." /> : <OperationsDisplayContainer title={label} {description}>

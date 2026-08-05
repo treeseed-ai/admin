@@ -7,7 +7,7 @@ import AgentLabChrome from './AgentLabChrome.astro';
 interface Props extends Awaited<ReturnType<typeof loadAgentLabCommandPage>> { current: AgentLabCommandSurface }
 const { app, preferences, frame, surface, endpoints, query, current } = Astro.props as Props;
 ---
-<TreeseedAppLayout title={`Agent Lab · ${surface.title}`} description={surface.description} currentPath="/app/command" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+<TreeseedAppLayout title={`Agent Lab · ${surface.title}`} description={surface.description} currentPath="/app/work" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
 	<section class="ts-agent-lab-page" data-scene={`agent-lab.${current}`}>
 		{frame && endpoints ? <><AgentLabChrome {frame} {current} inboxCount={surface.unreadCount} /><CommandWorkspace client:load surface={current} initial={surface} {endpoints} realtime={{ enabled: preferences.realTimeUpdates, intervalMs: preferences.realTimePollingIntervalSeconds * 1000 }} timeZone={preferences.timeZone} {query} /></> : <EmptyState title="Choose an active team" description="Agent Lab operations are team-scoped." />}
 	</section>

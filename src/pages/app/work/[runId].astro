@@ -23,7 +23,7 @@ const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((r
 if (team && !run.id) Astro.response.status = 404;
 const transitions: Record<string, string[]> = { queued: ['running', 'cancelled', 'failed'], running: ['completed', 'degraded', 'cancelled', 'failed'] };
 ---
-<TreeseedAppLayout title={run.id ? text(run.name, run.scenarioId, 'Workday') : 'Workday unavailable'} description="Live workday control and historical execution replay." currentPath="/app/command" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader>
+<TreeseedAppLayout title={run.id ? text(run.name, run.scenarioId, 'Workday') : 'Workday unavailable'} description="Live workday control and historical execution replay." currentPath="/app/work" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader>
 	<section class="ts-template" aria-label="Workday detail" data-scene="command.workday.detail">
 		{monitor ? <AgentLabChrome frame={monitor} /> : null}
 		{!team ? <EmptyState title="Choose an active team" description="Workdays are team-scoped." /> : !run.id ? <EmptyState title="Workday not found" description="The run is unavailable or outside the active team." /> : <OperationsDisplayContainer eyebrow={`Workday · ${String(run.status ?? 'unknown')}`} title={text(run.name, run.scenarioId, 'Workday')} description="Inspect the run, durable events, and its legal lifecycle actions.">
