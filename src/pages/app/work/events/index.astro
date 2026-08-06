@@ -1,0 +1,5 @@
+---
+import AgentLabEntityPage from '../../../../components/agent-lab/AgentLabEntityPage.astro'; import { loadAgentLabEntityPage } from '../../../../view-models/agent-lab/entity-page.ts';
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`); const frame = await loadAgentLabEntityPage(Astro, 'events');
+---
+<AgentLabEntityPage frame={frame} label="System Events" description="Durable control-plane and runtime transitions from the team’s operating day." />

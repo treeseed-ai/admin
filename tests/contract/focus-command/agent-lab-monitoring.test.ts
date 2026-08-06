@@ -14,22 +14,21 @@ describe('Agent Lab command header and navigator', () => {
 		for (const path of ['src/pages/app/work/index.astro', 'src/pages/app/work/[runId].astro', 'src/components/agent-lab/AgentLabEntityPage.astro']) {
 			const page = source(path); expect(page).toContain('AgentLabChrome'); expect(page).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
 		}
-		const entityPage = source('src/pages/app/work/entity-overview.astro');
-		expect(entityPage).toContain('AgentLabEntityPage');
-		expect(entityPage).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
 		const routes = source('src/routes.ts');
 		for (const route of entityRoutes) {
-			expect(routes).toContain(`adminRoute('/app/work/${route}', 'pages/app/work/entity-overview.astro'`);
-			expect(entityPage).toContain(`${route}: { kind: '${route}'`);
+			const entityPage = source(`src/pages/app/work/${route}/index.astro`);
+			expect(routes).toContain(`adminRoute('/app/work/${route}', 'pages/app/work/${route}/index.astro'`);
+			expect(entityPage).toContain('AgentLabEntityPage');
+			expect(entityPage).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
 		}
-		expect(source('src/pages/app/work/workdays.astro')).toContain('AgentLabChrome');
+		expect(source('src/pages/app/work/workdays/index.astro')).toContain('AgentLabChrome');
 	});
 
 	it('registers production-backed command routes with one reusable workspace', () => {
 		const routes = source('src/routes.ts');
 		for (const route of navigatorRoutes) {
 			expect(routes).toContain(`/app/work/${route}`);
-			expect(source(`src/pages/app/work/${route}.astro`)).toContain('AgentLabCommandPage');
+			expect(source(`src/pages/app/work/${route}/index.astro`)).toContain('AgentLabCommandPage');
 		}
 		const page = source('src/components/agent-lab/AgentLabCommandPage.astro');
 		expect(page).toContain('CommandWorkspace');
