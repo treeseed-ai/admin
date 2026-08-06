@@ -164,7 +164,7 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('keeps navigation focused on active-team work and identity management', () => {
 		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
 		const publicLayout = readFileSync('src/layouts/PublicLayout.astro', 'utf8');
-		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/services', '/app/projects', '/app/command', '/app/focus', '/app/knowledge', '/knowledge/market/', '/status/']) {
+		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/services', '/app/projects', '/app/work', '/app/knowledge', '/knowledge/market/', '/status/']) {
 			expect(appLayout).toContain(target);
 		}
 		for (const target of ['/market', '/cart', '/seller']) {
@@ -181,6 +181,9 @@ describe('@treeseed/admin identity and team surface', () => {
 		}
 		expect(appLayout).not.toContain("{ label: 'Capacity'");
 		expect(appLayout).not.toContain("{ label: 'Work'");
+		expect(appLayout).not.toContain("{ label: 'Command'");
+		expect(appLayout).not.toContain("{ label: 'Focus'");
+		expect(appLayout).toContain("{ label: 'Agent Lab'");
 		expect(appLayout).not.toContain("{ label: 'Teams'");
 		expect(appLayout).toContain('<ShellIcon name="teams"');
 		expect(appLayout).toContain('iconOnly: true');

@@ -19,6 +19,7 @@ describe('team management architecture audit', () => {
 			'/app/projects',
 			'/app/command',
 			'/app/focus',
+			'/app/work',
 			'/app/services',
 			'/app/capacity',
 			'/app/knowledge',
@@ -61,7 +62,7 @@ describe('team management architecture audit', () => {
 
 	it('keeps overview, settings, membership, consent, and lifecycle responsibilities complete', () => {
 		const overview = source('src/pages/app/teams/[teamId]/index.astro');
-		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity', 'Command', 'Focus']) {
+		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity', 'Agent Lab']) {
 			expect(overview, label).toContain(label);
 		}
 		expect(overview).toContain("import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart'");
