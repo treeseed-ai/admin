@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.agent.discussion.use-non-overlapping-discussion-dock.749
+journeyIndex: 749
+type: agent
+subtype: discussion
+journey: Use the non-overlapping Discussion dock
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Search and continue TreeDX Discussions, edit Markdown, reference files, and observe assignment resource traces without covering page content.
+status: planned
+dependencies: { journeys: [744], guarantees: [guarantee.agent.discussion.persist-discussion-only-in-treedx.744] }
+actors: { allowed: [authenticated_user, team_owner], forbidden: [anonymous_user] }
+devices: { required: [desktop_chromium], optional: [mobile_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: [] }
+api: { required: true, verifierRefs: [] }
+content: { required: true, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: []
+evidence: { required: [guarantee_report, scene_screenshots] }
+notes: ["Activate after the stable Agent Lab Discussion scene produces repeatable evidence."]
