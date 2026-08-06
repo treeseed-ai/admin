@@ -29,7 +29,7 @@ const metrics = frame?.overview.metrics.map((metric) => {
 const csrfToken = ensureCsrfToken(Astro);
 ---
 
-<TreeseedAppLayout title="Agent Lab" description="See the operating field, understand its signals, and direct agent work." currentPath="/app/command" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+<TreeseedAppLayout title="Agent Lab" description="See the operating field, understand its signals, and direct agent work." currentPath="/app/work" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
 	<section class="ts-agent-lab-page" aria-label="Agent Lab" data-scene="agent-lab.home">
 		{frame ? <>
 			<AgentLabChrome {frame} />

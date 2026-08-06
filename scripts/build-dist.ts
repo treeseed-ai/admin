@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
@@ -9,7 +9,9 @@ import { build } from 'esbuild';
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const requireFromPackage = createRequire(resolve(packageRoot, 'package.json'));
 const srcRoot = resolve(packageRoot, 'src');
-const distRoot = resolve(packageRoot, 'dist');
+const liveDistRoot = resolve(packageRoot, 'dist');
+const buildRoot = resolve(packageRoot, '.local', 'build-dist', String(process.pid));
+const distRoot = resolve(buildRoot, 'dist');
 const buildLockRoot = resolve(packageRoot, '.treeseed-build-dist.lock');
 const workspaceCoreDistRoot = resolve(packageRoot, '..', 'core', 'dist');
 const workspaceSdkDistRoot = resolve(packageRoot, '..', 'sdk', 'dist');
@@ -216,11 +218,30 @@ function writeDeclarationTsconfig() {
 		compilerOptions: {
 			...baseCompilerOptions,
 			ignoreDeprecations: baseCompilerOptions.ignoreDeprecations ?? ignoreDeprecationsForInstalledTypescript(),
+			outDir: relativePathForTsconfig(distRoot),
 			paths: mergedPaths,
 		},
 		include: baseConfig.include ?? ['src/**/*'],
 	}, null, 2)}\n`, 'utf8');
 	return tsconfigPath;
+}
+
+function publishCompletedBuild() {
+	const stagedFiles = walkFiles(distRoot);
+	const expected = new Set(stagedFiles.map((filePath) => relative(distRoot, filePath)));
+	mkdirSync(liveDistRoot, { recursive: true });
+	for (const stagedFile of stagedFiles) {
+		const outputFile = resolve(liveDistRoot, relative(distRoot, stagedFile));
+		ensureDir(outputFile);
+		try {
+			renameSync(stagedFile, outputFile);
+		} catch {
+			cpSync(stagedFile, outputFile);
+		}
+	}
+	for (const liveFile of walkFiles(liveDistRoot)) {
+		if (!expected.has(relative(liveDistRoot, liveFile))) rmSync(liveFile, { force: true });
+	}
 }
 
 function emitDeclarations() {
@@ -252,7 +273,7 @@ async function main() {
   const releaseBuildLock = await acquireBuildLock();
   try {
   ensureWorkspaceRuntimePackageLinks();
-  rmSync(distRoot, { recursive: true, force: true });
+  rmSync(buildRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
 
   for (const filePath of walkFiles(srcRoot)) {
@@ -275,7 +296,9 @@ async function main() {
   writeDeclaration('middleware.d.ts', "export declare const onRequest: any;\n");
   writeDeclaration('lib/market/catalog.d.ts', "export declare function createMarketTemplateCatalogProvider(...args: any[]): any;\n");
   writeDeclaration('lib/market/store.d.ts', "export declare function resolveApiStore(...args: any[]): any;\n");
+  publishCompletedBuild();
   } finally {
+	rmSync(buildRoot, { recursive: true, force: true });
     releaseBuildLock();
   }
 }

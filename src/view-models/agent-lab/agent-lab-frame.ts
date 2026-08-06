@@ -24,7 +24,7 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 		api.request('GET', `${base}/overview${suffix}`).catch(() => fallbackOverview(team, preferences.timeZone)),
 		api.request('GET', `${base}/activity${suffix}`).catch(() => ({ revision: 'unavailable', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] })),
 		api.request('GET', `${base}/metric-series${suffix}`).catch(() => ({ revision: 'unavailable', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] })),
-		api.request('GET', `${base}/allocation${suffix}`).catch(() => ({ revision: 'unavailable', generatedAt: new Date().toISOString(), canManage: false, activeAllocationSetId: null, credits: { budget: null, requested: 0, reserved: 0, committed: 0, reported: 0, spent: 0, remaining: null, overrun: 0 }, projects: [], agentClasses: [] })),
+		api.request('GET', `${base}/allocation${suffix}`).catch(() => ({ revision: 'unavailable', generatedAt: new Date().toISOString(), canManage: false, activeAllocationSetId: null, time: { availableSeconds: null, requestedSeconds: 0, reservedSeconds: 0, activeSeconds: 0, elapsedSeconds: 0, releasedSeconds: 0, remainingSeconds: null, overrunSeconds: 0 }, projects: [], agentClasses: [], workdayTime: [] })),
 	]);
 	return {
 		overview: overview as AgentLabOverview,

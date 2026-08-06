@@ -5,7 +5,7 @@ type: user
 subtype: account
 journey: Manage Appearance
 ownerPackage: "@treeseed/admin"
-summary: Set theme and interface preferences for the admin shell; should use reusable UI/theme tokens and persist per user where available.
+summary: Set persistent application and independently scoped content-workspace appearance preferences with reusable accessible UI theme tokens.
 status: active
 dependencies:
   journeys:
@@ -70,7 +70,8 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Set theme and interface preferences for the admin shell; should use reusable UI/theme tokens and persist per user where available.
+  - Application appearance and the optional content workspace scheme and mode persist per user.
+  - The content workspace palette applies to ControlSurface and content overlays without changing persistent shell utilities or fading readable tokens.
 surface: admin-ui
 run:
   timeoutSeconds: 300
