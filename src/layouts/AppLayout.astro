@@ -88,6 +88,11 @@ const feedbackContext = principal ? {
 	policy: 'authenticated' as const,
 	source: 'page' as const,
 } : undefined;
+const discussionContext = principal && activeTeam ? {
+	teamId: activeTeam.id,
+	identityLabel: principal.displayName ?? 'Current account',
+	endpoint: '/v1/discussions',
+} : undefined;
 ---
 
 <ProductShell
@@ -100,6 +105,7 @@ const feedbackContext = principal ? {
 	timeZone={preferences.timeZone}
 	helpContext={helpContext}
 	feedbackContext={feedbackContext}
+	discussionContext={discussionContext}
 	brand={{
 		name: 'TreeSeed',
 		tag: SITE_SLOGAN,
