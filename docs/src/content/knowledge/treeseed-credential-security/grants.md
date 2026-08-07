@@ -9,11 +9,11 @@ summary: Give another administrator cryptographic access without sharing
 status: published
 visibility: authenticated
 order: 10
-tags:
+groupIds:
+  - administrator
   - grant
   - revoke
-  - administrator
-  - wrapped team key
+  - wrapped-team-key
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

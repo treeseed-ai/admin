@@ -8,7 +8,10 @@ description: Provider-specific setup and operational guidance for TreeSeed servi
 status: published
 visibility: authenticated
 order: 30
-topics: [services, providers, capabilities]
+groupIds:
+  - capabilities
+  - providers
+  - services
 audience: [service administrators, team owners]
 relatedBookIds: [treeseed-team-administration, treeseed-credential-security]
 packPolicy: allowed

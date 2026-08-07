@@ -8,11 +8,11 @@ summary: Create a durable team identity and become its first owner.
 status: published
 visibility: authenticated
 order: 30
-tags:
-  - create team
+groupIds:
+  - create-team
+  - name
   - owner
   - visibility
-  - name
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

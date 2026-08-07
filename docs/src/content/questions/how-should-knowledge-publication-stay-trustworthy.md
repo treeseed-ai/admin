@@ -5,10 +5,10 @@ description: Defines the evidence boundary for repository-native knowledge autho
 summary: Establishes which correlated records must agree before TreeSeed treats a knowledge revision as published and pack-ready.
 date: 2026-08-01
 status: live
-tags:
+groupIds:
   - knowledge
-  - review
   - publication
+  - review
 draft: false
 questionType: implementation
 motivation: A knowledge UI must not report success when Git, TreeDX, the published manifest, the reader, or derived packs refer to different source revisions.

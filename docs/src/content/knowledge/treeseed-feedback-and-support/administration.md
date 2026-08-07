@@ -9,12 +9,12 @@ summary: Search, filter, investigate, and export feedback without exposing
 status: published
 visibility: admin
 order: 20
-tags:
-  - feedback
+groupIds:
   - administration
-  - search
+  - feedback
   - filter
-  - platform admin
+  - platform-admin
+  - search
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

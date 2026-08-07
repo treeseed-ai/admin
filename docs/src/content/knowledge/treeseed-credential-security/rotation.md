@@ -8,10 +8,10 @@ summary: Choose the rotation that matches the material that may be exposed.
 status: published
 visibility: authenticated
 order: 70
-tags:
-  - rotate passphrase
-  - rotate team key
-  - rotate token
+groupIds:
+  - rotate-passphrase
+  - rotate-team-key
+  - rotate-token
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

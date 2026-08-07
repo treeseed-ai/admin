@@ -8,7 +8,10 @@ description: Role-aware operational guidance for TreeSeed teams and their admini
 status: published
 visibility: public
 order: 20
-topics: [teams, membership, ownership]
+groupIds:
+  - membership
+  - ownership
+  - teams
 audience: [team members, team administrators]
 relatedBookIds: [treeseed-accounts-and-identity, treeseed-services-and-providers]
 packPolicy: allowed

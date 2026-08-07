@@ -9,11 +9,11 @@ summary: Review connection changes and validation outcomes without exposing
 status: published
 visibility: team
 order: 10
-tags:
+groupIds:
   - activity
   - audit
-  - validation
   - timestamp
+  - validation
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

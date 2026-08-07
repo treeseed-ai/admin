@@ -9,13 +9,13 @@ summary: Separate runtime, DNS, and storage tokens and restrict each one to
 status: published
 visibility: authenticated
 order: 90
-tags:
+groupIds:
+  - api-token
   - cloudflare
-  - pages
-  - workers
   - dns
+  - pages
   - r2
-  - api token
+  - workers
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

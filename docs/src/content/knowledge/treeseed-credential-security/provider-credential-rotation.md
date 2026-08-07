@@ -9,12 +9,12 @@ summary: Replace a token at its provider and then encrypt the replacement
 status: published
 visibility: team
 order: 40
-tags:
-  - credential
-  - token
-  - rotation
-  - revoke
+groupIds:
   - compromise
+  - credential
+  - revoke
+  - rotation
+  - token
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

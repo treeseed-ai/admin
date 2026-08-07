@@ -9,11 +9,11 @@ summary: Reuse the step-1 passphrase to unlock your key and wrap a new random
 status: published
 visibility: authenticated
 order: 80
-tags:
-  - step 2
-  - same passphrase
-  - team vault key
-  - key wrapping
+groupIds:
+  - key-wrapping
+  - same-passphrase
+  - step-2
+  - team-vault-key
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

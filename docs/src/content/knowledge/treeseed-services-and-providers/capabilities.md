@@ -9,12 +9,12 @@ summary: Enable provider-neutral capabilities independently and make them
 status: published
 visibility: team
 order: 20
-tags:
-  - capability
+groupIds:
   - binding
+  - capability
+  - hosting
   - repository
   - workflow
-  - hosting
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -9,11 +9,11 @@ summary: Maintain metadata, capabilities, credential readiness, activity,
 status: published
 visibility: authenticated
 order: 40
-tags:
-  - connection settings
+groupIds:
   - capabilities
-  - validation
+  - connection-settings
   - disconnect
+  - validation
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

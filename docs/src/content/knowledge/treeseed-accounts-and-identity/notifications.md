@@ -8,12 +8,12 @@ summary: Set a default notification policy and replace it only for selected proj
 status: published
 visibility: authenticated
 order: 60
-tags:
-  - notifications
-  - projects
-  - overrides
-  - email
+groupIds:
   - cadence
+  - email
+  - notifications
+  - overrides
+  - projects
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

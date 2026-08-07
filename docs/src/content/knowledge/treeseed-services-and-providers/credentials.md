@@ -9,12 +9,12 @@ summary: Learn what is encrypted, who can use it, and how interactive operations
 status: published
 visibility: authenticated
 order: 60
-tags:
+groupIds:
   - credentials
   - encryption
-  - token
   - envelope
   - lease
+  - token
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

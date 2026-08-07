@@ -9,12 +9,12 @@ summary: Compare human-readable responsibilities and understand which
 status: published
 visibility: team
 order: 120
-tags:
-  - roles
-  - permissions
-  - owner
-  - lead
+groupIds:
   - contributor
+  - lead
+  - owner
+  - permissions
+  - roles
   - viewer
 contributors: []
 relatedBookIds: []

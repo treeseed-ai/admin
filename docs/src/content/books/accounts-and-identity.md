@@ -8,7 +8,10 @@ description: Practical guidance for creating and maintaining a secure TreeSeed i
 status: published
 visibility: authenticated
 order: 10
-topics: [accounts, identity, authentication]
+groupIds:
+  - accounts
+  - authentication
+  - identity
 audience: [TreeSeed users]
 relatedBookIds: [treeseed-team-administration, treeseed-credential-security]
 packPolicy: allowed

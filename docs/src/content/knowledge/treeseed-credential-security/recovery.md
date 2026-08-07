@@ -9,11 +9,11 @@ summary: Know when another administrator can restore access and when protected
 status: published
 visibility: authenticated
 order: 50
-tags:
-  - step 3
+groupIds:
+  - forgotten-passphrase
   - recovery
-  - forgotten passphrase
-  - sole administrator
+  - sole-administrator
+  - step-3
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

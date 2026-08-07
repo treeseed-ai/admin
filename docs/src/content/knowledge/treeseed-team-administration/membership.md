@@ -9,13 +9,13 @@ summary: Find team members and understand which operations require an
 status: published
 visibility: authenticated
 order: 70
-tags:
-  - members
-  - roles
-  - ownership
+groupIds:
   - invitation
-  - remove
   - leave
+  - members
+  - ownership
+  - remove
+  - roles
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

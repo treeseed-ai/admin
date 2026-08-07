@@ -9,12 +9,12 @@ summary: Understand which identity details are public, permanent, or used only
 status: published
 visibility: authenticated
 order: 50
-tags:
-  - profile
-  - username
+groupIds:
   - email
-  - timezone
   - identity
+  - profile
+  - timezone
+  - username
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

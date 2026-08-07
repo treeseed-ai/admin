@@ -9,11 +9,11 @@ summary: Control whether the team identity profile is public without changing
 status: published
 visibility: team
 order: 140
-tags:
-  - visibility
-  - public
+groupIds:
   - private
   - profile
+  - public
+  - visibility
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

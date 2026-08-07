@@ -9,12 +9,12 @@ summary: Manage account sign-in methods without weakening recovery or exposing
 status: published
 visibility: authenticated
 order: 80
-tags:
+groupIds:
+  - email
   - password
   - provider
-  - email
-  - verification
   - security
+  - verification
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

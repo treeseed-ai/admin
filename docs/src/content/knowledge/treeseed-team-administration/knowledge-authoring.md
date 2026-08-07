@@ -8,10 +8,10 @@ summary: Create repository-native books and pages through recoverable TreeDX wor
 status: published
 visibility: team
 order: 90
-tags:
-  - knowledge
-  - books
+groupIds:
   - authoring
+  - books
+  - knowledge
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

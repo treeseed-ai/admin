@@ -9,11 +9,11 @@ summary: Choose the team that scopes daily work without changing it merely by
 status: published
 visibility: authenticated
 order: 20
-tags:
-  - teams
-  - active team
+groupIds:
+  - active-team
   - archived
   - switch
+  - teams
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

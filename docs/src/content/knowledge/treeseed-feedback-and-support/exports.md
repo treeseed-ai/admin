@@ -8,13 +8,13 @@ summary: Prepare bounded feedback bundles for human review and AI-assisted remed
 status: published
 visibility: admin
 order: 30
-tags:
+groupIds:
+  - ai
   - export
-  - AI
-  - JSONL
-  - ZIP
+  - jsonl
   - privacy
   - provenance
+  - zip
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

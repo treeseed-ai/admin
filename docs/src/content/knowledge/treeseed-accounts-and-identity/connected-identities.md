@@ -9,12 +9,12 @@ summary: Understand how external sign-in providers attach to your account and
 status: published
 visibility: authenticated
 order: 20
-tags:
-  - provider
-  - sign-in
-  - identity
+groupIds:
   - github
   - google
+  - identity
+  - provider
+  - sign-in
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -9,12 +9,12 @@ summary: Compare supported providers without treating shared capability types as
 status: published
 visibility: authenticated
 order: 130
-tags:
-  - github
+groupIds:
   - cloudflare
-  - railway
+  - github
   - openbao
   - permissions
+  - railway
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:
