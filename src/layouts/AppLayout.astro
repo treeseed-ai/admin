@@ -52,10 +52,11 @@ const {
 
 const appearance = await resolveAuthenticatedThemePreference(Astro);
 const api = createApiFacade(Astro);
-const [personalThemes, preferences] = await Promise.all([
+const [personalThemes, loadedPreferences] = await Promise.all([
 	api.personalThemes().catch(() => []),
-	suppliedTimeZone ? Promise.resolve({ timeZone: suppliedTimeZone }) : api.accountPreferences().catch(() => ({ timeZone: 'UTC' })),
+	api.accountPreferences().catch(() => ({ timeZone: suppliedTimeZone ?? 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const })),
 ]);
+const preferences = { ...loadedPreferences, ...(suppliedTimeZone ? { timeZone: suppliedTimeZone } : {}) };
 const customSchemes = Object.fromEntries(personalThemes.flatMap((theme) => {
 	try { return [[theme.schemeId, compileGuidedThemePalette(theme.palette, theme.baseScheme)]]; } catch { return []; }
 }));
@@ -93,6 +94,7 @@ const discussionContext = principal && activeTeam ? {
 	teamId: activeTeam.id,
 	identityLabel: principal.displayName ?? 'Current account',
 	endpoint: '/v1/discussions',
+	realtime: { endpoint: '/v1/session/events', enabled: preferences.realTimeUpdates !== false },
 } : undefined;
 ---
 
