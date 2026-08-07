@@ -9,12 +9,12 @@ summary: Maintain the team name, display identity, logo, summary, and profile
 status: published
 visibility: authenticated
 order: 130
-tags:
-  - team settings
-  - identity
-  - public profile
-  - visibility
+groupIds:
   - conflict
+  - identity
+  - public-profile
+  - team-settings
+  - visibility
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

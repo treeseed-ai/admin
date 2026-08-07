@@ -8,13 +8,13 @@ summary: Send, review, resend, revoke, and explicitly accept team invitations.
 status: published
 visibility: public
 order: 40
-tags:
-  - invitation
+groupIds:
   - accept
+  - email-mismatch
+  - expiry
+  - invitation
   - resend
   - revoke
-  - expiry
-  - email mismatch
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

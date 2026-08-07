@@ -8,12 +8,12 @@ summary: Move feedback through a clear workflow and preserve useful resolution e
 status: published
 visibility: admin
 order: 70
-tags:
-  - triage
-  - in progress
-  - resolve
-  - reopen
+groupIds:
+  - in-progress
   - notes
+  - reopen
+  - resolve
+  - triage
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

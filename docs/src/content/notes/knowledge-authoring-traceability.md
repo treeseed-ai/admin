@@ -5,10 +5,10 @@ description: Records why every published knowledge change must retain an exact r
 summary: Knowledge changes remain trustworthy when their authoring workspace, review, source commit, graph revision, publication manifest, and derived packs can be correlated.
 date: 2026-08-01
 status: live
-tags:
+groupIds:
   - knowledge
-  - traceability
   - publication
+  - traceability
 author: admin-steward
 draft: false
 about:

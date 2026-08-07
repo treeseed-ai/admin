@@ -9,11 +9,11 @@ summary: Understand blockers, reauthentication, confirmation, and the access
 status: published
 visibility: authenticated
 order: 30
-tags:
-  - delete account
+groupIds:
   - blockers
-  - reauthentication
+  - delete-account
   - irreversible
+  - reauthentication
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -8,11 +8,11 @@ summary: Grant or transfer ownership without leaving a team with no accountable 
 status: published
 visibility: team
 order: 90
-tags:
+groupIds:
+  - last-owner
   - owner
   - ownership
   - transfer
-  - last owner
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

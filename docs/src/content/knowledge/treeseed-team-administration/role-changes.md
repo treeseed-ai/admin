@@ -8,11 +8,11 @@ summary: Review how a role change affects visible controls and durable authoriza
 status: published
 visibility: team
 order: 110
-tags:
-  - role
+groupIds:
   - access
-  - permission
   - change
+  - permission
+  - role
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

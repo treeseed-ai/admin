@@ -9,12 +9,12 @@ summary: Review signed-in devices, timestamps, network addresses, and safe
 status: published
 visibility: authenticated
 order: 90
-tags:
-  - sessions
+groupIds:
   - devices
+  - ip-address
   - revoke
-  - ip address
-  - sign out
+  - sessions
+  - sign-out
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

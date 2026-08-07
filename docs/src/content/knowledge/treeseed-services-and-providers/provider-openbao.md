@@ -8,12 +8,12 @@ summary: Use workload identity and references instead of storing a reusable vaul
 status: published
 visibility: authenticated
 order: 110
-tags:
-  - openbao
-  - hashicorp vault
-  - oidc
+groupIds:
+  - hashicorp-vault
   - jwt
-  - workload identity
+  - oidc
+  - openbao
+  - workload-identity
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

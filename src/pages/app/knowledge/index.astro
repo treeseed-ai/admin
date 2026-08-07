@@ -63,10 +63,10 @@ const valuesFromForm = (data: FormData) => ({
 	title: String(data.get('title') ?? '').trim(), summary: String(data.get('summary') ?? '').trim(),
 	visibility: String(data.get('visibility') ?? 'team'),
 	order: Number(data.get('order') ?? 0), description: String(data.get('description') ?? '').trim(),
-	topics: commaList(data.get('topics')), audience: commaList(data.get('audience')),
+	groupIds: commaList(data.get('groupIds')), audience: commaList(data.get('audience')),
 	editorialCoreNoteId: String(data.get('editorialCoreNoteId') ?? '').trim(),
 	packPolicy: String(data.get('packPolicy') ?? 'allowed'), cover: { image: String(data.get('coverImage') ?? '').trim(), alt: String(data.get('coverAlt') ?? '').trim() },
-	parentId: String(data.get('parentId') ?? '').trim(), tags: commaList(data.get('tags')), contributors: commaList(data.get('contributors')),
+	parentId: String(data.get('parentId') ?? '').trim(), contributors: commaList(data.get('contributors')),
 	relatedBookIds: commaList(data.get('relatedBookIds')), relatedKnowledgeIds: commaList(data.get('relatedKnowledgeIds')),
 	relatedNoteIds: commaList(data.get('relatedNoteIds')), relatedQuestionIds: commaList(data.get('relatedQuestionIds')),
 	relatedObjectiveIds: commaList(data.get('relatedObjectiveIds')), relatedProposalIds: commaList(data.get('relatedProposalIds')),
@@ -203,7 +203,7 @@ if (workspaceId) {
 			const source = await api.request<any>('GET', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}/content?path=${encodeURIComponent(sourcePath)}`);
 			const definition = source.definition ?? {};
 			formValues = { ...definition, kind: source.kind, bodyMarkdown: definition.bodyMarkdown ?? '', backlinks: source.backlinks ?? [],
-				tags: definition.tags?.join?.(', ') ?? '', topics: definition.topics?.join?.(', ') ?? '',
+				groupIds: definition.groupIds?.join?.(', ') ?? '',
 				audience: definition.audience?.join?.(', ') ?? '', relatedKnowledgeIds: definition.relatedKnowledgeIds?.join?.(', ') ?? '',
 				guaranteeIds: definition.guaranteeIds?.join?.(', ') ?? '',
 				audiencesPrimary: definition.audiences?.primary?.join?.(', ') ?? '',

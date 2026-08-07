@@ -9,11 +9,11 @@ summary: Add, verify, promote, and remove account email addresses without
 status: published
 visibility: authenticated
 order: 40
-tags:
+groupIds:
   - email
-  - verification
   - primary
   - recovery
+  - verification
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

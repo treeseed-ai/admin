@@ -8,11 +8,11 @@ summary: Resolve ownership and resource blockers before access is removed.
 status: published
 visibility: team
 order: 100
-tags:
-  - remove
-  - leave
+groupIds:
   - blockers
-  - lost access
+  - leave
+  - lost-access
+  - remove
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

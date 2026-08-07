@@ -8,12 +8,12 @@ summary: Learn which context is stored, who can inspect it, and how retention wo
 status: published
 visibility: authenticated
 order: 40
-tags:
-  - privacy
-  - identity
-  - retention
+groupIds:
   - audit
   - contact
+  - identity
+  - privacy
+  - retention
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -9,12 +9,12 @@ summary: Pause team activity reversibly or permanently delete it through a
 status: published
 visibility: authenticated
 order: 50
-tags:
+groupIds:
   - archive
-  - restore
-  - delete team
   - blockers
+  - delete-team
   - password
+  - restore
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

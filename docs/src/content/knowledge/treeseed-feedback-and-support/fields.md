@@ -9,12 +9,12 @@ summary: Understand the stable identity, workflow, attribution, and Markdown
 status: published
 visibility: authenticated
 order: 10
-tags:
-  - title
+groupIds:
+  - author
+  - content-fields
   - slug
   - status
-  - author
-  - content fields
+  - title
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds: []

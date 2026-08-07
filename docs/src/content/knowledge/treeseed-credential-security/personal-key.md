@@ -9,11 +9,11 @@ summary: Create an administrator key protected by a personal passphrase that is
 status: published
 visibility: authenticated
 order: 30
-tags:
-  - step 1
-  - personal passphrase
-  - administrator key
-  - account password
+groupIds:
+  - account-password
+  - administrator-key
+  - personal-passphrase
+  - step-1
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

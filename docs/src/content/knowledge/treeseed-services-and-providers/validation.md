@@ -9,11 +9,11 @@ summary: Authorize a single-use operation lease that tests a provider connection
 status: published
 visibility: team
 order: 150
-tags:
-  - validation
+groupIds:
+  - credentials
   - lease
   - read-only
-  - credentials
+  - validation
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -9,11 +9,11 @@ summary: Resolve capability consumers before removing a connection and its
 status: published
 visibility: team
 order: 70
-tags:
-  - disconnect
-  - delete
+groupIds:
   - blocker
   - ciphertext
+  - delete
+  - disconnect
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

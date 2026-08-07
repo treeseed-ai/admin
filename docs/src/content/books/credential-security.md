@@ -8,7 +8,10 @@ description: Security guidance for TreeSeed client-encrypted provider credential
 status: published
 visibility: authenticated
 order: 40
-topics: [security, credentials, encryption]
+groupIds:
+  - credentials
+  - encryption
+  - security
 audience: [credential administrators, team owners]
 relatedBookIds: [treeseed-accounts-and-identity, treeseed-services-and-providers]
 packPolicy: restricted

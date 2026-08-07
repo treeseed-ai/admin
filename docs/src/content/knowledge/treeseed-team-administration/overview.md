@@ -9,12 +9,12 @@ summary: Read team identity, your role, owned-domain summaries, activity, and
 status: published
 visibility: authenticated
 order: 80
-tags:
-  - team overview
-  - permissions
+groupIds:
   - audit
+  - permissions
   - projects
   - services
+  - team-overview
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

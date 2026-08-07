@@ -9,11 +9,11 @@ summary: Search and inspect the complete member directory while keeping
 status: published
 visibility: team
 order: 60
-tags:
-  - search
+groupIds:
   - directory
   - member
   - pagination
+  - search
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

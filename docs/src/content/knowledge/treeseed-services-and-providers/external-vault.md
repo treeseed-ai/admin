@@ -9,12 +9,12 @@ summary: Configure unattended credential references without storing a long-lived
 status: published
 visibility: authenticated
 order: 80
-tags:
-  - vault
-  - openbao
-  - oidc
+groupIds:
   - jwt
-  - workload identity
+  - oidc
+  - openbao
+  - vault
+  - workload-identity
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

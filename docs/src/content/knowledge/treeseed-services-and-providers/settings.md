@@ -9,12 +9,12 @@ summary: Change readable account metadata and enabled capabilities without
 status: published
 visibility: team
 order: 140
-tags:
-  - settings
+groupIds:
+  - account-id
   - metadata
-  - account id
-  - workspace
   - organization
+  - settings
+  - workspace
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

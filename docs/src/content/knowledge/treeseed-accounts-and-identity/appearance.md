@@ -8,12 +8,12 @@ summary: Create personal themes and choose the active appearance safely.
 status: published
 visibility: authenticated
 order: 10
-tags:
-  - theme
+groupIds:
   - appearance
   - colors
-  - dark mode
   - contrast
+  - dark-mode
+  - theme
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -8,10 +8,10 @@ summary: Read the human-centered history of security-sensitive team changes.
 status: published
 visibility: team
 order: 10
-tags:
+groupIds:
   - activity
-  - audit
   - actor
+  - audit
   - changes
   - history
 contributors: []

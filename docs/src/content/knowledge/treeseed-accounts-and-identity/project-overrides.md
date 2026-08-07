@@ -9,11 +9,11 @@ summary: Replace the all-project notification choices for selected projects
 status: published
 visibility: authenticated
 order: 70
-tags:
-  - notifications
-  - projects
-  - overrides
+groupIds:
   - content
+  - notifications
+  - overrides
+  - projects
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

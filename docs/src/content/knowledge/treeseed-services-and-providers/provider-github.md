@@ -9,10 +9,10 @@ summary: Use a GitHub App installation with capability-specific repository,
 status: published
 visibility: authenticated
 order: 100
-tags:
-  - github app
-  - installation
+groupIds:
   - actions
+  - github-app
+  - installation
   - repositories
   - secrets
 contributors: []

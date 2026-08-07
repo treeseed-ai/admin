@@ -8,7 +8,10 @@ description: Guidance for users reporting issues and administrators triaging and
 status: published
 visibility: authenticated
 order: 50
-topics: [feedback, support, privacy]
+groupIds:
+  - feedback
+  - privacy
+  - support
 audience: [TreeSeed users, platform administrators]
 relatedBookIds: [treeseed-accounts-and-identity, treeseed-team-administration]
 packPolicy: allowed

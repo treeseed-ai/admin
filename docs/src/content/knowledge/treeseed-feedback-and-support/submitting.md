@@ -9,12 +9,12 @@ summary: Explain a problem or idea while TreeSeed attaches verified page and
 status: published
 visibility: authenticated
 order: 60
-tags:
-  - feedback
-  - report
-  - issue
-  - suggestion
+groupIds:
   - context
+  - feedback
+  - issue
+  - report
+  - suggestion
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

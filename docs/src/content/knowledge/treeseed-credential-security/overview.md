@@ -9,12 +9,12 @@ summary: Understand personal keys, team custody, encrypted credentials, and the
 status: published
 visibility: authenticated
 order: 20
-tags:
-  - service vault
-  - passphrase
+groupIds:
   - encryption
-  - team key
-  - zero knowledge
+  - passphrase
+  - service-vault
+  - team-key
+  - zero-knowledge
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

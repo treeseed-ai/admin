@@ -9,11 +9,11 @@ summary: Permanently discard inaccessible encrypted credentials and initialize
 status: published
 visibility: authenticated
 order: 60
-tags:
-  - reset vault
-  - discard credentials
+groupIds:
+  - discard-credentials
   - irreversible
   - reauthentication
+  - reset-vault
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

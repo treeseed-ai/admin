@@ -9,12 +9,12 @@ summary: Understand provider connections, capability bindings, custody
 status: published
 visibility: authenticated
 order: 50
-tags:
-  - services
-  - providers
-  - connections
+groupIds:
+  - active-team
   - capabilities
-  - active team
+  - connections
+  - providers
+  - services
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

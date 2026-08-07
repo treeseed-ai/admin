@@ -9,12 +9,12 @@ summary: Understand what the optional browser capture masks and how private
 status: published
 visibility: authenticated
 order: 50
-tags:
-  - screenshot
-  - capture
-  - redact
-  - privacy
+groupIds:
   - attachment
+  - capture
+  - privacy
+  - redact
+  - screenshot
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

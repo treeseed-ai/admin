@@ -9,12 +9,12 @@ summary: Choose the IANA time zone used to format dates and times throughout
 status: published
 visibility: authenticated
 order: 100
-tags:
-  - timezone
-  - time zone
+groupIds:
   - date
+  - iana
+  - time-zone
   - timestamp
-  - IANA
+  - timezone
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

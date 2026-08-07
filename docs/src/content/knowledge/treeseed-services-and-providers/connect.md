@@ -9,11 +9,11 @@ summary: Choose a provider account, enable only required capabilities, and
 status: published
 visibility: authenticated
 order: 30
-tags:
-  - connect service
-  - provider
+groupIds:
   - capability
+  - connect-service
   - credentials
+  - provider
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:

@@ -9,11 +9,11 @@ summary: Record a workspace boundary and acknowledge the broader authority of
 status: published
 visibility: authenticated
 order: 120
-tags:
+groupIds:
+  - api-token
+  - blast-radius
   - railway
   - workspace
-  - api token
-  - blast radius
 contributors: []
 relatedBookIds: []
 relatedKnowledgeIds:
