@@ -3,7 +3,6 @@ import { resolveEditorialPreview } from '@treeseed/core/middleware/editorial-pre
 import { getSiteAuthConfig, localAuthCanonicalRedirectUrl } from './lib/auth/configuration/config';
 import { apiAccessTokenFromCookies, clearApiAccessTokenCookie, resolveApiBaseUrl } from './lib/market/api-client';
 import { ensureLocalCloudflareRuntime } from './lib/runtime/local-cloudflare';
-import { ensureCsrfToken } from './lib/auth/support/csrf';
 import { authenticatedAuthRedirect } from './lib/auth/support/access-policy';
 
 const DEV_RESET_COOKIE = 'ts_market_dev_reset';
@@ -126,7 +125,6 @@ async function loadApiBackedWebSession(context: any) {
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	await ensureLocalCloudflareRuntime(context.locals);
-	ensureCsrfToken(context);
 	const config = getSiteAuthConfig(context);
 	const resetCookieBoundary = applyLocalDevResetCookieBoundary(context);
 	const canonicalLocalUrl = localAuthCanonicalRedirectUrl(context.url, config.siteBaseUrl);

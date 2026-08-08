@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
+const readDependency = (name: string, path: string) => readFileSync(resolve(root, 'node_modules', name, path), 'utf8');
 
 describe('service management architecture', () => {
 	it('owns one provider-first route family with no legacy host route', () => {
@@ -73,8 +74,8 @@ describe('service management architecture', () => {
 	});
 
 	it('does not expose the removed shared-passphrase or hardcoded host permission components', () => {
-		const layout = read('../ui/src/astro/layouts/AppLayout.astro');
-		const uiPackage = read('../ui/package.json');
+		const layout = readDependency('@treeseed/ui', 'dist/astro/layouts/AppLayout.astro');
+		const uiPackage = readDependency('@treeseed/ui', 'package.json');
 		expect(layout).not.toContain('SensitiveDataUnlock');
 		expect(uiPackage).not.toContain('SensitiveDataUnlock');
 		expect(uiPackage).not.toContain('HostCredentialPermissionNote');

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const source = (path: string) => readFileSync(resolve(root, path), 'utf8');
+const dependencySource = (name: string, path: string) => readFileSync(resolve(root, 'node_modules', name, path), 'utf8');
 
 describe('knowledge management architecture', () => {
 	it('composes the workbench exclusively from shared UI knowledge primitives', () => {
@@ -35,24 +36,24 @@ describe('knowledge management architecture', () => {
 		expect(page).toContain('!canManageBooks ? null');
 		expect(page).toContain("(canReview || canPublish) && Astro.url.searchParams.get('view') === 'reviews'");
 		expect(page).toContain("canBuildPacks && Astro.url.searchParams.get('view') === 'packs'");
-		const form = source('../ui/src/astro/knowledge/KnowledgeAuthoringForm.astro');
+		const form = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeAuthoringForm.astro');
 		expect(form).not.toContain('name="status"');
 		expect(form).toContain('data-scene="knowledge.editor.form"');
-		const reviews = source('../ui/src/astro/knowledge/KnowledgeReviewCollection.astro');
+		const reviews = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeReviewCollection.astro');
 		expect(reviews).toContain('knowledge.review.decision');
 		expect(reviews).toContain('data-review-paths');
 		expect(reviews).toContain('data-review-decision');
 		expect(reviews).toContain('knowledge.review.editorial');
 		expect(form).toContain('name="audiencesPrimary"');
 		expect(form).toContain('name="contextDigest"');
-		expect(source('../ui/src/astro/knowledge/KnowledgePackWorkbench.astro')).toContain('knowledge.pack.build');
-		const lifecycle = source('../ui/src/astro/knowledge/KnowledgeLifecyclePanel.astro');
+		expect(dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgePackWorkbench.astro')).toContain('knowledge.pack.build');
+		const lifecycle = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeLifecyclePanel.astro');
 		expect(lifecycle).toContain('href: item.resolutionHref');
 		expect(lifecycle).toContain('disabled={dependencyItems.length > 0}');
 	});
 
 	it('uses one canonical reader and knowledge-backed contextual help', () => {
-		expect(source('../core/src/pages/t/[teamSlug]/books/[bookSlug]/[...pageSlug].astro')).toContain('StarlightPage');
+		expect(dependencySource('@treeseed/core', 'dist/pages/t/[teamSlug]/books/[bookSlug]/[...pageSlug].astro')).toContain('StarlightPage');
 		expect(source('src/lib/help/context.ts')).toContain('/v1/knowledge/pages/');
 		expect(source('src/lib/help/context.ts')).not.toContain('/v1/help/');
 	});

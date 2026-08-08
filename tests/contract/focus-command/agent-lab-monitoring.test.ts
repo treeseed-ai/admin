@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const source = (path: string) => readFileSync(path, 'utf8');
-const secondaryRoutes = ['agents.astro', 'workdays.astro', 'events.astro', 'assignments.astro', 'executions.astro', 'artifacts.astro'];
+const entityRoutes = ['agents', 'events', 'assignments', 'executions', 'artifacts'];
 const navigatorRoutes = ['inbox', 'decisions', 'build', 'direction', 'results', 'find'];
 
 describe('Agent Lab command header and navigator', () => {
@@ -14,14 +14,21 @@ describe('Agent Lab command header and navigator', () => {
 		for (const path of ['src/pages/app/work/index.astro', 'src/pages/app/work/[runId].astro', 'src/components/agent-lab/AgentLabEntityPage.astro']) {
 			const page = source(path); expect(page).toContain('AgentLabChrome'); expect(page).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
 		}
-		for (const route of secondaryRoutes) expect(source(`src/pages/app/work/${route}`)).toMatch(/AgentLabEntityPage|AgentLabChrome/u);
+		const routes = source('src/routes.ts');
+		for (const route of entityRoutes) {
+			const entityPage = source(`src/pages/app/work/${route}/index.astro`);
+			expect(routes).toContain(`adminRoute('/app/work/${route}', 'pages/app/work/${route}/index.astro'`);
+			expect(entityPage).toContain('AgentLabEntityPage');
+			expect(entityPage).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
+		}
+		expect(source('src/pages/app/work/workdays/index.astro')).toContain('AgentLabChrome');
 	});
 
 	it('registers production-backed command routes with one reusable workspace', () => {
 		const routes = source('src/routes.ts');
 		for (const route of navigatorRoutes) {
 			expect(routes).toContain(`/app/work/${route}`);
-			expect(source(`src/pages/app/work/${route}.astro`)).toContain('AgentLabCommandPage');
+			expect(source(`src/pages/app/work/${route}/index.astro`)).toContain('AgentLabCommandPage');
 		}
 		const page = source('src/components/agent-lab/AgentLabCommandPage.astro');
 		expect(page).toContain('CommandWorkspace');

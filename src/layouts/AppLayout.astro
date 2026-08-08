@@ -10,6 +10,7 @@ import '@treeseed/ui/styles/account/forms.css';
 import '@treeseed/ui/styles/auth.css';
 import ProductShell from '@treeseed/ui/components/astro/shell/layout/ProductShell.astro';
 import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro';
+import { AppearancePersistenceIsland } from '@treeseed/ui/components/react/progressive';
 import { resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 import { compileGuidedThemePalette } from '@treeseed/ui/theme';
 import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
@@ -51,10 +52,11 @@ const {
 
 const appearance = await resolveAuthenticatedThemePreference(Astro);
 const api = createApiFacade(Astro);
-const [personalThemes, preferences] = await Promise.all([
+const [personalThemes, loadedPreferences] = await Promise.all([
 	api.personalThemes().catch(() => []),
-	suppliedTimeZone ? Promise.resolve({ timeZone: suppliedTimeZone }) : api.accountPreferences().catch(() => ({ timeZone: 'UTC' })),
+	api.accountPreferences().catch(() => ({ timeZone: suppliedTimeZone ?? 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const })),
 ]);
+const preferences = { ...loadedPreferences, ...(suppliedTimeZone ? { timeZone: suppliedTimeZone } : {}) };
 const customSchemes = Object.fromEntries(personalThemes.flatMap((theme) => {
 	try { return [[theme.schemeId, compileGuidedThemePalette(theme.palette, theme.baseScheme)]]; } catch { return []; }
 }));
@@ -92,6 +94,7 @@ const discussionContext = principal && activeTeam ? {
 	teamId: activeTeam.id,
 	identityLabel: principal.displayName ?? 'Current account',
 	endpoint: '/v1/discussions',
+	realtime: { endpoint: '/v1/session/events', enabled: preferences.realTimeUpdates !== false },
 } : undefined;
 ---
 
@@ -158,6 +161,8 @@ const discussionContext = principal && activeTeam ? {
 	<slot />
 </ProductShell>
 
+<AppearancePersistenceIsland endpoint="/v1/auth/web/appearance" reloadOnSuccessPath="/app/account/appearance" client:load />
+
 <script>
 	document.querySelectorAll('[data-team-switcher]').forEach((form) => {
 		const select = (form as HTMLFormElement).elements.namedItem('teamId') as HTMLSelectElement | null;
@@ -170,36 +175,4 @@ const discussionContext = principal && activeTeam ? {
 			(form as HTMLFormElement).requestSubmit();
 		});
 	});
-</script>
-
-<script>
-	import { sendFormRequest } from '@treeseed/ui/forms/client';
-	import { shouldReloadAppearancePage } from '../lib/auth/accounts/appearance';
-
-	const bindingKey = '__treeseedAuthenticatedAppearanceSyncBound';
-	const syncWindow = window as unknown as Record<string, unknown>;
-	if (!syncWindow[bindingKey]) {
-		syncWindow[bindingKey] = true;
-		window.addEventListener('treeseed:theme-change', (event) => {
-			const detail = (event as CustomEvent).detail || {};
-			if (detail.persist !== true || !detail.scheme || !detail.mode) return;
-			void sendFormRequest({
-				url: '/v1/auth/web/appearance',
-				init: {
-					method: 'PATCH',
-					headers: { accept: 'application/json', 'content-type': 'application/json', 'x-treeseed-csrf': document.cookie.split('; ').find((entry) => entry.startsWith('ts_csrf='))?.split('=').slice(1).join('=') || '' },
-					body: JSON.stringify({
-						colorScheme: detail.scheme,
-						themeMode: detail.mode,
-						contentThemeOverlayEnabled: detail.workspace?.enabled === true,
-						contentThemeOverlayScheme: detail.workspace?.scheme,
-						contentThemeOverlayMode: detail.workspace?.mode,
-					}),
-					keepalive: true,
-				},
-			}).then((response) => {
-				if (shouldReloadAppearancePage(window.location.pathname, response.ok)) window.location.reload();
-			}).catch(() => {});
-		});
-	}
 </script>

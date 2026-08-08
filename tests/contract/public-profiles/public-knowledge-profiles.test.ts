@@ -54,6 +54,13 @@ describe('public knowledge profile composition', () => {
 		expect(layout).toContain('showFooter={!profilePage}');
 	});
 
+	it('keeps anonymous public responses eligible for shared edge caching', () => {
+		const middleware = source('src/middleware.ts');
+		expect(middleware).not.toContain("import { ensureCsrfToken }");
+		expect(middleware).not.toContain('ensureCsrfToken(context)');
+		expect(source('src/layouts/AppLayout.astro')).toContain('ensureCsrfToken(Astro)');
+	});
+
 	it('shows canonical management tabs only for the owning account or a team member', () => {
 		const user = source('src/pages/u/[username].astro');
 		const team = source('src/pages/t/[name].astro');
