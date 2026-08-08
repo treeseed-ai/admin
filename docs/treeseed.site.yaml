@@ -1,6 +1,6 @@
 name: TreeSeed Admin Knowledge Hub
 slug: treeseed-admin-docs
-siteUrl: https://admin.treeseed.ai
+siteUrl: https://admin.docs.treeseed.dev
 contactEmail: hello@treeseed.email
 hosting:
   kind: self_hosted_project
@@ -24,15 +24,15 @@ surfaces:
     enabled: true
     provider: cloudflare
     rootDir: .
-    publicBaseUrl: https://admin.treeseed.ai
+    publicBaseUrl: https://admin.docs.treeseed.dev
     localBaseUrl: http://127.0.0.1:4321
     local:
       runtime: local
     environments:
       staging:
-        domain: admin-docs-staging.treeseed.ai
+        domain: admin.docs.preview.treeseed.dev
       prod:
-        domain: admin.treeseed.ai
+        domain: admin.docs.treeseed.dev
 providers:
   agents:
     execution: codex

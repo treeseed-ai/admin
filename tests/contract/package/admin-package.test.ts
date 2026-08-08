@@ -330,4 +330,23 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(existsSync('.github/workflows/deploy.yml')).toBe(false);
 		expect(readFileSync('.github/workflows/release-gate.yml', 'utf8')).not.toContain('trsd hosting apply');
 	});
+
+	it('owns a standalone site with one source-first plugin composition', () => {
+		const site = readFileSync('treeseed.site.yaml', 'utf8');
+		const manifest = readFileSync('treeseed.package.yaml', 'utf8');
+		const packageJson = readFileSync('package.json', 'utf8');
+		expect(site).toContain('siteUrl: https://admin.treeseed.dev');
+		expect(site).toContain('bucketName: treeseed-admin-content');
+		expect(site).toContain('buildOutputDir: .treeseed/app-dist');
+		expect(site).toContain('package: "@treeseed/core/plugin-default"');
+		expect(site).toContain('package: "@treeseed/admin/plugin"');
+		expect(manifest).toContain('type: web-application');
+		expect(manifest).toContain('topology: split_site_content');
+		expect(manifest).toContain('contentRuntimeSource: r2_preview_overlay');
+		expect(packageJson).toContain('"build:app"');
+		expect(existsSync('astro.config.ts')).toBe(true);
+		expect(existsSync('src/content.config.ts')).toBe(true);
+		expect(existsSync('src/manifest.yaml')).toBe(true);
+		expect(existsSync('src/config.yaml')).toBe(true);
+	});
 });

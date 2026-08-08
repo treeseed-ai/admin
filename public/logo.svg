@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">TreeSeed</title>
+  <path fill="#173f35" d="M30 58V31h4v27z"/>
+  <path fill="#2f765e" d="M32 34C15 34 8 23 8 9c14 0 24 7 24 25Z"/>
+  <path fill="#5aa77f" d="M32 34C49 34 56 23 56 9c-14 0-24 7-24 25Z"/>
+  <path fill="none" stroke="#173f35" stroke-linecap="round" stroke-width="4" d="M17 18c8 4 12 9 15 16m15-16c-8 4-12 9-15 16"/>
+</svg>

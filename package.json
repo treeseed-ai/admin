@@ -30,11 +30,14 @@
     "check:file-architecture": "node --import tsx ./scripts/check-file-architecture.ts",
     "setup": "npm install",
     "setup:ci": "npm ci --workspaces=false",
-    "build": "npm run build:dist",
+    "build": "npm run build:dist && npm run build:app",
     "build:dist": "node --import tsx ./scripts/build-dist.ts",
+    "build:app": "node ./node_modules/astro/astro.js build --config astro.config.ts",
+    "dev": "node ./node_modules/astro/astro.js dev --config astro.config.ts --port 4322",
+    "preview": "node ./node_modules/astro/astro.js preview --config astro.config.ts --port 4322",
     "prepare": "node --import tsx ./scripts/prepare.ts",
     "prepack": "npm run build:dist",
-    "check": "npm run check:file-lengths && npm run build:dist && tsc --noEmit",
+    "check": "npm run check:file-lengths && npm run build:dist && tsc --noEmit && node ./node_modules/astro/astro.js check --root .",
     "test": "npm run test:unit",
     "test:unit": "vitest run --config ./vitest.config.ts",
     "lint": "npm run check",
@@ -49,20 +52,20 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#4fc8533f15858b26cb47daa1f3a2625a409a4422",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#fa498d44fb5c61235d13aef87e836884dd61cf82",
+    "@treeseed/core": "github:treeseed-ai/core#9a2bbcc14fd231928af7df3f67db16b0a7f6a53b",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#3de64cac067330ede86875631459f9e20dbce1dc",
     "@treeseed/ui": "github:treeseed-ai/ui#a1793dd77ed94ca5495a855892bb5569c8179aed",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
   "peerDependencies": {
-    "astro": "^5.0.0 || ^6.0.0"
+    "astro": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "astro": "^6.4.5",
+    "astro": "^5.6.1",
     "esbuild": "^0.28.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

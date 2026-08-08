@@ -1,0 +1,64 @@
+name: TreeSeed Admin
+slug: treeseed-admin
+siteUrl: https://admin.treeseed.dev
+contactEmail: hello@treeseed.email
+hosting:
+  kind: self_hosted_project
+  registration: none
+  teamId: treeseed
+  projectId: admin
+hub:
+  mode: treeseed_hosted
+runtime:
+  mode: treeseed_managed
+  registration: none
+cloudflare:
+  workerName: treeseed-admin
+  d1Binding: SITE_DATA_DB
+  pages:
+    projectName: treeseed-admin
+    productionBranch: main
+    stagingBranch: staging
+    buildOutputDir: .treeseed/app-dist
+  r2:
+    bucketName: treeseed-admin-content
+    manifestKeyTemplate: content/admin/{environment}/channels/current.json
+    previewRootTemplate: content/admin/previews
+    previewTtlHours: 168
+surfaces:
+  web:
+    enabled: true
+    provider: cloudflare
+    rootDir: .
+    publicBaseUrl: https://admin.treeseed.dev
+    localBaseUrl: http://127.0.0.1:4322
+    local:
+      runtime: local
+    environments:
+      staging:
+        domain: admin.preview.treeseed.dev
+      prod:
+        domain: admin.treeseed.dev
+connections:
+  api:
+    proxyPrefix: /v1
+    localBaseUrl: http://127.0.0.1:3000
+    environments:
+      staging:
+        baseUrl: https://api.preview.treeseed.dev
+      prod:
+        baseUrl: https://api.treeseed.dev
+plugins:
+  - package: "@treeseed/core/plugin-default"
+  - package: "@treeseed/admin/plugin"
+providers:
+  deploy: cloudflare
+  dns: cloudflare-dns
+  content:
+    serving: published_runtime
+    runtime: team_scoped_r2_overlay
+    publish: team_scoped_r2_overlay
+    docs: default
+  site: default
+turnstile:
+  enabled: true

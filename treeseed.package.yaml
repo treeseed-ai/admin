@@ -1,10 +1,10 @@
 id: "@treeseed/admin"
 name: TreeSeed Admin
 kind: node-typescript
-type: node-library
+type: web-application
 repository: treeseed-ai/admin
 publishTarget: npm
-capabilities: { save: true, verify: true, publish: true, deploy: false, localOnly: false }
+capabilities: { save: true, verify: true, publish: true, deploy: true, localOnly: false }
 workflowTemplateVersion: "1"
 githubEnvironments:
   - production
@@ -20,12 +20,13 @@ artifacts:
 releaseGate:
   workflow: verify.yml
 projectArchitecture:
-  topology: single_repository_site
+  topology: split_site_content
   rootPath: .
-  sitePath: docs
-  contentPath: docs/src/content
-  contentRuntimeSource: r2_published_manifest
-  localContentMaterialization: existing_path
+  sitePath: .
+  contentRuntimeSource: r2_preview_overlay
+  localContentMaterialization: none
+  requiresLocalContentForCi: false
+  requiresLocalContentForDeploy: false
   contentPublishTarget:
     kind: cloudflare_r2
     prefix: packages/admin

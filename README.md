@@ -1,16 +1,28 @@
 # @treeseed/admin
 
-`@treeseed/admin` is the distributable AGPLv3 identity and team administration layer for Treeseed sites. Its rendered surface includes authentication, account management, team management, active-team selection, invitations, and public user/team knowledge profiles.
+`@treeseed/admin` is the distributable AGPLv3 administration portal and independently deployable management site for Treeseed. Its rendered surface includes authentication, account and team management, projects, capacity, agent work, knowledge operations, and service connections.
 
 The removed pre-redesign surface is archived in the root [legacy route inventory](../../docs/legacy-routes.md). The redesign direction is described in [ui-redesign.md](../../docs/ui-redesign.md).
 
-## Install and compose
+## Run the standalone site
+
+The repository owns a root `treeseed.site.yaml` and can run without Market:
+
+```bash
+npm run dev
+npm run build:app
+npm run preview
+```
+
+The app uses the open TreeSeed API through its configured HTTP connection. Runtime content comes from the team-scoped R2 overlay through TreeDX; the site does not require a checked-out content repository. The npm library output remains in `dist`, while the deployable Cloudflare application is built separately under `.treeseed/app-dist`.
+
+## Install and compose as a library
 
 ```bash
 npm install @treeseed/admin @treeseed/core @treeseed/ui @treeseed/sdk
 ```
 
-Add `@treeseed/admin/plugin` to the host `treeseed.site.yaml`, use the config helper from `@treeseed/admin/config`, and delegate host middleware to `@treeseed/admin/middleware`. Admin does not own a hostable site manifest; the host app owns deployment and environment configuration.
+Add `@treeseed/admin/plugin` to another host's `treeseed.site.yaml`, use the config helper from `@treeseed/admin/config`, and delegate host middleware to `@treeseed/admin/middleware`. Market may consume these public package surfaces, but it is not the owner of Admin's standalone deployment.
 
 ## Current route surface
 
@@ -52,4 +64,4 @@ npm test
 npm run release:verify
 ```
 
-`verify.yml`, the manual `release-gate.yml`, and `publish.yml` remain package-owned. Hosted deployment is suspended; the package must not contain a push-triggered `deploy.yml`.
+`verify.yml`, the manual `release-gate.yml`, and `publish.yml` remain package-owned. Hosted deployment is suspended while the reviewed OpenTofu deployment design is completed; the package must not contain a push-triggered `deploy.yml`.
