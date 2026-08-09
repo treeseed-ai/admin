@@ -6,7 +6,7 @@ subtype: agent-lab
 journey: "Monitor the team Agent Lab"
 ownerPackage: "@treeseed/admin"
 surface: admin-ui
-summary: "A team member sees one compact, responsive, revisioned Agent Lab and can inspect an agent as designed intent, assignment-time state, or observed forensic activity; the anatomy workbench edits only human intent while generated identity, class linkage, repository placement, and operational status remain locked system facts."
+summary: "A team member sees one responsive, revisioned Agent Atlas for live operation and immutable historical replay, can inspect designed, assigned, and observed evidence, and can carry validated context into Discussion without granting historical state current mutation authority."
 status: planned
 dependencies: { journeys: [738], guarantees: [guarantee.work.command.monitor-team-operations.033] }
 actors: { allowed: [authenticated_user, team_owner, project_lead], forbidden: [unauthorized_user] }
@@ -16,6 +16,6 @@ preconditions: { fixtures: [integrated_treeseed_project], notes: ["An active tea
 api: { required: false, verifierRefs: [] }
 content: { required: false, verifierRefs: [] }
 audit: { required: false, verifierRefs: [] }
-negativeCases: ["Snapshot mode makes no background requests.", "Closed charts do not poll.", "Stale responses and cursor corrections cannot restore removed records.", "Generated identity and runtime status cannot be edited as design intent.", "Provider supply cannot be widened from an agent definition.", "Polling does not reset the selected anatomy region or close cascading note and question overlays.", "Advanced forensic fields never displace the primary human-readable content by default."]
+negativeCases: ["Historical playback never substitutes current agent definitions.", "Live events never force a historical cursor to the live edge.", "Absent recorded progress is never fabricated.", "A new topology revision never applies an incompatible saved viewport.", "Generated identity and runtime status cannot be edited as design intent.", "Provider supply cannot be widened from an agent definition.", "Historical Discussion context cannot authorize current execution.", "Advanced forensic fields never displace the primary human-readable content by default."]
 evidence: { required: [guarantee_report] }
-notes: ["Planned while the accelerated anatomy design is iterated; activate after light/dark, idle/running/waiting/degraded, narrow, keyboard navigation, intent compilation, conflict, and TreeDX commit scenes produce repeatable evidence."]
+notes: ["The reusable Atlas implementation is present but remains planned until standard/research, expanded/compact vitals, replay, signal/event/assignment overlays, authoring conflicts, Discussion context, and production-shaped workday scenes produce repeatable evidence."]

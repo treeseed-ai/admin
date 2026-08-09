@@ -15,7 +15,7 @@ describe('Agent Lab content architecture', () => {
 		expect(command).toContain('Astro.redirect(`/app/work/direction');
 		expect(command).toContain(', 308)');
 		const lab = source('src/pages/app/work/index.astro');
-		expect(lab).toContain('@treeseed/ui/components/react/OperationsMonitor');
+		expect(lab).toContain('@treeseed/ui/components/react/AgentAtlas');
 		expect(lab).toContain('client:load');
 	});
 
