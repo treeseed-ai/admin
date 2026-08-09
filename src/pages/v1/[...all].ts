@@ -105,6 +105,7 @@ export const ALL: APIRoute = async (context) => {
 		headers,
 		body,
 		redirect: 'manual',
+		signal: context.request.signal,
 	});
 
 	const responseHeaders = new Headers();

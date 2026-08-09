@@ -19,6 +19,7 @@ describe('team management architecture audit', () => {
 			'/app/projects',
 			'/app/command',
 			'/app/focus',
+			'/app/work',
 			'/app/services',
 			'/app/capacity',
 			'/app/knowledge',
@@ -61,7 +62,7 @@ describe('team management architecture audit', () => {
 
 	it('keeps overview, settings, membership, consent, and lifecycle responsibilities complete', () => {
 		const overview = source('src/pages/app/teams/[teamId]/index.astro');
-		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity', 'Command', 'Focus']) {
+		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity', 'Agent Lab']) {
 			expect(overview, label).toContain(label);
 		}
 		expect(overview).toContain("import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart'");
@@ -73,11 +74,9 @@ describe('team management architecture audit', () => {
 		const overviewHeader = overview.slice(overview.indexOf('<PageHeader'), overview.indexOf('<TeamNavigation'));
 		expect(overviewHeader).not.toContain('slot="actions"');
 		expect(overviewHeader).not.toMatch(/>(?:Settings|Members)</u);
-		const domainOverview = source('src/pages/app/domain-overview.astro');
-		for (const path of ['/app/services', '/app/knowledge', '/app/market']) {
-			expect(domainOverview, path).toContain(`'${path}'`);
-		}
-		expect(domainOverview).toContain('This bounded landing page preserves domain ownership.');
+		const marketPage = source('src/pages/app/market/index.astro');
+		expect(marketPage).toContain('currentPath="/app/market"');
+		expect(marketPage).toContain('This bounded landing page preserves domain ownership.');
 
 		const settings = source('src/pages/app/teams/[teamId]/edit.astro');
 		for (const field of ['name="name"', 'name="displayName"', 'name="logoUrl"', 'name="profileSummary"', 'name="visibility"', 'name="expectedUpdatedAt"']) {

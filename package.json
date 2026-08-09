@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.59-dev.staging.20260804T171053Z",
+  "version": "0.12.59-dev.treedx-perf.20260805T075847Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
