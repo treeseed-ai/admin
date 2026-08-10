@@ -2,7 +2,7 @@
   "name": "@treeseed/admin",
   "version": "0.12.59-dev.fix-stage-fixture-alias-cleanup.20260810T091911Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/treeseed-ai/admin.git",
