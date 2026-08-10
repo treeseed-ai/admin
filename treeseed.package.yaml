@@ -20,13 +20,12 @@ artifacts:
 releaseGate:
   workflow: verify.yml
 projectArchitecture:
-  topology: split_site_content
+  topology: single_repository_site
   rootPath: .
-  sitePath: .
-  contentRuntimeSource: r2_preview_overlay
-  localContentMaterialization: none
-  requiresLocalContentForCi: false
-  requiresLocalContentForDeploy: false
+  sitePath: docs
+  contentPath: docs/src/content
+  contentRuntimeSource: r2_published_manifest
+  localContentMaterialization: existing_path
   contentPublishTarget:
     kind: cloudflare_r2
     prefix: packages/admin

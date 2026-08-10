@@ -341,8 +341,10 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(site).toContain('package: "@treeseed/core/plugin-default"');
 		expect(site).toContain('package: "@treeseed/admin/plugin"');
 		expect(manifest).toContain('type: web-application');
-		expect(manifest).toContain('topology: split_site_content');
-		expect(manifest).toContain('contentRuntimeSource: r2_preview_overlay');
+		expect(manifest).toContain('topology: single_repository_site');
+		expect(manifest).toContain('sitePath: docs');
+		expect(manifest).toContain('contentPath: docs/src/content');
+		expect(manifest).toContain('contentRuntimeSource: r2_published_manifest');
 		expect(packageJson).toContain('"build:app"');
 		expect(existsSync('astro.config.ts')).toBe(true);
 		expect(existsSync('src/content.config.ts')).toBe(true);
