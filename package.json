@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.59-dev.fix-ai-staging-verification.20260810T002524Z",
+  "version": "0.12.59-dev.fix-local-treedx-project-closure.20260810T055455Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -52,8 +52,8 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#7f2f9f0ba65362adfe22bfa01161af40b4088e7c",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#f4dbe00f22ef5225559136a4fef699917aaedddc",
+    "@treeseed/core": "github:treeseed-ai/core#1a3074c1298fb339719fdb3dd8e4b4085422dba0",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#84cddd5331fbcf6994a80198dc281a3c7bf1d42d",
     "@treeseed/ui": "github:treeseed-ai/ui#5f6981b9a7618e0f9d82e784aafa890c1492e31c",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
