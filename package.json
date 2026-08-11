@@ -32,7 +32,7 @@
     "setup:ci": "npm ci --workspaces=false",
     "build": "npm run build:dist && npm run build:app",
     "build:dist": "node --import tsx ./scripts/build-dist.ts",
-    "build:app": "node ./node_modules/astro/astro.js build --config astro.config.ts",
+    "build:app": "astro build --config astro.config.ts",
     "dev": "node ./node_modules/astro/astro.js dev --config astro.config.ts --port 4322",
     "preview": "node ./node_modules/astro/astro.js preview --config astro.config.ts --port 4322",
     "prepare": "node --import tsx ./scripts/prepare.ts",
@@ -52,9 +52,9 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#27d6805680cd2cb4ea7208ca443392d525602fc2",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#144f48e941a3404ca2ce12f52878032c5da21753",
-    "@treeseed/ui": "github:treeseed-ai/ui#6fb94ae8b1e3b493de92301f24fd7d371f6aabdd",
+    "@treeseed/core": "github:treeseed-ai/core#4b8b0afdcb3f4e5ed2df204e509071e0186147a3",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#a3586c955bfc8d4aeabaa5f07f54757c12041bf9",
+    "@treeseed/ui": "github:treeseed-ai/ui#c68ed1d9fc64c93426304eddaaf7c449622f2f61",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
