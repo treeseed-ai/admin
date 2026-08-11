@@ -22,8 +22,8 @@ cloudflare:
     buildOutputDir: .treeseed/app-dist
   r2:
     bucketName: treeseed-admin-content
-    manifestKeyTemplate: content/admin/{environment}/channels/current.json
-    previewRootTemplate: content/admin/previews
+    manifestKeyTemplate: content/{teamId}/{projectId}/{environment}/channels/current.json
+    previewRootTemplate: content/{teamId}/{projectId}/previews
     previewTtlHours: 168
 surfaces:
   web:

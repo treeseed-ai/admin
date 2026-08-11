@@ -1,33 +1,31 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadKnowledgeCatalog } from '@treeseed/sdk/knowledge';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 const readDependency = (name: string, path: string) => readFileSync(resolve(root, 'node_modules', name, path), 'utf8');
-const pages = loadKnowledgeCatalog(resolve(root, 'docs/src/content/knowledge'), '@treeseed/admin');
-const pageIds = new Set(pages.map((page) => page.id));
-
 describe('Admin contextual help architecture', () => {
-	it('declares knowledge as the canonical Admin content contribution', () => {
+	it('declares knowledge as a remote published content contribution', () => {
 		expect(read('treeseed.package.yaml')).toContain('contentContributions:');
-		expect(read('treeseed.package.yaml')).toContain('path: docs/src/content/knowledge');
+		expect(read('treeseed.package.yaml')).toContain('path: src/content/knowledge');
+		expect(read('treeseed.package.yaml')).toContain('contentRuntimeSource: r2_preview_overlay');
+		expect(read('treeseed.package.yaml')).toContain('localContentMaterialization: none');
 		expect(read('docs/src/manifest.yaml')).toContain('docs: ./src/content/knowledge');
 	});
 
-	it('maps every active account, team, invitation, and service route to a published knowledge page', () => {
+	it('maps every active account, team, invitation, and service route to a stable knowledge identity', () => {
 		const routes = read('src/routes.ts');
 		const routedPages = [...routes.matchAll(/knowledgePageIds:\s*\['([^']+)'\]/gu)].map((match) => match[1]);
 		expect(routedPages.length).toBeGreaterThanOrEqual(15);
-		for (const id of routedPages) expect(pageIds.has(id), `${id} must be published`).toBe(true);
+		for (const id of routedPages) expect(id).toMatch(/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/u);
 		for (const route of ['/app/account', '/app/teams', '/app/services', '/app/services/vault', '/team-invites/[token]/accept']) {
 			const line = routes.split('\n').find((candidate) => candidate.includes(`adminRoute('${route}'`));
 			expect(line, route).toContain('knowledgePageIds');
 		}
 	});
 
-	it('resolves every local help trigger to the canonical Markdown catalog', () => {
+	it('resolves every help trigger through stable remote content identities', () => {
 		const sources = [
 			'AccountDeletionPanel.astro',
 			'AccountIdentitySettings.astro',
@@ -48,7 +46,8 @@ describe('Admin contextual help architecture', () => {
 		].map(read)).join('\n');
 		const literalIds = [...sources.matchAll(/knowledgePageId="([^"]+)"/gu)].map((match) => match[1]);
 		expect(literalIds.length).toBeGreaterThan(20);
-		for (const id of literalIds) expect(pageIds.has(id), `${id} must be published`).toBe(true);
+		for (const id of literalIds) expect(id).toMatch(/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/u);
+		expect(read('src/lib/help/context.ts')).toContain('/v1/knowledge/pages/{pageId}');
 	});
 
 	it('makes vault passphrase reuse explicit and uses shared form spacing', () => {

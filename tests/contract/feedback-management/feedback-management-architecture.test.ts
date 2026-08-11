@@ -34,10 +34,12 @@ describe('feedback management architecture', () => {
 		expect(existsSync('../ui/src/lib/feedback/dialog.ts')).toBe(false);
 	});
 
-	it('publishes contextual guidance for submission, privacy, triage, and exports', () => {
-		for (const topic of ['submitting', 'screenshot-privacy', 'administration', 'triage', 'privacy', 'exports']) {
-			const content = source(`docs/src/content/knowledge/treeseed-feedback-and-support/${topic}.md`);
-			expect(content).toContain('schemaVersion: treeseed.knowledge-page/v1');
-		}
+	it('routes feedback guidance through the published content plane', () => {
+		const routes = source('src/routes.ts');
+		expect(routes).toContain("knowledgePageIds: ['feedback.administration']");
+		expect(routes).toContain("knowledgePageIds: ['feedback.triage']");
+		const manifest = source('treeseed.package.yaml');
+		expect(manifest).toContain('contentRuntimeSource: r2_preview_overlay');
+		expect(manifest).toContain('localContentMaterialization: none');
 	});
 });
