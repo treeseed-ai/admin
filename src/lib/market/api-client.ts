@@ -48,9 +48,9 @@ export function envValue(locals: App.Locals | Record<string, unknown> | null | u
     return typeof processValue === 'string' && processValue.trim() ? processValue.trim() : '';
 }
 export function resolveApiBaseUrl(locals?: App.Locals | Record<string, unknown> | null) {
-    return (envValue(locals, 'TREESEED_MARKET_API_BASE_URL')
-        || envValue(locals, 'TREESEED_CENTRAL_MARKET_API_BASE_URL')
-        || 'https://api.treeseed.ai').replace(/\/+$/u, '');
+    return (envValue(locals, 'TREESEED_API_BASE_URL')
+        || envValue(locals, 'TREESEED_MARKET_API_BASE_URL')
+        || 'https://api.treeseed.dev').replace(/\/+$/u, '');
 }
 export function encodeAssertionPayload(payload: Record<string, unknown>) {
     return Buffer.from(JSON.stringify(payload)).toString('base64url');

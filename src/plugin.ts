@@ -52,13 +52,13 @@ export const ADMIN_ENV_METADATA = {
   TREESEED_MARKET_API_BASE_URL: {
     group: 'api',
     sensitivity: 'plain',
-    description: 'Primary Treeseed API base URL used by the admin web facade.',
+    description: 'Singleton Market API base URL used only for Market operations.',
     required: false,
   },
-  TREESEED_CENTRAL_MARKET_API_BASE_URL: {
+  TREESEED_API_BASE_URL: {
     group: 'api',
     sensitivity: 'plain',
-    description: 'Fallback central Treeseed API base URL used by distributable admin deployments.',
+    description: 'Resolved Admin control-plane API base URL used by the server-side facade.',
     required: false,
   },
   TREESEED_CATALOG_MARKET_API_BASE_URLS: {
@@ -78,7 +78,7 @@ export const ADMIN_ENV_SCHEMA: Record<string, unknown> = {
   TREESEED_AUTH_MODE: envField.enum({ values: ['internal-first', 'internal-only', 'providers-only'], context: 'server', access: 'secret', optional: true }),
   TREESEED_AUTH_INTERNAL_SIGNUP: envField.enum({ values: ['open', 'invite', 'admin'], context: 'server', access: 'secret', optional: true }),
   TREESEED_MARKET_API_BASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
-  TREESEED_CENTRAL_MARKET_API_BASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
+  TREESEED_API_BASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
   TREESEED_CATALOG_MARKET_API_BASE_URLS: envField.string({ context: 'server', access: 'secret', optional: true }),
 };
 
