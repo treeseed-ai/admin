@@ -1,6 +1,7 @@
 import { agentLabMetricKeys, type AgentAtlasProjection, type AgentLabActivityInterval, type AgentLabDelta, type AgentLabMetricPoint, type AgentLabOverview } from '@treeseed/sdk/agent-capacity';
 import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import type { ApiClientFacade } from '../../lib/market/api-client.ts';
+import type { AllocationSnapshot } from '@treeseed/ui/components/react/OperationsMonitor';
 
 export const agentLabMetricDestinations = {
 	agents: '/app/work/agents', workdays: '/app/work/workdays', systemEvents: '/app/work/events',
@@ -16,7 +17,7 @@ function fallbackOverview(team: { id: string; name?: string; slug?: string }, ti
 		metrics: agentLabMetricKeys.map((key) => ({ key, value: 0, secondary: 'Unavailable', semantic: key === 'agents' ? 'configured' : ['workdays', 'systemEvents'].includes(key) ? 'exact-total' : key === 'running' ? 'instantaneous' : 'cumulative', observedAt: now.toISOString() })) };
 }
 
-function fallbackAtlas(teamId:string,overview:AgentLabOverview):AgentAtlasProjection{return{revision:'server-snapshot-unavailable',generatedAt:overview.generatedAt,timeZone:overview.timeZone,scope:{teamId,selectedDate:overview.workdayContext.selectedDate,workdayIds:[],projectIds:[],groupIds:[],agentIds:[],activityProfiles:[],sizingMetric:'activity'},topologies:[],nodeStates:[],assignments:[],activity:[],playback:{mode:'live',startedAt:overview.operatingDay.start,endedAt:overview.operatingDay.end,liveEdgeAt:overview.generatedAt,cursor:{cursor:null,observedAt:overview.generatedAt,positions:{}}},alerts:[{id:'atlas-unavailable',severity:'warning',message:'The Agent Atlas projection is temporarily unavailable.'}]}}
+function fallbackAtlas(teamId:string,overview:AgentLabOverview):AgentAtlasProjection{return{revision:'server-snapshot-unavailable',generatedAt:overview.generatedAt,timeZone:overview.timeZone,scope:{teamId,selectedDate:overview.workdayContext.selectedDate,workdayIds:[],projectIds:[],groupIds:[],agentIds:[],activityProfiles:[],sizingMetric:'activity'},topologies:[],nodeStates:[],assignments:[],activity:[],workdaySummary:null,activityWindow:{total:0,loaded:0,truncated:false},playback:{mode:'live',startedAt:overview.operatingDay.start,endedAt:overview.operatingDay.end,liveEdgeAt:overview.generatedAt,cursor:{cursor:null,observedAt:overview.generatedAt,positions:{}}},alerts:[{id:'atlas-unavailable',severity:'warning',message:'The Agent Atlas projection is temporarily unavailable.'}]}}
 
 export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string; name?: string; slug?: string }, preferences: AccountPreferences, selection: { date?: string | null; workday?: string | null } = {}) {
 	const base = `/v1/teams/${encodeURIComponent(team.id)}/agent-lab`;
@@ -34,8 +35,8 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 		atlas:atlas as AgentAtlasProjection,
 		activity: activity as AgentLabDelta<AgentLabActivityInterval>,
 		series: series as AgentLabDelta<AgentLabMetricPoint>,
-		allocation,
-		endpoints: { overview: `${base}/overview${suffix}`, activity: `${base}/activity${suffix}`, metricSeries: `${base}/metric-series${suffix}`, allocation: `${base}/allocation${suffix}` },
+		allocation: allocation as AllocationSnapshot,
+		endpoints: { overview: `${base}/overview${suffix}`, activity: `${base}/activity${suffix}`, metricSeries: `${base}/metric-series${suffix}`, allocation: `${base}/allocation${suffix}`, viewState:`${base}/view-state` },
 		atlasEndpoints:{projection:`${base}/atlas${suffix}`,delta:`${base}/atlas/delta${suffix}`,stream:`${base}/atlas/events/stream${suffix}`,detail:`${base}/atlas/details`,assignmentGraphs:`${base}/atlas/assignment-graphs`,viewState:`${base}/view-state`,createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`},
 		targetEndpoint: `${base}/targets`,
 		preference: { enabled: preferences.realTimeUpdates, intervalSeconds: preferences.realTimePollingIntervalSeconds },

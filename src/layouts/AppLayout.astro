@@ -142,6 +142,7 @@ const discussionContext = principal && activeTeam ? {
 				<input type="hidden" name="csrfToken" value={csrfToken} />
 				<label class="ts-field ts-team-selector__label">
 					<select class="ts-control" name="teamId" aria-label="Active team">
+						{!activeTeam ? <option value="" selected disabled>Choose a team</option> : null}
 						{teamOptions.map((team) => (
 							<option value={team.id} selected={team.id === activeTeam?.id}>{team.label}</option>
 						))}
@@ -164,6 +165,8 @@ const discussionContext = principal && activeTeam ? {
 <AppearancePersistenceIsland endpoint="/v1/auth/web/appearance" reloadOnSuccessPath="/app/account/appearance" client:load />
 
 <script>
+	import { startClientActionExecutor } from '../lib/agents/client-action-executor';
+	startClientActionExecutor();
 	document.querySelectorAll('[data-team-switcher]').forEach((form) => {
 		const select = (form as HTMLFormElement).elements.namedItem('teamId') as HTMLSelectElement | null;
 		select?.addEventListener('change', () => {

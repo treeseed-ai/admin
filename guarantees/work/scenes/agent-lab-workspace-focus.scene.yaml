@@ -1,0 +1,137 @@
+schemaVersion: treeseed.scene/v1
+id: agent-lab-workspace-focus
+title: Agent Lab Workspace Focus
+description: Verify vital density and Atlas content-region focus through the authenticated Agent Lab.
+audience: [operator, designer, qa]
+mode: { test: true, demo: false, training: false }
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport: { width: 1600, height: 900 }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, orientation: portrait, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: admin, required: true, seedOnly: true }
+artifacts: { trace: true, video: false, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+runtime:
+  mode: acceptance
+  failure: { continueOnFailure: false }
+  checkpoints: { enabled: false }
+chapters:
+  - { id: authentication, title: Enter the team Agent Lab, startsAt: open-sign-in }
+  - { id: workspace-focus, title: Verify focus and navigation state, startsAt: wait-for-atlas }
+workflow:
+  - id: open-sign-in
+    title: Open Agent Lab sign in
+    action: { goto: /auth/sign-in?returnTo=/app/work }
+    expect: { urlIncludes: /auth/sign-in }
+  - id: enter-login
+    title: Enter visual-audit administrator
+    action: { fill: { css: '#login', internal: true, value: visual.admin@treeseed.io } }
+  - id: enter-password
+    title: Enter visual-audit password
+    action: { fill: { css: '#password', internal: true, value: TreeSeedVisualAudit!2026 } }
+  - id: sign-in
+    title: Sign in to Agent Lab
+    action: { click: { role: button, name: Sign in } }
+    expect: { urlIncludes: /app/work }
+  - id: choose-team
+    title: Choose the visual-audit team
+    action: { select: { css: '.ts-product-shell__desktop-operations [data-team-switcher] select[name="teamId"]', internal: true, label: Acceptance visual-audit } }
+  - id: wait-for-atlas
+    title: Wait for the team Atlas
+    action: { pause: { mode: timed, durationSeconds: 2 } }
+    expect:
+      text: Visual Audit Agent
+      visible:
+        - { css: '[data-scene="agent-lab.atlas"]', internal: true }
+        - { css: '[data-atlas-selectable][aria-label^="Visual Audit Agent,"]', internal: true }
+  - id: compress-vitals
+    title: Toggle the persisted vital-statistics density
+    action: { click: { css: '.ts-operations-density', internal: true } }
+    expect:
+      visible:
+        - { css: '.ts-operations-density[aria-expanded]', internal: true }
+  - id: page-events-forward
+    title: Page through the bounded event log
+    action: { click: { role: button, name: Next } }
+    expect: { text: Page 2 of 2 }
+  - id: page-events-back
+    title: Return to the first event page
+    action: { click: { role: button, name: Previous } }
+    expect: { text: Page 1 of 2 }
+  - id: filter-events
+    title: Filter the event log by forensic evidence text
+    action: { fill: { css: '.ts-atlas-filters input[placeholder="Agent, project, or event"]', internal: true, value: forensic event 26 } }
+    expect: { text: 1 matching event }
+  - id: select-event-filter
+    title: Select the active event search
+    action: { keyboard: Control+A }
+  - id: clear-event-filter
+    title: Restore the complete bounded event window
+    action: { keyboard: Backspace }
+    expect: { text: 27 matching events }
+  - id: replay-from-start
+    title: Freeze the workday circuit at its first recorded instant
+    action: { click: { role: button, name: Stop and return to start } }
+    expect:
+      visible:
+        - { css: '[data-scene="agent-lab.atlas"][data-mode="historical"]', internal: true }
+  - id: inspect-historical-agent
+    title: Inspect the definition retained by historical playback
+    action: { click: { css: '[data-atlas-selectable][aria-label^="Visual Audit Agent,"]', internal: true } }
+    expect:
+      text: Historical definition
+      visible:
+        - { css: '[data-scene="agent-lab.definition-provenance"][data-mode="historical"]', internal: true }
+  - id: close-historical-agent
+    title: Return to the historical circuit
+    action: { click: { role: button, name: Close detail } }
+    expect:
+      visible:
+        - { css: '[data-scene="agent-lab.atlas"][data-mode="historical"]', internal: true }
+  - id: return-to-live-edge
+    title: Return the same circuit to its live edge
+    action: { click: { css: '.ts-atlas-live-edge', internal: true } }
+    expect:
+      visible:
+        - { css: '[data-scene="agent-lab.atlas"][data-mode="live"]', internal: true }
+  - id: expand-atlas
+    title: Focus Atlas across the Agent Lab content region
+    action: { click: { role: button, name: Expand Agent Atlas } }
+    expect:
+      urlIncludes: focus=atlas
+      visible:
+        - { css: '[data-workspace-surface="agent-atlas"][data-mode="focused"]', internal: true }
+        - { role: button, name: Shrink Agent Atlas }
+  - id: escape-focus
+    title: Shrink Atlas with Escape
+    action: { keyboard: Escape }
+    expect:
+      visible:
+        - { css: '[data-workspace-surface="agent-atlas"][data-mode="inline"]', internal: true }
+        - { role: button, name: Expand Agent Atlas }
+  - id: expand-atlas-for-history
+    title: Focus Atlas for browser history verification
+    action: { click: { role: button, name: Expand Agent Atlas } }
+    expect: { urlIncludes: focus=atlas }
+  - id: browser-back-focus
+    title: Shrink Atlas through browser Back
+    action: { browserHistory: back }
+    expect:
+      visible:
+        - { css: '[data-workspace-surface="agent-atlas"][data-mode="inline"]', internal: true }
+        - { role: button, name: Expand Agent Atlas }
+  - id: restore-vitals
+    title: Restore the persisted vital-statistics density
+    action: { click: { css: '.ts-operations-density', internal: true } }
+    expect:
+      visible:
+        - { css: '.ts-operations-density[aria-expanded]', internal: true }

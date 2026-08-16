@@ -41,5 +41,17 @@ describe('Agent Lab command header and navigator', () => {
 		const monitor = source('src/components/agent-lab/AgentLabMonitor.astro');
 		expect(monitor).not.toMatch(/setInterval|setTimeout|localStorage|fetch\(/u);
 		expect(monitor).toContain('initialOverview={frame.overview}');
+		const atlas = source('src/pages/app/work/index.astro');
+		expect(atlas).toContain("searchParams.get('focus') === 'atlas'");
+		expect(atlas).toContain("includes('workday:diagnose')");
+		expect(atlas).toContain('{canDiagnose}');
+	});
+
+	it('proves immutable historical definition evidence across responsive Atlas scenes', () => {
+		const scene = source('guarantees/work/scenes/agent-lab-workspace-focus.scene.yaml');
+		for (const profile of ['desktop_chromium', 'tablet_chromium', 'mobile_chromium']) expect(scene).toContain(`id: ${profile}`);
+		expect(scene).toContain('id: inspect-historical-agent');
+		expect(scene).toContain('agent-lab.definition-provenance');
+		expect(scene).toContain('text: Historical definition');
 	});
 });

@@ -16,6 +16,6 @@ preconditions: { fixtures: [integrated_treeseed_project], notes: [] }
 api: { required: true, verifierRefs: [] }
 content: { required: true, verifierRefs: [] }
 audit: { required: false, verifierRefs: [] }
-negativeCases: []
+negativeCases: [{ id: field-addressable-content-error, actor: authenticated_user, verifierRefs: [] }]
 evidence: { required: [guarantee_report, scene_screenshots] }
-notes: ["Activate after the stable Agent Lab Discussion scene produces repeatable evidence."]
+notes: ["The shared UI dock now marks an optimistic message failed and renders field-addressable API/TreeDX diagnostics as a Platform message. Activate after the stable Agent Lab Discussion scene produces repeatable evidence for this state and the rest of the dock journey."]

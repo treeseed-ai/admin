@@ -54,6 +54,7 @@ describe('team management architecture audit', () => {
 		expect(active).toContain('team_forbidden');
 		expect(active).toContain("cookies.set('treeseed_active_team'");
 		const layout = source('src/layouts/AppLayout.astro');
+		expect(layout).toContain('!activeTeam ? <option value="" selected disabled>Choose a team</option>');
 		expect(layout).toContain("label: 'Team overview'");
 		expect(layout).toContain("href: `/app/teams/${encodeURIComponent(activeTeam.id)}`");
 		expect(layout).toContain("label: 'Manage teams', href: '/app/teams'");
@@ -221,7 +222,7 @@ describe('team management architecture audit', () => {
 		expect(aggregate).toContain('requiredForRelease: true');
 	});
 
-	it('hands the primary authenticated session to every owner journey that consumes run-created team state', () => {
+	it('passes the primary authenticated session to every owner journey that consumes run-created team state', () => {
 		for (const path of [
 			'guarantees/team/scenes/create-team.scene.yaml',
 			'guarantees/team/scenes/switch-active-team.scene.yaml',

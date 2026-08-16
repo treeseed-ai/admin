@@ -18,6 +18,7 @@ const [frame, access] = await Promise.all([
 	app.activeTeam ? api.getTeamAccessSummary(app.activeTeam.id).catch(() => null) : null,
 ]);
 const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+const canDiagnose = Boolean((access?.permissions ?? access?.access?.permissions ?? []).includes('workday:diagnose'));
 ---
 
 <TreeseedAppLayout title="Agent Lab" description="See the operating field, understand its signals, and direct agent work." currentPath="/app/work" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
@@ -29,7 +30,8 @@ const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((r
 				initialProjection={frame.atlas}
 				endpoints={frame.atlasEndpoints}
 				{canManage}
-				initialResearch={Astro.url.searchParams.get('research') === '1'}
+				{canDiagnose}
+				initialSurfaceMode={Astro.url.searchParams.get('focus') === 'atlas' || Astro.url.searchParams.get('research') === '1' ? 'focused' : 'inline'}
 			/>
 		</> : <EmptyState title="Choose an active team" description="Agent Lab operations are team-scoped." />}
 	</section>
