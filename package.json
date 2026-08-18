@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.59-dev.fix-platform-initialization-verification.20260816T171722Z",
+  "version": "0.12.59-dev.fix-platform-guarantee-catalog.20260818T015924Z",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "Apache-2.0",
   "repository": {
@@ -52,8 +52,8 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": "github:treeseed-ai/core#f15c7a809245bf5c9f3ee286536eaf59c2fa2a8a",
-    "@treeseed/sdk": "github:treeseed-ai/sdk#f5b6657ff17f0e8883330872ca8fbee9bbe0a391",
+    "@treeseed/core": "github:treeseed-ai/core#babb758abb5a76019a0f046fd9388e4c8f9175eb",
+    "@treeseed/sdk": "github:treeseed-ai/sdk#117bb507cd39e066c9efc35b319ce39dadd552c6",
     "@treeseed/ui": "github:treeseed-ai/ui#d622525826d4222ced78e7748880750f6c1377bb",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
