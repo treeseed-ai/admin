@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
@@ -13,9 +13,6 @@ const liveDistRoot = resolve(packageRoot, 'dist');
 const buildRoot = resolve(packageRoot, '.local', 'build-dist', String(process.pid));
 const distRoot = resolve(buildRoot, 'dist');
 const buildLockRoot = resolve(packageRoot, '.treeseed-build-dist.lock');
-const workspaceCoreDistRoot = resolve(packageRoot, '..', 'core', 'dist');
-const workspaceSdkDistRoot = resolve(packageRoot, '..', 'sdk', 'dist');
-const workspaceUiDistRoot = resolve(packageRoot, '..', 'ui', 'dist');
 
 const COMPILE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const COPY_EXTENSIONS = new Set(['.astro', '.css', '.d.ts', '.js', '.json', '.yaml', '.yml']);
@@ -68,29 +65,6 @@ async function acquireBuildLock() {
 			}
 			await sleep(250);
 		}
-	}
-}
-
-function runtimeDependencyNames() {
-	const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8')) as {
-		dependencies?: Record<string, string>;
-	};
-	return Object.keys(packageJson.dependencies ?? {});
-}
-
-function ensureWorkspaceRuntimePackageLinks() {
-	for (const packageName of runtimeDependencyNames()) {
-		if (!packageName.startsWith('@treeseed/')) {
-			continue;
-		}
-		const runtimePackageRoot = resolve(packageRoot, '..', packageName.slice('@treeseed/'.length));
-		if (!existsSync(resolve(runtimePackageRoot, 'package.json'))) {
-			continue;
-		}
-		const linkPath = resolve(packageRoot, 'node_modules', ...packageName.split('/'));
-		rmSync(linkPath, { recursive: true, force: true });
-		mkdirSync(dirname(linkPath), { recursive: true });
-		symlinkSync(runtimePackageRoot, linkPath, 'dir');
 	}
 }
 
@@ -156,38 +130,6 @@ function relativePathForTsconfig(targetPath) {
 	return relative(packageRoot, targetPath).replaceAll('\\', '/');
 }
 
-function existingWorkspaceDeclarationPaths() {
-	const paths = {};
-	if (existsSync(resolve(workspaceCoreDistRoot, 'index.d.ts'))) {
-		Object.assign(paths, {
-			'@treeseed/core': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, 'index.d.ts'))],
-			'@treeseed/core/middleware/editorial-preview': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, 'middleware', 'editorial-preview.d.ts'))],
-			'@treeseed/core/*/index': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, '*', 'index.d.ts'))],
-			'@treeseed/core/*': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, '*.d.ts'))],
-		});
-	}
-	if (existsSync(resolve(workspaceSdkDistRoot, 'index.d.ts'))) {
-		Object.assign(paths, {
-			'@treeseed/sdk': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'index.d.ts'))],
-			'@treeseed/sdk/site-contracts/plugin': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'platform', 'plugin.d.ts'))],
-			'@treeseed/sdk/site-contracts/catalog': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'sdk-types.d.ts'))],
-			'@treeseed/sdk/types/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'types', '*.d.ts'))],
-			'@treeseed/sdk/*/index': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*', 'index.d.ts'))],
-			'@treeseed/sdk/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*.d.ts'))],
-		});
-	}
-	if (existsSync(resolve(workspaceUiDistRoot, 'index.d.ts'))) {
-		Object.assign(paths, {
-			'@treeseed/ui': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'index.d.ts'))],
-			'@treeseed/ui/react': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'react.d.ts'))],
-			'@treeseed/ui/theme': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'theme', 'index.d.ts'))],
-			'@treeseed/ui/*/index': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*', 'index.d.ts'))],
-			'@treeseed/ui/*': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*.d.ts'))],
-		});
-	}
-	return paths;
-}
-
 function ignoreDeprecationsForInstalledTypescript() {
 	try {
 		const typescriptPackageJson = JSON.parse(readFileSync(requireFromPackage.resolve('typescript/package.json'), 'utf8'));
@@ -211,7 +153,6 @@ function writeDeclarationTsconfig() {
 	const mergedPaths = {
 		...(inheritedCompilerOptions.paths ?? {}),
 		...(baseCompilerOptions.paths ?? {}),
-		...existingWorkspaceDeclarationPaths(),
 	};
 	writeFileSync(tsconfigPath, `${JSON.stringify({
 		extends: './tsconfig.build.json',
@@ -272,7 +213,6 @@ function emitDeclarations() {
 async function main() {
   const releaseBuildLock = await acquireBuildLock();
   try {
-  ensureWorkspaceRuntimePackageLinks();
   rmSync(buildRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
 
