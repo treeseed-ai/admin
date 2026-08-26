@@ -2,8 +2,7 @@ name: Verify
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [staging, main]
     paths-ignore: ["docs/src/content/**"]
   pull_request:
     paths-ignore: ["docs/src/content/**"]
