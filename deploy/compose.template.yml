@@ -6,13 +6,19 @@ services:
       HOST: 0.0.0.0
       PORT: "4322"
       TREESEED_WEB_RUNTIME_TARGET: managed-node
-      TREESEED_API_BASE_URL: "${TREESEED_API_BASE_URL:?TREESEED_API_BASE_URL is required}"
+      TREESEED_API_BASE_URL: "${TREESEED_API_BASE_URL:-http://api:3000}"
       TREESEED_SITE_URL: "${TREESEED_SITE_URL:-https://admin.treeseed.localhost}"
       TREESEED_REVIEWER_URL: "${TREESEED_REVIEWER_URL:-}"
-    ports:
-      - "127.0.0.1:4322:4322"
+    networks: [platform, treeseed-edge]
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4322/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 12
+networks:
+  platform:
+    name: treeseed-platform
+    external: true
+  treeseed-edge:
+    name: treeseed-edge
+    external: true
