@@ -4,7 +4,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY . .
 ENV TREESEED_WEB_RUNTIME_TARGET=managed-node
-RUN npm run build:app
+RUN npm run build
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
