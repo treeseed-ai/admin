@@ -360,4 +360,19 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(existsSync('src/manifest.yaml')).toBe(true);
 		expect(existsSync('src/config.yaml')).toBe(true);
 	});
+
+	it('publishes its package-owned guarantee catalog and verifier declarations', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as { files?: string[] };
+		const manifest = readFileSync('treeseed.package.yaml', 'utf8');
+		expect(packageJson.files).toEqual(expect.arrayContaining(['guarantees', 'treeseed.package.yaml']));
+		expect(manifest).toContain('id: "@treeseed/admin/guarantee-catalog"');
+		expect(manifest).toContain('source: guarantees');
+		expect(manifest).toContain('artifact: dist/standards/guarantee-catalog.json');
+		expect(existsSync('guarantees/verifiers/ui.verifiers.yaml')).toBe(true);
+		expect(existsSync('dist/standards/guarantee-catalog.json')).toBe(true);
+		const catalog = JSON.parse(readFileSync('dist/standards/guarantee-catalog.json', 'utf8')) as { schemaVersion: string; guarantees: unknown[]; verifierRegistries: unknown[] };
+		expect(catalog.schemaVersion).toBe('treeseed.guarantee-catalog/v1');
+		expect(catalog.guarantees).toHaveLength(92);
+		expect(catalog.verifierRegistries).toHaveLength(1);
+	});
 });
