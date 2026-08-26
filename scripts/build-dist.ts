@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { build } from 'esbuild';
+import { parse } from 'yaml';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const requireFromPackage = createRequire(resolve(packageRoot, 'package.json'));
@@ -126,6 +127,31 @@ function writeDeclaration(relativePath, source) {
   writeFileSync(filePath, source, 'utf8');
 }
 
+function canonicalize(value) {
+	if (Array.isArray(value)) return value.map(canonicalize);
+	if (!value || typeof value !== 'object') return value;
+	return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
+}
+
+function writeGuaranteeCatalog() {
+	const guaranteesRoot = resolve(packageRoot, 'guarantees');
+	const guarantees = walkFiles(guaranteesRoot)
+		.filter((path) => /\.guarantee\.ya?ml$/u.test(path))
+		.map((path) => ({ sourcePath: relative(packageRoot, path).replaceAll('\\', '/'), manifest: parse(readFileSync(path, 'utf8')) }))
+		.sort((a, b) => String(a.manifest?.id ?? '').localeCompare(String(b.manifest?.id ?? '')));
+	const verifierRegistries = walkFiles(resolve(guaranteesRoot, 'verifiers'))
+		.filter((path) => /\.ya?ml$/u.test(path))
+		.map((path) => ({ sourcePath: relative(packageRoot, path).replaceAll('\\', '/'), document: parse(readFileSync(path, 'utf8')) }))
+		.sort((a, b) => a.sourcePath.localeCompare(b.sourcePath));
+	const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8'));
+	writeDeclaration('standards/guarantee-catalog.json', `${JSON.stringify(canonicalize({
+		schemaVersion: 'treeseed.guarantee-catalog/v1',
+		package: { name: packageJson.name, version: packageJson.version },
+		guarantees,
+		verifierRegistries,
+	}), null, 2)}\n`);
+}
+
 function relativePathForTsconfig(targetPath) {
 	return relative(packageRoot, targetPath).replaceAll('\\', '/');
 }
@@ -236,6 +262,7 @@ async function main() {
   writeDeclaration('middleware.d.ts', "export declare const onRequest: any;\n");
   writeDeclaration('lib/market/catalog.d.ts', "export declare function createMarketTemplateCatalogProvider(...args: any[]): any;\n");
   writeDeclaration('lib/market/store.d.ts', "export declare function resolveApiStore(...args: any[]): any;\n");
+  writeGuaranteeCatalog();
   publishCompletedBuild();
   } finally {
 	rmSync(buildRoot, { recursive: true, force: true });
