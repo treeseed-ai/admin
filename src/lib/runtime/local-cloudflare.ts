@@ -3,7 +3,7 @@ import type {
 	D1DatabaseLike,
 	KvNamespaceLike,
 	KvNamespacePutOptions,
-} from '@treeseed/sdk/types/cloudflare';
+} from '@treeseed/sdk/site-contracts/cloudflare';
 
 type RuntimeLocals = App.Locals & {
 	runtime?: CloudflareRuntime;

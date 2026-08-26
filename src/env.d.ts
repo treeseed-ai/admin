@@ -21,7 +21,7 @@ declare module 'cloudflare:sockets' {
 
 declare namespace App {
 	interface Locals {
-		runtime?: import('@treeseed/sdk/types/cloudflare').CloudflareRuntime;
+		runtime?: import('@treeseed/sdk/site-contracts/cloudflare').CloudflareRuntime;
 		contentPreview?: import('@treeseed/sdk').EditorialPreviewTokenPayload | null;
 		auth?: {
 			session: {
@@ -34,7 +34,7 @@ declare namespace App {
 				authenticatedAt?: string | null;
 				expiresAt?: string | null;
 			};
-			principal: import('@treeseed/sdk/remote').ApiPrincipal;
+			principal: import('@treeseed/sdk/site-contracts/catalog').ApiPrincipal;
 		} | null;
 	}
 }

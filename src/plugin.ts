@@ -1,6 +1,6 @@
 import { envField } from 'astro/config';
-import { definePlugin } from '@treeseed/sdk/platform/plugin';
-import type { Plugin } from '@treeseed/sdk/platform/plugin';
+import { definePlugin } from '@treeseed/sdk/site-contracts/plugin';
+import type { Plugin } from '@treeseed/sdk/site-contracts/plugin';
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from './routes.js';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from './commerce.js';
 

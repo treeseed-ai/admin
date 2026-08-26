@@ -1,9 +1,10 @@
 import type { APIContext } from 'astro';
-import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/remote';
+import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/site-contracts/catalog';
 import { getSiteAuthConfig } from '../auth/configuration/config';
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 export type AstroLike = Pick<APIContext, 'locals' | 'cookies' | 'url' | 'request'>;
 export const API_SESSION_COOKIE = 'ts_market_api_access';
+export const API_REFRESH_COOKIE = 'ts_market_api_refresh';
 export function getNodeCrypto(): {
     createHmac?: (algorithm: string, secret: string) => {
         update: (value: string) => {
@@ -108,8 +109,26 @@ export function setApiAccessTokenCookie(context: Pick<APIContext, 'cookies' | 'u
         maxAge: maxAgeSeconds,
     });
 }
+export function apiRefreshTokenFromCookies(context: Pick<APIContext, 'cookies'>) {
+    return context.cookies.get(API_REFRESH_COOKIE)?.value ?? null;
+}
+export function setApiRefreshTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>, token: string) {
+    context.cookies.set(API_REFRESH_COOKIE, token, {
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        secure: context.url.protocol === 'https:',
+        maxAge: 30 * 24 * 60 * 60,
+    });
+}
 export function clearApiAccessTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>) {
     context.cookies.delete(API_SESSION_COOKIE, {
+        path: '/',
+        secure: context.url.protocol === 'https:',
+    });
+}
+export function clearApiRefreshTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>) {
+    context.cookies.delete(API_REFRESH_COOKIE, {
         path: '/',
         secure: context.url.protocol === 'https:',
     });

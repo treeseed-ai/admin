@@ -17,8 +17,24 @@ verify:
 artifacts:
   - provider: npm
     name: "@treeseed/admin"
+  - provider: docker
+    name: "treeseed/admin"
 releaseGate:
   workflow: verify.yml
+standards:
+  schemaVersion: 1
+  workflow: { enabled: true }
+  acceptedBaseline: { packageName: "@treeseed/admin", packageVersion: "0.12.58" }
+  produced:
+    - { id: "@treeseed/admin/browser-bff", family: behavioral, version: "1.0.0", semanticRange: "^1.0.0", source: src/pages/auth, artifact: .treeseed/standards/browser-bff.json, verifier: scripts/verify-driver.ts }
+  consumed:
+    - { id: "@treeseed/sdk/control-plane-catalog", family: json-schema, version: "1.0.0", semanticRange: "^1.0.0", source: node_modules/@treeseed/sdk, verifier: scripts/verify-driver.ts }
+    - { id: "@treeseed/core/site-plugin-runtime", family: behavioral, version: "1.0.0", semanticRange: "^1.0.0", source: node_modules/@treeseed/core, verifier: scripts/verify-driver.ts }
+    - { id: "@treeseed/ui/presentation-catalog", family: behavioral, version: "1.0.0", semanticRange: "^1.0.0", source: node_modules/@treeseed/ui, verifier: scripts/verify-driver.ts }
+  guarantees: [oauth-browser-bff, httponly-token-custody, catalog-driven-account-and-team-management, stateless-managed-runtime]
+  deprecations: []
+  runtimes: [node>=22]
+  rollbackOperations: [remove-prerelease-dist-tag, restore-accepted-composition]
 projectArchitecture:
   topology: split_site_content
   rootPath: .

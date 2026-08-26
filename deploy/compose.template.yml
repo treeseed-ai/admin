@@ -1,0 +1,18 @@
+services:
+  admin:
+    image: "@ADMIN_IMAGE@"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4322"
+      TREESEED_WEB_RUNTIME_TARGET: managed-node
+      TREESEED_API_BASE_URL: "${TREESEED_API_BASE_URL:?TREESEED_API_BASE_URL is required}"
+      TREESEED_SITE_URL: "${TREESEED_SITE_URL:-https://admin.treeseed.localhost}"
+      TREESEED_REVIEWER_URL: "${TREESEED_REVIEWER_URL:-}"
+    ports:
+      - "127.0.0.1:4322:4322"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4322/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 12

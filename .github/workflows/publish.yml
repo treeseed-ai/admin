@@ -1,32 +1,65 @@
 name: Publish TreeSeed Admin
-
 on:
   push:
-    tags:
-      - "*.*.*"
-  workflow_dispatch:
-
+    tags: ["*.*.*"]
 jobs:
-  publish:
-    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  verify:
+    runs-on: ubuntu-24.04
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24, registry-url: "https://registry.npmjs.org" }
+      - run: npm run release:setup
+      - run: npm run release:check-tag
+      - run: npm run release:verify
+      - run: npm run release:publish
+        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }
+  build:
+    needs: verify
+    runs-on: ${{ matrix.runner }}
+    permissions: { contents: read }
+    environment: production
+    strategy:
+      matrix:
+        include:
+          - { arch: amd64, platform: linux/amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, platform: linux/arm64, runner: ubuntu-24.04-arm }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with: { username: "${{ vars.TREESEED_DOCKERHUB_USERNAME }}", password: "${{ secrets.TREESEED_DOCKERHUB_TOKEN }}" }
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with: { context: ., platforms: "${{ matrix.platform }}", push: true, tags: "treeseed/admin:${{ github.ref_name }}-${{ matrix.arch }}", sbom: true, provenance: mode=max }
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions: { contents: write }
     environment: production
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-      - run: npm run release:setup
-      - run: bash -lc 'npm run verify:local'
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${GITHUB_REF_NAME}" --generate-notes --verify-tag
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24 }
+      - run: npm ci --ignore-scripts
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with: { username: "${{ vars.TREESEED_DOCKERHUB_USERNAME }}", password: "${{ secrets.TREESEED_DOCKERHUB_TOKEN }}" }
+      - id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          docker buildx imagetools create -t "treeseed/admin:${version}" "treeseed/admin:${version}-amd64" "treeseed/admin:${version}-arm64"
+          echo "digest=$(docker buildx imagetools inspect "treeseed/admin:${version}" --format '{{json .Manifest}}' | jq -r '.digest')" >> "$GITHUB_OUTPUT"
+      - env:
+          TREESEED_RELEASE: "${{ github.ref_name }}"
+          TREESEED_SOURCE_COMMIT: "${{ github.sha }}"
+          TREESEED_ADMIN_DIGEST: "${{ steps.image.outputs.digest }}"
+        run: node --import tsx scripts/create-component-release.ts
+      - env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        shell: bash
+        run: |
+          args=(--generate-notes --verify-tag)
+          [[ "${GITHUB_REF_NAME}" == *-rc.* ]] && args+=(--prerelease)
+          gh release create "${GITHUB_REF_NAME}" release-assets/* "${args[@]}"

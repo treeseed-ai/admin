@@ -8,14 +8,14 @@ import '@treeseed/ui/styles/app-controls.css';
 import '@treeseed/ui/styles/charts.css';
 import '@treeseed/ui/styles/account/forms.css';
 import '@treeseed/ui/styles/auth.css';
-import ProductShell from '@treeseed/ui/components/astro/shell/layout/ProductShell.astro';
+import ProductShell from '@treeseed/ui/components/astro/shell/ProductShell.astro';
 import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro';
 import { AppearancePersistenceIsland } from '@treeseed/ui/components/react/progressive';
 import { resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 import { compileGuidedThemePalette } from '@treeseed/ui/theme';
 import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
-import { principalHasPlatformPermission } from '@treeseed/sdk/api/auth/rbac';
-import { createApiFacade } from '../lib/market/api-client';
+import { principalHasPlatformPermission } from '../lib/auth/support/rbac';
+import { createApiFacade, envValue } from '../lib/market/api-client';
 import { ensureCsrfToken } from '../lib/auth/support/csrf';
 import { loadRouteHelpContext } from '../lib/help/context';
 
@@ -96,6 +96,12 @@ const discussionContext = principal && activeTeam ? {
 	endpoint: '/v1/discussions',
 	realtime: { endpoint: '/v1/session/events', enabled: preferences.realTimeUpdates !== false },
 } : undefined;
+const reviewerCandidate = envValue(Astro.locals, 'TREESEED_REVIEWER_URL');
+let reviewerUrl = '';
+try {
+	const parsed = new URL(reviewerCandidate);
+	if (parsed.protocol === 'http:' && ['127.0.0.1', 'localhost', '::1'].includes(parsed.hostname)) reviewerUrl = parsed.toString();
+} catch { reviewerUrl = ''; }
 ---
 
 <ProductShell
@@ -129,6 +135,7 @@ const discussionContext = principal && activeTeam ? {
 		activeTeam
 			? { label: 'Team overview', href: `/app/teams/${encodeURIComponent(activeTeam.id)}`, variant: 'primary' as const, icon: 'teams' as const }
 			: { label: 'Manage teams', href: '/app/teams', variant: 'primary' as const, icon: 'teams' as const },
+		...(reviewerUrl ? [{ label: 'Open local Reviewer', href: reviewerUrl, variant: 'secondary' as const }] : []),
 	]}
 	accountActions={[
 		{ label: 'Account', href: '/app/account', variant: 'secondary' as const, icon: 'account' as const },

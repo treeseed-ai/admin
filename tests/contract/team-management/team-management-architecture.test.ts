@@ -159,7 +159,7 @@ describe('team management architecture audit', () => {
 		expect(access).toContain('Manage projects');
 		expect(access).toContain('Manage workstreams');
 		const navigation = source('src/components/team/TeamNavigation.astro');
-		expect(navigation).toContain("import SurfaceTabs from '@treeseed/ui/components/astro/shell/navigation/SurfaceTabs.astro'");
+		expect(navigation).toContain("import SurfaceTabs from '@treeseed/ui/components/astro/shell/SurfaceTabs.astro'");
 		expect(navigation).toContain('<SurfaceTabs');
 		expect(navigation).toContain('wrap');
 		expect(navigation).not.toContain('ts-team-tabs');
