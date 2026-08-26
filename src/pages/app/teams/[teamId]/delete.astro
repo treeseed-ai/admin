@@ -10,6 +10,7 @@ import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
@@ -32,7 +33,9 @@ let unavailable = resolution.status === 'unavailable';
 
 if (team && isOwner) {
 	try {
-		readiness = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/deletion-readiness`);
+		readiness = await api.invoke(CONTROL_PLANE_OPERATIONS.teams.deletionReadiness, {
+			path: { teamId: team.id }, query: {}, body: undefined,
+		});
 	} catch {
 		unavailable = true;
 		Astro.response.status = 503;
@@ -52,33 +55,27 @@ if (Astro.request.method === 'POST' && team && isOwner) {
 	const action = String(data.get('action') ?? '');
 	try {
 		if (action === 'archive') {
-			await api.request('POST', `/v1/teams/${encodeURIComponent(team.id)}/archive`, {
-				body: { lifecycleVersion: Number(data.get('lifecycleVersion')) },
-			});
+			await api.invoke(CONTROL_PLANE_OPERATIONS.teams.archive, {
+				path: { teamId: team.id }, query: {}, body: {},
+			}, { ifMatch: String(data.get('lifecycleVersion') ?? '') });
 			if (context.activeTeam?.id === team.id) Astro.cookies.delete('treeseed_active_team', { path: '/app' });
 			return formSubmissionResponse(Astro.request, {
 				ok: true, code: 'team_archived', message: 'Team archived.', redirect: '/app/teams',
 			}, { fallbackRedirect: '/app/teams' });
 		}
 		if (action === 'restore') {
-			await api.request('POST', `/v1/teams/${encodeURIComponent(team.id)}/restore`, {
-				body: { lifecycleVersion: Number(data.get('lifecycleVersion')) },
-			});
+			await api.invoke(CONTROL_PLANE_OPERATIONS.teams.restore, {
+				path: { teamId: team.id }, query: {}, body: {},
+			}, { ifMatch: String(data.get('lifecycleVersion') ?? '') });
 			return formSubmissionResponse(Astro.request, {
 				ok: true, code: 'team_restored', message: 'Team restored.', redirect: `/app/teams/${team.id}`,
 			}, { fallbackRedirect: `/app/teams/${team.id}` });
 		}
 		if (action === 'delete') {
-			await api.request('DELETE', `/v1/teams/${encodeURIComponent(team.id)}/permanent-delete`, {
-				body: {
-					confirmation: String(data.get('confirmation') ?? ''),
-					currentPassword: String(data.get('currentPassword') ?? ''),
-				},
-			});
-			if (context.activeTeam?.id === team.id) Astro.cookies.delete('treeseed_active_team', { path: '/app' });
 			return formSubmissionResponse(Astro.request, {
-				ok: true, code: 'team_deleted', message: 'Team permanently deleted.', redirect: '/app/teams',
-			}, { fallbackRedirect: '/app/teams' });
+				ok: false, code: 'capability_unavailable',
+				message: 'Permanent team deletion is unavailable until the API publishes an authoritative catalog operation.',
+			}, { fallbackRedirect: Astro.url.pathname });
 		}
 		return formSubmissionResponse(Astro.request, {
 			ok: false, code: 'invalid_action', message: 'Choose a valid lifecycle action.',

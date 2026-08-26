@@ -1,5 +1,6 @@
 import type { APIContext } from 'astro';
-import { randomId, resolveApiBaseUrl } from '../market/api-client';
+import { getSiteAuthConfig } from './configuration/config';
+import { randomId, resolveApiBaseUrl, safeTokenEquals, signAssertionPayload } from '../market/api-client';
 
 export const ADMIN_OAUTH_CLIENT_ID = 'treeseed-admin';
 export const OAUTH_VERIFIER_COOKIE = 'ts_admin_oauth_verifier';
@@ -18,16 +19,33 @@ function base64Url(bytes: Uint8Array) {
 	return Buffer.from(bytes).toString('base64url');
 }
 
-export async function beginAdminAuthorization(context: Pick<APIContext, 'cookies' | 'url'>, returnTo = '/app/') {
+function sealAuthorizationValue(context: Pick<APIContext, 'locals'>, value: string) {
+	return `${value}.${signAssertionPayload(value, getSiteAuthConfig(context).csrfSecret)}`;
+}
+
+export function readAdminAuthorizationCookie(
+	context: Pick<APIContext, 'cookies' | 'locals'>,
+	name: typeof OAUTH_VERIFIER_COOKIE | typeof OAUTH_STATE_COOKIE | typeof OAUTH_RETURN_COOKIE,
+) {
+	const sealed = context.cookies.get(name)?.value ?? '';
+	const separator = sealed.lastIndexOf('.');
+	if (separator <= 0) return '';
+	const value = sealed.slice(0, separator);
+	const signature = sealed.slice(separator + 1);
+	const expected = signAssertionPayload(value, getSiteAuthConfig(context).csrfSecret);
+	return safeTokenEquals(signature, expected) ? value : '';
+}
+
+export async function beginAdminAuthorization(context: Pick<APIContext, 'cookies' | 'url' | 'locals'>, returnTo = '/app/') {
 	const verifierBytes = new Uint8Array(48);
 	globalThis.crypto.getRandomValues(verifierBytes);
 	const verifier = base64Url(verifierBytes);
 	const challenge = base64Url(new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
 	const state = randomId();
 	const safeReturn = returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/app/';
-	context.cookies.set(OAUTH_VERIFIER_COOKIE, verifier, cookieOptions(context));
-	context.cookies.set(OAUTH_STATE_COOKIE, state, cookieOptions(context));
-	context.cookies.set(OAUTH_RETURN_COOKIE, safeReturn, cookieOptions(context));
+	context.cookies.set(OAUTH_VERIFIER_COOKIE, sealAuthorizationValue(context, verifier), cookieOptions(context));
+	context.cookies.set(OAUTH_STATE_COOKIE, sealAuthorizationValue(context, state), cookieOptions(context));
+	context.cookies.set(OAUTH_RETURN_COOKIE, sealAuthorizationValue(context, safeReturn), cookieOptions(context));
 	const target = new URL('/auth/authorize', context.url.origin);
 	target.search = new URLSearchParams({ client_id: ADMIN_OAUTH_CLIENT_ID, redirect_uri: adminCallbackUrl(context),
 		response_type: 'code', code_challenge: challenge, code_challenge_method: 'S256',

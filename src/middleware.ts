@@ -136,7 +136,7 @@ async function loadApiBackedWebSession(context: any) {
 	}
 	if (!response?.ok) return null;
 	const envelope = await response.json().catch(() => null);
-	const payload = envelope?.payload;
+	const payload = envelope?.data ?? envelope?.payload;
 	if (!payload?.principal) return null;
 	return {
 		id: payload.sessionId ?? payload.principal?.metadata?.sessionId ?? 'api-session',

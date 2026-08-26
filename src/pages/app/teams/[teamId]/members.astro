@@ -18,6 +18,7 @@ import AccessibleDialog from '@treeseed/ui/components/astro/overlays/AccessibleD
 import Pagination from '@treeseed/ui/components/astro/shell/navigation/Pagination.astro';
 import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import TeamAccessDetails from '../../../../components/team/TeamAccessDetails.astro';
 import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
@@ -51,7 +52,7 @@ if (Astro.request.method === 'POST' && team) {
 	try {
 		requireCsrf(Astro, data.get('csrfToken'));
 		if (data.get('action') !== 'leave') throw new Error('Choose a valid membership action.');
-		await api.request('POST', `/v1/teams/${encodeURIComponent(team.id)}/leave`, { body: {} });
+		await api.invoke(CONTROL_PLANE_OPERATIONS.teams.leave, { path: { teamId: team.id }, query: {}, body: {} });
 		const fallback = context.teams.find((entry: any) => entry.id !== team.id && (entry.status ?? 'active') === 'active');
 		if (fallback?.id) Astro.cookies.set('treeseed_active_team', fallback.id, {
 			path: '/app', httpOnly: false, sameSite: 'lax',
@@ -73,12 +74,14 @@ if (Astro.request.method === 'POST' && team) {
 
 if (team) {
 	try {
-		memberPage = await api.request(
-			'GET',
-			`/v1/teams/${encodeURIComponent(team.id)}/members?page=${page}&limit=25&q=${encodeURIComponent(query)}`,
-		);
+		memberPage = await api.invoke(CONTROL_PLANE_OPERATIONS.teams.members, {
+			path: { teamId: team.id }, query: { cursor: String((page - 1) * 25), limit: 25, q: query || undefined }, body: undefined,
+		});
 		if (canManage) {
-			invitations = await api.request('GET', `/v1/teams/${encodeURIComponent(team.id)}/invites`);
+			const invitationPage = await api.invoke(CONTROL_PLANE_OPERATIONS.teams.invites, {
+				path: { teamId: team.id }, query: { limit: 100 }, body: undefined,
+			}) as any;
+			invitations = Array.isArray(invitationPage?.items) ? invitationPage.items : [];
 			memberPage.items = await Promise.all(memberPage.items.map(async (member: any) => ({
 				...member,
 				removal: await api.request(

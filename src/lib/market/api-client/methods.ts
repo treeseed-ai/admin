@@ -1,7 +1,7 @@
 import type { ApiClientFacade } from "../api-client.ts";
 import { headersMethod } from "./support/contracts/headers.ts";
 import { urlMethod } from "./support/contracts/url.ts";
-import { requestMethod } from "./support/contracts/request.ts";
+import { invokeMethod, requestMethod } from "./support/contracts/request.ts";
 import { accountIdentityMethod } from "./accounts/contracts/account-identity.ts";
 import { accountPreferencesMethod } from "./accounts/contracts/account-preferences.ts";
 import { authProvidersMethod } from "./capacity/providers/contracts/auth-providers.ts";
@@ -174,6 +174,7 @@ export function installApiClientFacadeMethods(prototype: ApiClientFacade) {
   prototype.headers = headersMethod;
   prototype.url = urlMethod;
   prototype.request = requestMethod;
+  prototype.invoke = invokeMethod;
   prototype.accountIdentity = accountIdentityMethod;
   prototype.accountPreferences = accountPreferencesMethod;
   prototype.authProviders = authProvidersMethod;

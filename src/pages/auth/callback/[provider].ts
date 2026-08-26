@@ -3,6 +3,7 @@ import { isSupportedAuthProvider, normalizeReturnTo } from '../../../lib/auth/su
 import { resolveApiBaseUrl, setApiAccessTokenCookie, setApiRefreshTokenCookie } from '../../../lib/market/api-client';
 import { ADMIN_OAUTH_CLIENT_ID, OAUTH_RETURN_COOKIE, OAUTH_STATE_COOKIE, OAUTH_VERIFIER_COOKIE,
 	adminCallbackUrl, clearAdminAuthorizationCookies, oauthProtocolRequest } from '../../../lib/auth/oauth-browser';
+import { readAdminAuthorizationCookie } from '../../../lib/auth/oauth-browser';
 
 export const prerender = false;
 
@@ -10,8 +11,8 @@ const callback: APIRoute = async (context) => {
 	const provider = context.params.provider ?? 'unknown';
 	if (provider === 'treeseed') {
 		const state = context.url.searchParams.get('state') ?? '';
-		const expectedState = context.cookies.get(OAUTH_STATE_COOKIE)?.value ?? '';
-		const verifier = context.cookies.get(OAUTH_VERIFIER_COOKIE)?.value ?? '';
+		const expectedState = readAdminAuthorizationCookie(context, OAUTH_STATE_COOKIE);
+		const verifier = readAdminAuthorizationCookie(context, OAUTH_VERIFIER_COOKIE);
 		const code = context.url.searchParams.get('code') ?? '';
 		if (!state || state !== expectedState || !verifier || !code || context.url.searchParams.has('error')) {
 			clearAdminAuthorizationCookies(context);
@@ -27,7 +28,7 @@ const callback: APIRoute = async (context) => {
 			clearAdminAuthorizationCookies(context);
 			return context.redirect('/auth/sign-in?error=oauth_exchange_failed', 303);
 		}
-		const returnTo = context.cookies.get(OAUTH_RETURN_COOKIE)?.value ?? '/app/';
+		const returnTo = readAdminAuthorizationCookie(context, OAUTH_RETURN_COOKIE) || '/app/';
 		setApiAccessTokenCookie(context, tokens.access_token, Number(tokens.expires_in ?? 900));
 		setApiRefreshTokenCookie(context, tokens.refresh_token);
 		clearAdminAuthorizationCookies(context);
