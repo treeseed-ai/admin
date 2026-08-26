@@ -8,4 +8,5 @@ import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, reso
 export function accountDeletionBlockersMethod(this: ApiClientFacade) { return this.invoke(CONTROL_PLANE_OPERATIONS.accounts.deletionBlockers, { path: {}, query: {}, body: undefined }) as unknown as Promise<{
     blockers: AccountDeletionBlocker[];
     canDelete: boolean;
+    updatedAt: string;
 }>; }

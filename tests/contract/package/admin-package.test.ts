@@ -256,6 +256,8 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(notificationsPage).toContain(
 			"NotificationPreferencePanel from '@treeseed/ui/components/astro/account/NotificationPreferencePanel.astro'",
 		);
+		expect(accountHandler).toContain("form.get('expectedUpdatedAt')");
+		expect(accountHandler).toContain('expectedRevision(form)');
 	});
 
 	it('routes network forms through the UI-owned enhanced submission contract', () => {
