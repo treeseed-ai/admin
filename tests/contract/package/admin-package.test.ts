@@ -341,7 +341,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(site).toContain('bucketName: treeseed-admin-content');
 		expect(site).toContain('buildOutputDir: .treeseed/app-dist');
 		expect(site).toContain('package: "@treeseed/core/plugin-default"');
-		expect(site).toContain('package: "@treeseed/admin/plugin"');
+		expect(site).toContain('package: "file:./dist/plugin.js"');
 		expect(manifest).toContain('type: web-application');
 		expect(manifest).toContain('topology: split_site_content');
 		expect(manifest).toContain('sitePath: docs');

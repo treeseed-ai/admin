@@ -50,7 +50,7 @@ connections:
         baseUrl: https://api.treeseed.dev
 plugins:
   - package: "@treeseed/core/plugin-default"
-  - package: "@treeseed/admin/plugin"
+  - package: "file:./dist/plugin.js"
 providers:
   deploy: cloudflare
   dns: cloudflare-dns
