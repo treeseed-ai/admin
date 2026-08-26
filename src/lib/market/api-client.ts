@@ -137,7 +137,9 @@ export function isObject(value: unknown): value is Record<string, unknown> {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 export function unwrapEnvelope<T = unknown>(envelope: any): T {
-    if (Object.prototype.hasOwnProperty.call(envelope, 'payload'))
+	if (Object.prototype.hasOwnProperty.call(envelope, 'data'))
+		return envelope.data as T;
+	if (Object.prototype.hasOwnProperty.call(envelope, 'payload'))
         return envelope.payload as T;
     if (Object.prototype.hasOwnProperty.call(envelope, 'provider'))
         return envelope.provider as T;

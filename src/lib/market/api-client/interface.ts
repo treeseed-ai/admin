@@ -1,5 +1,6 @@
 declare module "../api-client.ts" {
   interface ApiClientFacade {
+    invoke: typeof import("./support/contracts/request.ts").invokeMethod;
     acceptTeamInvite: typeof import("./teams/lifecycle/accept-team-invite.ts").acceptTeamInviteMethod;
     accountDeletionBlockers: typeof import("./accounts/contracts/account-deletion-blockers.ts").accountDeletionBlockersMethod;
     accountIdentity: typeof import("./accounts/contracts/account-identity.ts").accountIdentityMethod;

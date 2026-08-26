@@ -8,6 +8,7 @@ import Select from '@treeseed/ui/components/astro/forms/Select.astro';
 import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { loadAppContext } from '../../../view-models/app-access.js';
@@ -54,8 +55,8 @@ if (Astro.request.method === 'POST') {
 		}, { fallbackRedirect: '/app/teams/new' });
 	} else {
 		try {
-			const team = await new ApiClientFacade(Astro).request<any>('POST', '/v1/teams', {
-				body: { ...formValues, metadata: { visibility: formValues.visibility } },
+			const team = await new ApiClientFacade(Astro).invoke(CONTROL_PLANE_OPERATIONS.teams.create, {
+				path: {}, query: {}, body: { ...formValues, metadata: { visibility: formValues.visibility } },
 			});
 			return formSubmissionResponse(Astro.request, {
 				ok: true,
