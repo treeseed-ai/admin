@@ -7,6 +7,7 @@ import {
 	setApiAccessTokenCookie,
 } from '../../lib/market/api-client';
 import { csrfMatches, WEB_CSRF_HEADER } from '../../lib/auth/support/csrf';
+import { promoteConcurrencyHeader } from '../../lib/market/proxy-request';
 
 export const prerender = false;
 
@@ -100,6 +101,7 @@ export const ALL: APIRoute = async (context) => {
 
 	const method = context.request.method.toUpperCase();
 	const body = ['GET', 'HEAD'].includes(method) ? undefined : await context.request.arrayBuffer();
+	promoteConcurrencyHeader(headers, body);
 	const response = await fetch(upstream, {
 		method,
 		headers,

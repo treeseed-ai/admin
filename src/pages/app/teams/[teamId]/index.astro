@@ -10,6 +10,7 @@ import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
 import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart';
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import TeamAccessDetails from '../../../../components/team/TeamAccessDetails.astro';
 import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
@@ -30,7 +31,19 @@ let summary: any = null;
 let unavailable = resolution.status === 'unavailable';
 if (team) {
 	try {
-		summary = await new ApiClientFacade(Astro).request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/home`);
+		const access = await new ApiClientFacade(Astro).invoke(CONTROL_PLANE_OPERATIONS.teams.access, {
+			path: { teamId: team.id }, query: {}, body: undefined,
+		});
+		summary = {
+			access,
+			counts: {
+				members: typeof team.memberCount === 'number' ? team.memberCount : 'Unavailable',
+				pendingInvitations: typeof team.pendingInvitations === 'number' ? team.pendingInvitations : 'Unavailable',
+			},
+			operational: null,
+			contentActivity: null,
+			auditEvents: null,
+		};
 	} catch (error) {
 		const status = Number((error as any)?.status ?? 503);
 		if (status === 403) Astro.response.status = 403;
@@ -44,7 +57,7 @@ if (team) {
 	Astro.response.status = resolution.status === 'forbidden' ? 403 : resolution.status === 'unavailable' ? 503 : 404;
 }
 
-const operationalEntries = Object.entries(summary?.operational ?? {}) as Array<[string, any]>;
+const operationalEntries = summary?.operational ? Object.entries(summary.operational) as Array<[string, any]> : [];
 const managementRoles = new Set(['team_owner', 'project_lead']);
 const canManageTeam = Boolean(summary?.access?.roles?.some((role: string) => managementRoles.has(role)));
 const isOwner = Boolean(summary?.access?.roles?.includes('team_owner'));
@@ -55,9 +68,9 @@ const operationalLabels: Record<string, string> = {
 	knowledge: 'Knowledge',
 	catalog: 'Catalog and billing',
 };
-const auditEvents = summary?.auditEvents ?? [];
-const auditActivity = auditEvents.map((event: any) => teamAuditDisplay(event));
-const contentActivity = Array.isArray(summary?.contentActivity) ? summary.contentActivity : [];
+const auditEvents = Array.isArray(summary?.auditEvents) ? summary.auditEvents : null;
+const auditActivity = auditEvents?.map((event: any) => teamAuditDisplay(event)) ?? [];
+const contentActivity = Array.isArray(summary?.contentActivity) ? summary.contentActivity : null;
 const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role).label)
 	.join(', ') || 'Member';
 ---
@@ -99,7 +112,7 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 				<div class="ts-resource-grid">
 					<ResourceCard title="Agent Lab" description="Design agents, govern proposals, allocate time, launch simulations, and monitor production work." href="/app/work" status="Operational workspace" tone="success" />
 				</div>
-				<MetricGrid min="14rem">
+				{operationalEntries.length > 0 ? <MetricGrid min="14rem">
 					{operationalEntries.map(([key, item]) => (
 						<MetricCard
 							href={item.href}
@@ -110,11 +123,11 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 							dataScene={`team.overview.${key}`}
 						/>
 					))}
-				</MetricGrid>
+				</MetricGrid> : <EmptyState title="Operational summaries unavailable" description="Catalogued domain totals are not available in this foundation; no zero values have been inferred." />}
 			</Panel>
 
 			<div data-scene="team.overview.content-activity">
-				<ProjectActivityChart
+				{contentActivity ? <ProjectActivityChart
 					client:load
 					title="Project content activity"
 					description="Created and updated published content across this team’s projects."
@@ -124,12 +137,12 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 					initialDisplayMode="period"
 					pollIntervalMs={null}
 					showPollingControl={false}
-				/>
+				/> : <EmptyState title="Content activity unavailable" description="A catalogued activity projection is not available; no empty timeline has been inferred." />}
 			</div>
 
 			<Panel eyebrow="Security" title="Recent team audit activity" description="Security-sensitive team changes recorded by the API." knowledgePageId="team.activity">
 				<div data-scene="team.overview.audit">
-					<ActivityFeed items={auditActivity} emptyLabel="No recent security-sensitive activity." />
+					{auditEvents ? <ActivityFeed items={auditActivity} emptyLabel="No recent security-sensitive activity." /> : <EmptyState title="Audit projection unavailable" description="Open the authoritative audit domain when its catalogued team read is published." />}
 				</div>
 			</Panel>
 		</section>

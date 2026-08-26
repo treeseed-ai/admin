@@ -97,7 +97,9 @@ describe('team management architecture audit', () => {
 		]) expect(members, action).toContain(`data-scene="${action}"`);
 		expect(members).toContain('Every recipient must explicitly accept');
 		expect(members).toContain("redirect: '/app/teams'");
-		expect(members).toContain('/removal-blockers');
+		expect(members).toContain('CONTROL_PLANE_OPERATIONS.teams.memberRemovalBlockers');
+		expect(members).toContain('catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.updateMember');
+		expect(members).toContain('catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.revokeInvite');
 		expect(members).toContain('Removal checks are unavailable.');
 		expect(members).toContain('soleCurrentOwner');
 		expect(members).toContain('Add or transfer ownership before changing your owner role.');
@@ -118,8 +120,8 @@ describe('team management architecture audit', () => {
 		expect(members).not.toContain('can list or manage other members');
 
 		const consent = source('src/pages/team-invites/[token]/accept.astro');
-		expect(consent).toContain("api.request<any>('GET'");
-		expect(consent).toContain("api.request<any>('POST'");
+		expect(consent).toContain('api.getTeamInvite(token)');
+		expect(consent).toContain('api.acceptTeamInvite(token');
 		expect(consent).toContain('team.invitation.switch-account');
 		expect(consent).toContain('name="inviteToken"');
 		expect(consent).toContain('name="inviteEmail"');

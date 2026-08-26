@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
-import { invokeMethod } from '../../../src/lib/market/api-client/support/contracts/request.ts';
+import { catalogOperationPath, invokeMethod } from '../../../src/lib/market/api-client/support/contracts/request.ts';
 import { unwrapEnvelope } from '../../../src/lib/market/api-client.ts';
 
 describe('Admin catalog invocation boundary', () => {
@@ -20,6 +20,14 @@ describe('Admin catalog invocation boundary', () => {
 		await expect(invokeMethod.call({ request: vi.fn() } as any, copy as any, {
 			path: {}, query: {}, body: undefined,
 		})).rejects.toThrow('not the authoritative SDK catalog binding');
+	});
+
+	it('builds enhanced-form actions from authoritative descriptors', () => {
+		expect(catalogOperationPath(
+			CONTROL_PLANE_OPERATIONS.teams.removeMember,
+			{ teamId: 'team/one', membershipId: 'member two' },
+			{},
+		)).toBe('/v1/teams/team%2Fone/members/member%20two');
 	});
 
 	it('unwraps canonical catalog response envelopes', () => {

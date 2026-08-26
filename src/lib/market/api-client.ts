@@ -149,6 +149,7 @@ export function unwrapEnvelope<T = unknown>(envelope: any): T {
 }
 import * as extractedMethods from "./api-client/methods.ts";
 import "./api-client/interface.ts";
+export { catalogOperationPath } from "./api-client/support/contracts/request.ts";
 export class ApiClientFacade {
     constructor(readonly context: AstroLike) { }
     get currentPrincipal() {
