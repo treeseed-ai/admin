@@ -1,8 +1,8 @@
 ---
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
-import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
-import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import { createApiFacade } from '../../lib/market/api-client';
 import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
 import { normalizeReturnTo, redirectAuthenticatedToApp } from '../../lib/auth/support/flow';
@@ -43,7 +43,7 @@ if (token && Astro.request.method === 'POST') {
 		error={error}
 		appearance={appearance}
 	>
-		{!confirmed && !error ? <form method="POST"><input type="hidden" name="csrfToken" value={csrfToken} /><FormActions><Button type="submit">Confirm email</Button></FormActions></form> : null}
+		{!confirmed && !error ? <form method="POST" data-ts-submit="enhanced"><input type="hidden" name="csrfToken" value={csrfToken} /><FormActions><Button type="submit">Confirm email</Button></FormActions></form> : null}
 		{confirmed ? <p><a class="ts-button" href={`/auth/sign-in?verified=1&returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a></p> : null}
 		<Fragment slot="sidebarLinks">
 			<a href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}`}>Create account</a>

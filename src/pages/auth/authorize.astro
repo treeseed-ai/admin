@@ -1,10 +1,10 @@
 ---
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
-import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
-import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
-import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
-import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import Field from '@treeseed/ui/components/astro/forms/Field.astro';
+import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
 import { apiAccessTokenFromCookies } from '../../lib/market/api-client';
 import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
@@ -43,7 +43,7 @@ const appearance = resolveAnonymousThemePreference(Astro);
 ---
 <AuthShell title="Authorize TreeSeed | TreeSeed" description="Review and authorize access to TreeSeed." appearance={appearance}>
 	<AuthCard title="Authorize access" description={presentation ? `${presentation.clientName} is requesting access to your TreeSeed account.` : undefined} error={error} appearance={appearance}>
-		{presentation ? <form method="POST" class="auth-form">
+		{presentation ? <form method="POST" class="auth-form" data-ts-submit="enhanced">
 			<input type="hidden" name="csrfToken" value={csrfToken} />
 			<ul aria-label="Requested permissions">{presentation.scopes.map((scope: string) => <li>{scope}</li>)}</ul>
 			{!Astro.locals.auth?.principal ? <>

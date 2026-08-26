@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../../../src/plugin';
-import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk/platform/plugin';
+import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk/site-contracts/plugin';
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../../../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
 import { authenticatedAuthRedirect, isAnonymousAuthRoute } from '../../../src/lib/auth/support/access-policy';
@@ -67,11 +67,13 @@ const EXPECTED_ROUTES = [
 	'/auth/forgot-password',
 	'/auth/reset-password',
 	'/auth/username',
+	'/auth/authorize',
 	'/auth/device/approve',
 	'/auth/callback/[provider]',
 	'/u/[username]',
 	'/t/[name]',
 	'/team-invites/[token]/accept',
+	'/healthz',
 ].sort();
 const EXPECTED_SUPPORT_ROUTES = ['/v1/[...all]'];
 function filesUnder(root: string): string[] {

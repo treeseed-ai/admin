@@ -1,4 +1,4 @@
-import { defineRoute, validateRouteCapabilities, type RouteCapability, type SiteRouteContribution } from '@treeseed/sdk/platform/plugin';
+import { defineRoute, validateRouteCapabilities, type RouteCapability, type SiteRouteContribution } from '@treeseed/sdk/site-contracts/plugin';
 
 type CapabilityInput = Partial<RouteCapability> & Pick<RouteCapability, 'id' | 'description'>;
 
@@ -103,11 +103,22 @@ export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapab
 	adminRoute('/auth/forgot-password', 'pages/auth/forgot-password.astro', { id: 'admin.auth.forgot-password', description: 'Privacy-safe password-reset request.' }),
 	adminRoute('/auth/reset-password', 'pages/auth/reset-password.astro', { id: 'admin.auth.reset-password', description: 'Token-bound password reset.', guarantees: ['guarantee.user.auth.forgot-reset-password.003'] }),
 	adminRoute('/auth/username', 'pages/auth/username.astro', { id: 'admin.auth.username-claim', description: 'Permanent username claim for first-time provider users.', accessPolicy: ['restricted provider-onboarding session', 'username not already assigned', 'safe return URL'] }),
+	adminRoute('/auth/authorize', 'pages/auth/authorize.astro', {
+		id: 'admin.auth.authorize',
+		description: 'OAuth client and scope review with explicit approval or denial.',
+		accessPolicy: ['valid authorization request', 'signed-in principal or credential authentication', 'exact registered redirect URI'],
+	}),
 	adminRoute('/auth/device/approve', 'pages/auth/device/approve.astro', { id: 'admin.auth.device-approve', description: 'Authenticated CLI/device authorization approval.', accessPolicy: ['signed-in principal', 'valid pending device request'] }),
 	adminRoute('/auth/callback/[provider]', 'pages/auth/callback/[provider].ts', { id: 'admin.auth.provider-callback', description: 'Hidden configured-provider callback with one-time state, nonce, PKCE, and safe redirect.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['anonymous principal only', 'configured provider', 'one-time database state', 'nonce and PKCE validation', 'safe return URL'] }),
 	adminRoute('/u/[username]', 'pages/u/[username].astro', { id: 'admin.profile.user', description: 'Public identity-only user profile.', guarantees: ['guarantee.user.account.view-user-profile.010'] }),
 	adminRoute('/t/[name]', 'pages/t/[name].astro', { id: 'admin.profile.team', description: 'Public identity-only team profile.', guarantees: ['guarantee.team.team.view-public-team-profile.021'] }),
 	adminRoute('/team-invites/[token]/accept', 'pages/team-invites/[token]/accept.astro', { id: 'admin.team.invite-accept', description: 'Idempotent invitation acceptance and safe destination.', guarantees: ['guarantee.team.membership.accept-team-invitation.018'], knowledgePageIds: ['team.invitation'] }),
+	adminRoute('/healthz', 'pages/healthz.ts', {
+		id: 'admin.system.health',
+		description: 'Stateless managed-runtime readiness endpoint.',
+		responseKind: 'data', archetype: 'action', shell: 'Standalone', template: 'Standalone', surface: 'system', resourceType: 'health',
+		accessPolicy: ['public readiness probe'], navigation: 'hidden', states: ['success', 'unavailable'],
+	}),
 ]);
 
 export const ADMIN_SUPPORT_ROUTES: readonly SiteRouteContribution[] = validateRouteCapabilities([

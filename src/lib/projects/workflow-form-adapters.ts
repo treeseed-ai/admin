@@ -1,4 +1,4 @@
-import { encryptGitHubActionsSecret } from '@treeseed/sdk/secrets-capability';
+import { encryptGitHubActionsSecret } from '../services/service-vault-crypto.ts';
 import { registerFormAdapter } from '@treeseed/ui/forms/client';
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? '').trim();

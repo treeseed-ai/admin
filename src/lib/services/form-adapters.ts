@@ -1,6 +1,8 @@
 import {
 	SERVICE_VAULT_ENCRYPTION_VERSION,
 	canonicalServiceVaultAssociatedData,
+} from '@treeseed/sdk/secrets-capability';
+import {
 	clearServiceVaultKey,
 	createServiceVaultKey,
 	createServiceVaultUserKeyPair,
@@ -12,7 +14,7 @@ import {
 	openTeamVaultGrant,
 	rewrapServiceCredential,
 	sealSecretOperationPayload,
-} from '@treeseed/sdk/secrets-capability';
+} from './service-vault-crypto.ts';
 import { registerFormAdapter, sendFormRequest } from '@treeseed/ui/forms/client';
 
 function jsonRequest(url: string, body: unknown, csrfToken: string, method = 'POST') {

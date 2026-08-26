@@ -169,8 +169,8 @@ function existingWorkspaceDeclarationPaths() {
 	if (existsSync(resolve(workspaceSdkDistRoot, 'index.d.ts'))) {
 		Object.assign(paths, {
 			'@treeseed/sdk': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'index.d.ts'))],
-			'@treeseed/sdk/platform/plugin': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'platform', 'plugin.d.ts'))],
-			'@treeseed/sdk/types': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'sdk-types.d.ts'))],
+			'@treeseed/sdk/site-contracts/plugin': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'platform', 'plugin.d.ts'))],
+			'@treeseed/sdk/site-contracts/catalog': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'sdk-types.d.ts'))],
 			'@treeseed/sdk/types/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'types', '*.d.ts'))],
 			'@treeseed/sdk/*/index': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*', 'index.d.ts'))],
 			'@treeseed/sdk/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*.d.ts'))],
@@ -290,8 +290,8 @@ async function main() {
   writeDeclaration('index.d.ts', "export * from './routes.js';\nexport * from './commerce.js';\n");
   writeDeclaration('config.d.ts', "export { createTenantSite as createAdminSite } from '@treeseed/core/config';\n");
   writeDeclaration('content-config.d.ts', "export { createTenantCollections as createAdminCollections } from '@treeseed/core/content-config';\n");
-  writeDeclaration('plugin.d.ts', "declare const plugin: import('@treeseed/sdk/platform/plugin').TreeseedPlugin;\nexport default plugin;\nexport declare const ADMIN_ENV_SCHEMA: Record<string, unknown>;\nexport declare const ADMIN_CAPABILITIES: Record<string, unknown>;\n");
-  writeDeclaration('routes.d.ts', "import type { TreeseedSiteRouteContribution } from '@treeseed/sdk/platform/plugin';\nexport declare const ADMIN_ROUTES: TreeseedSiteRouteContribution[];\n");
+  writeDeclaration('plugin.d.ts', "declare const plugin: import('@treeseed/sdk/site-contracts/plugin').TreeseedPlugin;\nexport default plugin;\nexport declare const ADMIN_ENV_SCHEMA: Record<string, unknown>;\nexport declare const ADMIN_CAPABILITIES: Record<string, unknown>;\n");
+  writeDeclaration('routes.d.ts', "import type { TreeseedSiteRouteContribution } from '@treeseed/sdk/site-contracts/plugin';\nexport declare const ADMIN_ROUTES: TreeseedSiteRouteContribution[];\n");
   writeDeclaration('commerce.d.ts', readFileSync(resolve(srcRoot, 'commerce.ts'), 'utf8').replace(/export const DEFAULT_ADMIN_COMMERCE_PROVIDER[\s\S]*$/u, 'export declare const DEFAULT_ADMIN_COMMERCE_PROVIDER: AdminCommerceProvider;\n'));
   writeDeclaration('middleware.d.ts', "export declare const onRequest: any;\n");
   writeDeclaration('lib/market/catalog.d.ts', "export declare function createMarketTemplateCatalogProvider(...args: any[]): any;\n");
