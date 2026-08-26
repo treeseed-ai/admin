@@ -231,6 +231,9 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(reset).toContain("PasswordSetupFields from '@treeseed/ui/components/astro/forms/fields/PasswordSetupFields.astro'");
 		expect(reset).toContain('passwordId="resetPassword"');
 		expect(reset).toContain('confirmLabel="Confirm new password"');
+		expect(reset).toContain("token && !error ? <form");
+		expect(reset).toContain('Password reset link unavailable');
+		expect(reset).not.toContain('Market login');
 		expect(accountSettings).toContain("const confirmPassword = String(form.get('confirmPassword') ?? '')");
 		expect(accountSettings).toContain("if (password !== confirmPassword) throw new Error('Passwords do not match.')");
 		expect(accountSettings).toContain('if (!passwordMeetsPolicy(password))');
