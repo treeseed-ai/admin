@@ -13,6 +13,8 @@ if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo
 const returnTo = normalizeReturnTo(Astro);
 const existing = String(Astro.locals.auth.principal.metadata?.username ?? '');
 if (existing) return Astro.redirect(returnTo, 302);
+const api = createApiFacade(Astro);
+const identity = await api.accountIdentity();
 let error = Astro.url.searchParams.get('error') ?? '';
 let value = '';
 if (Astro.request.method === 'POST') {
@@ -20,7 +22,7 @@ if (Astro.request.method === 'POST') {
 	value = String(form.get('username') ?? '');
 	try {
 		requireCsrf(Astro, form.get('csrfToken'));
-		const result = await createApiFacade(Astro).claimUsername(value);
+		const result = await api.claimUsername(value, String(form.get('expectedUpdatedAt') ?? ''));
 		if (result.accessToken) setApiAccessTokenCookie(Astro, result.accessToken, Number(result.expiresInSeconds ?? 900));
 		return pageFormResponse(Astro, { ok: true, code: 'username_claimed', message: 'Username saved.', redirect: returnTo }, Astro.url.pathname + Astro.url.search);
 	} catch (caught) {
@@ -33,6 +35,6 @@ const appearance = await resolveAuthenticatedThemePreference(Astro);
 ---
 <AuthShell title="Choose Username | TreeSeed" description="Choose your permanent public TreeSeed username." appearance={appearance}>
 	<AuthCard title="Choose your username" description="This is the final step for a provider-created account." error={error} appearance={appearance}>
-		<UsernameClaimForm csrfToken={ensureCsrfToken(Astro)} value={value} />
+		<UsernameClaimForm csrfToken={ensureCsrfToken(Astro)} value={value} expectedUpdatedAt={identity.updatedAt} />
 	</AuthCard>
 </AuthShell>

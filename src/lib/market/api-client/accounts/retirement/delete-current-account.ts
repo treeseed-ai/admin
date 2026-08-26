@@ -8,7 +8,7 @@ import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, reso
 export function deleteCurrentAccountMethod(this: ApiClientFacade, body: {
     confirmation: string;
     currentPassword?: string;
-    reauthenticationGrantId?: string;
-}) { return this.invoke(CONTROL_PLANE_OPERATIONS.accounts.remove, { path: {}, query: {}, body }) as unknown as Promise<{
+	reauthenticationGrantId?: string;
+}, ifMatch: string) { return this.invoke(CONTROL_PLANE_OPERATIONS.accounts.remove, { path: {}, query: {}, body }, { ifMatch }) as unknown as Promise<{
     deleted: true;
 }>; }

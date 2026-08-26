@@ -5,6 +5,11 @@ import { getSiteAuthConfig } from "../../../../auth/configuration/config";
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 import type { AstroLike, ApiClientFacade } from '../../../api-client.ts';
 import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, encodeAssertionPayload, signAssertionPayload, createTrustedWebUserAssertion, apiServiceHeaders, apiAccessTokenFromCookies, setApiAccessTokenCookie, clearApiAccessTokenCookie, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../api-client.ts';
+export interface TeamAccessSummary {
+	roles: string[];
+	permissions: string[];
+	access?: { roles?: string[]; permissions?: string[] };
+}
 export function getTeamAccessSummaryMethod(this: ApiClientFacade, teamId: string) {
-    return this.invoke(CONTROL_PLANE_OPERATIONS.teams.access, { path: { teamId }, query: {}, body: undefined });
+    return this.invoke(CONTROL_PLANE_OPERATIONS.teams.access, { path: { teamId }, query: {}, body: undefined }) as unknown as Promise<TeamAccessSummary>;
 }

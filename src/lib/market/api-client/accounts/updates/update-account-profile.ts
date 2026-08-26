@@ -12,6 +12,6 @@ export function updateAccountProfileMethod(this: ApiClientFacade, body: {
     headline?: string | null;
     profileSummary?: string | null;
     location?: string | null;
-    website?: string | null;
-    expertise?: string[];
-}) { return this.invoke(CONTROL_PLANE_OPERATIONS.accounts.updateProfile, { path: {}, query: {}, body }) as unknown as Promise<AccountMutationResult>; }
+	website?: string | null;
+	expertise?: string[];
+}, ifMatch: string) { return this.invoke(CONTROL_PLANE_OPERATIONS.accounts.updateProfile, { path: {}, query: {}, body }, { ifMatch }) as unknown as Promise<AccountMutationResult>; }
