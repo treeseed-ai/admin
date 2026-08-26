@@ -1,0 +1,56 @@
+---
+import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
+import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
+import Field from '@treeseed/ui/components/astro/forms/fields/Field.astro';
+import TextInput from '@treeseed/ui/components/astro/forms/fields/TextInput.astro';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
+import { apiAccessTokenFromCookies } from '../../lib/market/api-client';
+import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
+import { oauthProtocolRequest } from '../../lib/auth/oauth-browser';
+
+export const prerender = false;
+const query = Astro.url.searchParams;
+const protocolQuery = new URLSearchParams(query);
+let error = '';
+let presentation: any = null;
+const read = await oauthProtocolRequest(Astro, `/oauth/authorize?${protocolQuery.toString()}`);
+if (read.ok) presentation = await read.json();
+else error = (await read.json().catch(() => null))?.error_description ?? 'This authorization request is invalid or expired.';
+const csrfToken = ensureCsrfToken(Astro);
+if (Astro.request.method === 'POST' && presentation) {
+	const form = await Astro.request.formData();
+	try {
+		requireCsrf(Astro, form.get('csrfToken'));
+		const body = new URLSearchParams({ client_id: presentation.clientId, redirect_uri: presentation.redirectUri,
+			response_type: presentation.responseType, code_challenge: presentation.codeChallenge,
+			code_challenge_method: presentation.codeChallengeMethod, scope: presentation.scopes.join(' '),
+			state: presentation.state, decision: String(form.get('decision') ?? '') });
+		const access = apiAccessTokenFromCookies(Astro);
+		if (!access) {
+			body.set('identifier', String(form.get('identifier') ?? ''));
+			body.set('password', String(form.get('password') ?? ''));
+		}
+		const response = await oauthProtocolRequest(Astro, '/oauth/authorize', { method: 'POST',
+			headers: { 'content-type': 'application/x-www-form-urlencoded', ...(access ? { authorization: `Bearer ${access}` } : {}) }, body });
+		const result = await response.json().catch(() => null);
+		if (!response.ok || !result?.redirectTo) error = result?.error_description ?? 'Authorization could not be completed.';
+		else return Astro.redirect(result.redirectTo, 303);
+	} catch (cause) { error = cause instanceof Error ? cause.message : 'Authorization could not be completed.'; }
+}
+const appearance = resolveAnonymousThemePreference(Astro);
+---
+<AuthShell title="Authorize TreeSeed | TreeSeed" description="Review and authorize access to TreeSeed." appearance={appearance}>
+	<AuthCard title="Authorize access" description={presentation ? `${presentation.clientName} is requesting access to your TreeSeed account.` : undefined} error={error} appearance={appearance}>
+		{presentation ? <form method="POST" class="auth-form">
+			<input type="hidden" name="csrfToken" value={csrfToken} />
+			<ul aria-label="Requested permissions">{presentation.scopes.map((scope: string) => <li>{scope}</li>)}</ul>
+			{!Astro.locals.auth?.principal ? <>
+				<Field label="Email or username" name="identifier" required><TextInput name="identifier" autocomplete="username" required /></Field>
+				<Field label="Password" name="password" required><TextInput name="password" type="password" autocomplete="current-password" required /></Field>
+			</> : null}
+			<FormActions><Button type="submit" name="decision" value="approve">Approve</Button><Button type="submit" name="decision" value="deny">Deny</Button></FormActions>
+		</form> : null}
+	</AuthCard>
+</AuthShell>

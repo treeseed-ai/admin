@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireCsrf } from '../../lib/auth/support/csrf';
-import { clearApiAccessTokenCookie, createApiFacade } from '../../lib/market/api-client';
+import { apiAccessTokenFromCookies, apiRefreshTokenFromCookies, clearApiAccessTokenCookie, clearApiRefreshTokenCookie,
+	resolveApiBaseUrl } from '../../lib/market/api-client';
 import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
 export const prerender = false;
@@ -22,8 +23,13 @@ export const POST: APIRoute = async (context) => {
 	const signInPath = `/auth/sign-in?${signInParams.toString()}`;
 	try {
 		requireCsrf(context, form.get('csrfToken'));
-		await createApiFacade(context).request('POST', '/v1/auth/logout', { body: {} });
+		const tokens = [apiAccessTokenFromCookies(context), apiRefreshTokenFromCookies(context)].filter(Boolean) as string[];
+		await Promise.all(tokens.map((token) => fetch(`${resolveApiBaseUrl(context.locals)}/oauth/revoke`, { method: 'POST',
+			headers: { 'content-type': 'application/x-www-form-urlencoded' },
+			body: new URLSearchParams({ client_id: 'treeseed-admin', token }),
+		}).catch(() => null)));
 		clearApiAccessTokenCookie(context);
+		clearApiRefreshTokenCookie(context);
 		return pageFormResponse(context, {
 			ok: true,
 			code: 'signed_out',

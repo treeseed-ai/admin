@@ -1,9 +1,12 @@
 ---
 import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
-import { createApiFacade, setApiAccessTokenCookie } from '../../lib/market/api-client';
-import { resolveAnonymousThemePreference, setAnonymousThemeCookies, setPrincipalThemeCookies } from '../../lib/auth/accounts/appearance';
+import Button from '@treeseed/ui/components/astro/forms/actions/Button.astro';
+import FormActions from '@treeseed/ui/components/astro/forms/actions/FormActions.astro';
+import { createApiFacade } from '../../lib/market/api-client';
+import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
 import { normalizeReturnTo, redirectAuthenticatedToApp } from '../../lib/auth/support/flow';
+import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
 
 export const prerender = false;
 
@@ -11,24 +14,20 @@ const returnTo = normalizeReturnTo(Astro);
 const token = Astro.url.searchParams.get('token') ?? '';
 const appearance = resolveAnonymousThemePreference(Astro);
 let error = '';
+let confirmed = false;
 const api = createApiFacade(Astro);
+const csrfToken = ensureCsrfToken(Astro);
 
-if (token) {
+if (token && Astro.request.method === 'POST') {
 	try {
-		const payload = await api.confirmEmail(token);
-		setApiAccessTokenCookie(Astro, payload.accessToken, Number(payload.expiresInSeconds ?? 900));
-		if (!setPrincipalThemeCookies(Astro, payload.principal)) {
-			setAnonymousThemeCookies(Astro, appearance);
-		}
-		const redirect = Astro.redirect(returnTo, 303);
-		for (const cookie of Astro.cookies.headers()) {
-			redirect.headers.append('set-cookie', cookie);
-		}
-		return redirect;
+		const form = await Astro.request.formData();
+		requireCsrf(Astro, form.get('csrfToken'));
+		await api.confirmEmail(token);
+		confirmed = true;
 	} catch (confirmationError) {
 		error = confirmationError instanceof Error ? confirmationError.message : 'Email confirmation failed.';
 	}
-} else {
+} else if (!token) {
 	const authenticatedRedirect = redirectAuthenticatedToApp(Astro);
 	if (authenticatedRedirect) {
 		return authenticatedRedirect;
@@ -39,11 +38,13 @@ if (token) {
 
 <AuthShell title="Confirm Email | TreeSeed" description="Confirm your email to continue." appearance={appearance}>
 	<AuthCard
-		title="Email confirmation failed"
-		description="The confirmation link is invalid or expired. Try registering again or contact support if this keeps happening."
+		title={confirmed ? 'Email confirmed' : error ? 'Email confirmation failed' : 'Confirm your email'}
+		description={confirmed ? 'Your email is confirmed. Sign in to continue.' : error ? 'The confirmation link is invalid or expired.' : 'Activate this email address once. This link cannot be reused.'}
 		error={error}
 		appearance={appearance}
 	>
+		{!confirmed && !error ? <form method="POST"><input type="hidden" name="csrfToken" value={csrfToken} /><FormActions><Button type="submit">Confirm email</Button></FormActions></form> : null}
+		{confirmed ? <p><a class="ts-button" href={`/auth/sign-in?verified=1&returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a></p> : null}
 		<Fragment slot="sidebarLinks">
 			<a href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}`}>Create account</a>
 			<a href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a>

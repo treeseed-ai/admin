@@ -13,10 +13,10 @@ import {
 	normalizeReturnTo,
 	providerSignInPath,
 	redirectAuthenticatedToApp,
-	submitMarketEmailAuthFlow,
 } from '../../lib/auth/support/flow';
+import { beginAdminAuthorization } from '../../lib/auth/oauth-browser';
 import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
-import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
+import { pageFormFailure } from '../../lib/forms/page-submission';
 
 export const prerender = false;
 
@@ -72,15 +72,9 @@ if (Astro.request.method === 'POST') {
 			...(!password ? { password: 'Password is required.' } : {}),
 		});
 	} else {
-		const result = await submitMarketEmailAuthFlow(Astro, 'sign-in/email', {
-			login: identifier,
-			password,
-			rememberMe: true,
-		});
-		if (result.ok) {
-			return pageFormResponse(Astro, { ok: true, code: 'signed_in', message: 'Signed in.', redirect: returnTo }, Astro.url.pathname + Astro.url.search);
-		}
-		return pageFormFailure(Astro, result.error, Astro.url.pathname + Astro.url.search);
+		// Authentication occurs only at the API authorization decision boundary. The
+		// password is deliberately not persisted by this gateway page.
+		return Astro.redirect((await beginAdminAuthorization(Astro, returnTo)).toString(), 303);
 	}
 }
 

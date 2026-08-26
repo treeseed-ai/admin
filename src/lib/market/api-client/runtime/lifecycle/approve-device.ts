@@ -6,4 +6,4 @@ import type { AstroLike, ApiClientFacade } from '../../../api-client.ts';
 import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, encodeAssertionPayload, signAssertionPayload, createTrustedWebUserAssertion, apiServiceHeaders, apiAccessTokenFromCookies, setApiAccessTokenCookie, clearApiAccessTokenCookie, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../api-client.ts';
 export function approveDeviceMethod(this: ApiClientFacade, userCode: string) { return this.request<{
     approved: true;
-}>('POST', '/v1/auth/device/approve', { body: { userCode } }); }
+}>('POST', '/auth/device/approve', { body: { userCode } }); }
