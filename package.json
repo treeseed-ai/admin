@@ -52,9 +52,9 @@
   },
   "dependencies": {
     "@react-email/render": "^2.0.8",
-    "@treeseed/core": ">=0.12.59 <0.14.0",
-    "@treeseed/sdk": ">=0.13.0-rc.38 <0.14.0",
-    "@treeseed/ui": ">=0.12.17 <0.14.0",
+    "@treeseed/core": ">=0.12.60-rc.1 <0.14.0",
+    "@treeseed/sdk": ">=0.13.0-rc.39 <0.14.0",
+    "@treeseed/ui": ">=0.12.18-rc.1 <0.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
