@@ -10,6 +10,9 @@ githubEnvironments:
   - production
 requiredSecrets:
   - NPM_TOKEN
+  - DOCKERHUB_TOKEN
+requiredVariables:
+  - DOCKERHUB_USERNAME
 verify:
   fast: npm run verify
   local: npm run verify:local
