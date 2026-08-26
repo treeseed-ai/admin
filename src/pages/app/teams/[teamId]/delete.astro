@@ -72,10 +72,15 @@ if (Astro.request.method === 'POST' && team && isOwner) {
 			}, { fallbackRedirect: `/app/teams/${team.id}` });
 		}
 		if (action === 'delete') {
+			await api.invoke(CONTROL_PLANE_OPERATIONS.teams.remove, {
+				path: { teamId: team.id }, query: {}, body: {
+					confirmation: String(data.get('confirmation') ?? ''),
+					currentPassword: String(data.get('currentPassword') ?? ''),
+				},
+			}, { ifMatch: String(data.get('lifecycleVersion') ?? '') });
 			return formSubmissionResponse(Astro.request, {
-				ok: false, code: 'capability_unavailable',
-				message: 'Permanent team deletion is unavailable until the API publishes an authoritative catalog operation.',
-			}, { fallbackRedirect: Astro.url.pathname });
+				ok: true, code: 'team_deleted', message: 'Team permanently deleted.', redirect: '/app/teams',
+			}, { fallbackRedirect: '/app/teams' });
 		}
 		return formSubmissionResponse(Astro.request, {
 			ok: false, code: 'invalid_action', message: 'Choose a valid lifecycle action.',
@@ -87,7 +92,7 @@ if (Astro.request.method === 'POST' && team && isOwner) {
 			code: details.code ?? 'team_lifecycle_failed',
 			message: details.message ?? (error instanceof Error ? error.message : 'The lifecycle action failed.'),
 			fieldErrors: details.code === 'confirmation'
-				? { confirmation: `Type "${team.name}" exactly.` }
+				? { confirmation: `Type "DELETE ${team.name}" exactly.` }
 				: details.code === 'reauthentication_required'
 					? { currentPassword: 'Enter your current password.' }
 					: undefined,
@@ -175,11 +180,12 @@ const restoreAvailable = team?.status === 'archived' && Number.isFinite(restoreD
 								tone: 'danger',
 							}))} />
 						) : <p>No deletion blockers were found.</p>}
-						<p class="ts-danger-zone__confirmation">To confirm, type <code>{team.name}</code> and enter your current password.</p>
+						<p class="ts-danger-zone__confirmation">To confirm, type <code>DELETE {team.name}</code> and enter your current password.</p>
 						<form class="ts-team-form" method="post" action={Astro.url.pathname} data-ts-submit="enhanced" data-ts-success-message="Team permanently deleted." data-scene="team.delete">
 							<input type="hidden" name="csrfToken" value={csrfToken} />
 							<input type="hidden" name="action" value="delete" />
-							<Field label={`Type "${team.name}" exactly`} name="confirmation" required>
+							<input type="hidden" name="lifecycleVersion" value={team.lifecycleVersion} />
+							<Field label={`Type "DELETE ${team.name}" exactly`} name="confirmation" required>
 								<TextInput name="confirmation" required autocomplete="off" />
 							</Field>
 							<Field label="Current password" name="currentPassword" required>

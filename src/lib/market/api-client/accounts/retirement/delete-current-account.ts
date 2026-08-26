@@ -1,4 +1,5 @@
 import type { APIContext } from 'astro';
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/site-contracts/catalog';
 import { getSiteAuthConfig } from "../../../../auth/configuration/config";
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
@@ -8,6 +9,6 @@ export function deleteCurrentAccountMethod(this: ApiClientFacade, body: {
     confirmation: string;
     currentPassword?: string;
     reauthenticationGrantId?: string;
-}) { return this.request<{
+}) { return this.invoke(CONTROL_PLANE_OPERATIONS.accounts.remove, { path: {}, query: {}, body }) as unknown as Promise<{
     deleted: true;
-}>('DELETE', '/v1/auth/web/account', { body }); }
+}>; }

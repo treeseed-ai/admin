@@ -40,6 +40,32 @@ type OperationInput<T extends ControlPlaneOperationBinding<any, any, any, any>> 
     body: ControlPlaneOperationBody<T>;
 };
 
+export function catalogOperationPath<T extends ControlPlaneOperationBinding<any, any, any, any>>(
+    binding: T,
+    pathValue: ControlPlaneOperationPath<T>,
+    queryValue: ControlPlaneOperationQuery<T>,
+) {
+    const operationId = binding.descriptor.operationId;
+    if (controlPlaneOperation(operationId) !== binding)
+        throw new Error(`Operation ${operationId} is not the authoritative SDK catalog binding.`);
+    const rest = binding.descriptor.rest;
+    if (!rest) throw new Error(`Operation ${operationId} has no REST binding.`);
+    const pathInput = binding.schema.path.parse(pathValue) as Record<string, unknown>;
+    const queryInput = binding.schema.query.parse(queryValue) as Record<string, unknown>;
+    const path = rest.path.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/gu, (_match, name: string) => {
+        const value = pathInput[name];
+        if (typeof value !== 'string' && typeof value !== 'number') throw new Error(`Operation ${operationId} requires path parameter ${name}.`);
+        return encodeURIComponent(String(value));
+    });
+    if (path.includes('{')) throw new Error(`Operation ${operationId} has unresolved path parameters.`);
+    const query = new URLSearchParams();
+    for (const [name, value] of Object.entries(queryInput)) {
+        if (value === undefined || value === null) continue;
+        for (const item of Array.isArray(value) ? value : [value]) query.append(name, String(item));
+    }
+    return `${path}${query.size ? `?${query}` : ''}`;
+}
+
 export async function invokeMethod<T extends ControlPlaneOperationBinding<any, any, any, any>>(
     this: ApiClientFacade,
     binding: T,
@@ -47,31 +73,12 @@ export async function invokeMethod<T extends ControlPlaneOperationBinding<any, a
     options: { headers?: HeadersInit; idempotencyKey?: string; ifMatch?: string; signal?: AbortSignal } = {},
 ): Promise<ControlPlaneOperationOutput<T>> {
     const operationId = binding.descriptor.operationId;
-    if (controlPlaneOperation(operationId) !== binding)
-        throw new Error(`Operation ${operationId} is not the authoritative SDK catalog binding.`);
     const rest = binding.descriptor.rest;
     if (!rest)
         throw new Error(`Operation ${operationId} has no REST binding.`);
-    const pathInput = binding.schema.path.parse(input.path) as Record<string, unknown>;
-    const queryInput = binding.schema.query.parse(input.query) as Record<string, unknown>;
     const bodyInput = binding.schema.body.parse(input.body);
-    const path = rest.path.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/gu, (_match, name: string) => {
-        const value = pathInput[name];
-        if (typeof value !== 'string' && typeof value !== 'number')
-            throw new Error(`Operation ${operationId} requires path parameter ${name}.`);
-        return encodeURIComponent(String(value));
-    });
-    if (path.includes('{'))
-        throw new Error(`Operation ${operationId} has unresolved path parameters.`);
-    const query = new URLSearchParams();
-    for (const [name, value] of Object.entries(queryInput)) {
-        if (value === undefined || value === null)
-            continue;
-        for (const item of Array.isArray(value) ? value : [value])
-            query.append(name, String(item));
-    }
-    const suffix = query.size ? `?${query}` : '';
-    return this.request<ControlPlaneOperationOutput<T>>(rest.method, `${path}${suffix}`, {
+    const path = catalogOperationPath(binding, input.path, input.query);
+    return this.request<ControlPlaneOperationOutput<T>>(rest.method, path, {
         ...options,
         body: rest.method === 'GET' ? undefined : bodyInput,
     });

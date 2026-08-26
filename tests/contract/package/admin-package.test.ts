@@ -286,6 +286,8 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(authPages).toContain('pageFormResponse');
 		expect(authPages).toContain('pageFormFailure');
 		expect(memberPage).toContain('data-ts-form-adapter="json"');
+		expect(memberPage).toContain('catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.invite');
+		expect(memberPage).toContain('CONTROL_PLANE_OPERATIONS.teams.memberRemovalBlockers');
 		expect(memberPage).not.toContain('location.reload');
 		expect(memberPage).not.toMatch(/\bfetch\s*\(/u);
 	});

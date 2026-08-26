@@ -21,7 +21,7 @@ const timeZone = Astro.locals.auth?.principal
 let preview: any = null;
 let previewStatus = 200;
 try {
-	preview = await api.request<any>('GET', `/v1/team-invites/${encodeURIComponent(token)}`);
+	preview = await api.getTeamInvite(token);
 } catch (error) {
 	previewStatus = Number((error as any)?.status ?? 404);
 	preview = { invite: { status: 'invalid' }, message: (error as any)?.details?.message ?? 'This invitation is invalid or no longer available.' };
@@ -43,7 +43,7 @@ if (Astro.request.method === 'POST' && Astro.locals.auth?.principal) {
 		}, { fallbackRedirect: returnTo });
 	}
 	try {
-		const result = await api.request<any>('POST', `/v1/team-invites/${encodeURIComponent(token)}/accept`, { body: {} });
+		const result: any = await api.acceptTeamInvite(token, Astro.locals.auth.principal.id);
 		if (data.get('setActive') === 'yes' && result.team?.id) {
 			Astro.cookies.set('treeseed_active_team', result.team.id, {
 				path: '/app', httpOnly: false, sameSite: 'lax', secure: Astro.url.protocol === 'https:', maxAge: 31_536_000,
