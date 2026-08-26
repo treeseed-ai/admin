@@ -56,9 +56,12 @@ describe('public knowledge profile composition', () => {
 
 	it('keeps anonymous public responses eligible for shared edge caching', () => {
 		const middleware = source('src/middleware.ts');
+		const userProfile = source('src/lib/market/api-client/accounts/queries/load-user-profile-by-username.ts');
 		expect(middleware).not.toContain("import { ensureCsrfToken }");
 		expect(middleware).not.toContain('ensureCsrfToken(context)');
 		expect(source('src/layouts/AppLayout.astro')).toContain('ensureCsrfToken(Astro)');
+		expect(userProfile).toContain('CONTROL_PLANE_OPERATIONS.accounts.publicProfile');
+		expect(userProfile).not.toContain('/v1/users/by-username/');
 	});
 
 	it('shows canonical management tabs only for the owning account or a team member', () => {
