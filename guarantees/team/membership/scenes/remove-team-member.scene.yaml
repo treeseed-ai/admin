@@ -137,24 +137,15 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: sign-in-removed-member
-    title: Authenticate the removed user
-    action:
-      click:
-        role: button
-        name: Continue to sign in
-    expect:
-      urlIncludes: /auth/authorize
-      text: Authorize
   - id: enter-removed-member-approval-email
-    title: Re-enter the removed member's credential at the authorization boundary
+    title: Re-enter the removed member's credential at the sign-in boundary
     action:
       fill:
         role: textbox
         name: Email or username
         value: invite-{{runId}}-{{deviceId}}@treeseed.local
     expect:
-      text: Authorize
+      text: Sign in
   - id: enter-removed-member-approval-password
     title: Enter the removed member's password for explicit Admin approval
     action:
@@ -163,13 +154,13 @@ workflow:
         internal: true
         value: TreeSeedInviteGuarantee123!
     expect:
-      text: Authorize
+      text: Sign in
   - id: approve-removed-member-session
-    title: Explicitly approve Admin for the removed member
+    title: Sign in to Admin for the removed member
     action:
       click:
         role: button
-        name: Approve
+        name: Sign in
     expect:
       urlIncludes: /app
   - id: prove-removed-member-lost-access
@@ -190,24 +181,15 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: sign-in-existing-member
-    title: Authenticate the existing accepted member
-    action:
-      click:
-        role: button
-        name: Continue to sign in
-    expect:
-      urlIncludes: /auth/authorize
-      text: Authorize
   - id: enter-existing-member-approval-email
-    title: Re-enter the existing member's credential at the authorization boundary
+    title: Re-enter the existing member's credential at the sign-in boundary
     action:
       fill:
         role: textbox
         name: Email or username
         value: visual.member@treeseed.io
     expect:
-      text: Authorize
+      text: Sign in
   - id: enter-existing-member-approval-password
     title: Enter the existing member's password for explicit Admin approval
     action:
@@ -216,13 +198,13 @@ workflow:
         internal: true
         value: TreeSeedVisualAudit!2026
     expect:
-      text: Authorize
+      text: Sign in
   - id: approve-existing-member-session
-    title: Explicitly approve Admin for the existing member
+    title: Sign in to Admin for the existing member
     action:
       click:
         role: button
-        name: Approve
+        name: Sign in
     expect:
       urlIncludes: /app
   - id: open-existing-member-team
@@ -283,24 +265,15 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: sign-in-primary-owner
-    title: Authenticate as the remaining owner
-    action:
-      click:
-        role: button
-        name: Continue to sign in
-    expect:
-      urlIncludes: /auth/authorize
-      text: Authorize
   - id: enter-primary-owner-approval-email
-    title: Re-enter the primary owner's credential at the authorization boundary
+    title: Re-enter the primary owner's credential at the sign-in boundary
     action:
       fill:
         role: textbox
         name: Email or username
         value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
-      text: Authorize
+      text: Sign in
   - id: enter-primary-owner-approval-password
     title: Enter the primary owner's password for explicit Admin approval
     action:
@@ -309,13 +282,13 @@ workflow:
         internal: true
         value: TreeSeedGuaranteeReset123!
     expect:
-      text: Authorize
+      text: Sign in
   - id: approve-primary-owner-session
-    title: Explicitly approve Admin for the remaining owner
+    title: Sign in to Admin for the remaining owner
     action:
       click:
         role: button
-        name: Approve
+        name: Sign in
     expect:
       urlIncludes: /app
   - id: open-primary-owner-team-collection

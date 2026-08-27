@@ -58,6 +58,50 @@ export async function beginAdminAuthorization(context: Pick<APIContext, 'cookies
 	return target;
 }
 
+export async function completeAdminCredentialAuthorization(
+	context: Pick<APIContext, 'cookies' | 'url' | 'locals'>,
+	credentials: { identifier: string; password: string },
+	returnTo = '/app/',
+) {
+	const target = await beginAdminAuthorization(context, returnTo);
+	const requestPath = `/oauth/authorize?${target.searchParams.toString()}`;
+	const read = await oauthProtocolRequest(context, requestPath);
+	const presentation = await read.json().catch(() => null);
+	if (!read.ok || presentation?.clientId !== ADMIN_OAUTH_CLIENT_ID
+		|| presentation?.redirectUri !== adminCallbackUrl(context)
+		|| presentation?.state !== target.searchParams.get('state')) {
+		throw new Error(presentation?.error_description ?? 'The TreeSeed sign-in request is invalid or expired.');
+	}
+	const body = new URLSearchParams({
+		client_id: presentation.clientId,
+		redirect_uri: presentation.redirectUri,
+		response_type: presentation.responseType,
+		code_challenge: presentation.codeChallenge,
+		code_challenge_method: presentation.codeChallengeMethod,
+		scope: presentation.scopes.join(' '),
+		state: presentation.state,
+		decision: 'approve',
+		identifier: credentials.identifier,
+		password: credentials.password,
+	});
+	const response = await oauthProtocolRequest(context, '/oauth/authorize', {
+		method: 'POST',
+		headers: { 'content-type': 'application/x-www-form-urlencoded' },
+		body,
+	});
+	const result = await response.json().catch(() => null);
+	if (!response.ok || !result?.redirectTo) {
+		throw new Error(result?.error_description ?? 'Sign in could not be completed.');
+	}
+	const callback = new URL(result.redirectTo);
+	const expected = new URL(adminCallbackUrl(context));
+	if (callback.origin !== expected.origin || callback.pathname !== expected.pathname
+		|| callback.searchParams.get('state') !== presentation.state) {
+		throw new Error('The TreeSeed sign-in callback was rejected.');
+	}
+	return callback;
+}
+
 export function clearAdminAuthorizationCookies(context: Pick<APIContext, 'cookies' | 'locals' | 'url'>) {
 	for (const name of [OAUTH_VERIFIER_COOKIE, OAUTH_STATE_COOKIE, OAUTH_RETURN_COOKIE]) {
 		context.cookies.delete(name, { path: '/', secure: adminOrigin(context).startsWith('https:') });

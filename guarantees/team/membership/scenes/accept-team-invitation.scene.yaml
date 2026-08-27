@@ -178,33 +178,27 @@ workflow:
     expect:
       text: Email confirmed
   - id: continue-invited-sign-in
-    title: Continue to sign in with the preserved invitation return path
+    title: Sign in with the preserved invitation return path
     action:
       click: { role: link, name: Sign in }
     expect:
       urlIncludes: /auth/sign-in
-  - id: continue-invited-authorization
-    title: Continue to the authorization decision
-    action:
-      click: { role: button, name: Continue to sign in }
-    expect:
-      urlIncludes: /auth/authorize
   - id: fill-invited-authorization-identifier
     title: Reauthenticate the invited account at the decision boundary
     action:
       fill: { role: textbox, name: Email or username, value: 'invite-{{runId}}-{{deviceId}}@treeseed.local' }
     expect:
-      text: Authorize access
+      text: Sign in
   - id: fill-invited-authorization-password
     title: Enter the invited account password at the decision boundary
     action:
       fill: { css: 'input[name="password"]', internal: true, value: TreeSeedInviteGuarantee123! }
     expect:
-      text: Authorize access
+      text: Sign in
   - id: approve-invited-authorization
-    title: Approve the first-party Admin scopes
+    title: Sign in through the first-party Admin BFF
     action:
-      click: { role: button, name: Approve }
+      click: { role: button, name: Sign in }
     expect:
       urlIncludes: /team-invites/
       text: Accept invitation
@@ -238,31 +232,22 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: sign-in-existing-user
-    title: Continue the existing user to the authorization decision
-    action:
-      click:
-        role: button
-        name: Continue to sign in
-    expect:
-      urlIncludes: /auth/authorize
-      text: Authorize access
   - id: fill-existing-user-authorization-identifier
     title: Reauthenticate the existing user at the decision boundary
     action:
       fill: { role: textbox, name: Email or username, value: visual.member@treeseed.io }
     expect:
-      text: Authorize access
+      text: Sign in
   - id: fill-existing-user-authorization-password
     title: Enter the existing user's password at the decision boundary
     action:
       fill: { css: 'input[name="password"]', internal: true, value: TreeSeedVisualAudit!2026 }
     expect:
-      text: Authorize access
+      text: Sign in
   - id: approve-existing-user-authorization
-    title: Approve Admin access and return to the preserved invitation
+    title: Sign in to Admin and return to the preserved invitation
     action:
-      click: { role: button, name: Approve }
+      click: { role: button, name: Sign in }
     expect:
       urlIncludes: /team-invites/
       text: Accept invitation

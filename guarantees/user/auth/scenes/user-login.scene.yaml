@@ -9,7 +9,7 @@ journey:
   kind: service
   proves:
     - anonymous user can open sign-in
-    - sign-in continues to the OAuth authorization boundary without collecting credentials
+    - sign-in continues to the OAuth sign-in boundary without collecting credentials
     - credentials are entered once and approval reaches the authenticated app shell or returns a visible auth error
   minimumSteps: 7
   requiresInteractiveAction: true
@@ -114,17 +114,8 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: continue-to-authorization
-    title: Continue to the OAuth authorization decision
-    action:
-      click:
-        role: button
-        name: Continue to sign in
-    expect:
-      urlIncludes: /auth/authorize
-      text: Authorize access
   - id: enter-authorization-identifier
-    title: Enter the account identifier at the authorization boundary
+    title: Enter the account identifier at the sign-in boundary
     action:
       fill:
         role: textbox
@@ -132,10 +123,10 @@ workflow:
         value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
       visible:
-        - role: list
-          name: Requested permissions
+        - role: button
+          name: Sign in
   - id: enter-invalid-authorization-password
-    title: Enter invalid credentials at the authorization boundary
+    title: Enter invalid credentials at the sign-in boundary
     action:
       fill:
         css: input[name='password']
@@ -146,16 +137,16 @@ workflow:
         - css: "input[name='password']"
           internal: true
   - id: reject-invalid-authorization
-    title: Reject invalid authorization credentials
+    title: Reject invalid sign-in credentials
     action:
       click:
         role: button
-        name: Approve
+        name: Sign in
     expect:
-      urlIncludes: /auth/authorize
+      urlIncludes: /auth/sign-in
       visible:
         - role: button
-          name: Approve
+          name: Sign in
   - id: enter-correct-password
     title: Enter the reset password
     action:
@@ -172,7 +163,7 @@ workflow:
     action:
       click:
         role: button
-        name: Approve
+        name: Sign in
     expect:
       urlIncludes: /app
       visible:
