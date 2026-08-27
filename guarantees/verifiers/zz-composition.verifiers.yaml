@@ -1,0 +1,73 @@
+schemaVersion: treeseed.guarantee-verifiers/v1
+ownerPackage: "@treeseed/admin"
+verifiers:
+  admin.team.ui-contracts: &adminTeamUi
+    kind: artifact
+    ownerPackage: "@treeseed/admin"
+    artifactId: "@treeseed/admin/team-ui-contracts"
+    entrypoint: dist/standards/verifiers/team-ui-contracts.js
+    caseId: admin.team.ui-contracts
+    description: The packed Admin artifact retains catalog-driven team routes and shared submission behavior.
+  sdk.team.ui-evidence-trust:
+    kind: artifact
+    ownerPackage: "@treeseed/sdk"
+    artifactId: "@treeseed/sdk/guarantee-verifier-contract"
+    entrypoint: dist/guarantees/index.js
+    exportName: runUiEvidenceTrustVerifier
+    caseId: sdk.ui.evidence-trust
+    description: The packed SDK rejects device substitution and unexpected console or transport failures.
+  api.auth.lifecycle.audit: &apiRegistration
+    kind: artifact
+    ownerPackage: "@treeseed/api"
+    artifactId: "@treeseed/api/identity-team-verifier"
+    entrypoint: dist/standards/verifiers/identity-team-live.js
+    caseId: api.identity.registration-confirmation-oauth
+    description: The exact API artifact proves registration, one-use confirmation, OAuth consent, PKCE, and replay rejection.
+  api.auth.signup.mailpit: *apiRegistration
+  api.auth.signin: *apiRegistration
+  api.auth.email.lifecycle: *apiRegistration
+  api.auth.account-preferences: &apiAccount
+    kind: artifact
+    ownerPackage: "@treeseed/api"
+    artifactId: "@treeseed/api/identity-team-verifier"
+    entrypoint: dist/standards/verifiers/identity-team-live.js
+    caseId: api.identity.account-lifecycle
+    description: The exact API artifact proves account reads, mutations, preferences, sessions, reset, rotation, and replay rejection.
+  api.auth.account.blockers: *apiAccount
+  api.auth.appearance: *apiAccount
+  api.auth.me.requires-user: *apiAccount
+  api.auth.notifications: *apiAccount
+  api.auth.password-reset.request.mailpit: *apiAccount
+  api.auth.profile.update: *apiAccount
+  api.auth.public-knowledge-profile: *apiAccount
+  api.auth.sessions: *apiAccount
+  admin.team.production-readiness: &apiTeams
+    kind: artifact
+    ownerPackage: "@treeseed/api"
+    artifactId: "@treeseed/api/identity-team-verifier"
+    entrypoint: dist/standards/verifiers/identity-team-live.js
+    caseId: api.teams.lifecycle-authority-cleanup
+    description: The exact API artifact proves the team lifecycle, forbidden actors, concurrency, terminal invitations, last-owner protection, and cleanup.
+  api.team.accept.correlated: *apiTeams
+  api.team.active.correlated: *apiTeams
+  api.team.create.anonymous-denied: *apiTeams
+  api.team.create.correlated: *apiTeams
+  api.team.delete.correlated: *apiTeams
+  api.team.invitation.mismatch-denied: *apiTeams
+  api.team.invitation.terminal-states: *apiTeams
+  api.team.invite.contributor-denied: *apiTeams
+  api.team.invite.correlated: *apiTeams
+  api.team.lifecycle-contracts: *apiTeams
+  api.team.lifecycle.project-lead-denied: *apiTeams
+  api.team.overview.anonymous-denied: *apiTeams
+  api.team.overview.correlated: *apiTeams
+  api.team.overview.nonmember-denied: *apiTeams
+  api.team.public-profile.archived-not-found: *apiTeams
+  api.team.public-profile.correlated: *apiTeams
+  api.team.public-profile.private-member-access: *apiTeams
+  api.team.remove.contributor-denied: *apiTeams
+  api.team.remove.correlated: *apiTeams
+  api.team.role.contributor-denied: *apiTeams
+  api.team.role.correlated: *apiTeams
+  api.team.update.contributor-denied: *apiTeams
+  api.team.update.correlated: *apiTeams

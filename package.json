@@ -27,6 +27,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "bin": {
+    "treeseed-admin-verify-team-ui": "./dist/standards/verifiers/team-ui-contracts.js"
+  },
   "scripts": {
     "check:file-lengths": "node --import tsx ./scripts/check-file-lengths.ts && npm run check:file-architecture",
     "check:file-architecture": "node --import tsx ./scripts/check-file-architecture.ts",

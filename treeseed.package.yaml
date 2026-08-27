@@ -67,6 +67,7 @@ standards:
   produced:
     - { id: "@treeseed/admin/browser-bff", family: behavioral, version: "1.0.0", semanticRange: "^1.0.0", source: src/pages/auth, artifact: .treeseed/standards/browser-bff.json, verifier: scripts/verify-driver.ts }
     - { id: "@treeseed/admin/guarantee-catalog", family: json-schema, version: "1.0.0", semanticRange: "^1.0.0", source: guarantees, artifact: dist/standards/guarantee-catalog.json, verifier: scripts/verify-driver.ts }
+    - { id: "@treeseed/admin/team-ui-contracts", family: behavioral, version: "1.0.0", semanticRange: "^1.0.0", source: src/standards/verifiers/team-ui-contracts.ts, artifact: dist/standards/verifiers/team-ui-contract.json, verifier: dist/standards/verifiers/team-ui-contracts.js }
   consumed:
     - { id: "@treeseed/sdk/control-plane-catalog", family: json-schema, version: "1.0.0", semanticRange: "^1.0.0", source: node_modules/@treeseed/sdk, verifier: scripts/verify-driver.ts }
     - { id: "@treeseed/core/site-plugin-runtime", family: behavioral, version: "1.0.0", semanticRange: "^1.0.0", source: node_modules/@treeseed/core, verifier: scripts/verify-driver.ts }
