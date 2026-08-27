@@ -165,7 +165,7 @@ workflow:
         - scene: team.navigation
         - css: '[data-scene="team.navigation"] a[aria-current="page"]'
           internal: true
-      text: Lifecycle
+      text: Public knowledge
   - id: return-to-members
     title: Use the authorized member-management tab
     action:
