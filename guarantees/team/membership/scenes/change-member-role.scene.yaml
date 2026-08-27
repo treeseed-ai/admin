@@ -181,11 +181,9 @@ workflow:
   - id: sign-out-former-owner
     title: End the former owner's browser session before restoring ownership
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -251,11 +249,9 @@ workflow:
   - id: sign-out-invited-owner
     title: End the invited user's session after ownership is restored
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
