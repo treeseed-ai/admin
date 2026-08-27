@@ -53,6 +53,7 @@
     "release:setup": "npm run setup:ci",
     "release:check-tag": "node --import tsx ./scripts/assert-release-tag-version.ts",
     "release:verify": "npm run check:file-lengths && npm run build && npm run test:unit",
+    "release:custody": "node --import tsx ./scripts/release-custody.ts",
     "release:publish": "node --import tsx ./scripts/publish-package.ts"
   },
   "dependencies": {

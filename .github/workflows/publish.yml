@@ -1,25 +1,25 @@
-name: Publish TreeSeed Admin
+name: Build or Promote TreeSeed Admin Candidate
 on:
   push:
+    branches: [staging]
     tags: ["*.*.*"]
 jobs:
-  verify:
+  candidate-package:
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-24.04
-    permissions: { contents: read, id-token: write }
-    environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: { node-version: 24, registry-url: "https://registry.npmjs.org" }
-      - run: npm run release:setup
-      - run: npm run release:check-tag
-      - run: npm run release:verify
-      - run: npm run release:publish
-        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }
-  build:
-    needs: verify
+        with: { node-version: 24 }
+      - run: npm ci --workspaces=false --no-audit --no-fund
+      - run: npm run verify:direct
+      - run: mkdir -p source-assets && npm pack --json --ignore-scripts --pack-destination source-assets && npm sbom --sbom-format cyclonedx > source-assets/sbom.cdx.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: "admin-source-${{ github.sha }}", path: source-assets/, if-no-files-found: error }
+  candidate-build:
+    if: github.ref == 'refs/heads/staging'
+    needs: candidate-package
     runs-on: ${{ matrix.runner }}
-    permissions: { contents: read }
     environment: production
     strategy:
       matrix:
@@ -29,48 +29,71 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - name: Verify Docker Hub publisher binding
-        env:
-          DOCKERHUB_USERNAME: "${{ vars.DOCKERHUB_USERNAME }}"
-          DOCKERHUB_TOKEN: "${{ secrets.DOCKERHUB_TOKEN }}"
-        run: test -n "$DOCKERHUB_USERNAME" && test -n "$DOCKERHUB_TOKEN"
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with: { username: "${{ vars.DOCKERHUB_USERNAME }}", password: "${{ secrets.DOCKERHUB_TOKEN }}" }
       - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
-        with: { context: ., platforms: "${{ matrix.platform }}", push: true, tags: "treeseed/admin:${{ github.ref_name }}-${{ matrix.arch }}", sbom: true, provenance: mode=max }
-  release:
-    needs: build
+        with: { context: ., platforms: "${{ matrix.platform }}", push: true, tags: "treeseed/admin:candidate-${{ github.sha }}-${{ matrix.arch }}", sbom: true, provenance: mode=max }
+  candidate-seal:
+    if: github.ref == 'refs/heads/staging'
+    needs: candidate-build
     runs-on: ubuntu-24.04
-    permissions: { contents: write }
     environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: { node-version: 24 }
-      - run: npm ci --ignore-scripts
+      - run: npm ci --ignore-scripts --workspaces=false --no-audit --no-fund
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - name: Verify Docker Hub publisher binding
-        env:
-          DOCKERHUB_USERNAME: "${{ vars.DOCKERHUB_USERNAME }}"
-          DOCKERHUB_TOKEN: "${{ secrets.DOCKERHUB_TOKEN }}"
-        run: test -n "$DOCKERHUB_USERNAME" && test -n "$DOCKERHUB_TOKEN"
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with: { username: "${{ vars.DOCKERHUB_USERNAME }}", password: "${{ secrets.DOCKERHUB_TOKEN }}" }
-      - id: image
-        shell: bash
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: "admin-source-${{ github.sha }}", path: release-assets }
+      - name: Seal exact image and component assets
         run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          docker buildx imagetools create -t "treeseed/admin:${version}" "treeseed/admin:${version}-amd64" "treeseed/admin:${version}-arm64"
-          echo "digest=$(docker buildx imagetools inspect "treeseed/admin:${version}" --format '{{json .Manifest}}' | jq -r '.digest')" >> "$GITHUB_OUTPUT"
-      - env:
-          TREESEED_RELEASE: "${{ github.ref_name }}"
-          TREESEED_SOURCE_COMMIT: "${{ github.sha }}"
-          TREESEED_ADMIN_DIGEST: "${{ steps.image.outputs.digest }}"
-        run: node --import tsx scripts/create-component-release.ts
-      - env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
-        shell: bash
+          candidate="candidate-${GITHUB_SHA}"
+          docker buildx imagetools create -t "treeseed/admin:${candidate}" "treeseed/admin:${candidate}-amd64" "treeseed/admin:${candidate}-arm64"
+          export TREESEED_ADMIN_DIGEST="$(docker buildx imagetools inspect "treeseed/admin:${candidate}" --format '{{json .Manifest}}' | jq -r '.digest')"
+          [[ "$TREESEED_ADMIN_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          export TREESEED_RELEASE="$(node -p "require('./package.json').version")" TREESEED_SOURCE_COMMIT="$GITHUB_SHA"
+          node --import tsx scripts/create-component-release.ts
+          npm run release:custody -- seal release-assets/release-evidence-v1.json release-assets
+          npm run release:custody -- verify release-assets/release-evidence-v1.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: "admin-candidate-${{ github.sha }}", path: release-assets/, if-no-files-found: error, retention-days: 30 }
+  promote:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions: { actions: read, contents: write, id-token: write }
+    environment: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24, registry-url: "https://registry.npmjs.org" }
+      - run: npm ci --ignore-scripts --workspaces=false --no-audit --no-fund
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with: { username: "${{ vars.DOCKERHUB_USERNAME }}", password: "${{ secrets.DOCKERHUB_TOKEN }}" }
+      - name: Download exact accepted candidate
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
         run: |
-          args=(--generate-notes --verify-tag)
-          [[ "${GITHUB_REF_NAME}" == *-rc.* ]] && args+=(--prerelease)
-          gh release create "${GITHUB_REF_NAME}" release-assets/* "${args[@]}"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/staging)"
+          run_id="$(gh run list --workflow publish.yml --branch staging --commit "$GITHUB_SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$run_id"; gh run download "$run_id" --name "admin-candidate-${GITHUB_SHA}" --dir candidate
+          npm run release:check-tag; npm run release:custody -- verify candidate/release-evidence-v1.json
+      - id: before
+        run: echo "latest=$(npm view @treeseed/admin dist-tags.latest)" >> "$GITHUB_OUTPUT"
+      - name: Publish exact npm tarball
+        run: npm run release:publish -- "$(find candidate -maxdepth 1 -name '*.tgz' -print -quit)"
+        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }
+      - name: Promote exact image manifest
+        run: |
+          identity="$(node -e "const e=require('./candidate/release-evidence-v1.json'); process.stdout.write(e.artifacts.find(x=>x.kind==='oci-image').identity)")"
+          digest="${identity#*@}"; docker buildx imagetools create -t "treeseed/admin:${GITHUB_REF_NAME}" "$identity"
+          test "$(docker buildx imagetools inspect "treeseed/admin:${GITHUB_REF_NAME}" --format '{{json .Manifest}}' | jq -r '.digest')" = "$digest"
+      - name: Verify npm read-back and publish unchanged assets
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}", EXPECTED_LATEST: "${{ steps.before.outputs.latest }}" }
+        run: |
+          test "$(npm view @treeseed/admin dist-tags.latest)" = "$EXPECTED_LATEST"
+          flags=(); if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" candidate/* --generate-notes --verify-tag "${flags[@]}"

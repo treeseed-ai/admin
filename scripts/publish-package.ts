@@ -18,7 +18,8 @@ if (extraArgs.some((argument) => argument === '--tag' || argument.startsWith('--
 }
 
 const npmDistTag = tagName?.includes('-') ? 'next' : 'latest';
-const npmArgs = ['publish', '.', '--access', 'public', '--tag', npmDistTag];
+const publishTarget = extraArgs.shift() ?? '.';
+const npmArgs = ['publish', publishTarget, '--access', 'public', '--tag', npmDistTag];
 
 if (process.env.GITHUB_ACTIONS === 'true') {
   npmArgs.push('--provenance');
