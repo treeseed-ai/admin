@@ -149,30 +149,12 @@ workflow:
       visible:
         - role: heading
           name: Sign in
-  - id: enter-deleted-account-email
-    title: Try the deleted account email
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
-    expect:
-      urlIncludes: /auth/sign-in
-  - id: enter-deleted-account-password
-    title: Try the deleted account password
-    action:
-      fill:
-        css: "#password"
-        internal: true
-        value: TreeSeedGuaranteeReset123!
-    expect:
-      urlIncludes: /auth/sign-in
   - id: reject-deleted-account-login
     title: Continue the deleted identity to the authorization boundary
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       visible:

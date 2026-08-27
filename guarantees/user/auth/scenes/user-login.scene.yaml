@@ -9,8 +9,8 @@ journey:
   kind: service
   proves:
     - anonymous user can open sign-in
-    - sign-in form accepts credentials
-    - sign-in submission reaches authenticated app shell or returns a visible auth error
+    - sign-in continues to the OAuth authorization boundary without collecting credentials
+    - credentials are entered once and approval reaches the authenticated app shell or returns a visible auth error
   minimumSteps: 7
   requiresInteractiveAction: true
   consumesState:
@@ -114,34 +114,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: enter-identifier
-    title: Enter email or username
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
-    expect:
-      visible:
-        - role: textbox
-          name: Email or username
-  - id: enter-password
-    title: Enter password
-    action:
-      fill:
-        css: input[name='password']
-        internal: true
-        value: incorrect-password
-    expect:
-      visible:
-        - css: "input[name='password']"
-          internal: true
-  - id: reject-invalid-sign-in
+  - id: continue-to-authorization
     title: Continue to the OAuth authorization decision
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize access
