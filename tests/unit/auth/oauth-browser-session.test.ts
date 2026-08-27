@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { beginAdminAuthorization, OAUTH_RETURN_COOKIE, OAUTH_STATE_COOKIE, OAUTH_VERIFIER_COOKIE, readAdminAuthorizationCookie } from '../../../src/lib/auth/oauth-browser.ts';
+import { beginAdminAuthorization, completeAdminCredentialAuthorization, OAUTH_RETURN_COOKIE, OAUTH_STATE_COOKIE, OAUTH_VERIFIER_COOKIE, readAdminAuthorizationCookie } from '../../../src/lib/auth/oauth-browser.ts';
 
 function context() {
 	const values = new Map<string, string>();
@@ -42,5 +42,34 @@ describe('Admin OAuth browser session', () => {
 		const target = await beginAdminAuthorization(request as any, '/app/');
 		expect(target.origin).toBe('https://admin.treeseed.localhost');
 		expect(target.searchParams.get('redirect_uri')).toBe('https://admin.treeseed.localhost/auth/callback/treeseed');
+	});
+
+	it('completes the exact first-party credential transaction without a visible consent hop', async () => {
+		const request = context();
+		const originalFetch = globalThis.fetch;
+		const requests: Array<{ url: string; body: string }> = [];
+		globalThis.fetch = async (input, init) => {
+			const url = String(input);
+			requests.push({ url, body: String(init?.body ?? '') });
+			if (url.includes('/oauth/authorize?')) {
+				const query = new URL(url).searchParams;
+				return Response.json({ clientId: query.get('client_id'), redirectUri: query.get('redirect_uri'),
+					responseType: query.get('response_type'), codeChallenge: query.get('code_challenge'),
+					codeChallengeMethod: query.get('code_challenge_method'), scopes: query.get('scope')?.split(' '), state: query.get('state') });
+			}
+			const state = new URLSearchParams(String(init?.body)).get('state');
+			return Response.json({ redirectTo: `https://admin.treeseed.localhost/auth/callback/treeseed?code=code-a&state=${state}` });
+		};
+		try {
+			const callback = await completeAdminCredentialAuthorization(request as any, { identifier: 'operator@example.com', password: 'secret' }, '/auth/device/approve?user_code=ABCD-EFGH');
+			expect(callback.pathname).toBe('/auth/callback/treeseed');
+			expect(readAdminAuthorizationCookie(request as any, OAUTH_RETURN_COOKIE)).toBe('/auth/device/approve?user_code=ABCD-EFGH');
+			expect(requests).toHaveLength(2);
+			expect(requests[1]?.body).toContain('client_id=treeseed-admin');
+			expect(requests[1]?.body).toContain('decision=approve');
+			expect(requests[1]?.body).toContain('identifier=operator%40example.com');
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });

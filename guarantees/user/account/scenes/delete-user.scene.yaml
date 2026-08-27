@@ -149,44 +149,35 @@ workflow:
       visible:
         - role: heading
           name: Sign in
-  - id: reject-deleted-account-login
-    title: Continue the deleted identity to the authorization boundary
-    action:
-      click:
-        role: button
-        name: Continue to sign in
-    expect:
-      urlIncludes: /auth/authorize
-      visible:
-        - role: heading
-          name: Authorize access
   - id: enter-deleted-authorization-email
-    title: Enter the deleted identity at the authorization boundary
+    title: Enter the deleted identity at the sign-in boundary
     action:
       fill:
         role: textbox
         name: Email or username
         value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
-      urlIncludes: /auth/authorize
+      urlIncludes: /auth/sign-in
   - id: enter-deleted-authorization-password
-    title: Enter the deleted credential at the authorization boundary
+    title: Enter the deleted credential at the sign-in boundary
     action:
       fill:
         css: "#password"
         internal: true
         value: TreeSeedGuaranteeReset123!
     expect:
-      urlIncludes: /auth/authorize
+      urlIncludes: /auth/sign-in
   - id: reject-deleted-account-authorization
-    title: Reject authorization for the deleted identity
+    title: Reject sign-in for the deleted identity
     action:
       click:
         role: button
-        name: Approve
+        name: Sign in
     expect:
-      urlIncludes: /auth/authorize
-      text: An authenticated user session is required.
+      urlIncludes: /auth/sign-in
+      visible:
+        - role: button
+          name: Sign in
 chapters: []
 overlays: []
 diagrams: []

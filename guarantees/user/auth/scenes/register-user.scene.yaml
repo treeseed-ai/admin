@@ -223,7 +223,7 @@ workflow:
       urlIncludes: /auth/confirm-email
       text: Email confirmed
   - id: continue-to-sign-in
-    title: Continue to sign in after confirmation
+    title: Sign in after confirmation
     action:
       click:
         role: link

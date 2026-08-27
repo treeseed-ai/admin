@@ -26,12 +26,11 @@ workflow:
     action: { goto: /app/teams }
     expect: { urlIncludes: "/auth/sign-in?returnTo=", text: Sign in }
   - id: exercise-sign-in-boundary
-    title: Continue anonymous access to the authorization boundary
-    action:
-      click: { role: button, name: Continue to sign in }
+    title: Render the credential form without a consent interstitial
+    action: { goto: /auth/sign-in }
     expect:
-      urlIncludes: "/auth/authorize"
-      visible: [{ role: textbox, name: Email or username }]
+      urlIncludes: "/auth/sign-in"
+      visible: [{ role: textbox, name: Email or username }, { role: button, name: Sign in }]
   - id: deny-team-creation
     title: Redirect anonymous create access without rendering mutation controls
     action: { goto: /app/teams/new }
