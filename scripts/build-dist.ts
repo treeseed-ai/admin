@@ -157,7 +157,7 @@ function writeGuaranteeVerifierContract() {
 		schemaVersion: 'treeseed.guarantee-verifier-artifact/v1',
 		artifactId: '@treeseed/admin/team-ui-contracts',
 		entrypoint: 'dist/standards/verifiers/team-ui-contracts.js',
-		cases: ['admin.team.ui-contracts'],
+		cases: ['admin.team.ui-contracts', 'admin.identity-account.ui-contracts'],
 	}), null, 2)}\n`);
 }
 

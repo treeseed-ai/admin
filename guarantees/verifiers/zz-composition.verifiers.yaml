@@ -8,6 +8,13 @@ verifiers:
     entrypoint: dist/standards/verifiers/team-ui-contracts.js
     caseId: admin.team.ui-contracts
     description: The packed Admin artifact retains catalog-driven team routes and shared submission behavior.
+  admin.identity-account.ui-contracts:
+    kind: artifact
+    ownerPackage: "@treeseed/admin"
+    artifactId: "@treeseed/admin/team-ui-contracts"
+    entrypoint: dist/standards/verifiers/team-ui-contracts.js
+    caseId: admin.identity-account.ui-contracts
+    description: The packed Admin artifact retains genuine OAuth consent, device approval, email confirmation, registration, password reset, logout, and account management routes.
   sdk.team.ui-evidence-trust:
     kind: artifact
     ownerPackage: "@treeseed/sdk"
@@ -16,14 +23,20 @@ verifiers:
     exportName: runUiEvidenceTrustVerifier
     caseId: sdk.ui.evidence-trust
     description: The packed SDK rejects device substitution and unexpected console or transport failures.
-  api.auth.lifecycle.audit: &apiRegistration
+  api.auth.lifecycle.audit:
+    kind: artifact
+    ownerPackage: "@treeseed/api"
+    artifactId: "@treeseed/api/identity-team-verifier"
+    entrypoint: dist/standards/verifiers/identity-team-live.js
+    caseId: api.identity.audit-evidence
+    description: The exact API artifact correlates canonical durable identity, session, account, and team audit events to its disposable run records.
+  api.auth.signup.mailpit: &apiRegistration
     kind: artifact
     ownerPackage: "@treeseed/api"
     artifactId: "@treeseed/api/identity-team-verifier"
     entrypoint: dist/standards/verifiers/identity-team-live.js
     caseId: api.identity.registration-confirmation-oauth
     description: The exact API artifact proves registration, one-use confirmation, OAuth consent, PKCE, and replay rejection.
-  api.auth.signup.mailpit: *apiRegistration
   api.auth.signin: *apiRegistration
   api.auth.email.lifecycle: *apiRegistration
   api.auth.account-preferences: &apiAccount
