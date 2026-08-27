@@ -10,7 +10,9 @@ const frame = await loadAccountFrame(Astro, 'identity');
 const response = await handleIdentityRequest(Astro, frame.api);
 if (response) return response;
 const identity = await frame.api.accountIdentity();
-const providers = await frame.api.authProviders().catch(() => []);
+// External authentication-provider linking remains a planned guarantee. Do not
+// call the retired, uncatalogued /v1/auth/providers placeholder route.
+const providers = [];
 const passwordGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
 ---
 

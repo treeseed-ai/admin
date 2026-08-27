@@ -14,7 +14,6 @@ declare module "../api-client.ts" {
     approveCommerceOwnershipTransfer: typeof import("./commerce/ownership/lifecycle/approve-commerce-ownership-transfer.ts").approveCommerceOwnershipTransferMethod;
     approveDevice: typeof import("./runtime/lifecycle/approve-device.ts").approveDeviceMethod;
     archiveCommerceCapacityListing: typeof import("./commerce/capacity/retirement/archive-commerce-capacity-listing.ts").archiveCommerceCapacityListingMethod;
-    authProviders: typeof import("./capacity/providers/contracts/auth-providers.ts").authProvidersMethod;
     backfillCommonsParticipants: typeof import("./governance/commons/contracts/backfill-commons-participants.ts").backfillCommonsParticipantsMethod;
     buyerApproveCommerceServiceQuote: typeof import("./commerce/services/contracts/buyer-approve-commerce-service-quote.ts").buyerApproveCommerceServiceQuoteMethod;
     cancelCommerceCapacityInquiry: typeof import("./commerce/capacity/retirement/cancel-commerce-capacity-inquiry.ts").cancelCommerceCapacityInquiryMethod;
