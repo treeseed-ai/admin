@@ -165,7 +165,7 @@ workflow:
       mailpitConfirmLatest:
         mailpitUrl: http://127.0.0.1:8025
         email: invite-{{runId}}-{{deviceId}}@treeseed.local
-        subjectIncludes: Confirm your Treeseed Market email
+        subjectIncludes: Confirm your TreeSeed email
         displayInboxSeconds: 1
         displayMessageSeconds: 1
     expect:
