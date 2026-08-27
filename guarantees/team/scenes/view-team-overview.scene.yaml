@@ -112,7 +112,7 @@ workflow:
         internal: true
     expect:
       urlIncludes: /app/teams/
-      text: Operational overview
+      text: Content activity unavailable
       visible:
         - scene: team.overview
         - scene: team.navigation
@@ -121,7 +121,6 @@ workflow:
         - css: '.ts-disclosure-list'
           internal: true
         - scene: team.overview.content-activity
-      text: Content activity unavailable
   - id: open-team-activity-help
     title: Open team activity guidance from the audit panel
     action:
