@@ -121,8 +121,7 @@ workflow:
         - css: '.ts-disclosure-list'
           internal: true
         - scene: team.overview.content-activity
-        - css: '[data-testid="project-activity-chart"]'
-          internal: true
+      text: Content activity unavailable
   - id: open-team-activity-help
     title: Open team activity guidance from the audit panel
     action:

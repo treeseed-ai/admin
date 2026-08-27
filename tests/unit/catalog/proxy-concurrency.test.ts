@@ -22,6 +22,16 @@ describe('Admin browser BFF concurrency', () => {
 		expect(headers.get('if-match')).toBe('explicit-v4');
 	});
 
+	it('promotes explicit form idempotency without replacing a caller header', () => {
+		const headers = new Headers({ 'content-type': 'application/json' });
+		promoteConcurrencyHeader(headers, encoded({ idempotencyKey: 'invite-team-1-member-1' }));
+		expect(headers.get('idempotency-key')).toBe('invite-team-1-member-1');
+
+		headers.set('idempotency-key', 'caller-key');
+		promoteConcurrencyHeader(headers, encoded({ idempotencyKey: 'body-key' }));
+		expect(headers.get('idempotency-key')).toBe('caller-key');
+	});
+
 	it('leaves malformed and unversioned bodies fail-closed for the API', () => {
 		const headers = new Headers({ 'content-type': 'application/json' });
 		promoteConcurrencyHeader(headers, encoded({ roleKey: 'reviewer' }));

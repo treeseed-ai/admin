@@ -129,6 +129,7 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 				<Panel eyebrow="Invitation" title="Invite a member" description="Every recipient must explicitly accept, including existing users." knowledgePageId="team.invitation">
 					<form class="ts-form-stack ts-team-form" method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.invite, { teamId: team.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation sent." data-ts-reset-on-success="true" data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.create">
 						<input type="hidden" name="csrfToken" value={csrfToken} />
+						<input type="hidden" name="idempotencyKey" value={`team-invite:${team.id}:${Date.now()}`} />
 						<div class="ts-form-grid">
 							<Field label="Recipient email" name="email" required>
 								<TextInput name="email" type="email" required autocomplete="email" />
