@@ -188,30 +188,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: enter-invited-owner-email
-    title: Sign in as the newly transferred owner
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: invite-{{runId}}-{{deviceId}}@treeseed.local
-    expect:
-      text: Sign in
-  - id: enter-invited-owner-password
-    title: Enter the invited owner's password
-    action:
-      fill:
-        css: 'input[name="password"]'
-        internal: true
-        value: TreeSeedInviteGuarantee123!
-    expect:
-      text: Sign in
   - id: sign-in-invited-owner
     title: Authenticate as the invited owner
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize
@@ -284,30 +266,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: enter-primary-owner-email
-    title: Enter the restored primary owner's account
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
-    expect:
-      text: Sign in
-  - id: enter-primary-owner-password
-    title: Enter the primary owner's reset password
-    action:
-      fill:
-        css: 'input[name="password"]'
-        internal: true
-        value: TreeSeedGuaranteeReset123!
-    expect:
-      text: Sign in
   - id: sign-in-primary-owner
     title: Authenticate as the restored primary owner
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize

@@ -183,22 +183,10 @@ workflow:
       click: { role: link, name: Sign in }
     expect:
       urlIncludes: /auth/sign-in
-  - id: fill-invited-sign-in-identifier
-    title: Enter the invited account identifier
-    action:
-      fill: { role: textbox, name: Email or username, value: 'invite-{{runId}}-{{deviceId}}@treeseed.local' }
-    expect:
-      text: Sign in
-  - id: fill-invited-sign-in-password
-    title: Enter the invited account password
-    action:
-      fill: { css: 'input[name="password"]', internal: true, value: TreeSeedInviteGuarantee123! }
-    expect:
-      text: Sign in
   - id: continue-invited-authorization
     title: Continue to the authorization decision
     action:
-      click: { role: button, name: Sign in }
+      click: { role: button, name: Continue to sign in }
     expect:
       urlIncludes: /auth/authorize
   - id: fill-invited-authorization-identifier
@@ -250,30 +238,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: fill-existing-user-login
-    title: Enter the existing verified user's email
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: visual.member@treeseed.io
-    expect:
-      text: Sign in
-  - id: fill-existing-user-password
-    title: Enter the existing verified user's password
-    action:
-      fill:
-        css: 'input[name="password"]'
-        internal: true
-        value: TreeSeedVisualAudit!2026
-    expect:
-      text: Sign in
   - id: sign-in-existing-user
     title: Continue the existing user to the authorization decision
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize access

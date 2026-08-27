@@ -137,30 +137,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: enter-removed-member-email
-    title: Enter the removed member's account
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: invite-{{runId}}-{{deviceId}}@treeseed.local
-    expect:
-      text: Sign in
-  - id: enter-removed-member-password
-    title: Enter the removed member's password
-    action:
-      fill:
-        css: 'input[name="password"]'
-        internal: true
-        value: TreeSeedInviteGuarantee123!
-    expect:
-      text: Sign in
   - id: sign-in-removed-member
     title: Authenticate the removed user
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize
@@ -208,30 +190,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: enter-existing-member-email
-    title: Enter the existing accepted member's account
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: visual.member@treeseed.io
-    expect:
-      text: Sign in
-  - id: enter-existing-member-password
-    title: Enter the existing accepted member's password
-    action:
-      fill:
-        css: 'input[name="password"]'
-        internal: true
-        value: TreeSeedVisualAudit!2026
-    expect:
-      text: Sign in
   - id: sign-in-existing-member
     title: Authenticate the existing accepted member
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize
@@ -319,30 +283,12 @@ workflow:
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
-  - id: enter-primary-owner-email
-    title: Enter the primary owner's account
-    action:
-      fill:
-        role: textbox
-        name: Email or username
-        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
-    expect:
-      text: Sign in
-  - id: enter-primary-owner-password
-    title: Enter the primary owner's reset password
-    action:
-      fill:
-        css: 'input[name="password"]'
-        internal: true
-        value: TreeSeedGuaranteeReset123!
-    expect:
-      text: Sign in
   - id: sign-in-primary-owner
     title: Authenticate as the remaining owner
     action:
       click:
         role: button
-        name: Sign in
+        name: Continue to sign in
     expect:
       urlIncludes: /auth/authorize
       text: Authorize
