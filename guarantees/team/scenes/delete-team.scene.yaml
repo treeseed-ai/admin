@@ -93,11 +93,13 @@ workflow:
   - id: open-lifecycle
     title: Open owner-only lifecycle controls
     action:
-      click:
-        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
-        internal: true
+      clickVisibleSequence:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+          internal: true
+        - role: link
+          name: Lifecycle
     expect:
-      text: No active lifecycle blockers were found.
+      text: No active archive blockers were found.
   - id: archive-team
     title: Archive the team through the visible lifecycle control
     action:
@@ -143,9 +145,11 @@ workflow:
   - id: reopen-active-lifecycle
     title: Reopen lifecycle after restoration and delete without another archive
     action:
-      click:
-        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
-        internal: true
+      clickVisibleSequence:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+          internal: true
+        - role: link
+          name: Lifecycle
     expect:
       text: Deletion is immediate
   - id: enter-incorrect-confirmation
@@ -153,7 +157,7 @@ workflow:
     action:
       fill:
         role: textbox
-        name: Type "gt-{{runShort}}-{{deviceId}}" exactly
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}" exactly
         value: wrong-team
     expect:
       text: Delete team permanently
@@ -175,13 +179,14 @@ workflow:
     expect:
       urlIncludes: /delete
       text: Type
+      clientErrorSourceIncludes: /delete
   - id: enter-exact-confirmation
     title: Enter the exact deletion confirmation
     action:
       fill:
         role: textbox
-        name: Type "gt-{{runShort}}-{{deviceId}}" exactly
-        value: gt-{{runShort}}-{{deviceId}}
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}" exactly
+        value: DELETE gt-{{runShort}}-{{deviceId}}
     expect:
       text: Delete team permanently
   - id: delete-team
