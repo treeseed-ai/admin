@@ -291,8 +291,8 @@ workflow:
     title: Leave the team through the visible self-service control
     action:
       click:
-        role: button
-        name: Leave team
+        css: 'form[data-scene="team.member.leave"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /app/teams
       text: You left the team.
@@ -392,8 +392,8 @@ workflow:
     title: Reject self-leave when it would orphan the team
     action:
       click:
-        role: button
-        name: Leave team
+        css: 'form[data-scene="team.member.leave"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /members
       text: A team must keep at least one owner.
