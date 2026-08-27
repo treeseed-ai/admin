@@ -203,7 +203,7 @@ workflow:
         name: Approve
     expect:
       urlIncludes: /auth/authorize
-      text: Authentication failed
+      text: An authenticated user session is required.
 chapters: []
 overlays: []
 diagrams: []
