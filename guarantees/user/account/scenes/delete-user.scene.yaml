@@ -119,6 +119,7 @@ workflow:
     expect:
       urlIncludes: /app/account/delete
       text: DELETE MY ACCOUNT
+      clientErrorSourceIncludes: /app/account/delete
   - id: enter-valid-confirmation
     title: Enter the exact deletion confirmation
     action:
