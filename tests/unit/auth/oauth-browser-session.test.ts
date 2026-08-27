@@ -20,6 +20,7 @@ describe('Admin OAuth browser session', () => {
 		const request = context();
 		const target = await beginAdminAuthorization(request as any, '/app/teams');
 		expect(target.searchParams.get('code_challenge_method')).toBe('S256');
+		expect(target.searchParams.get('scope')).toBe('treeseed:read treeseed:projects:write');
 		expect(readAdminAuthorizationCookie(request as any, OAUTH_STATE_COOKIE)).toBe(target.searchParams.get('state'));
 		expect(readAdminAuthorizationCookie(request as any, OAUTH_VERIFIER_COOKIE).length).toBeGreaterThan(40);
 		expect(readAdminAuthorizationCookie(request as any, OAUTH_RETURN_COOKIE)).toBe('/app/teams');

@@ -152,6 +152,15 @@ function writeGuaranteeCatalog() {
 	}), null, 2)}\n`);
 }
 
+function writeGuaranteeVerifierContract() {
+	writeDeclaration('standards/verifiers/team-ui-contract.json', `${JSON.stringify(canonicalize({
+		schemaVersion: 'treeseed.guarantee-verifier-artifact/v1',
+		artifactId: '@treeseed/admin/team-ui-contracts',
+		entrypoint: 'dist/standards/verifiers/team-ui-contracts.js',
+		cases: ['admin.team.ui-contracts', 'admin.identity-account.ui-contracts'],
+	}), null, 2)}\n`);
+}
+
 function relativePathForTsconfig(targetPath) {
 	return relative(packageRoot, targetPath).replaceAll('\\', '/');
 }
@@ -263,6 +272,7 @@ async function main() {
   writeDeclaration('lib/market/catalog.d.ts', "export declare function createMarketTemplateCatalogProvider(...args: any[]): any;\n");
   writeDeclaration('lib/market/store.d.ts', "export declare function resolveApiStore(...args: any[]): any;\n");
   writeGuaranteeCatalog();
+  writeGuaranteeVerifierContract();
   publishCompletedBuild();
   } finally {
 	rmSync(buildRoot, { recursive: true, force: true });

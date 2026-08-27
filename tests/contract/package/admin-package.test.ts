@@ -373,6 +373,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		const catalog = JSON.parse(readFileSync('dist/standards/guarantee-catalog.json', 'utf8')) as { schemaVersion: string; guarantees: unknown[]; verifierRegistries: unknown[] };
 		expect(catalog.schemaVersion).toBe('treeseed.guarantee-catalog/v1');
 		expect(catalog.guarantees).toHaveLength(92);
-		expect(catalog.verifierRegistries).toHaveLength(1);
+		expect(catalog.verifierRegistries).toHaveLength(2);
+		expect(existsSync('dist/standards/verifiers/team-ui-contract.json')).toBe(true);
 	});
 });

@@ -3,6 +3,7 @@ import { getSiteAuthConfig } from './configuration/config';
 import { randomId, resolveApiBaseUrl, safeTokenEquals, signAssertionPayload } from '../market/api-client';
 
 export const ADMIN_OAUTH_CLIENT_ID = 'treeseed-admin';
+export const ADMIN_OAUTH_SCOPES = ['treeseed:read', 'treeseed:projects:write'] as const;
 export const OAUTH_VERIFIER_COOKIE = 'ts_admin_oauth_verifier';
 export const OAUTH_STATE_COOKIE = 'ts_admin_oauth_state';
 export const OAUTH_RETURN_COOKIE = 'ts_admin_oauth_return';
@@ -49,7 +50,7 @@ export async function beginAdminAuthorization(context: Pick<APIContext, 'cookies
 	const target = new URL('/auth/authorize', context.url.origin);
 	target.search = new URLSearchParams({ client_id: ADMIN_OAUTH_CLIENT_ID, redirect_uri: adminCallbackUrl(context),
 		response_type: 'code', code_challenge: challenge, code_challenge_method: 'S256',
-		scope: 'treeseed:read', state }).toString();
+		scope: ADMIN_OAUTH_SCOPES.join(' '), state }).toString();
 	return target;
 }
 
