@@ -103,13 +103,15 @@ workflow:
       goto: /app/
     expect:
       urlIncludes: /app
-      text: Sign out
+      visible:
+        - scene: start.orientation
   - id: submit-user-logout
     title: End the current session
     action:
       click:
         role: button
         name: Sign out
+        revealWith: { role: button, name: Open team operations }
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in

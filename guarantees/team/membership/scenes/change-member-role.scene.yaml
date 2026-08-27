@@ -184,6 +184,7 @@ workflow:
       click:
         role: button
         name: Sign out
+        revealWith: { role: button, name: Open team operations }
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -279,6 +280,7 @@ workflow:
       click:
         role: button
         name: Sign out
+        revealWith: { role: button, name: Open team operations }
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
