@@ -267,12 +267,21 @@ workflow:
       visible:
         - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
           internal: true
+  - id: open-existing-member-overview
+    title: Enter the team through the contributor-visible overview
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+        internal: true
+    expect:
+      visible:
+        - scene: team.navigation
   - id: open-existing-member-access
     title: Open the existing member's own access controls
     action:
       click:
-        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
-        internal: true
+        role: link
+        name: Members
     expect:
       text: Leave team
       notVisible:
