@@ -71,6 +71,8 @@ describe('team management architecture audit', () => {
 		expect(overview).toContain('initialBucketSizeMs={604_800_000}');
 		expect(overview).toContain('pollIntervalMs={null}');
 		expect(overview).toContain("new Set(['team_owner', 'project_lead'])");
+		expect(overview).toContain('getTeamAccessSummary(team.id)');
+		expect(overview).not.toContain('CONTROL_PLANE_OPERATIONS.teams.access');
 		expect(overview).not.toContain('team.overview.management-actions');
 		const overviewHeader = overview.slice(overview.indexOf('<PageHeader'), overview.indexOf('<TeamNavigation'));
 		expect(overviewHeader).not.toContain('slot="actions"');
