@@ -7,7 +7,7 @@ import {
 	setApiAccessTokenCookie,
 } from '../../lib/market/api-client';
 import { csrfMatches, WEB_CSRF_HEADER } from '../../lib/auth/support/csrf';
-import { promoteConcurrencyHeader } from '../../lib/market/proxy-request';
+import { promoteConcurrencyHeader, signedConfirmationHeader } from '../../lib/market/proxy-request';
 
 export const prerender = false;
 
@@ -102,13 +102,18 @@ export const ALL: APIRoute = async (context) => {
 	const method = context.request.method.toUpperCase();
 	const body = ['GET', 'HEAD'].includes(method) ? undefined : await context.request.arrayBuffer();
 	promoteConcurrencyHeader(headers, body);
-	const response = await fetch(upstream, {
+	let response = await fetch(upstream, {
 		method,
 		headers,
 		body,
 		redirect: 'manual',
 		signal: context.request.signal,
 	});
+	const confirmation = await signedConfirmationHeader(response);
+	if (confirmation) {
+		headers.set('x-treeseed-confirmation', confirmation);
+		response = await fetch(upstream, { method, headers, body, redirect: 'manual', signal: context.request.signal });
+	}
 
 	const responseHeaders = new Headers();
 	for (const [name, value] of response.headers) {

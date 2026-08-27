@@ -98,7 +98,7 @@ const appearance = resolveAnonymousThemePreference(Astro);
 			) : null}
 		</Fragment>
 		{capabilities.internal.enabled ? (
-			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`} data-ts-submit="enhanced">
+			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>
 				<Field label="Email or username" name="login" required>
 					<TextInput name="login" type="text" autocomplete="username" value={submittedIdentifier} required />
 				</Field>

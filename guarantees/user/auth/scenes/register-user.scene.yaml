@@ -207,13 +207,30 @@ workflow:
       mailpitConfirmLatest:
         mailpitUrl: http://127.0.0.1:8025
         email: guarantee-{{runId}}-{{deviceId}}@treeseed.local
-        subjectIncludes: Confirm your Treeseed Market email
+        subjectIncludes: Confirm your TreeSeed email
         displayInboxSeconds: 1
         displayMessageSeconds: 1
     expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
+      urlIncludes: /auth/confirm-email
+      text: Confirm your email
+  - id: approve-email-confirmation
+    title: Explicitly confirm the one-use email token
+    action:
+      click:
+        role: button
+        name: Confirm email
+    expect:
+      urlIncludes: /auth/confirm-email
+      text: Email confirmed
+  - id: continue-to-sign-in
+    title: Continue to sign in after confirmation
+    action:
+      click:
+        role: link
+        name: Sign in
+    expect:
+      urlIncludes: /auth/sign-in
+      text: Sign in
 chapters: []
 overlays: []
 diagrams: []

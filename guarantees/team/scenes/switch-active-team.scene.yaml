@@ -142,11 +142,11 @@ workflow:
     expect:
       urlIncludes: /app
       visible:
-        - css: '[data-scene="dashboard-template"] .ts-page-header'
+        - css: '[data-scene="start.orientation"] .ts-page-header'
           internal: true
-        - css: '[aria-labelledby="dashboard-section-identity-context"] .ts-dashboard-metric:has-text("Active team"):has-text("Guarantee {{runShort}} {{deviceId}}")'
+        - css: '[data-scene="start.orientation"] .ts-page-header:has-text("Choose how to engage with Guarantee {{runShort}} {{deviceId}}")'
           internal: true
-        - css: '[data-scene="dashboard-template"] a.ts-resource-card:has-text("Current active team"):has-text("Guarantee {{runShort}} {{deviceId}}")'
+        - css: '[data-scene="start.orientation"] a:has-text("Enter Agent Lab")'
           internal: true
 chapters: []
 overlays: []

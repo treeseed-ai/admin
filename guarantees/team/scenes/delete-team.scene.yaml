@@ -90,20 +90,51 @@ workflow:
       visible:
         - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
           internal: true
+  - id: open-members-for-invitation-cleanup
+    title: Open members to resolve the deliberate mismatch invitation blocker
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
+  - id: revoke-mismatch-invitation
+    title: Revoke the remaining mismatched-account invitation before deletion
+    action:
+      click:
+        css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="DELETE"] button'
+        internal: true
+    expect:
+      text: Invitation revoked.
+      notVisible:
+        - css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
+  - id: return-to-lifecycle-entry
+    title: Return to the team collection after blocker cleanup
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
   - id: open-lifecycle
     title: Open owner-only lifecycle controls
     action:
-      click:
-        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
-        internal: true
+      clickVisibleSequence:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+          internal: true
+        - role: link
+          name: Lifecycle
     expect:
-      text: No active lifecycle blockers were found.
+      text: No active archive blockers were found.
   - id: archive-team
     title: Archive the team through the visible lifecycle control
     action:
       click:
-        role: button
-        name: Archive team
+        css: 'form[data-scene="team.archive"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /app/teams
       text: Team archived.
@@ -127,8 +158,8 @@ workflow:
     title: Restore the archived team during its recovery window
     action:
       click:
-        role: button
-        name: Restore team
+        css: 'form[data-scene="team.restore"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /app/teams/
       text: Operational overview
@@ -143,9 +174,11 @@ workflow:
   - id: reopen-active-lifecycle
     title: Reopen lifecycle after restoration and delete without another archive
     action:
-      click:
-        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
-        internal: true
+      clickVisibleSequence:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+          internal: true
+        - role: link
+          name: Lifecycle
     expect:
       text: Deletion is immediate
   - id: enter-incorrect-confirmation
@@ -153,7 +186,7 @@ workflow:
     action:
       fill:
         role: textbox
-        name: Type "gt-{{runShort}}-{{deviceId}}" exactly
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}" exactly
         value: wrong-team
     expect:
       text: Delete team permanently
@@ -170,26 +203,27 @@ workflow:
     title: Reject an incorrect exact-name confirmation
     action:
       click:
-        role: button
-        name: Delete team permanently
+        css: 'form[data-scene="team.delete"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /delete
       text: Type
+      clientErrorSourceIncludes: /delete
   - id: enter-exact-confirmation
     title: Enter the exact deletion confirmation
     action:
       fill:
         role: textbox
-        name: Type "gt-{{runShort}}-{{deviceId}}" exactly
-        value: gt-{{runShort}}-{{deviceId}}
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}" exactly
+        value: DELETE gt-{{runShort}}-{{deviceId}}
     expect:
       text: Delete team permanently
   - id: delete-team
     title: Permanently delete the run-owned team
     action:
       click:
-        role: button
-        name: Delete team permanently
+        css: 'form[data-scene="team.delete"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /app/teams
       notVisible:

@@ -129,6 +129,7 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 				<Panel eyebrow="Invitation" title="Invite a member" description="Every recipient must explicitly accept, including existing users." knowledgePageId="team.invitation">
 					<form class="ts-form-stack ts-team-form" method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.invite, { teamId: team.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation sent." data-ts-reset-on-success="true" data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.create">
 						<input type="hidden" name="csrfToken" value={csrfToken} />
+						<input type="hidden" name="idempotencyKey" value={`team-invite:${team.id}:${Date.now()}`} />
 						<div class="ts-form-grid">
 							<Field label="Recipient email" name="email" required>
 								<TextInput name="email" type="email" required autocomplete="email" />
@@ -183,8 +184,9 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 											<div class="ts-table-actions">
 												{canChange || soleCurrentOwner ? (
 											<form class="ts-table-actions__primary" method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.updateMember, { teamId: team.id, membershipId: member.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="PATCH" data-ts-success-message="Member role updated." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.member.role">
-														<input type="hidden" name="csrfToken" value={csrfToken} />
-														<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+												<input type="hidden" name="csrfToken" value={csrfToken} />
+												<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+												<input type="hidden" name="idempotencyKey" value={`team-member-role:${member.id}:${member.updatedAt}`} />
 														<Select name="roleKey" value={member.roleKey} options={roleOptions} aria-label={`Role for ${member.displayName ?? member.email}`} disabled={soleCurrentOwner} />
 														<Button type="submit" variant="secondary" size="sm" disabled={soleCurrentOwner}>Save</Button>
 														{soleCurrentOwner ? <small class="ts-form-help">Add or transfer ownership before changing your owner role.</small> : null}
@@ -194,8 +196,9 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 													{isOwner && !memberIsOwner && !isCurrent ? (
 												<form method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.transferOwnership, { teamId: team.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Ownership transferred." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.ownership.transfer">
 															<input type="hidden" name="csrfToken" value={csrfToken} />
-															<input type="hidden" name="membershipId" value={member.id} />
-															<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+													<input type="hidden" name="membershipId" value={member.id} />
+													<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+													<input type="hidden" name="idempotencyKey" value={`team-ownership-transfer:${member.id}:${member.updatedAt}`} />
 															<Button type="submit" variant="secondary" size="sm">Transfer ownership</Button>
 														</form>
 													) : null}
@@ -210,8 +213,9 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 																}))} />
 															) : <p>No removal blockers were found.</p>}
 													<form method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.removeMember, { teamId: team.id, membershipId: member.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Member removed." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.member.remove">
-																<input type="hidden" name="csrfToken" value={csrfToken} />
-																<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+															<input type="hidden" name="csrfToken" value={csrfToken} />
+															<input type="hidden" name="expectedVersion" value={member.updatedAt} />
+															<input type="hidden" name="idempotencyKey" value={`team-member-remove:${member.id}:${member.updatedAt}`} />
 																<Button type="submit" variant="danger" size="sm" disabled={!member.removal?.eligible}>Confirm removal</Button>
 															</form>
 														</InlineConfirmation>
@@ -255,8 +259,8 @@ const totalPages = Math.max(1, Math.ceil(Number(memberPage.total ?? 0) / Number(
 									<td data-label="Invited"><Timestamp value={invite.createdAt} timeZone={preferences.timeZone} class="ts-data-table__timestamp" /></td>
 									<td data-label="Expires"><Timestamp value={invite.expiresAt} timeZone={preferences.timeZone} class="ts-data-table__timestamp" /></td>
 									<td data-label="Actions" data-layout="stack"><div class="ts-action-bar">
-										<form method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.resendInvite, { teamId: team.id, inviteId: invite.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation resent." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.resend"><input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="secondary" size="sm">Resend</Button></form>
-										<form method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.revokeInvite, { teamId: team.id, inviteId: invite.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Invitation revoked." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.revoke"><input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="danger" size="sm">Revoke</Button></form>
+										<form method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.resendInvite, { teamId: team.id, inviteId: invite.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Invitation resent." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.resend"><input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="idempotencyKey" value={`team-invite-resend:${invite.id}:${invite.updatedAt ?? invite.expiresAt}`} /><Button type="submit" variant="secondary" size="sm">Resend</Button></form>
+										<form method="post" action={catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.revokeInvite, { teamId: team.id, inviteId: invite.id }, {})} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-method="DELETE" data-ts-success-message="Invitation revoked." data-ts-refresh-target="[data-team-members-panel]" data-scene="team.invitation.revoke"><input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="idempotencyKey" value={`team-invite-revoke:${invite.id}:${invite.updatedAt ?? invite.expiresAt}`} /><input type="hidden" name="expectedUpdatedAt" value={invite.updatedAt} /><Button type="submit" variant="danger" size="sm">Revoke</Button></form>
 									</div></td>
 								</tr>
 							))}

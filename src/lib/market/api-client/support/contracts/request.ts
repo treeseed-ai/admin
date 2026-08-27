@@ -26,7 +26,7 @@ export async function requestMethod<T = unknown>(this: ApiClientFacade, method: 
     });
     const envelope = await response.json().catch(() => null);
     if (!response.ok || envelope?.ok === false) {
-        const error = new Error(envelope?.message ?? envelope?.error ?? `API request failed: ${response.status}`);
+        const error = new Error(envelope?.message ?? envelope?.detail ?? envelope?.error ?? envelope?.title ?? `API request failed: ${response.status}`);
         (error as any).status = response.status;
         (error as any).details = isObject(envelope) ? envelope : {};
         throw error;
@@ -77,9 +77,21 @@ export async function invokeMethod<T extends ControlPlaneOperationBinding<any, a
     if (!rest)
         throw new Error(`Operation ${operationId} has no REST binding.`);
     const bodyInput = binding.schema.body.parse(input.body);
-    const path = catalogOperationPath(binding, input.path, input.query);
-    return this.request<ControlPlaneOperationOutput<T>>(rest.method, path, {
-        ...options,
-        body: rest.method === 'GET' ? undefined : bodyInput,
-    });
+	const path = catalogOperationPath(binding, input.path, input.query);
+	const idempotencyKey = options.idempotencyKey ?? (binding.descriptor.idempotency?.required ? randomId() : undefined);
+	const requestOptions = {
+		...options,
+		...(idempotencyKey ? { idempotencyKey } : {}),
+		body: rest.method === 'GET' ? undefined : bodyInput,
+	};
+	try {
+		return await this.request<ControlPlaneOperationOutput<T>>(rest.method, path, requestOptions);
+	} catch (error) {
+		const details = (error as any)?.details;
+		const confirmation = details?.inputRequired?.confirmation;
+		if (binding.descriptor.confirmation !== 'input_required' || (error as any)?.status !== 409 || !confirmation) throw error;
+		const headers = new Headers(options.headers);
+		headers.set('x-treeseed-confirmation', Buffer.from(JSON.stringify(confirmation)).toString('base64url'));
+		return this.request<ControlPlaneOperationOutput<T>>(rest.method, path, { ...requestOptions, headers });
+	}
 }

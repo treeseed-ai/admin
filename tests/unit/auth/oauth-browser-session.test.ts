@@ -34,4 +34,13 @@ describe('Admin OAuth browser session', () => {
 		expect(readAdminAuthorizationCookie(request as any, OAUTH_STATE_COOKIE)).toBe('');
 		expect(readAdminAuthorizationCookie(request as any, OAUTH_RETURN_COOKIE)).toBe('/app/');
 	});
+
+	it('uses the configured external origin behind a TLS-terminating edge', async () => {
+		const request = context();
+		request.url = new URL('http://admin-live:4322/auth/sign-in');
+		(request.locals.runtime.env as Record<string, string>).TREESEED_SITE_URL = 'https://admin.treeseed.localhost';
+		const target = await beginAdminAuthorization(request as any, '/app/');
+		expect(target.origin).toBe('https://admin.treeseed.localhost');
+		expect(target.searchParams.get('redirect_uri')).toBe('https://admin.treeseed.localhost/auth/callback/treeseed');
+	});
 });

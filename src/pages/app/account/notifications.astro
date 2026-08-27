@@ -9,10 +9,11 @@ const frame = await loadAccountFrame(Astro, 'notifications');
 const response = await handleNotificationRequest(Astro, frame.api);
 if (response) return response;
 const [preferences, projects] = await Promise.all([frame.api.notificationPreferences(), frame.api.listProjectsForPrincipal()]);
+const projectItems = Array.isArray(projects) ? projects : ((projects as unknown as { items?: typeof projects })?.items ?? []);
 ---
 
 <TreeseedAppLayout title="Notifications" description="Choose project content notifications and email cadence." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
 	<SettingsTemplate title="Notification preferences" description="One global content policy with focused project overrides." sections={frame.sections} knowledgePageId="account.notifications">
-		<NotificationPreferencePanel preferences={preferences} capabilities={NOTIFICATION_CONTENT_CAPABILITIES} projects={projects} csrfToken={frame.csrfToken} />
+		<NotificationPreferencePanel preferences={preferences} capabilities={NOTIFICATION_CONTENT_CAPABILITIES} projects={projectItems} csrfToken={frame.csrfToken} />
 	</SettingsTemplate>
 </TreeseedAppLayout>

@@ -10,7 +10,6 @@ import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
 import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart';
-import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import TeamAccessDetails from '../../../../components/team/TeamAccessDetails.astro';
 import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
@@ -31,14 +30,12 @@ let summary: any = null;
 let unavailable = resolution.status === 'unavailable';
 if (team) {
 	try {
-		const access = await new ApiClientFacade(Astro).invoke(CONTROL_PLANE_OPERATIONS.teams.access, {
-			path: { teamId: team.id }, query: {}, body: undefined,
-		});
+		const access = await new ApiClientFacade(Astro).getTeamAccessSummary(team.id);
 		summary = {
 			access,
 			counts: {
-				members: typeof team.memberCount === 'number' ? team.memberCount : 'Unavailable',
-				pendingInvitations: typeof team.pendingInvitations === 'number' ? team.pendingInvitations : 'Unavailable',
+				members: typeof team.counts?.members === 'number' ? team.counts.members : 'Unavailable',
+				pendingInvitations: typeof team.counts?.pendingInvitations === 'number' ? team.counts.pendingInvitations : 'Unavailable',
 			},
 			operational: null,
 			contentActivity: null,

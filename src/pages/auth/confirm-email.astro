@@ -43,7 +43,7 @@ if (token && Astro.request.method === 'POST') {
 		error={error}
 		appearance={appearance}
 	>
-		{!confirmed && !error ? <form method="POST" data-ts-submit="enhanced"><input type="hidden" name="csrfToken" value={csrfToken} /><FormActions><Button type="submit">Confirm email</Button></FormActions></form> : null}
+		{!confirmed && !error ? <form method="POST"><input type="hidden" name="csrfToken" value={csrfToken} /><FormActions><Button type="submit">Confirm email</Button></FormActions></form> : null}
 		{confirmed ? <p><a class="ts-button" href={`/auth/sign-in?verified=1&returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a></p> : null}
 		<Fragment slot="sidebarLinks">
 			<a href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}`}>Create account</a>

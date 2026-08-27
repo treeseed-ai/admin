@@ -8,12 +8,16 @@ export const OAUTH_VERIFIER_COOKIE = 'ts_admin_oauth_verifier';
 export const OAUTH_STATE_COOKIE = 'ts_admin_oauth_state';
 export const OAUTH_RETURN_COOKIE = 'ts_admin_oauth_return';
 
-export function adminCallbackUrl(context: Pick<APIContext, 'url'>) {
-	return new URL('/auth/callback/treeseed', context.url.origin).toString();
+function adminOrigin(context: Pick<APIContext, 'locals' | 'url'>) {
+	return new URL(getSiteAuthConfig(context).siteBaseUrl).origin;
 }
 
-function cookieOptions(context: Pick<APIContext, 'url'>) {
-	return { httpOnly: true, path: '/', sameSite: 'lax' as const, secure: context.url.protocol === 'https:', maxAge: 600 };
+export function adminCallbackUrl(context: Pick<APIContext, 'locals' | 'url'>) {
+	return new URL('/auth/callback/treeseed', adminOrigin(context)).toString();
+}
+
+function cookieOptions(context: Pick<APIContext, 'locals' | 'url'>) {
+	return { httpOnly: true, path: '/', sameSite: 'lax' as const, secure: adminOrigin(context).startsWith('https:'), maxAge: 600 };
 }
 
 function base64Url(bytes: Uint8Array) {
@@ -47,16 +51,16 @@ export async function beginAdminAuthorization(context: Pick<APIContext, 'cookies
 	context.cookies.set(OAUTH_VERIFIER_COOKIE, sealAuthorizationValue(context, verifier), cookieOptions(context));
 	context.cookies.set(OAUTH_STATE_COOKIE, sealAuthorizationValue(context, state), cookieOptions(context));
 	context.cookies.set(OAUTH_RETURN_COOKIE, sealAuthorizationValue(context, safeReturn), cookieOptions(context));
-	const target = new URL('/auth/authorize', context.url.origin);
+	const target = new URL('/auth/authorize', adminOrigin(context));
 	target.search = new URLSearchParams({ client_id: ADMIN_OAUTH_CLIENT_ID, redirect_uri: adminCallbackUrl(context),
 		response_type: 'code', code_challenge: challenge, code_challenge_method: 'S256',
 		scope: ADMIN_OAUTH_SCOPES.join(' '), state }).toString();
 	return target;
 }
 
-export function clearAdminAuthorizationCookies(context: Pick<APIContext, 'cookies' | 'url'>) {
+export function clearAdminAuthorizationCookies(context: Pick<APIContext, 'cookies' | 'locals' | 'url'>) {
 	for (const name of [OAUTH_VERIFIER_COOKIE, OAUTH_STATE_COOKIE, OAUTH_RETURN_COOKIE]) {
-		context.cookies.delete(name, { path: '/', secure: context.url.protocol === 'https:' });
+		context.cookies.delete(name, { path: '/', secure: adminOrigin(context).startsWith('https:') });
 	}
 }
 

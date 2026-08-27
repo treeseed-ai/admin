@@ -4,7 +4,6 @@ import { urlMethod } from "./support/contracts/url.ts";
 import { invokeMethod, requestMethod } from "./support/contracts/request.ts";
 import { accountIdentityMethod } from "./accounts/contracts/account-identity.ts";
 import { accountPreferencesMethod } from "./accounts/contracts/account-preferences.ts";
-import { authProvidersMethod } from "./capacity/providers/contracts/auth-providers.ts";
 import { requestPasswordResetMethod } from "./accounts/creation/request-password-reset.ts";
 import { completePasswordResetMethod } from "./accounts/lifecycle/complete-password-reset.ts";
 import { confirmEmailMethod } from "./accounts/lifecycle/confirm-email.ts";
@@ -177,7 +176,6 @@ export function installApiClientFacadeMethods(prototype: ApiClientFacade) {
   prototype.invoke = invokeMethod;
   prototype.accountIdentity = accountIdentityMethod;
   prototype.accountPreferences = accountPreferencesMethod;
-  prototype.authProviders = authProvidersMethod;
   prototype.requestPasswordReset = requestPasswordResetMethod;
   prototype.completePasswordReset = completePasswordResetMethod;
   prototype.confirmEmail = confirmEmailMethod;

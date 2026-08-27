@@ -181,11 +181,9 @@ workflow:
   - id: sign-out-former-owner
     title: End the former owner's browser session before restoring ownership
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -213,6 +211,33 @@ workflow:
       click:
         role: button
         name: Sign in
+    expect:
+      urlIncludes: /auth/authorize
+      text: Authorize
+  - id: enter-invited-owner-approval-email
+    title: Re-enter the invited owner's credential at the authorization decision boundary
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: invite-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Authorize
+  - id: enter-invited-owner-approval-password
+    title: Enter the invited owner's password for explicit client approval
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedInviteGuarantee123!
+    expect:
+      text: Authorize
+  - id: approve-invited-owner-session
+    title: Explicitly approve the Admin client as the invited owner
+    action:
+      click:
+        role: button
+        name: Approve
     expect:
       urlIncludes: /app
       visible:
@@ -251,11 +276,9 @@ workflow:
   - id: sign-out-invited-owner
     title: End the invited user's session after ownership is restored
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -283,6 +306,33 @@ workflow:
       click:
         role: button
         name: Sign in
+    expect:
+      urlIncludes: /auth/authorize
+      text: Authorize
+  - id: enter-primary-owner-approval-email
+    title: Re-enter the primary owner's credential at the authorization decision boundary
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Authorize
+  - id: enter-primary-owner-approval-password
+    title: Enter the primary owner's password for explicit client approval
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Authorize
+  - id: approve-primary-owner-session
+    title: Explicitly approve the Admin client as the restored primary owner
+    action:
+      click:
+        role: button
+        name: Approve
     expect:
       urlIncludes: /app
       visible:

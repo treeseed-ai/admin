@@ -40,8 +40,9 @@ function forwardedClientIp(context: AuthRequestContext) {
 	);
 }
 
-export function authApiJsonHeaders(context: AuthRequestContext) {
+export function authApiJsonHeaders(context: AuthRequestContext, options: { idempotencyKey?: string } = {}) {
 	const headers = new Headers({ accept: 'application/json', 'content-type': 'application/json' });
+	if (options.idempotencyKey) headers.set('idempotency-key', options.idempotencyKey);
 	const userAgent = forwardedHeader(context, 'user-agent');
 	const clientIp = forwardedClientIp(context);
 	if (userAgent) headers.set('user-agent', userAgent);
@@ -91,7 +92,7 @@ export async function submitMarketEmailAuthFlow(
 	options: { finalize?: boolean } = {},
 ) {
 	const endpoint = path === 'sign-up/email' ? '/v1/auth/web/sign-up' : '/v1/auth/web/sign-in';
-	const headers = authApiJsonHeaders(context);
+	const headers = authApiJsonHeaders(context, path === 'sign-up/email' ? { idempotencyKey: crypto.randomUUID() } : {});
 	try {
 		const response = await fetch(`${resolveApiBaseUrl(context.locals)}${endpoint}`, {
 			method: 'POST',
@@ -99,12 +100,13 @@ export async function submitMarketEmailAuthFlow(
 			body: JSON.stringify(body),
 		});
 		const envelope = await response.json().catch(() => null);
-		const confirmationRequired = path === 'sign-up/email' && envelope?.payload?.confirmationRequired === true;
-		if (!response.ok || envelope?.ok === false || (!envelope?.payload?.accessToken && !confirmationRequired)) {
+		const payload = envelope?.data ?? envelope?.payload;
+		const confirmationRequired = path === 'sign-up/email' && payload?.confirmationRequired === true;
+		if (!response.ok || envelope?.ok === false || (!payload?.accessToken && !confirmationRequired)) {
 			return {
 				ok: false as const,
 				status: response.status,
-				error: envelope?.error ?? 'Authentication failed.',
+				error: envelope?.error ?? envelope?.detail ?? 'Authentication failed.',
 				setCookies: [],
 			};
 		}
@@ -115,7 +117,7 @@ export async function submitMarketEmailAuthFlow(
 				setCookies: [],
 				user: {
 					id: null,
-					email: envelope.payload.email ?? body.email ?? null,
+					email: payload.email ?? body.email ?? null,
 					username: body.username ?? null,
 					name: body.name ?? body.email ?? null,
 				},
@@ -123,20 +125,20 @@ export async function submitMarketEmailAuthFlow(
 			};
 		}
 		if (options.finalize !== false) {
-			setApiAccessTokenCookie(context, envelope.payload.accessToken, Number(envelope.payload.expiresInSeconds ?? DEFAULT_AUTH_TTL_SECONDS));
-			setPrincipalThemeCookies(context, envelope.payload.principal);
+			setApiAccessTokenCookie(context, payload.accessToken, Number(payload.expiresInSeconds ?? DEFAULT_AUTH_TTL_SECONDS));
+			setPrincipalThemeCookies(context, payload.principal);
 		}
 		return {
 			ok: true as const,
 			confirmationRequired: false as const,
 			setCookies: [],
 			user: {
-				id: envelope.payload.principal?.id,
-				email: envelope.payload.principal?.metadata?.email ?? body.email ?? null,
-				username: envelope.payload.principal?.metadata?.username ?? body.username ?? null,
-				name: envelope.payload.principal?.displayName ?? body.name ?? body.email ?? null,
+				id: payload.principal?.id,
+				email: payload.principal?.metadata?.email ?? body.email ?? null,
+				username: payload.principal?.metadata?.username ?? body.username ?? null,
+				name: payload.principal?.displayName ?? body.name ?? body.email ?? null,
 			},
-			session: envelope.payload,
+			session: payload,
 		};
 	} catch (error: any) {
 		const errorBody = error?.body as { message?: string; code?: string } | undefined;

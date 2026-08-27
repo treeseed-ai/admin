@@ -8,7 +8,10 @@ if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo
 const frame = await loadAccountFrame(Astro, 'delete');
 const response = await handleDeletionRequest(Astro, frame.api);
 if (response) return response;
-const [identity, deletion, providers] = await Promise.all([frame.api.accountIdentity(), frame.api.accountDeletionBlockers(), frame.api.authProviders()]);
+const [identity, deletion] = await Promise.all([frame.api.accountIdentity(), frame.api.accountDeletionBlockers()]);
+// External authentication-provider linking remains planned. Account deletion
+// is currently reauthenticated with the API-owned credential flow.
+const providers = [];
 const reauthenticationGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
 ---
 

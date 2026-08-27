@@ -194,7 +194,9 @@ workflow:
         internal: true
     expect:
       urlIncludes: /members
-      text: Invite a member
+      text:
+        - Team members
+        - Owner
 chapters: []
 overlays: []
 diagrams: []

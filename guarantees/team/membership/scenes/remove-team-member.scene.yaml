@@ -103,7 +103,7 @@ workflow:
     title: Remove the invited member
     action:
       click:
-        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] summary'
+        css: '[data-member-email="invite-{{runId}}-{{deviceId}}@treeseed.local"] summary:has-text("Remove")'
         internal: true
     expect:
       urlIncludes: /members
@@ -130,11 +130,9 @@ workflow:
   - id: sign-out-removing-owner
     title: End the owner session before proving the removed user lost access
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -163,6 +161,33 @@ workflow:
         role: button
         name: Sign in
     expect:
+      urlIncludes: /auth/authorize
+      text: Authorize
+  - id: enter-removed-member-approval-email
+    title: Re-enter the removed member's credential at the authorization boundary
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: invite-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Authorize
+  - id: enter-removed-member-approval-password
+    title: Enter the removed member's password for explicit Admin approval
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedInviteGuarantee123!
+    expect:
+      text: Authorize
+  - id: approve-removed-member-session
+    title: Explicitly approve Admin for the removed member
+    action:
+      click:
+        role: button
+        name: Approve
+    expect:
       urlIncludes: /app
   - id: prove-removed-member-lost-access
     title: Prove the removed user's team collection no longer exposes the run-created team
@@ -175,11 +200,9 @@ workflow:
   - id: sign-out-removed-member
     title: End the removed user's session
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -208,6 +231,33 @@ workflow:
         role: button
         name: Sign in
     expect:
+      urlIncludes: /auth/authorize
+      text: Authorize
+  - id: enter-existing-member-approval-email
+    title: Re-enter the existing member's credential at the authorization boundary
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: visual.member@treeseed.io
+    expect:
+      text: Authorize
+  - id: enter-existing-member-approval-password
+    title: Enter the existing member's password for explicit Admin approval
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedVisualAudit!2026
+    expect:
+      text: Authorize
+  - id: approve-existing-member-session
+    title: Explicitly approve Admin for the existing member
+    action:
+      click:
+        role: button
+        name: Approve
+    expect:
       urlIncludes: /app
   - id: open-existing-member-team
     title: Open the run-created team as the existing member
@@ -217,12 +267,21 @@ workflow:
       visible:
         - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
           internal: true
+  - id: open-existing-member-overview
+    title: Enter the team through the contributor-visible overview
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+        internal: true
+    expect:
+      visible:
+        - scene: team.navigation
   - id: open-existing-member-access
     title: Open the existing member's own access controls
     action:
       click:
-        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
-        internal: true
+        role: link
+        name: Members
     expect:
       text: Leave team
       notVisible:
@@ -232,8 +291,8 @@ workflow:
     title: Leave the team through the visible self-service control
     action:
       click:
-        role: button
-        name: Leave team
+        css: 'form[data-scene="team.member.leave"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /app/teams
       text: You left the team.
@@ -251,11 +310,9 @@ workflow:
   - id: sign-out-former-member
     title: End the former member's session
     action:
-      clickVisibleSequence:
-        - role: button
-          name: Open team operations
-        - role: button
-          name: Sign out
+      click:
+        role: button
+        name: Sign out
     expect:
       urlIncludes: /auth/sign-in
       text: Sign in
@@ -284,6 +341,33 @@ workflow:
         role: button
         name: Sign in
     expect:
+      urlIncludes: /auth/authorize
+      text: Authorize
+  - id: enter-primary-owner-approval-email
+    title: Re-enter the primary owner's credential at the authorization boundary
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      text: Authorize
+  - id: enter-primary-owner-approval-password
+    title: Enter the primary owner's password for explicit Admin approval
+    action:
+      fill:
+        css: 'input[name="password"]'
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Authorize
+  - id: approve-primary-owner-session
+    title: Explicitly approve Admin for the remaining owner
+    action:
+      click:
+        role: button
+        name: Approve
+    expect:
       urlIncludes: /app
   - id: open-primary-owner-team-collection
     title: Return to the run-created team as its remaining owner
@@ -308,11 +392,12 @@ workflow:
     title: Reject self-leave when it would orphan the team
     action:
       click:
-        role: button
-        name: Leave team
+        css: 'form[data-scene="team.member.leave"] button[type="submit"]'
+        internal: true
     expect:
       urlIncludes: /members
       text: A team must keep at least one owner.
+      clientErrorSourceIncludes: /members
       visible:
         - css: '[data-ts-toast-id][data-tone="error"]:last-of-type'
           internal: true
