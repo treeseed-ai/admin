@@ -5,8 +5,10 @@ import Field from '@treeseed/ui/components/astro/forms/Field.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
+import type { OAuthDeviceApprovalPresentation } from '@treeseed/sdk/operator-contracts';
 import { resolveAnonymousThemePreference } from '../../../lib/auth/accounts/appearance';
-import { createApiFacade } from '../../../lib/market/api-client';
+import { apiAccessTokenFromCookies, createApiFacade } from '../../../lib/market/api-client';
+import { oauthProtocolRequest } from '../../../lib/auth/oauth-browser';
 import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/support/csrf';
 import { pageFormFailure, pageFormResponse } from '../../../lib/forms/page-submission';
 
@@ -25,6 +27,17 @@ let userCode = String(Astro.url.searchParams.get('user_code') ?? '').trim().toUp
 let error = '';
 let notice = Astro.url.searchParams.get('approved') === '1' ? 'CLI login approved. You can return to your terminal.' : '';
 let approved = Astro.url.searchParams.get('approved') === '1';
+let presentation: OAuthDeviceApprovalPresentation | null = null;
+
+if (userCode && !approved) {
+	const accessToken = apiAccessTokenFromCookies(Astro);
+	const response = await oauthProtocolRequest(Astro, `/auth/device/approve?user_code=${encodeURIComponent(userCode)}`, {
+		headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
+	});
+	const result = await response.json().catch(() => null);
+	if (response.ok) presentation = result as OAuthDeviceApprovalPresentation;
+	else error = result?.error_description ?? 'This device login request is invalid or expired. Request a new code from the CLI.';
+}
 
 async function approveThroughApi() {
 	await api.approveDevice(userCode);
@@ -40,6 +53,15 @@ if (Astro.request.method === 'POST') {
 		requireCsrf(Astro, form.get('csrfToken'));
 		if (!userCode) {
 			return pageFormFailure(Astro, 'Please correct the highlighted fields.', directApprovalAction, { userCode: 'Enter the CLI login code to approve this session.' });
+		} else if (!Astro.url.searchParams.get('user_code')) {
+			return pageFormResponse(Astro, {
+				ok: true,
+				code: 'device_login_review',
+				message: 'Review the device login request.',
+				redirect: `${Astro.url.pathname}?user_code=${encodeURIComponent(userCode)}`,
+			}, directApprovalAction);
+		} else if (!presentation) {
+			return pageFormFailure(Astro, error || 'This device login request is invalid or expired. Request a new code from the CLI.', directApprovalAction);
 		} else {
 			const approvedByApi = await approveThroughApi();
 			if (!approvedByApi) throw new Error('Device login approval endpoint was not found.');
@@ -73,12 +95,22 @@ if (Astro.request.method === 'POST') {
 		) : (
 			<form class="auth-form" method="POST" action={directApprovalAction} data-ts-submit="enhanced">
 				<input type="hidden" name="csrfToken" value={csrfToken} />
-				<Field label="CLI login code" name="userCode" required>
-					<TextInput name="userCode" type="text" value={userCode} autocomplete="one-time-code" required />
-				</Field>
-				<FormActions>
-					<Button type="submit">Approve login</Button>
-				</FormActions>
+				{presentation ? <>
+					<input type="hidden" name="userCode" value={presentation.userCode} />
+					<dl aria-label="Device login request">
+						<dt>Application</dt><dd>{presentation.clientName}</dd>
+						<dt>Code</dt><dd><strong>{presentation.userCode}</strong></dd>
+						<dt>Expires</dt><dd><time datetime={presentation.expiresAt}>{new Date(presentation.expiresAt).toLocaleString()}</time></dd>
+					</dl>
+					<h2>Permissions requested</h2>
+					<ul aria-label="Requested permissions">{presentation.scopes.map((scope) => <li>{scope}</li>)}</ul>
+					<FormActions><Button type="submit">Approve login</Button></FormActions>
+				</> : !userCode ? <>
+					<Field label="CLI login code" name="userCode" required>
+						<TextInput name="userCode" type="text" autocomplete="one-time-code" required />
+					</Field>
+					<FormActions><Button type="submit">Review login</Button></FormActions>
+				</> : null}
 			</form>
 		)}
 	</AuthCard>

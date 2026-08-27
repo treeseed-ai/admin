@@ -98,7 +98,7 @@ export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapab
 		accessPolicy: ['valid one-time confirmation token', 'anonymous or signed-in principal', 'safe return URL'],
 		guarantees: ['guarantee.user.auth.verify-email.002', 'guarantee.user.account.edit-account-settings.006'],
 	}),
-	adminRoute('/auth/sign-in', 'pages/auth/sign-in.astro', { id: 'admin.auth.sign-in', description: 'Credential and configured-provider sign-in.', guarantees: ['guarantee.user.auth.user-login.004'] }),
+	adminRoute('/auth/sign-in', 'pages/auth/sign-in.astro', { id: 'admin.auth.sign-in', description: 'OAuth and configured-provider sign-in entry.', guarantees: ['guarantee.user.auth.user-login.004'] }),
 	adminRoute('/auth/logout', 'pages/auth/logout.ts', { id: 'admin.auth.logout', description: 'CSRF-safe POST session termination; non-mutating GET redirect.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['GET is non-mutating', 'POST requires signed-in session and double-submit CSRF'], guarantees: ['guarantee.user.auth.user-logout.005'] }),
 	adminRoute('/auth/forgot-password', 'pages/auth/forgot-password.astro', { id: 'admin.auth.forgot-password', description: 'Privacy-safe password-reset request.' }),
 	adminRoute('/auth/reset-password', 'pages/auth/reset-password.astro', { id: 'admin.auth.reset-password', description: 'Token-bound password reset.', guarantees: ['guarantee.user.auth.forgot-reset-password.003'] }),
