@@ -153,6 +153,7 @@ workflow:
         role: combobox
         name: Color scheme
         label: Guarantee {{runId}} {{deviceId}}
+        settleNavigation: true
     expect:
       urlIncludes: /app/account/appearance
   - id: reload-active-personal-theme
