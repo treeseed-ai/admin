@@ -31,7 +31,7 @@ surfaces:
     provider: cloudflare
     rootDir: .
     publicBaseUrl: https://admin.treeseed.dev
-    localBaseUrl: http://127.0.0.1:4322
+    localBaseUrl: https://admin.treeseed.localhost
     local:
       runtime: local
     environments:
