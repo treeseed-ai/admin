@@ -131,6 +131,7 @@ workflow:
     expect:
       urlIncludes: /edit
       text: changed
+      clientErrorSourceIncludes: /edit
   - id: return-to-current-settings
     title: Reload the current version through the collection
     action:
