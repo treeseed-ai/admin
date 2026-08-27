@@ -397,6 +397,7 @@ workflow:
     expect:
       urlIncludes: /members
       text: A team must keep at least one owner.
+      clientErrorSourceIncludes: /members
       visible:
         - css: '[data-ts-toast-id][data-tone="error"]:last-of-type'
           internal: true
