@@ -354,6 +354,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		const manifest = readFileSync('treeseed.package.yaml', 'utf8');
 		const packageJson = readFileSync('package.json', 'utf8');
 		expect(site).toContain('siteUrl: https://admin.treeseed.dev');
+		expect(site).toContain('localBaseUrl: https://admin.treeseed.localhost');
 		expect(site).toContain('bucketName: treeseed-admin-content');
 		expect(site).toContain('buildOutputDir: .treeseed/app-dist');
 		expect(site).toContain('package: "@treeseed/core/plugin-default"');
