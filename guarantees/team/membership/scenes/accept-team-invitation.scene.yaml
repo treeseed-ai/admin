@@ -169,6 +169,55 @@ workflow:
         displayInboxSeconds: 1
         displayMessageSeconds: 1
     expect:
+      urlIncludes: /auth/confirm-email
+      text: Confirm your email
+  - id: submit-invited-email-confirmation
+    title: Explicitly consume the one-use email confirmation
+    action:
+      click: { role: button, name: Confirm email }
+    expect:
+      text: Email confirmed
+  - id: continue-invited-sign-in
+    title: Continue to sign in with the preserved invitation return path
+    action:
+      click: { role: link, name: Sign in }
+    expect:
+      urlIncludes: /auth/sign-in
+  - id: fill-invited-sign-in-identifier
+    title: Enter the invited account identifier
+    action:
+      fill: { role: textbox, name: Email or username, value: 'invite-{{runId}}-{{deviceId}}@treeseed.local' }
+    expect:
+      text: Sign in
+  - id: fill-invited-sign-in-password
+    title: Enter the invited account password
+    action:
+      fill: { css: 'input[name="password"]', internal: true, value: TreeSeedInviteGuarantee123! }
+    expect:
+      text: Sign in
+  - id: continue-invited-authorization
+    title: Continue to the authorization decision
+    action:
+      click: { role: button, name: Sign in }
+    expect:
+      urlIncludes: /auth/authorize
+  - id: fill-invited-authorization-identifier
+    title: Reauthenticate the invited account at the decision boundary
+    action:
+      fill: { role: textbox, name: Email or username, value: 'invite-{{runId}}-{{deviceId}}@treeseed.local' }
+    expect:
+      text: Authorize access
+  - id: fill-invited-authorization-password
+    title: Enter the invited account password at the decision boundary
+    action:
+      fill: { css: 'input[name="password"]', internal: true, value: TreeSeedInviteGuarantee123! }
+    expect:
+      text: Authorize access
+  - id: approve-invited-authorization
+    title: Approve the first-party Admin scopes
+    action:
+      click: { role: button, name: Approve }
+    expect:
       urlIncludes: /team-invites/
       text: Accept invitation
   - id: explicitly-accept-invitation
