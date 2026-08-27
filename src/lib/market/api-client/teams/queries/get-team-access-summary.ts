@@ -8,8 +8,18 @@ import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, reso
 export interface TeamAccessSummary {
 	roles: string[];
 	permissions: string[];
-	access?: { roles?: string[]; permissions?: string[] };
+	team?: unknown;
+	access?: { roles?: string[]; permissions?: string[]; [key: string]: unknown };
 }
-export function getTeamAccessSummaryMethod(this: ApiClientFacade, teamId: string) {
-    return this.invoke(CONTROL_PLANE_OPERATIONS.teams.access, { path: { teamId }, query: {}, body: undefined }) as unknown as Promise<TeamAccessSummary>;
+export async function getTeamAccessSummaryMethod(this: ApiClientFacade, teamId: string): Promise<TeamAccessSummary> {
+	const result = await this.invoke(CONTROL_PLANE_OPERATIONS.teams.access, {
+		path: { teamId }, query: {}, body: undefined,
+	}) as unknown as { team?: unknown; access?: TeamAccessSummary['access'] };
+	return {
+		...(result.access ?? {}),
+		team: result.team,
+		access: result.access,
+		roles: result.access?.roles ?? [],
+		permissions: result.access?.permissions ?? [],
+	};
 }

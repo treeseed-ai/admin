@@ -80,7 +80,7 @@ workflow:
       urlIncludes: /app/account/notifications
       text: Weekly
       visible:
-        - css: '[aria-label="All-project content types"] input[name="globalTypes"][value="questions"]:checked'
+        - css: '[aria-label="All-project content types"] input[name="globalContentTypes"][value="questions"]:checked'
           internal: true
 chapters: []
 overlays: []

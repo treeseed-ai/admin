@@ -11,6 +11,7 @@ const developmentWorkspaceRoot = process.env.TREESEED_DEVELOPMENT_WORKSPACE_ROOT
 
 export default {
 	...site,
+	devToolbar: { enabled: false },
 	...(developmentWorkspaceRoot ? {
 		vite: {
 			...site.vite,

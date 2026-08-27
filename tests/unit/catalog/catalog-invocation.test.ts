@@ -30,6 +30,20 @@ describe('Admin catalog invocation boundary', () => {
 		expect(request.mock.calls[0]?.[2]?.idempotencyKey).toBeTruthy();
 	});
 
+	it('replays an explicitly invoked high-risk operation with the API-signed confirmation state', async () => {
+		const confirmation = { schemaVersion: 'treeseed.confirmation-state/v1', nonce: 'nonce', signature: 'signature' };
+		const required = Object.assign(new Error('Confirmation required'), { status: 409, details: { inputRequired: { confirmation } } });
+		const request = vi.fn().mockRejectedValueOnce(required).mockResolvedValueOnce({ status: 'revoked' });
+
+		await invokeMethod.call({ request } as any, CONTROL_PLANE_OPERATIONS.accounts.revokeSession, {
+			path: { sessionId: 'session-1' }, query: {}, body: {},
+		});
+
+		expect(request).toHaveBeenCalledTimes(2);
+		const retryHeaders = new Headers(request.mock.calls[1]?.[2]?.headers);
+		expect(JSON.parse(Buffer.from(retryHeaders.get('x-treeseed-confirmation')!, 'base64url').toString('utf8'))).toEqual(confirmation);
+	});
+
 	it('builds enhanced-form actions from authoritative descriptors', () => {
 		expect(catalogOperationPath(
 			CONTROL_PLANE_OPERATIONS.teams.removeMember,
