@@ -137,14 +137,47 @@ workflow:
         - css: "input[name='password']"
           internal: true
   - id: reject-invalid-sign-in
-    title: Reject invalid credentials
+    title: Continue to the OAuth authorization decision
     action:
       click:
         role: button
         name: Sign in
     expect:
-      urlIncludes: /auth/sign-in
-      text: Authentication failed.
+      urlIncludes: /auth/authorize
+      text: Authorize access
+  - id: enter-authorization-identifier
+    title: Enter the account identifier at the authorization boundary
+    action:
+      fill:
+        role: textbox
+        name: Email or username
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+    expect:
+      visible:
+        - role: list
+          name: Requested permissions
+  - id: enter-invalid-authorization-password
+    title: Enter invalid credentials at the authorization boundary
+    action:
+      fill:
+        css: input[name='password']
+        internal: true
+        value: incorrect-password
+    expect:
+      visible:
+        - css: "input[name='password']"
+          internal: true
+  - id: reject-invalid-authorization
+    title: Reject invalid authorization credentials
+    action:
+      click:
+        role: button
+        name: Approve
+    expect:
+      urlIncludes: /auth/authorize
+      visible:
+        - role: button
+          name: Approve
   - id: enter-correct-password
     title: Enter the reset password
     action:
@@ -161,7 +194,7 @@ workflow:
     action:
       click:
         role: button
-        name: Sign in
+        name: Approve
     expect:
       urlIncludes: /app
       visible:

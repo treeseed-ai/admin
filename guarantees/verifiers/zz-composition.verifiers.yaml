@@ -1,6 +1,127 @@
 schemaVersion: treeseed.guarantee-verifiers/v1
 ownerPackage: "@treeseed/admin"
 verifiers:
+  admin.identity.onboarding:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.identity.onboarding
+    description: Reviewer executes the exact Admin registration and one-use email-confirmation scene in a real browser.
+  admin.identity.password-reset:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.identity.password-reset
+  admin.identity.login:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.identity.login
+  admin.identity.logout:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.identity.logout
+  admin.account.edit-profile:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.account.edit-profile
+  admin.account.sessions:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.account.sessions
+  admin.account.notifications:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.account.notifications
+  admin.account.appearance:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.account.appearance
+  admin.account.public-profile:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.account.public-profile
+  admin.account.delete:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.account.delete
+  admin.team.create:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.create
+  admin.team.select-active:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.select-active
+  admin.team.edit:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.edit
+  admin.team.overview:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.overview
+  admin.team.delete:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.delete
+  admin.team.invite:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.invite
+  admin.team.accept-invite:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.accept-invite
+  admin.team.change-member-role:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.change-member-role
+  admin.team.remove-member:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.remove-member
+  admin.team.public-profile:
+    kind: artifact
+    ownerPackage: "@treeseed/reviewer"
+    artifactId: "@treeseed/reviewer/admin-browser-scenes"
+    entrypoint: dist/verifiers/browser-scenes.js
+    caseId: admin.team.public-profile
   admin.team.ui-contracts: &adminTeamUi
     kind: artifact
     ownerPackage: "@treeseed/admin"

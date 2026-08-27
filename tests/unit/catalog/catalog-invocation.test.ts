@@ -22,6 +22,14 @@ describe('Admin catalog invocation boundary', () => {
 		})).rejects.toThrow('not the authoritative SDK catalog binding');
 	});
 
+	it('derives idempotency from an authoritative descriptor when the caller omits it', async () => {
+		const request = vi.fn().mockResolvedValue({ confirmed: true });
+		await invokeMethod.call({ request } as any, CONTROL_PLANE_OPERATIONS.accounts.confirmEmail, {
+			path: {}, query: {}, body: { token: 'confirmation-token' },
+		});
+		expect(request.mock.calls[0]?.[2]?.idempotencyKey).toBeTruthy();
+	});
+
 	it('builds enhanced-form actions from authoritative descriptors', () => {
 		expect(catalogOperationPath(
 			CONTROL_PLANE_OPERATIONS.teams.removeMember,

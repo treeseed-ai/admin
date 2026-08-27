@@ -78,8 +78,10 @@ export async function invokeMethod<T extends ControlPlaneOperationBinding<any, a
         throw new Error(`Operation ${operationId} has no REST binding.`);
     const bodyInput = binding.schema.body.parse(input.body);
     const path = catalogOperationPath(binding, input.path, input.query);
+    const idempotencyKey = options.idempotencyKey ?? (binding.descriptor.idempotency?.required ? randomId() : undefined);
     return this.request<ControlPlaneOperationOutput<T>>(rest.method, path, {
         ...options,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
         body: rest.method === 'GET' ? undefined : bodyInput,
     });
 }

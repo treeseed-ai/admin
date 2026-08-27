@@ -264,6 +264,11 @@ describe('@treeseed/admin identity and team surface', () => {
 	});
 
 	it('routes network forms through the UI-owned enhanced submission contract', () => {
+		const navigationForms = new Set([
+			'src/pages/auth/authorize.astro',
+			'src/pages/auth/confirm-email.astro',
+			'src/pages/auth/sign-in.astro',
+		]);
 		const astroSources = filesUnder('src')
 			.filter((path) => path.endsWith('.astro'))
 			.map((path) => [path, readFileSync(path, 'utf8')] as const);
@@ -271,6 +276,10 @@ describe('@treeseed/admin identity and team surface', () => {
 			/<form\b[^>]*\bmethod=(?:["']POST["']|["']post["']|\{[^}]*post[^}]*\})/u.test(source)
 		));
 		for (const [path, source] of postFormConsumers) {
+			if (navigationForms.has(path)) {
+				expect(source, `${path} should preserve browser redirect navigation`).not.toContain('data-ts-submit="enhanced"');
+				continue;
+			}
 			expect(source, `${path} should use delegated enhancement`).toContain('data-ts-submit="enhanced"');
 		}
 
@@ -356,6 +365,14 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(manifest).toContain('contentRuntimeSource: r2_preview_overlay');
 		expect(packageJson).toContain('"build:app"');
 		expect(existsSync('astro.config.ts')).toBe(true);
+		const astroConfig = readFileSync('astro.config.ts', 'utf8');
+		expect(astroConfig).toContain('TREESEED_DEVELOPMENT_WORKSPACE_ROOT');
+		expect(astroConfig).toContain('vite:');
+		expect(astroConfig).toContain('fs:');
+		expect(astroConfig).toContain('allow:');
+		const developmentCompose = readFileSync('compose.development.yml', 'utf8');
+		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKSPACE_ROOT:');
+		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKTREE:');
 		expect(existsSync('src/content.config.ts')).toBe(true);
 		expect(existsSync('src/manifest.yaml')).toBe(true);
 		expect(existsSync('src/config.yaml')).toBe(true);

@@ -43,7 +43,7 @@ const appearance = resolveAnonymousThemePreference(Astro);
 ---
 <AuthShell title="Authorize TreeSeed | TreeSeed" description="Review and authorize access to TreeSeed." appearance={appearance}>
 	<AuthCard title="Authorize access" description={presentation ? `${presentation.clientName} is requesting access to your TreeSeed account.` : undefined} error={error} appearance={appearance}>
-		{presentation ? <form method="POST" class="auth-form" data-ts-submit="enhanced">
+		{presentation ? <form method="POST" class="auth-form">
 			<input type="hidden" name="csrfToken" value={csrfToken} />
 			<ul aria-label="Requested permissions">{presentation.scopes.map((scope: string) => <li>{scope}</li>)}</ul>
 			{!Astro.locals.auth?.principal ? <>
