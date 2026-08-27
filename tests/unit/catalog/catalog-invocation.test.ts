@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
-import { catalogOperationPath, invokeMethod } from '../../../src/lib/market/api-client/support/contracts/request.ts';
+import { catalogOperationPath, invokeMethod, requestMethod } from '../../../src/lib/market/api-client/support/contracts/request.ts';
 import { unwrapEnvelope } from '../../../src/lib/market/api-client.ts';
 
 describe('Admin catalog invocation boundary', () => {
@@ -54,5 +54,16 @@ describe('Admin catalog invocation boundary', () => {
 
 	it('unwraps canonical catalog response envelopes', () => {
 		expect(unwrapEnvelope({ data: { id: 'account-1' }, meta: { etag: 'v1' } })).toEqual({ id: 'account-1' });
+	});
+
+	it('preserves RFC problem details for actionable concurrency feedback', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+			code: 'stale', detail: 'The team changed since this page loaded.',
+		}), { status: 409, headers: { 'content-type': 'application/problem+json' } })));
+		await expect(requestMethod.call({
+			headers: () => new Headers(),
+			url: (path: string) => new URL(path, 'https://api.treeseed.localhost'),
+		} as any, 'PATCH', '/v1/teams/team-1', { body: {} })).rejects.toThrow('The team changed since this page loaded.');
+		vi.unstubAllGlobals();
 	});
 });

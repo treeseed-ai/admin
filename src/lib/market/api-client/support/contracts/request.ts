@@ -26,7 +26,7 @@ export async function requestMethod<T = unknown>(this: ApiClientFacade, method: 
     });
     const envelope = await response.json().catch(() => null);
     if (!response.ok || envelope?.ok === false) {
-        const error = new Error(envelope?.message ?? envelope?.error ?? `API request failed: ${response.status}`);
+        const error = new Error(envelope?.message ?? envelope?.detail ?? envelope?.error ?? envelope?.title ?? `API request failed: ${response.status}`);
         (error as any).status = response.status;
         (error as any).details = isObject(envelope) ? envelope : {};
         throw error;
