@@ -3,8 +3,6 @@ import AuthShell from '@treeseed/ui/components/astro/auth/AuthShell.astro';
 import AuthCard from '@treeseed/ui/components/astro/auth/AuthCard.astro';
 import AuthDivider from '@treeseed/ui/components/astro/auth/AuthDivider.astro';
 import ProviderButtonList from '@treeseed/ui/components/astro/auth/ProviderButtonList.astro';
-import Field from '@treeseed/ui/components/astro/forms/Field.astro';
-import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
 import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
 import {
@@ -16,6 +14,7 @@ import {
 } from '../../lib/auth/support/flow';
 import { beginAdminAuthorization } from '../../lib/auth/oauth-browser';
 import { resolveAnonymousThemePreference } from '../../lib/auth/accounts/appearance';
+import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
 import { pageFormFailure } from '../../lib/forms/page-submission';
 
 export const prerender = false;
@@ -34,7 +33,6 @@ if (inviteEmail) registrationParams.set('email', inviteEmail);
 const capabilities = authProviderCapabilities(Astro);
 const provider = Astro.url.searchParams.get('provider');
 let error = Astro.url.searchParams.get('error') ?? '';
-let submittedIdentifier = '';
 const notice = Astro.url.searchParams.get('reset') === 'complete'
 	? 'Password reset complete. You can sign in with your new password.'
 	: Astro.url.searchParams.get('verified')
@@ -63,23 +61,17 @@ if (oauthRedirectPath) {
 
 if (Astro.request.method === 'POST') {
 	const form = await Astro.request.formData();
-	const identifier = String(form.get('login') ?? form.get('email') ?? '').trim();
-	const password = String(form.get('password') ?? '');
-	submittedIdentifier = identifier;
-	if (!identifier || !password) {
-		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, {
-			...(!identifier ? { login: 'Email or username is required.' } : {}),
-			...(!password ? { password: 'Password is required.' } : {}),
-		});
-	} else {
-		// Authentication occurs only at the API authorization decision boundary. The
-		// password is deliberately not persisted by this gateway page.
+	try {
+		requireCsrf(Astro, form.get('csrfToken'));
 		return Astro.redirect((await beginAdminAuthorization(Astro, returnTo)).toString(), 303);
+	} catch (cause) {
+		return pageFormFailure(Astro, cause instanceof Error ? cause.message : 'Sign in could not be started.', Astro.url.pathname + Astro.url.search);
 	}
 }
 
 const enabledProviders = capabilities.providers.filter((entry) => entry.enabled);
 const appearance = resolveAnonymousThemePreference(Astro);
+const csrfToken = ensureCsrfToken(Astro);
 ---
 
 <AuthShell title="Sign In | TreeSeed" description="Sign in to TreeSeed Market." appearance={appearance}>
@@ -99,14 +91,10 @@ const appearance = resolveAnonymousThemePreference(Astro);
 		</Fragment>
 		{capabilities.internal.enabled ? (
 			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>
-				<Field label="Email or username" name="login" required>
-					<TextInput name="login" type="text" autocomplete="username" value={submittedIdentifier} required />
-				</Field>
-				<Field label="Password" name="password" required>
-					<TextInput name="password" type="password" autocomplete="current-password" required minlength={8} />
-				</Field>
+				<input type="hidden" name="csrfToken" value={csrfToken} />
+				<p>Your credentials are entered once on TreeSeed's secure authorization page.</p>
 				<FormActions>
-					<Button type="submit">Sign in</Button>
+					<Button type="submit">Continue to sign in</Button>
 				</FormActions>
 			</form>
 		) : null}
