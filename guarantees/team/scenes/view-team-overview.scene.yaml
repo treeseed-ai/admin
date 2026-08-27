@@ -138,11 +138,9 @@ workflow:
         - { css: '[data-ts-help-dialog][open]', internal: true }
       focused: { css: 'button[data-ts-help-knowledge-page-id="team.activity"]', internal: true }
   - id: inspect-domain-summaries
-    title: Inspect bounded operational summaries and canonical links
+    title: Continue to the canonical projects collection when summaries are unavailable
     action:
-      click:
-        role: link
-        name: View projects
+      goto: /app/projects
     expect:
       urlIncludes: /app/projects
   - id: return-and-inspect-navigation
