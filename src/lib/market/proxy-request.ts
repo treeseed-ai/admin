@@ -22,3 +22,11 @@ export function promoteConcurrencyHeader(headers: Headers, body: ArrayBuffer | u
 		// The API remains authoritative for malformed JSON errors.
 	}
 }
+
+export async function signedConfirmationHeader(response: Response) {
+	if (response.status !== 409) return null;
+	const envelope = await response.clone().json().catch(() => null);
+	const confirmation = envelope?.inputRequired?.confirmation;
+	if (!confirmation || typeof confirmation !== 'object') return null;
+	return Buffer.from(JSON.stringify(confirmation)).toString('base64url');
+}

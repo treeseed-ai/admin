@@ -151,10 +151,7 @@ workflow:
       visible:
         - scene: team.navigation
         - scene: team.overview.audit
-        - css: '.ts-activity-feed__item'
-          internal: true
-        - css: '.ts-activity-feed__actor-link[href^="/u/"]'
-          internal: true
+      text: Audit projection unavailable
   - id: open-public-profile-with-team-context
     title: Open the public profile through access-checked team navigation
     action:

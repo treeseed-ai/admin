@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { promoteConcurrencyHeader } from '../../../src/lib/market/proxy-request.ts';
+import { promoteConcurrencyHeader, signedConfirmationHeader } from '../../../src/lib/market/proxy-request.ts';
 
 function encoded(value: unknown) {
 	return new TextEncoder().encode(JSON.stringify(value)).buffer as ArrayBuffer;
@@ -36,5 +36,12 @@ describe('Admin browser BFF concurrency', () => {
 		const headers = new Headers({ 'content-type': 'application/json' });
 		promoteConcurrencyHeader(headers, encoded({ roleKey: 'reviewer' }));
 		expect(headers.has('if-match')).toBe(false);
+	});
+
+	it('encodes only API-signed confirmation challenges for an exact retry', async () => {
+		const confirmation = { schemaVersion: 'treeseed.confirmation-state/v1', signature: 'signed' };
+		const response = new Response(JSON.stringify({ inputRequired: { confirmation } }), { status: 409 });
+		expect(JSON.parse(Buffer.from((await signedConfirmationHeader(response))!, 'base64url').toString('utf8'))).toEqual(confirmation);
+		expect(await signedConfirmationHeader(new Response('{}', { status: 400 }))).toBeNull();
 	});
 });
