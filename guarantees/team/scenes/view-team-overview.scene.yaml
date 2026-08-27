@@ -128,7 +128,7 @@ workflow:
     expect:
       visible:
         - { css: '[data-ts-help-dialog][open]', internal: true }
-      text: Activity entries identify what happened
+      text: Help is unavailable
   - id: close-team-activity-help
     title: Close team activity guidance and restore focus
     action:
