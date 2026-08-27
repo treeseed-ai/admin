@@ -269,11 +269,30 @@ workflow:
     expect:
       text: Sign in
   - id: sign-in-existing-user
-    title: Sign in and return to the preserved invitation token
+    title: Continue the existing user to the authorization decision
     action:
       click:
         role: button
         name: Sign in
+    expect:
+      urlIncludes: /auth/authorize
+      text: Authorize access
+  - id: fill-existing-user-authorization-identifier
+    title: Reauthenticate the existing user at the decision boundary
+    action:
+      fill: { role: textbox, name: Email or username, value: visual.member@treeseed.io }
+    expect:
+      text: Authorize access
+  - id: fill-existing-user-authorization-password
+    title: Enter the existing user's password at the decision boundary
+    action:
+      fill: { css: 'input[name="password"]', internal: true, value: TreeSeedVisualAudit!2026 }
+    expect:
+      text: Authorize access
+  - id: approve-existing-user-authorization
+    title: Approve Admin access and return to the preserved invitation
+    action:
+      click: { role: button, name: Approve }
     expect:
       urlIncludes: /team-invites/
       text: Accept invitation
