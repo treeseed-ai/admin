@@ -33,10 +33,11 @@ development:
       kind: live-web
       platforms: [linux-amd64, linux-arm64, darwin-arm64, darwin-amd64]
       runtimeRequirements: [node>=22, browser]
-      sourceRoots: [src, public, astro.config.ts]
+      sourceRoots: [src, public, astro.config.ts, compose.development.yml]
       ignoredPaths: [dist, node_modules]
       operations:
-        start: { command: npm, args: [run, dev, --, --host, 127.0.0.1], environment: {}, timeoutSeconds: 86400 }
+        start: { command: docker, args: [compose, --file, compose.development.yml, --project-name, treeseed-admin-development, up, --abort-on-container-exit, --exit-code-from, admin-live], environment: { TREESEED_DEVELOPMENT_EDGE_HOST: admin-live }, timeoutSeconds: 86400 }
+        cleanup: { command: docker, args: [compose, --file, compose.development.yml, --project-name, treeseed-admin-development, down, --remove-orphans], environment: {}, timeoutSeconds: 120 }
         build: { command: npm, args: [run, build], environment: {}, timeoutSeconds: 1800 }
         verify: { command: npm, args: [run, test:unit], environment: {}, timeoutSeconds: 900 }
       ready: { kind: http, path: /healthz, expectedStatus: 200, timeoutSeconds: 120 }
