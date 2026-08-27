@@ -147,12 +147,18 @@ workflow:
     expect:
       text: Color scheme
   - id: activate-personal-theme
-    title: Select the personal theme and reload the appearance page
+    title: Select the personal theme from the application header
     action:
       select:
         role: combobox
         name: Color scheme
         label: Guarantee {{runId}} {{deviceId}}
+    expect:
+      urlIncludes: /app/account/appearance
+  - id: reload-active-personal-theme
+    title: Reload and prove the active personal theme is durable
+    action:
+      goto: /app/account/appearance
     expect:
       urlIncludes: /app/account/appearance
       visible:

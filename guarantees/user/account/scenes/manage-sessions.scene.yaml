@@ -108,17 +108,16 @@ workflow:
       visible:
         - scene: account-sessions
       text: Revoke session
-  - id: verify-session-network-and-pretty-time
-    title: Verify the session network origin and formatted time
+  - id: verify-session-metadata-and-pretty-time
+    title: Verify the additional session and formatted time without trusting a spoofed edge address
     action:
       goto: /app/account/sessions
     expect:
-      text: 198.51.100.27
       notText: T00:00:00.000Z
       visible:
-        - css: '[data-session-entry="treeseed-guarantee-revocable-session"] [data-session-ip]'
+        - css: '[data-session-entry]:has(button:has-text("Revoke session")) [data-session-ip]'
           internal: true
-        - css: '[data-session-entry="treeseed-guarantee-revocable-session"] .account-session-signed-in'
+        - css: '[data-session-entry]:has(button:has-text("Revoke session")) .account-session-signed-in'
           internal: true
   - id: reject-current-session-revocation
     title: Prove no current-session revoke control is exposed
@@ -132,7 +131,7 @@ workflow:
     title: Revoke the additional non-current session
     action:
       click:
-        css: '[data-session-user-agent="treeseed-guarantee-revocable-session"]'
+        css: '[data-session-entry]:has(button:has-text("Revoke session")) button:has-text("Revoke session")'
         internal: true
     expect:
       urlIncludes: /app/account/sessions
