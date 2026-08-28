@@ -321,6 +321,9 @@ describe('@treeseed/admin identity and team surface', () => {
 			expect(scene, path).toContain('[data-ts-toast-id][data-tone="success"]');
 			expect(scene, path).not.toMatch(/urlIncludes:\s*(?:saved|updated|removed)=/u);
 		}
+		const appearanceScene = readFileSync('guarantees/user/account/scenes/manage-appearance.scene.yaml', 'utf8');
+		expect(appearanceScene).toContain('value: Guarantee {{runShort}} {{deviceId}}');
+		expect(appearanceScene).not.toContain('Guarantee {{runId}} {{deviceId}}');
 	});
 
 	it('retains domain facades without route-specific UI dependencies', () => {
