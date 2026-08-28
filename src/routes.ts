@@ -38,6 +38,8 @@ function adminRoute(pattern: string, resourcePath: string, input: CapabilityInpu
 }
 
 export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapabilities([
+	adminRoute('/404', 'pages/404.astro', { id: 'admin.system.not-found', description: 'Admin-owned themed not-found response for authenticated and public routes.', archetype: 'message', template: 'MessageTemplate', surface: 'system', resourceType: 'route-error', accessPolicy: ['anonymous or signed-in principal'], navigation: 'hidden', states: ['not-found'] }),
+	adminRoute('/500', 'pages/500.astro', { id: 'admin.system.error', description: 'Admin-owned themed unavailable response for authenticated and public routes.', archetype: 'message', template: 'MessageTemplate', surface: 'system', resourceType: 'route-error', accessPolicy: ['anonymous or signed-in principal'], navigation: 'hidden', states: ['unavailable', 'retry'] }),
 	adminRoute('/app', 'pages/app/index.astro', { id: 'admin.app.start', description: 'Authenticated identity and active-team start dashboard.', guarantees: ['guarantee.user.auth.user-login.004', 'guarantee.team.team.switch-active-team.013'] }),
 	adminRoute('/app/account', 'pages/app/account/index.astro', { id: 'admin.account.identity', description: 'Identity, immutable username, verified email, password, and connected-provider settings.', guarantees: ['guarantee.user.account.edit-account-settings.006'], knowledgePageIds: ['account.identity'] }),
 	adminRoute('/app/account/sessions', 'pages/app/account/sessions.astro', { id: 'admin.account.sessions', description: 'Account session collection with current-session protection and revocation.', guarantees: ['guarantee.user.account.manage-sessions.007'], knowledgePageIds: ['account.sessions'] }),

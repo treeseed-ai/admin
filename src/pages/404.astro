@@ -1,0 +1,29 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import PublicNotFound from '../components/runtime/PublicNotFound.astro';
+import TreeseedAppLayout from '../layouts/AppLayout.astro';
+import { loadAppContext } from '../view-models/app-access.js';
+
+Astro.response.status = 404;
+const authenticatedAppPath = Boolean(Astro.locals.auth?.principal && Astro.url.pathname.startsWith('/app'));
+const context = authenticatedAppPath ? await loadAppContext(Astro) : null;
+const title = 'Page not found';
+const description = authenticatedAppPath
+	? 'This Admin page does not exist or is no longer available.'
+	: 'This TreeSeed page does not exist or is not publicly available.';
+---
+
+{authenticatedAppPath && context ? (
+	<TreeseedAppLayout title={title} description={description} currentPath={Astro.url.pathname} teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+		<section class="ts-template" aria-label="Page not found" data-scene="admin.not-found">
+			<PageHeader eyebrow="404" title={title} description={description} />
+			<Panel title="Return to a known Admin page" description="Your session and active-team selection have not changed.">
+				<div class="ts-action-bar"><Button href="/app/" variant="primary">Admin start</Button><Button href="/app/teams" variant="secondary">Manage teams</Button></div>
+			</Panel>
+		</section>
+	</TreeseedAppLayout>
+) : (
+	<PublicNotFound currentPath={Astro.url.pathname} description={description} />
+)}

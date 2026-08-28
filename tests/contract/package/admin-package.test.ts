@@ -8,6 +8,8 @@ import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
 import { authenticatedAuthRedirect, isAnonymousAuthRoute } from '../../../src/lib/auth/support/access-policy';
 
 const EXPECTED_ROUTES = [
+	'/404',
+	'/500',
 	'/app',
 	'/app/account',
 	'/app/account/sessions',

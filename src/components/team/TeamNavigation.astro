@@ -2,7 +2,7 @@
 import SurfaceTabs from '@treeseed/ui/components/astro/shell/SurfaceTabs.astro';
 
 interface Props {
-	team: { id: string; name: string; status?: string };
+	team: { id: string; name: string; status?: string; metadata?: { visibility?: string } };
 	currentPath: string;
 	canManage?: boolean;
 	isOwner?: boolean;
@@ -16,7 +16,7 @@ const items = [
 	{ id: 'members', label: 'Members', href: `${root}/members`, visible: true },
 	{ id: 'settings', label: 'Settings', href: `${root}/edit`, visible: canManage },
 	{ id: 'lifecycle', label: 'Lifecycle', href: `${root}/delete`, visible: isOwner },
-	{ id: 'public-profile', label: 'Public profile', href: `/t/${encodeURIComponent(team.name)}`, visible: team.status !== 'archived' },
+	{ id: 'public-profile', label: 'Public profile', href: `/t/${encodeURIComponent(team.name)}`, visible: team.status !== 'archived' && team.metadata?.visibility === 'public' },
 ];
 const normalizedPath = currentPath.replace(/\/+$/u, '');
 const visibleItems = items.filter((item) => item.visible);

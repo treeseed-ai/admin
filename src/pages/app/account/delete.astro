@@ -2,6 +2,7 @@
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
 import AccountDeletionPanel from '@treeseed/ui/components/astro/account/AccountDeletionPanel.astro';
+import type { AuthProviderCapability } from '@treeseed/sdk/account-contracts';
 import { handleDeletionRequest, loadAccountFrame } from '../../../view-models/account-settings';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/delete')}`);
@@ -11,7 +12,7 @@ if (response) return response;
 const [identity, deletion] = await Promise.all([frame.api.accountIdentity(), frame.api.accountDeletionBlockers()]);
 // External authentication-provider linking remains planned. Account deletion
 // is currently reauthenticated with the API-owned credential flow.
-const providers = [];
+const providers: AuthProviderCapability[] = [];
 const reauthenticationGrantId = Astro.url.searchParams.get('reauthenticationGrantId');
 ---
 

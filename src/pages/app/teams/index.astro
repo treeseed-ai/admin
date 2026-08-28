@@ -31,7 +31,7 @@ function teamActions(team: any) {
 		{ label: 'Overview', href: `/app/teams/${encodeURIComponent(team.id)}`, visible: actions.viewOverview !== false },
 		{ label: 'Settings', href: `/app/teams/${encodeURIComponent(team.id)}/edit`, visible: actions.edit === true },
 		{ label: 'Members', href: `/app/teams/${encodeURIComponent(team.id)}/members`, visible: actions.manageMembers === true },
-		{ label: 'Public profile', href: `/t/${encodeURIComponent(team.name)}`, visible: team.status === 'active' },
+		{ label: 'Public profile', href: `/t/${encodeURIComponent(team.name)}`, visible: team.status === 'active' && team.metadata?.visibility === 'public' },
 	];
 }
 ---

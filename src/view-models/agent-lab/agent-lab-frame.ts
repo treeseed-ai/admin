@@ -2,6 +2,7 @@ import { agentLabMetricKeys, type AgentAtlasProjection, type AgentLabActivityInt
 import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import type { ApiClientFacade } from '../../lib/market/api-client.ts';
 import type { AllocationSnapshot } from '@treeseed/ui/components/react/OperationsMonitor';
+import { items } from '../../lib/operations/records.ts';
 
 export const agentLabMetricDestinations = {
 	agents: '/app/work/agents', workdays: '/app/work/workdays', systemEvents: '/app/work/events',
@@ -20,15 +21,17 @@ function fallbackOverview(team: { id: string; name?: string; slug?: string }, ti
 function fallbackAtlas(teamId:string,overview:AgentLabOverview):AgentAtlasProjection{return{revision:'server-snapshot-unavailable',generatedAt:overview.generatedAt,timeZone:overview.timeZone,scope:{teamId,selectedDate:overview.workdayContext.selectedDate,workdayIds:[],projectIds:[],groupIds:[],agentIds:[],activityProfiles:[],sizingMetric:'activity'},topologies:[],nodeStates:[],assignments:[],activity:[],workdaySummary:null,activityWindow:{total:0,loaded:0,truncated:false},playback:{mode:'live',startedAt:overview.operatingDay.start,endedAt:overview.operatingDay.end,liveEdgeAt:overview.generatedAt,cursor:{cursor:null,observedAt:overview.generatedAt,positions:{}}},alerts:[{id:'atlas-unavailable',severity:'warning',message:'The Agent Atlas projection is temporarily unavailable.'}]}}
 
 export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string; name?: string; slug?: string }, preferences: AccountPreferences, selection: { date?: string | null; workday?: string | null } = {}) {
-	const base = `/v1/teams/${encodeURIComponent(team.id)}`;
-	const query = new URLSearchParams(); if (selection.date) query.set('date', selection.date); if (selection.workday) query.set('workday', selection.workday);
-	const suffix = query.size ? `?${query}` : '';
-	const [providers, workdays, assignments, projects] = await Promise.all([
+	void selection;
+	const [providerResult, workdayResult, assignmentResult, projectResult] = await Promise.all([
 		api.listProviderAvailabilitySessions(team.id).catch(() => null),
 		api.listWorkdayRuns(team.id).catch(() => null),
 		api.listProviderAssignments(team.id).catch(() => null),
-		api.listProjectsForPrincipal().then((items: any[]) => items.filter((item) => item.teamId === team.id)).catch(() => null),
+		api.listProjectsForPrincipal().catch(() => null),
 	]);
+	const providers = providerResult === null ? null : items(providerResult);
+	const workdays = workdayResult === null ? null : items(workdayResult);
+	const assignments = assignmentResult === null ? null : items(assignmentResult);
+	const projects = projectResult === null ? null : items(projectResult).filter((item) => item.teamId === team.id);
 	const overview = fallbackOverview(team, preferences.timeZone);
 	overview.connectivity = [providers, workdays, assignments, projects].every((value) => value !== null) ? 'live' : 'degraded';
 	if (providers) overview.activeProviders = providers.filter((item: any) => ['active', 'available', 'connected'].includes(String(item.status))).length;
