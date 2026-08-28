@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../../../src/plugin';
 import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk/site-contracts/plugin';
@@ -111,6 +112,13 @@ function resolveSiteHooks(): SiteExtensionContribution {
 }
 
 describe('@treeseed/admin identity and team surface', () => {
+	it('serves the canonical UI-owned TreeSeed logo', () => {
+		const canonicalLogo = readFileSync(fileURLToPath(import.meta.resolve('@treeseed/ui/assets/treeseed-logo.svg')));
+		const publicLogo = readFileSync('public/logo.svg');
+		expect(publicLogo).toEqual(canonicalLogo);
+		expect(readFileSync('scripts/brand/sync-assets.ts', 'utf8')).toContain("import.meta.resolve('@treeseed/ui/assets/treeseed-logo.svg')");
+	});
+
 	it('registers exactly the retained routes and resources', () => {
 		const pageFiles = filesUnder('src/pages').filter((path) => /\.(astro|ts)$/u.test(path));
 		const expectedPageRoutes = [
