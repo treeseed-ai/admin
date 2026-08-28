@@ -104,7 +104,7 @@ workflow:
       fill:
         role: textbox
         name: Theme name
-        value: Guarantee {{runId}} {{deviceId}}
+        value: Guarantee {{runShort}} {{deviceId}}
     expect:
       visible:
         - css: "[data-personal-theme-builder] [data-personal-theme-base]"
@@ -152,7 +152,7 @@ workflow:
       select:
         role: combobox
         name: Color scheme
-        label: Guarantee {{runId}} {{deviceId}}
+        label: Guarantee {{runShort}} {{deviceId}}
         settleNavigation: true
     expect:
       urlIncludes: /app/account/appearance
@@ -163,7 +163,7 @@ workflow:
     expect:
       urlIncludes: /app/account/appearance
       visible:
-        - css: '[data-active-personal-theme-name="Guarantee {{runId}} {{deviceId}}"]'
+        - css: '[data-active-personal-theme-name="Guarantee {{runShort}} {{deviceId}}"]'
           internal: true
 chapters: []
 overlays: []
