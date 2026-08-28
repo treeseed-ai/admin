@@ -1,11 +1,28 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { loadAgentLabFrame } from '../../../src/view-models/agent-lab/agent-lab-frame';
 
 const source = (path: string) => readFileSync(path, 'utf8');
 const entityRoutes = ['agents', 'events', 'assignments', 'executions', 'artifacts'];
 const navigatorRoutes = ['inbox', 'decisions', 'build', 'direction', 'results', 'find'];
 
 describe('Agent Lab command header and navigator', () => {
+	it('normalizes catalog collection envelopes before deriving monitoring totals', async () => {
+		const api = {
+			listProviderAvailabilitySessions: async () => ({ items: [{ status: 'active' }] }),
+			listWorkdayRuns: async () => ({ items: [{ id: 'workday-1', status: 'running' }] }),
+			listProviderAssignments: async () => ({ items: [{ id: 'assignment-1', status: 'completed' }] }),
+			listProjectsForPrincipal: async () => ({ items: [{ id: 'project-1', teamId: 'team-1' }] }),
+		};
+		const frame = await loadAgentLabFrame(api as any, { id: 'team-1', name: 'TreeSeed' }, {
+			timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5,
+		} as any);
+		expect(frame.overview.connectivity).toBe('live');
+		expect(frame.overview.activeProviders).toBe(1);
+		expect(frame.overview.activeWorkdays).toBe(1);
+		expect(frame.overview.workdayContext.workdays).toHaveLength(1);
+		expect(Object.fromEntries(frame.overview.metrics.map((metric) => [metric.key, metric.value]))).toMatchObject({ workdays: 1, assignments: 1, agents: 1 });
+	});
 	it('uses one shared chrome without conventional page or Command navigation', () => {
 		const chrome = source('src/components/agent-lab/AgentLabChrome.astro');
 		expect(chrome).toContain('AgentLabMonitor');

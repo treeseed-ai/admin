@@ -48,6 +48,7 @@ describe('team management architecture audit', () => {
 		const activeCards = collection.slice(collection.indexOf('{activeTeams.map'), collection.indexOf('{archivedTeams.length'));
 		expect(activeCards).not.toContain('>Archive</Button>');
 		expect(collection).not.toContain("cookies.set('treeseed_active_team'");
+		expect(collection).toContain("team.metadata?.visibility === 'public'");
 		expect(creation).not.toContain("cookies.set('treeseed_active_team'");
 		expect(access).not.toContain('selectableTeams[0]');
 		expect(active).toContain("entry.status ?? 'active'");
@@ -166,6 +167,7 @@ describe('team management architecture audit', () => {
 		expect(navigation).toContain("import SurfaceTabs from '@treeseed/ui/components/astro/shell/SurfaceTabs.astro'");
 		expect(navigation).toContain('<SurfaceTabs');
 		expect(navigation).toContain('wrap');
+		expect(navigation).toContain("team.metadata?.visibility === 'public'");
 		expect(navigation).not.toContain('ts-team-tabs');
 		for (const path of teamPages) {
 			const page = source(path);

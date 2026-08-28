@@ -9,6 +9,10 @@ const dependencySource = (name: string, path: string) => readFileSync(resolve(ro
 describe('knowledge management architecture', () => {
 	it('composes the workbench exclusively from shared UI knowledge primitives', () => {
 		const page = source('src/pages/app/knowledge/index.astro');
+		expect(page).toContain("import { items } from '../../../lib/operations/records'");
+		expect(page).toContain('items(await api.listTeamProjects');
+		expect(page).toContain("reviews = items(await api.request('GET'");
+		expect(page).toContain('collections = items(savedCollections); builds = items(packBuilds)');
 		for (const component of ['KnowledgeAuthoringForm', 'KnowledgeLifecyclePanel', 'KnowledgeOutline',
 			'KnowledgePackWorkbench', 'KnowledgeProjectCollection', 'KnowledgePublicationStatus', 'KnowledgeReviewCollection']) {
 			expect(page).toContain(`@treeseed/ui/components/astro/knowledge/${component}.astro`);

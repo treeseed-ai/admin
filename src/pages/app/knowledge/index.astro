@@ -17,6 +17,7 @@ import { formSubmissionResponse } from '@treeseed/ui/forms';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/support/csrf';
 import { ApiClientFacade } from '../../../lib/market/api-client';
+import { items } from '../../../lib/operations/records';
 import { loadAppContext } from '../../../view-models/app-access.js';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/knowledge')}`);
@@ -37,7 +38,7 @@ const canReview = permissions.has('knowledge:review');
 const canPublish = permissions.has('knowledge:publish');
 const canManageBooks = permissions.has('knowledge:manage-books');
 const canBuildPacks = permissions.has('knowledge:build-packs');
-const projects = context.activeTeam ? await api.listTeamProjects(context.activeTeam.id).catch(() => []) : [];
+const projects = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])) : [];
 let selectedProjectId = Astro.url.searchParams.get('project') ?? '';
 let workspaceId = Astro.url.searchParams.get('workspace') ?? '';
 let sourcePath = Astro.url.searchParams.get('sourcePath') ?? '';
@@ -218,7 +219,7 @@ if (canManageBooks && !workspaceId && selectedProjectId && sourcePath) {
 	catch { lifecycleUnavailable = true; Astro.response.status = 503; }
 }
 if (context.activeTeam && (canReview || canPublish) && Astro.url.searchParams.get('view') === 'reviews') {
-	try { reviews = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/reviews`); }
+	try { reviews = items(await api.request('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/reviews`)); }
 	catch { reviewsUnavailable = true; Astro.response.status = 503; }
 }
 if (context.activeTeam && canBuildPacks && Astro.url.searchParams.get('view') === 'packs') {
@@ -228,7 +229,7 @@ if (context.activeTeam && canBuildPacks && Astro.url.searchParams.get('view') ==
 			api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/collections`),
 			api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/packs`),
 		]);
-		books = catalog.books ?? []; collections = savedCollections; builds = packBuilds;
+		books = Array.isArray(catalog.books) ? catalog.books : []; collections = items(savedCollections); builds = items(packBuilds);
 	} catch { packsUnavailable = true; Astro.response.status = 503; }
 }
 if (context.activeTeam && canRead && !workspaceId && !selectedProjectId && !Astro.url.searchParams.get('view')) {

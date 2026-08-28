@@ -6,6 +6,7 @@ import KnowledgeProfileIdentity from '@treeseed/ui/components/astro/public/profi
 import KnowledgeProfileLayout from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileLayout.astro';
 import KnowledgeProfileStats from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileStats.astro';
 import TeamNavigation from '../../components/team/TeamNavigation.astro';
+import PublicNotFound from '../../components/runtime/PublicNotFound.astro';
 import { createApiFacade } from '../../lib/market/api-client';
 import { resolvePublicTeamProfile } from '../../lib/market/public-access.js';
 
@@ -16,11 +17,11 @@ const normalizedName = requestedName.trim().toLowerCase().replace(/[^a-z0-9-]+/g
 if (requestedName !== normalizedName && normalizedName) return Astro.redirect(`/t/${normalizedName}`, 301);
 
 const profile: any = await resolvePublicTeamProfile(Astro, normalizedName);
-if (!profile?.team) return new Response('Not found', { status: 404 });
+if (!profile?.team) Astro.response.status = 404;
 
-const team = profile.team;
-const knowledge = profile.knowledge ?? { stats: {}, catalog: [], knowledgePacks: [], projects: [], trail: [] };
-const displayName = team.displayName ?? team.name;
+const team = profile?.team ?? null;
+const knowledge = profile?.knowledge ?? { stats: {}, catalog: [], knowledgePacks: [], projects: [], trail: [] };
+const displayName = team?.displayName ?? team?.name ?? 'Team';
 const principal = Astro.locals.auth?.principal;
 const api = createApiFacade(Astro);
 const [preferences, accessibleTeams] = principal
@@ -30,20 +31,20 @@ const [preferences, accessibleTeams] = principal
 	])
 	: [{ timeZone: 'UTC' }, []];
 const timeZone = preferences.timeZone;
-const memberTeam = accessibleTeams.find((entry: any) => entry.name === team.name) ?? null;
+const memberTeam = team ? accessibleTeams.find((entry: any) => entry.name === team.name) ?? null : null;
 const memberRoles = memberTeam?.roles ?? [];
 const canManageTeam = Boolean(memberTeam?.allowedActions?.edit);
 const isOwner = memberRoles.includes('team_owner');
 const publishedBySlug = new Map<string, any>();
-for (const item of [...knowledge.catalog, ...knowledge.knowledgePacks]) {
+for (const item of [...(Array.isArray(knowledge.catalog) ? knowledge.catalog : []), ...(Array.isArray(knowledge.knowledgePacks) ? knowledge.knowledgePacks : [])]) {
 	const key = `${item.kind ?? 'knowledge_pack'}:${item.slug}`;
 	if (!publishedBySlug.has(key)) publishedBySlug.set(key, item);
 }
 const published = [...publishedBySlug.values()];
-const projects = knowledge.projects.map((project: any) => ({ ...project, kind: 'project', title: project.name }));
+const projects = (Array.isArray(knowledge.projects) ? knowledge.projects : []).map((project: any) => ({ ...project, kind: 'project', title: project.name }));
 ---
 
-<TreeseedPublicLayout
+{!team ? <PublicNotFound currentPath={Astro.url.pathname} description="This team does not exist or has not published a public profile." /> : <TreeseedPublicLayout
 	title={`${displayName} (@${team.name}) | TreeSeed`}
 	description={team.profileSummary ?? `Public knowledge profile for @${team.name}.`}
 	currentPath={`/t/${team.name}`}
@@ -87,4 +88,4 @@ const projects = knowledge.projects.map((project: any) => ({ ...project, kind: '
 		/>
 		<KnowledgeActivityTrail items={knowledge.trail} timeZone={timeZone} />
 	</KnowledgeProfileLayout>
-</TreeseedPublicLayout>
+</TreeseedPublicLayout>}
