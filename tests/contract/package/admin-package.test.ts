@@ -282,6 +282,7 @@ describe('@treeseed/admin identity and team surface', () => {
 			}
 			expect(source, `${path} should use delegated enhancement`).toContain('data-ts-submit="enhanced"');
 		}
+		expect(readFileSync('src/pages/auth/sign-in.astro', 'utf8')).toContain('data-astro-reload');
 
 		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
 		const pageHelper = readFileSync('src/lib/forms/page-submission.ts', 'utf8');

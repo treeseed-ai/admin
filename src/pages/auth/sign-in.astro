@@ -97,7 +97,7 @@ const csrfToken = ensureCsrfToken(Astro);
 			) : null}
 		</Fragment>
 		{capabilities.internal.enabled ? (
-			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>
+			<form class="auth-form" method="POST" action={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`} data-astro-reload>
 				<input type="hidden" name="csrfToken" value={csrfToken} />
 				<Field label="Email or username" name="identifier" required>
 					<TextInput name="identifier" value={identifier} autocomplete="username" required />
