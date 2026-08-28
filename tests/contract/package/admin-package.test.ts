@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../../../src/plugin';
@@ -6,6 +7,8 @@ import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk
 import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../../../src/routes';
 import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
 import { authenticatedAuthRedirect, isAnonymousAuthRoute } from '../../../src/lib/auth/support/access-policy';
+
+const require = createRequire(import.meta.url);
 
 const EXPECTED_ROUTES = [
 	'/404',
@@ -111,6 +114,13 @@ function resolveSiteHooks(): SiteExtensionContribution {
 }
 
 describe('@treeseed/admin identity and team surface', () => {
+	it('serves the canonical UI-owned TreeSeed logo', () => {
+		const canonicalLogo = readFileSync(require.resolve('@treeseed/ui/assets/treeseed-logo.svg'));
+		const publicLogo = readFileSync('public/logo.svg');
+		expect(publicLogo).toEqual(canonicalLogo);
+		expect(readFileSync('scripts/brand/sync-assets.ts', 'utf8')).toContain("import.meta.resolve('@treeseed/ui/assets/treeseed-logo.svg')");
+	});
+
 	it('registers exactly the retained routes and resources', () => {
 		const pageFiles = filesUnder('src/pages').filter((path) => /\.(astro|ts)$/u.test(path));
 		const expectedPageRoutes = [
