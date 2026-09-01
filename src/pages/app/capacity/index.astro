@@ -26,9 +26,14 @@ const [snapshot, access, preferences, registrationKey, requestPage, membershipPa
 	team ? api.request('GET', `/v1/teams/${encodeURIComponent(team.id)}/capacity-provider-memberships?limit=100`).catch(() => null) : null,
 ]);
 const usagePages = team && snapshot ? await Promise.all(snapshot.projects.map((project) => api.request('GET', `${base}/usage?projectId=${encodeURIComponent(String(project.id))}&limit=100`).catch(() => null))) : [];
+const providerStatuses = team && snapshot ? await Promise.all(snapshot.providers.map((provider: any) => {
+	const providerId=String(provider.providerId ?? provider.id ?? '');
+	return providerId?api.request('GET',`/v1/teams/${encodeURIComponent(team.id)}/capacity-providers/${encodeURIComponent(providerId)}/status`).catch(()=>null):null;
+})) : [];
 const reservationItems = snapshot?.reservations ?? []; const usageItems = usagePages.flatMap(items); const ledgerItems = snapshot?.ledger ?? [];
 const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role))); const csrfToken = ensureCsrfToken(Astro);
 const providerRequests = items(requestPage); const memberships = items(membershipPage);
+const providerAlerts=providerStatuses.flatMap((status:any)=>Array.isArray(status?.alerts)?status.alerts:[]);
 const object = (value: unknown) => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {};
 const number = (...values: unknown[]) => values.map(Number).find(Number.isFinite) ?? 0;
 const fleet = (snapshot?.providers ?? []).map((provider: any) => {
@@ -54,6 +59,7 @@ const registrationBase = `/v1/teams/${encodeURIComponent(team?.id ?? '')}/capaci
 		{!team ? <EmptyState title="Choose an active team" description="Capacity evidence is team-scoped." /> : <>
 			<CapacityControlRoom providers={fleet} timeZone={preferences.timeZone} title="Provider energy grid" description="Strict intersections of provider supply, team grants, reservations, and live usage." />
 			<MetricGrid min="12rem"><MetricCard label="Provider sessions" value={snapshot?.providers.length ?? 0} description="Availability reports" /><MetricCard label="Reservations" value={reservationItems.length} description="Committed capacity" /><MetricCard label="Usage records" value={usageItems.length} description="Reported actuals" /><MetricCard label="Ledger entries" value={ledgerItems.length} description="Settled accounting evidence" /></MetricGrid>
+			{providerAlerts.length?<Panel eyebrow="Provider blockers" title={`${providerAlerts.length} capability offer alert${providerAlerts.length===1?'':'s'}`} description="Unavailable offers remain excluded from assignment matching until the provider updates and requalifies them.">{providerAlerts.map((alert:any)=><ResourceCard title={text(alert.code,'Provider offer unavailable')} description={text(alert.message,`${alert.offerId ?? 'offer'} · ${alert.status ?? 'unavailable'}`)} status={String(alert.status ?? 'blocked')} tone="danger" />)}</Panel>:null}
 			<div class="ts-resource-grid">
 				<Panel eyebrow="Connection authority" title="Provider invite circuit" description="Invite authority is team-scoped. Values remain concealed until an explicit audited reveal.">
 					<ResourceCard title="Team invite token" description={text(object(registrationKey).status, 'Not initialized')} status={String(object(registrationKey).status ?? 'unknown')} tone={statusTone(object(registrationKey).status)} />
