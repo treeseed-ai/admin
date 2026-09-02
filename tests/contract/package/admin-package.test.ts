@@ -360,6 +360,23 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(missingTargets).toEqual([]);
 	});
 
+	it('seals a server-rendered Cloudflare Pages application for hosted deployment', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+			devDependencies?: Record<string, string>;
+			scripts?: Record<string, string>;
+		};
+		const publish = readFileSync('.github/workflows/publish.yml', 'utf8');
+		const custody = readFileSync('scripts/release-custody.ts', 'utf8');
+
+		expect(packageJson.devDependencies?.['@astrojs/cloudflare']).toBe('12.6.13');
+		expect(packageJson.scripts?.['build:pages']).toContain('TREESEED_WEB_RUNTIME_TARGET=cloudflare');
+		expect(publish).toContain('npm run build:pages');
+		expect(publish).toContain('source-assets/admin-pages.tar.gz');
+		expect(publish).toContain("test -f .treeseed/app-dist/_worker.js/index.js");
+		expect(publish).toContain("test -f .treeseed/app-dist/_routes.json");
+		expect(custody).toContain("name === 'admin-pages.tar.gz' ? 'admin-pages'");
+	});
+
 	it('keeps hosted deployment suspended', () => {
 		expect(existsSync('.github/workflows/deploy.yml')).toBe(false);
 		expect(readFileSync('.github/workflows/release-gate.yml', 'utf8')).not.toContain('trsd hosting apply');

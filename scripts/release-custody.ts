@@ -17,7 +17,8 @@ if (process.argv[2] === 'seal') {
 	for (const name of readdirSync(output).filter((name) => name !== basename(evidencePath)).sort()) {
 		const path = resolve(output, name); if (!statSync(path).isFile()) continue;
 		const kind = name.endsWith('.tgz') ? 'npm-package' as const : name === 'component-release.json' ? 'component-manifest' as const : name === 'compose.yml' ? 'compose' as const : name.includes('sbom') ? 'sbom' as const : 'archive' as const;
-		artifacts.push({ id: `asset-${createHash('sha256').update(name).digest('hex').slice(0, 12)}`, kind, identity: name, digest: sha256(path), mediaType: name.endsWith('.json') ? 'application/json' : name.endsWith('.yml') ? 'application/yaml' : 'application/gzip', size: statSync(path).size });
+		const id = name === 'admin-pages.tar.gz' ? 'admin-pages' : `asset-${createHash('sha256').update(name).digest('hex').slice(0, 12)}`;
+		artifacts.push({ id, kind, identity: name, digest: sha256(path), mediaType: name.endsWith('.json') ? 'application/json' : name.endsWith('.yml') ? 'application/yaml' : 'application/gzip', size: statSync(path).size });
 	}
 	const receiptDigest = `sha256:${createHash('sha256').update(`${sourceCommit}\n${artifacts.map(({ digest }) => digest).join('\n')}`).digest('hex')}` as const;
 	const evidence = releaseEvidenceSchema.parse({ schemaVersion: 'treeseed.release-evidence/v1', candidate: { id: `candidate-${sourceCommit.slice(0, 12)}`, receiptDigest, sourceCommit, stagingRef: process.env.GITHUB_REF ?? 'refs/heads/staging', workflowRunId: process.env.GITHUB_RUN_ID ?? '1', createdAt: new Date().toISOString() }, packages: [{ projectId: 'admin', name: pkg.name, version: pkg.version, minimumBump: 'patch' }], artifacts, contractBundles: [], compatibilityAttestations: [], verification: { status: 'passed', operations: ['npm run verify:direct', 'multi-architecture OCI build'], completedAt: new Date().toISOString() } });
