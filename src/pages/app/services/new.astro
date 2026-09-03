@@ -65,8 +65,8 @@ const permissions = provider ? [...new Set(provider.credentialProfiles.flatMap((
 						<input type="hidden" name="csrfToken" value={csrfToken} />
 						<input type="hidden" name="providerId" value={provider.id} />
 						<div class="ts-form-grid">
-							<Field label="Connection name" name="displayName" help="A concise name administrators will recognize." required>
-								<TextInput name="displayName" placeholder={`${provider.label} team account`} maxlength={80} required />
+							<Field label="Connection reference" name="displayName" help="A stable, provider-scoped name used by portable Platform topology. It must exactly match the topology connectionRef; database IDs never belong in Platform." required>
+								<TextInput name="displayName" placeholder={`${provider.id}-hosting-staging`} maxlength={80} required />
 							</Field>
 							{provider.connectionFields.map((item) => (
 								<Field label={item.label} name={`config.${item.key}`} help={item.description} required={item.required}>
