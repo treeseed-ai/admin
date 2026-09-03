@@ -62,7 +62,7 @@
     "@astrojs/starlight": "0.37.6",
     "@react-email/render": "^2.0.8",
     "@treeseed/core": ">=0.12.60-rc.1 <0.14.0",
-    "@treeseed/sdk": ">=0.13.0-rc.82 <0.14.0",
+    "@treeseed/sdk": "0.13.0-rc.84",
     "@treeseed/ui": "^0.12.18-rc.11",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
