@@ -65,6 +65,17 @@ describe('service management architecture', () => {
 		expect(adapters).not.toContain('document.cookie');
 	});
 
+	it('supports portable topology references and isolated R2 state metadata', () => {
+		const createPage = read('src/pages/app/services/new.astro');
+		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
+		expect(createPage).toContain('Connection reference');
+		expect(createPage).toContain('exactly match the topology connectionRef');
+		expect(createPage).toContain('database IDs never belong in Platform');
+		for (const field of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef']) {
+			expect(providerContracts).toContain(`field("${field}"`);
+		}
+	});
+
 	it('renders service activity in the persisted user timezone', () => {
 		for (const page of ['src/pages/app/services/index.astro', 'src/pages/app/services/[connectionId].astro', 'src/pages/app/services/vault.astro']) {
 			const source = read(page);

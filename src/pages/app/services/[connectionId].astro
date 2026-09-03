@@ -280,7 +280,7 @@ const environmentReference = (profileId: string) => `TREESEED_GITHUB_TOKEN_${Str
 								<input type="hidden" name="csrfToken" value={csrfToken} />
 								<input type="hidden" name="providerId" value={provider.id} />
 								<input type="hidden" name="version" value={connection.version} />
-								<Field label="Connection name" name="displayName" required>
+								<Field label="Connection reference" name="displayName" help="Stable provider-scoped name used by portable Platform topology." required>
 									<TextInput name="displayName" value={connection.displayName} required />
 								</Field>
 								{provider.connectionFields.map((field) => (
