@@ -15,6 +15,8 @@ export default {
 	...(developmentWorkspaceRoot ? {
 		vite: {
 			...site.vite,
+			resolve: { ...site.vite?.resolve, preserveSymlinks: true },
+			ssr: { ...site.vite?.ssr, noExternal: ['@treeseed/ui'] },
 			server: {
 				...site.vite?.server,
 				fs: { ...site.vite?.server?.fs, allow: [...(site.vite?.server?.fs?.allow ?? []), developmentWorkspaceRoot] },

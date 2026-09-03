@@ -4,6 +4,11 @@ import { getSiteAuthConfig } from "../../../../../auth/configuration/config";
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 import type { AstroLike, ApiClientFacade } from '../../../../api-client.ts';
 import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, encodeAssertionPayload, signAssertionPayload, createTrustedWebUserAssertion, apiServiceHeaders, apiAccessTokenFromCookies, setApiAccessTokenCookie, clearApiAccessTokenCookie, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../../api-client.ts';
+export interface TeamProjectPage {
+    items: Array<Record<string, unknown>>;
+    cursor?: string | null;
+}
+
 export function listTeamProjectsMethod(this: ApiClientFacade, teamId: string) {
-    return this.request<any[]>('GET', `/v1/projects?teamId=${encodeURIComponent(teamId)}`);
+    return this.request<TeamProjectPage>('GET', `/v1/projects?teamId=${encodeURIComponent(teamId)}`);
 }

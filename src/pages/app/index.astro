@@ -6,6 +6,7 @@ import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
+import { developmentSceneAdminRoute, resolveDevelopmentScene } from '@treeseed/ui/foundation';
 import TreeseedAppLayout from '../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../lib/market/api-client.ts';
 import { statusTone, text } from '../../lib/operations/records.ts';
@@ -19,6 +20,11 @@ if (!Astro.locals.auth?.principal) {
 }
 
 const context = await loadAppContext(Astro);
+const requestedScene = import.meta.env.DEV ? resolveDevelopmentScene(Astro.url.searchParams.get('devScene') ?? '') : undefined;
+if (requestedScene) {
+	const route = developmentSceneAdminRoute(requestedScene, context.activeTeam?.id);
+	return Astro.redirect(`${route}?devScene=${encodeURIComponent(requestedScene.id)}`);
+}
 const api = new ApiClientFacade(Astro);
 const [focus, command] = context.activeTeam ? await Promise.all([loadFocusSnapshot(api, context.activeTeam.id), loadCommandSnapshot(api, context.activeTeam.id)]) : [null, null];
 const workday = command ? activeWorkday(command) : null; const situations = command ? deriveCommandSituations(command) : [];

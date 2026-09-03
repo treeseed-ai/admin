@@ -44,6 +44,18 @@ describe('Admin OAuth browser session', () => {
 		expect(target.searchParams.get('redirect_uri')).toBe('https://admin.treeseed.localhost/auth/callback/treeseed');
 	});
 
+	it('uses the request loopback origin only in explicit local development mode', async () => {
+		const request = context();
+		request.url = new URL('http://127.0.0.1:4322/auth/sign-in');
+		Object.assign(request.locals.runtime.env, {
+			TREESEED_SITE_URL: 'https://admin.treeseed.localhost',
+			TREESEED_DEVELOPMENT_MODE: 'live',
+		});
+		const target = await beginAdminAuthorization(request as any, '/app/');
+		expect(target.origin).toBe('http://127.0.0.1:4322');
+		expect(target.searchParams.get('redirect_uri')).toBe('http://127.0.0.1:4322/auth/callback/treeseed');
+	});
+
 	it('completes the exact first-party credential transaction without a visible consent hop', async () => {
 		const request = context();
 		const originalFetch = globalThis.fetch;

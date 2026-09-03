@@ -1,21 +1,13 @@
 ---
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import ActivityFeed from '@treeseed/ui/components/astro/activity/ActivityFeed.astro';
-import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
-import MetricCard from '@treeseed/ui/components/astro/data/metrics/MetricCard.astro';
-import MetricGrid from '@treeseed/ui/components/astro/data/metrics/MetricGrid.astro';
-import Stack from '@treeseed/ui/components/astro/layout/Stack.astro';
-import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
-import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart';
-import TeamAccessDetails from '../../../../components/team/TeamAccessDetails.astro';
+import TeamViewer from '@treeseed/ui/components/astro/team/TeamViewer.astro';
 import TeamNavigation from '../../../../components/team/TeamNavigation.astro';
 import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../../lib/market/api-client';
 import { roleDisplay } from '../../../../lib/teams/access-display';
 import { teamAuditDisplay } from '../../../../lib/teams/audit-display';
+import { items } from '../../../../lib/operations/records';
 import { loadAppContext, resolveAppTeam } from '../../../../view-models/app-access.js';
 
 const teamId = String(Astro.params.teamId ?? '');
@@ -30,9 +22,16 @@ let summary: any = null;
 let unavailable = resolution.status === 'unavailable';
 if (team) {
 	try {
-		const access = await new ApiClientFacade(Astro).getTeamAccessSummary(team.id);
+		const api = new ApiClientFacade(Astro);
+		const [access, projectPage] = await Promise.all([
+			api.getTeamAccessSummary(team.id),
+			api.listTeamProjects(team.id).catch(() => []),
+		]);
+		const projects = items(projectPage);
+		const projectSummaries = await Promise.all(projects.slice(0, 50).map(async (project: any) => ({ project, summary: await api.getProjectSummary(String(project.id)).catch(() => ({})) })));
 		summary = {
 			access,
+			projects: projectSummaries,
 			counts: {
 				members: typeof team.counts?.members === 'number' ? team.counts.members : 'Unavailable',
 				pendingInvitations: typeof team.counts?.pendingInvitations === 'number' ? team.counts.pendingInvitations : 'Unavailable',
@@ -54,22 +53,37 @@ if (team) {
 	Astro.response.status = resolution.status === 'forbidden' ? 403 : resolution.status === 'unavailable' ? 503 : 404;
 }
 
-const operationalEntries = summary?.operational ? Object.entries(summary.operational) as Array<[string, any]> : [];
 const managementRoles = new Set(['team_owner', 'project_lead']);
 const canManageTeam = Boolean(summary?.access?.roles?.some((role: string) => managementRoles.has(role)));
 const isOwner = Boolean(summary?.access?.roles?.includes('team_owner'));
-const operationalLabels: Record<string, string> = {
-	projects: 'Projects',
-	services: 'Services',
-	capacity: 'Capacity and allocation',
-	knowledge: 'Knowledge',
-	catalog: 'Catalog and billing',
-};
 const auditEvents = Array.isArray(summary?.auditEvents) ? summary.auditEvents : null;
 const auditActivity = auditEvents?.map((event: any) => teamAuditDisplay(event)) ?? [];
-const contentActivity = Array.isArray(summary?.contentActivity) ? summary.contentActivity : null;
 const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role).label)
 	.join(', ') || 'Member';
+const projects = (summary?.projects ?? []).map(({ project, summary: projectSummary }: any) => ({
+	id: String(project.id),
+	title: project.displayName ?? project.name ?? project.slug ?? 'Project',
+	description: projectSummary.operatingState?.summary ?? projectSummary.description ?? project.description ?? project.coreObjective ?? 'Open the project operating view.',
+	status: String(projectSummary.status ?? project.status ?? 'active'),
+	meta: `${Number(projectSummary.pendingApprovals ?? 0)} approvals · ${Number(projectSummary.activeAgents ?? 0)} active agents`,
+	href: `/app/projects/${encodeURIComponent(String(project.id))}`,
+}));
+const resources = [
+	{ title: 'Knowledge', description: 'Books, project knowledge, review, and publication.', status: 'Available', href: '/app/knowledge' },
+	{ title: 'Models', description: 'Connected and published intelligence resources.', status: 'Contextual', href: '/app/market?type=model' },
+	{ title: 'Templates', description: 'Reusable project and agent configurations.', status: 'Contextual', href: '/app/market?type=template' },
+];
+const metrics = [
+	{ label: 'Projects', value: projects.length, description: 'Visible team projects', href: '/app/projects' },
+	{ label: 'Members', value: summary?.counts?.members ?? 'Unavailable', description: 'Active membership' },
+	{ label: 'Invitations', value: summary?.counts?.pendingInvitations ?? 'Unavailable', description: 'Pending responses' },
+];
+const actions = [
+	{ label: 'Connect service', href: '/app/services/new', variant: 'secondary' as const },
+	{ label: 'Manage capacity', href: '/app/capacity', variant: 'secondary' as const },
+	{ label: 'Open projects', href: '/app/projects', variant: 'primary' as const },
+	...(canManageTeam ? [{ label: 'Manage members', href: `/app/teams/${encodeURIComponent(team?.id ?? '')}/members`, variant: 'secondary' as const }] : []),
+];
 ---
 
 <TreeseedAppLayout title={team ? `${team.displayName ?? team.name} overview` : 'Team unavailable'} description="Operational team context and links to the domains that own team work." currentPath="/app/teams" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader={Boolean(team && summary && !unavailable)}>
@@ -79,69 +93,8 @@ const roleLabel = summary?.access?.roles?.map((role: string) => roleDisplay(role
 		</EmptyState>
 	) : team && summary ? (
 		<section class="ts-template" aria-label="Team operational overview" data-scene="team.overview">
-			<PageHeader
-				eyebrow={team.status === 'archived' ? 'Archived team' : 'Operational overview'}
-				title={team.displayName ?? team.name}
-				description={`@${team.name} · ${roleLabel}`}
-			/>
 			<TeamNavigation team={team} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} />
-
-			<div class="ts-resource-grid">
-				<Panel eyebrow="Identity" title="Team profile" description={team.profileSummary || 'No team summary has been added.'} knowledgePageId="team.settings">
-					<KeyValueList items={[
-						{ key: 'Status', value: team.status ?? 'active' },
-						{ key: 'Members', value: summary.counts?.members ?? 0 },
-						{ key: 'Pending invitations', value: summary.counts?.pendingInvitations ?? 0 },
-					]} />
-				</Panel>
-				<Panel eyebrow="Access" title="Your team role" description="These responsibilities come from your team role, not separate per-user permission settings." knowledgePageId="team.roles">
-					<Stack>
-						<TeamAccessDetails
-							role={summary.access?.roles?.[0] ?? 'viewer'}
-							capabilities={summary.access?.capabilities ?? []}
-						/>
-						{canManageTeam ? <Button href={`/app/teams/${encodeURIComponent(team.id)}/members`} variant="secondary" size="sm">Manage team roles</Button> : null}
-					</Stack>
-				</Panel>
-			</div>
-
-			<Panel eyebrow="Operations" title="Owned domain summaries" description="Open the canonical domain page to make changes." knowledgePageId="team.overview">
-				<div class="ts-resource-grid">
-					<ResourceCard title="Agent Lab" description="Design agents, govern proposals, allocate time, launch simulations, and monitor production work." href="/app/work" status="Operational workspace" tone="success" />
-				</div>
-				{operationalEntries.length > 0 ? <MetricGrid min="14rem">
-					{operationalEntries.map(([key, item]) => (
-						<MetricCard
-							href={item.href}
-							ariaLabel={`View ${(item.label ?? operationalLabels[key] ?? key.replaceAll('_', ' ')).toLowerCase()}`}
-							label={item.label ?? operationalLabels[key] ?? key.replaceAll('_', ' ')}
-							value={item.count ?? '—'}
-							description="Open domain"
-							dataScene={`team.overview.${key}`}
-						/>
-					))}
-				</MetricGrid> : <EmptyState title="Operational summaries unavailable" description="Catalogued domain totals are not available in this foundation; no zero values have been inferred." />}
-			</Panel>
-
-			<div data-scene="team.overview.content-activity">
-				{contentActivity ? <ProjectActivityChart
-					client:load
-					title="Project content activity"
-					description="Created and updated published content across this team’s projects."
-					eyebrow="Knowledge work"
-					initialEvents={contentActivity}
-					initialBucketSizeMs={604_800_000}
-					initialDisplayMode="period"
-					pollIntervalMs={null}
-					showPollingControl={false}
-				/> : <EmptyState title="Content activity unavailable" description="A catalogued activity projection is not available; no empty timeline has been inferred." />}
-			</div>
-
-			<Panel eyebrow="Security" title="Recent team audit activity" description="Security-sensitive team changes recorded by the API." knowledgePageId="team.activity">
-				<div data-scene="team.overview.audit">
-					{auditEvents ? <ActivityFeed items={auditActivity} emptyLabel="No recent security-sensitive activity." /> : <EmptyState title="Audit projection unavailable" description="Open the authoritative audit domain when its catalogued team read is published." />}
-				</div>
-			</Panel>
+			<TeamViewer name={team.displayName ?? team.name} handle={team.name} description={team.profileSummary} logoUrl={team.logoUrl} status={team.status} {roleLabel} projectLabel="All projects" metrics={metrics} projects={projects} resources={resources} activity={auditEvents ? auditActivity : null} actions={actions} />
 		</section>
 	) : (
 		<EmptyState title={Astro.response.status === 403 ? 'Team access denied' : 'Team not found'} description={Astro.response.status === 403 ? 'You do not have access to this team.' : 'This team does not exist or is no longer available.'} actions={[{ label: 'Back to teams', href: '/app/teams' }]} />

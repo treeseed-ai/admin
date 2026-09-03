@@ -7,7 +7,7 @@ import { loadAgentLabFrame } from './agent-lab-frame.ts';
 export async function loadAgentLabEntityPage(context: APIContext, kind: AgentLabEntityKind) {
 	const app = await loadAppContext(context); const api = new ApiClientFacade(context);
 	const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const }));
-	if (!app.activeTeam) return { app, preferences, monitor: null, items: [] as AgentLabEntitySummary[], total: 0, query: '', status: '', nextHref: null };
+	if (!app.activeTeam) return { app, preferences, monitor: null, items: [] as AgentLabEntitySummary[], total: 0, query: '', status: '', nextHref: undefined };
 	const query = context.url.searchParams.get('q') ?? ''; const status = context.url.searchParams.get('status') ?? ''; const cursor = context.url.searchParams.get('cursor') ?? '';
 	const date = context.url.searchParams.get('date'); const workday = context.url.searchParams.get('workday');
 	const params = new URLSearchParams({ kind, limit: '25' }); if (query) params.set('q', query); if (status) params.set('status', status); if (cursor) params.set('cursor', cursor);
@@ -20,5 +20,5 @@ export async function loadAgentLabEntityPage(context: APIContext, kind: AgentLab
 	const next = new URLSearchParams(); if (query) next.set('q', query); if (status) next.set('status', status); if (date) next.set('date', date); if (workday) next.set('workday', workday);
 	if (payload.page?.nextCursor) next.set('cursor', payload.page.nextCursor);
 	return { app, preferences, monitor, items: payload.items ?? [], total: Number(payload.total ?? 0), query, status,
-		nextHref: payload.page?.nextCursor ? `${context.url.pathname}?${next}` : null };
+		nextHref: payload.page?.nextCursor ? `${context.url.pathname}?${next}` : undefined };
 }

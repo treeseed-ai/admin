@@ -56,28 +56,26 @@ describe('team management architecture audit', () => {
 		expect(active).toContain("cookies.set('treeseed_active_team'");
 		const layout = source('src/layouts/AppLayout.astro');
 		expect(layout).toContain('!activeTeam ? <option value="" selected disabled>Choose a team</option>');
-		expect(layout).toContain("label: 'Team overview'");
-		expect(layout).toContain("href: `/app/teams/${encodeURIComponent(activeTeam.id)}`");
+		expect(layout).toContain('title="Current team"');
+		expect(layout).toContain("href={activeTeam ? `/app/teams/${encodeURIComponent(activeTeam.id)}` : '/app/teams'}");
 		expect(layout).toContain("label: 'Manage teams', href: '/app/teams'");
 		expect(layout).not.toContain("label: 'Create team', href: '/app/teams/new'");
 	});
 
 	it('keeps overview, settings, membership, consent, and lifecycle responsibilities complete', () => {
 		const overview = source('src/pages/app/teams/[teamId]/index.astro');
-		for (const label of ['Members', 'Pending invitations', 'Projects', 'Services', 'Capacity and allocation', 'Knowledge', 'Catalog and billing', 'Project content activity', 'Recent team audit activity', 'Agent Lab']) {
+		for (const label of ['Members', 'Invitations', 'Projects', 'Knowledge', 'Models', 'Templates', 'Connect service', 'Manage capacity', 'Open projects']) {
 			expect(overview, label).toContain(label);
 		}
-		expect(overview).toContain("import ProjectActivityChart from '@treeseed/ui/components/react/ProjectActivityChart'");
-		expect(overview).toContain('data-scene="team.overview.content-activity"');
-		expect(overview).toContain('initialBucketSizeMs={604_800_000}');
-		expect(overview).toContain('pollIntervalMs={null}');
+		expect(overview).toContain("TeamViewer from '@treeseed/ui/components/astro/team/TeamViewer.astro'");
+		expect(overview).not.toContain('CoreWorkspaceNavigation');
+		expect(overview).toContain('data-scene="team.overview"');
+		expect(overview).toContain('<TeamViewer');
+		expect(overview).toContain('<TeamNavigation');
 		expect(overview).toContain("new Set(['team_owner', 'project_lead'])");
 		expect(overview).toContain('getTeamAccessSummary(team.id)');
 		expect(overview).not.toContain('CONTROL_PLANE_OPERATIONS.teams.access');
 		expect(overview).not.toContain('team.overview.management-actions');
-		const overviewHeader = overview.slice(overview.indexOf('<PageHeader'), overview.indexOf('<TeamNavigation'));
-		expect(overviewHeader).not.toContain('slot="actions"');
-		expect(overviewHeader).not.toMatch(/>(?:Settings|Members)</u);
 		const marketPage = source('src/pages/app/market/index.astro');
 		expect(marketPage).toContain('currentPath="/app/market"');
 		expect(marketPage).toContain('This bounded landing page preserves domain ownership.');

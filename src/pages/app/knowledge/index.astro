@@ -1,18 +1,5 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import FormActions from '@treeseed/ui/components/astro/forms/FormActions.astro';
-import Select from '@treeseed/ui/components/astro/forms/Select.astro';
-import KnowledgeAuthoringForm from '@treeseed/ui/components/astro/knowledge/KnowledgeAuthoringForm.astro';
-import KnowledgeOutline from '@treeseed/ui/components/astro/knowledge/KnowledgeOutline.astro';
-import KnowledgeProjectCollection from '@treeseed/ui/components/astro/knowledge/KnowledgeProjectCollection.astro';
-import KnowledgePackWorkbench from '@treeseed/ui/components/astro/knowledge/KnowledgePackWorkbench.astro';
-import KnowledgeReviewCollection from '@treeseed/ui/components/astro/knowledge/KnowledgeReviewCollection.astro';
-import KnowledgeLifecyclePanel from '@treeseed/ui/components/astro/knowledge/KnowledgeLifecyclePanel.astro';
-import KnowledgePublicationStatus from '@treeseed/ui/components/astro/knowledge/KnowledgePublicationStatus.astro';
-import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
-import BookList from '@treeseed/ui/components/astro/site/content/BookList.astro';
+import KnowledgeWorkbenchSurface from '@treeseed/ui/components/astro/knowledge/KnowledgeWorkbenchSurface.astro';
 import { formSubmissionResponse } from '@treeseed/ui/forms';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/support/csrf';
@@ -55,7 +42,6 @@ let libraryCatalog: any = null;
 let libraryUnavailable = false;
 let lifecycle: any = null;
 let lifecycleUnavailable = false;
-let publicationStatus: any = null;
 
 const commaList = (value: FormDataEntryValue | null) => String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean);
 const valuesFromForm = (data: FormData) => ({
@@ -233,10 +219,7 @@ if (context.activeTeam && canBuildPacks && Astro.url.searchParams.get('view') ==
 	} catch { packsUnavailable = true; Astro.response.status = 503; }
 }
 if (context.activeTeam && canRead && !workspaceId && !selectedProjectId && !Astro.url.searchParams.get('view')) {
-	try { [libraryCatalog, publicationStatus] = await Promise.all([
-		api.request<any>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/catalog`),
-		api.request<any>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/publication-status`),
-	]); }
+	try { libraryCatalog = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/catalog`); }
 	catch { libraryUnavailable = true; Astro.response.status = 503; }
 }
 const projectItems = projects.map((project: any) => ({
@@ -260,65 +243,5 @@ const requestedUnauthorizedControl = Boolean(
 ---
 
 <TreeseedAppLayout title="Knowledge" description="Author, review, link, and package repository-native team knowledge." currentPath="/app/knowledge" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
-	<SettingsTemplate title="Knowledge workbench" description={context.activeTeam ? `Federated books and knowledge for ${context.activeTeam.displayName ?? context.activeTeam.name}.` : 'Select an active team to work with knowledge.'} sections={sections} knowledgePageId="knowledge.authoring">
-		{!context.activeTeam ? (
-			<EmptyState title="Choose an active team" description="Knowledge permissions and project repositories are scoped to the active team." actions={[{ label: 'Manage teams', href: '/app/teams' }]} />
-		) : accessUnavailable ? (
-			<EmptyState title="Knowledge access is unavailable" description="Permissions could not be verified. Authoring, review, publication, lifecycle, and pack controls remain unavailable until access can be confirmed." actions={[{ label: 'Retry', href: Astro.url.pathname + Astro.url.search }]} />
-		) : !canRead || requestedUnauthorizedControl ? (
-			<EmptyState title="Knowledge controls unavailable" description="Your role does not permit this knowledge operation. No mutation controls have been rendered." actions={[{ label: 'Open accessible knowledge', href: '/app/knowledge' }]} />
-		) : Astro.url.searchParams.get('view') === 'reviews' ? (
-			<Panel title="Knowledge reviews" description="Review committed TreeDX diffs before publication." data-knowledge-review-list>
-				{reviewsUnavailable ? <EmptyState title="Knowledge reviews are unavailable" description="The review store did not respond. No empty queue has been inferred." actions={[{ label: 'Retry', href: '/app/knowledge?view=reviews' }]} />
-					: <KnowledgeReviewCollection reviews={reviews} action="/app/knowledge?view=reviews" csrfToken={csrfToken} timeZone={preferences.timeZone} />}
-			</Panel>
-		) : Astro.url.searchParams.get('view') === 'packs' ? (
-			<Panel title="Collections and knowledge packs" description="Build immutable artifacts from exact TreeDX repository snapshots." data-knowledge-pack-panel>
-				{packsUnavailable ? <EmptyState title="Knowledge packs are unavailable" description="The catalog or pack store did not respond. No empty library has been inferred." actions={[{ label: 'Retry', href: '/app/knowledge?view=packs' }]} />
-					: <KnowledgePackWorkbench action="/app/knowledge?view=packs" csrfToken={csrfToken} books={books} collections={collections} builds={builds} timeZone={preferences.timeZone} />}
-			</Panel>
-		) : workspace ? (
-			<Panel title="Knowledge draft" description={`TreeDX workspace ${workspace.branchName}`} data-knowledge-editor-panel>
-				<KnowledgeAuthoringForm action="/app/knowledge" csrfToken={csrfToken} workspaceId={workspace.id} version={workspace.version} sourcePath={sourcePath} expectedSha={sourceSha} values={formValues} />
-			</Panel>
-		) : selectedProjectId ? (
-			<Panel title="Start an authoring workspace" description="A private, recoverable TreeDX workspace will be created from the repository publication ref.">
-				<form method="post" action="/app/knowledge" class="ts-form-stack" data-ts-submit="enhanced" data-scene="knowledge.workspace.start">
-					<input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="action" value="start" /><input type="hidden" name="requestId" value="" data-ts-request-id /><input type="hidden" name="projectId" value={selectedProjectId} />{sourcePath ? <input type="hidden" name="sourcePath" value={sourcePath} /> : null}
-					<p>The workspace is restricted to books, knowledge pages, and approved knowledge assets. Saving does not publish changes.</p>
-					<FormActions align="start"><Button type="submit">Create draft workspace</Button><Button href="/app/knowledge" variant="secondary">Cancel</Button></FormActions>
-				</form>
-				{!canManageBooks ? null : lifecycleUnavailable ? <EmptyState title="Knowledge lifecycle is unavailable" description="The repository or dependency graph did not respond. Archive and restore remain unavailable until the complete dependency check succeeds." actions={[{ label: 'Retry', href: Astro.url.pathname + Astro.url.search }]} />
-					: lifecycle ? <KnowledgeLifecyclePanel action="/app/knowledge" csrfToken={csrfToken} projectId={selectedProjectId}
-					path={sourcePath} expectedSha={lifecycle.expectedSha} kind={lifecycle.kind} status={lifecycle.definition.status}
-					dependencies={lifecycle.dependencies} /> : null}
-			</Panel>
-		) : Astro.url.searchParams.get('view') === 'author' ? (
-			<Panel title="Choose a knowledge repository" description="A draft workspace is isolated to one project repository and its approved content paths.">
-				{projects.length ? <form method="get" action="/app/knowledge" class="ts-action-bar"><Select name="project" options={projects.map((project: any) => ({ label: project.name, value: project.id }))} /><Button type="submit">Continue</Button></form>
-					: <EmptyState title="No authorable projects" description="You do not have an accessible project repository in this team." />}
-			</Panel>
-		) : (
-			<>
-				<Panel title="Team library" description="Search books federated from the active team's project repositories through TreeDX.">
-					{libraryUnavailable ? <EmptyState title="The team library is unavailable" description="TreeDX or a project repository did not respond. No empty library has been inferred." actions={[{ label: 'Retry', href: '/app/knowledge' }]} />
-						: libraryCatalog?.books?.length ? <BookList searchEndpoint={`/v1/knowledge/library?teamId=${encodeURIComponent(context.activeTeam.id)}`} items={libraryCatalog.books.map((book: any) => ({ ...book,
-							pageCount: libraryCatalog.pages.filter((page: any) => page.bookId === book.id).length,
-							teamSlug: book.source.teamSlug,
-							manageHref: `/app/knowledge?project=${encodeURIComponent(book.source.projectId)}&sourcePath=${encodeURIComponent(book.source.path)}&kind=book`,
-						}))} /> : <EmptyState title="No books yet" description="Create the first repository-native book for this team." actions={[{ label: 'Author knowledge', href: '/app/knowledge?view=author' }]} />}
-				</Panel>
-				{libraryCatalog?.books?.length ? <Panel title="Book outlines" description="Browse ordered pages and open a recoverable authoring workspace.">
-					<KnowledgeOutline books={libraryCatalog.books.map((book: any) => ({ ...book, pages: libraryCatalog.pages.filter((page: any) => page.bookId === book.id)
-						.map((page: any) => ({ ...page, manageHref: `/app/knowledge?project=${encodeURIComponent(page.source.projectId)}&sourcePath=${encodeURIComponent(page.source.path)}&kind=page` })) }))} />
-				</Panel> : null}
-				<Panel title="Knowledge repositories" description="Books remain in their owning project repositories; select a project to manage its source.">
-					<KnowledgeProjectCollection projects={projectItems} />
-				</Panel>
-				<Panel title="Publication state" description="The exact federated revision currently served to readers and knowledge-pack builds.">
-					<KnowledgePublicationStatus status={publicationStatus} timeZone={preferences.timeZone} />
-				</Panel>
-			</>
-		)}
-	</SettingsTemplate>
+	<KnowledgeWorkbenchSurface team={context.activeTeam} {sections} view={requestedView} retryHref={Astro.url.pathname + Astro.url.search} {accessUnavailable} {canRead} {requestedUnauthorizedControl} {reviewsUnavailable} {reviews} {packsUnavailable} {books} {collections} {builds} {workspace} {selectedProjectId} {sourcePath} {sourceSha} {formValues} {canManageBooks} {lifecycleUnavailable} {lifecycle} {projects} {projectItems} {libraryCatalog} {libraryUnavailable} {csrfToken} timeZone={preferences.timeZone} />
 </TreeseedAppLayout>

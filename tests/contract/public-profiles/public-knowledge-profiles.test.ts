@@ -7,19 +7,21 @@ function source(path: string) {
 
 describe('public knowledge profile composition', () => {
 	it('composes both principals from the canonical UI profile system', () => {
-		for (const path of ['src/pages/u/[username].astro', 'src/pages/t/[name].astro']) {
-			const page = source(path);
-			for (const component of [
-				'KnowledgeProfileLayout',
-				'KnowledgeProfileIdentity',
-				'KnowledgeProfileStats',
-				'KnowledgeProfileCollection',
-				'KnowledgeActivityTrail',
-			]) expect(page, `${path} should use ${component}`).toContain(component);
+		const user = source('src/pages/u/[username].astro');
+		for (const component of ['KnowledgeProfileLayout', 'KnowledgeProfileIdentity', 'KnowledgeProfileStats', 'KnowledgeProfileCollection', 'KnowledgeActivityTrail']) {
+			expect(user, `user profile should use ${component}`).toContain(component);
+		}
+		expect(user).toContain('accountPreferences()');
+		expect(user).toContain('timeZone={timeZone}');
+
+		const team = source('src/pages/t/[name].astro');
+		expect(team).toContain("TeamViewer from '@treeseed/ui/components/astro/team/TeamViewer.astro'");
+		expect(team).toContain('<TreeseedPublicLayout');
+		expect(team).toContain('<TeamViewer');
+		expect(team).toContain('publicView');
+		for (const page of [user, team]) {
 			expect(page).not.toContain('ProfileTemplate');
 			expect(page).not.toContain('formatTimestamp');
-			expect(page).toContain('accountPreferences()');
-			expect(page).toContain('timeZone={timeZone}');
 		}
 	});
 
@@ -27,7 +29,7 @@ describe('public knowledge profile composition', () => {
 		const user = source('src/pages/u/[username].astro');
 		const team = source('src/pages/t/[name].astro');
 		expect(user).toContain('Team membership stays private');
-		expect(team).toContain('Public catalog');
+		expect(team).toContain('Published team resource');
 		expect(team).toContain('Public projects');
 		for (const promotionalFallback of [
 			'Growing reusable knowledge in public',
