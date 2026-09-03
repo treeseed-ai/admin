@@ -4,7 +4,7 @@ services:
     working_dir: ${TREESEED_DEVELOPMENT_WORKTREE:?TreeSeed development worktree is required}
     init: true
     read_only: true
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    command: ["node", "--import", "tsx", "scripts/development/live-web.ts"]
     environment:
       HOST: 0.0.0.0
       PORT: "4322"
@@ -43,6 +43,7 @@ services:
     tmpfs:
       - /tmp
       - ${TREESEED_DEVELOPMENT_WORKTREE:?TreeSeed development worktree is required}/.astro
+      - ${TREESEED_DEVELOPMENT_WORKTREE:?TreeSeed development worktree is required}/node_modules/.astro
       - ${TREESEED_DEVELOPMENT_WORKTREE:?TreeSeed development worktree is required}/node_modules/.vite
     networks:
       - edge

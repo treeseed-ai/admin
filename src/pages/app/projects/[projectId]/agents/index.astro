@@ -1,23 +1,13 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
-import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import ResourceCard from '@treeseed/ui/components/astro/surface/ResourceCard.astro';
-import ModeNavigation from '../../../../../components/modes/ModeNavigation.astro';
+import ProjectAgentsSurface from '@treeseed/ui/components/astro/project/ProjectAgentsSurface.astro';
 import TreeseedAppLayout from '../../../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../../../lib/market/api-client.ts';
-import { items, statusTone, text } from '../../../../../lib/operations/records.ts';
+import { items, text } from '../../../../../lib/operations/records.ts';
 import { loadAppContext } from '../../../../../view-models/app-access.ts';
-
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 const projectId = String(Astro.params.projectId ?? ''); const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro);
 const owned = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])).some((entry) => String(entry.id) === projectId) : false;
 const [project, classesData, runsData] = owned ? await Promise.all([api.getProjectDetails(projectId).catch(() => null), api.request('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-classes?limit=100`).catch(() => null), api.request('GET', `/v1/projects/${encodeURIComponent(projectId)}/agent-mode-runs?projection=activity&limit=200`).catch(() => null)]) : [null, null, null];
-const classes = items(classesData); const runs = items(runsData);
-if (!project) Astro.response.status = 404;
+const agents = items(classesData); const runs = items(runsData); if (!project) Astro.response.status = 404;
 ---
-<TreeseedAppLayout title={`${text((project as any)?.displayName, (project as any)?.name, 'Project')} agents`} description="Configured project roles and their recent mode-run evidence." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
-	<section class="ts-template" aria-label="Project agents" data-scene="command.project.agents"><PageHeader eyebrow="Command · Project agents" title={text((project as any)?.displayName, (project as any)?.name, 'Project unavailable')} description="Inspection-only roster. Canonical MDX authoring remains in the synchronized content workflow."><Button slot="actions" href={`/app/projects/${encodeURIComponent(projectId)}`} variant="secondary">Project overview</Button></PageHeader><ModeNavigation mode="command" current="projects" />
-		{!project ? <EmptyState title="Project not found" description="The project is unavailable or outside your authorized scope." /> : !classes.length ? <EmptyState title="No synchronized agent classes" description="This surface does not invent agent definitions when the control plane has no projection." /> : <div class="ts-resource-grid">{classes.map((agent) => { const activity = runs.filter((run) => String(run.agentClassId ?? run.agent_class_id) === String(agent.id)); const latest = activity[0]; return <ResourceCard title={text(agent.displayName, agent.name, agent.slug, String(agent.id))} description={`${text(agent.description, agent.handler, 'Configured project agent')} · ${activity.length} recent runs`} status={String(latest?.status ?? agent.status ?? 'configured')} tone={statusTone(latest?.status ?? agent.status)} href={`/app/projects/${encodeURIComponent(projectId)}/agents/${encodeURIComponent(String(agent.id))}`} />; })}</div>}
-	</section>
-</TreeseedAppLayout>
+<TreeseedAppLayout title={`${text((project as any)?.displayName, (project as any)?.name, 'Project')} agents`} description="Configured project roles and their recent mode-run evidence." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader><ProjectAgentsSurface {projectId} {project} {agents} {runs} /></TreeseedAppLayout>

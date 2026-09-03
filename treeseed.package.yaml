@@ -33,9 +33,10 @@ development:
       kind: live-web
       platforms: [linux-amd64, linux-arm64, darwin-arm64, darwin-amd64]
       runtimeRequirements: [node>=22, browser]
-      sourceRoots: [src, public, astro.config.ts, compose.development.yml]
+      sourceRoots: [src, public, scripts/development, astro.config.ts, compose.development.yml]
       ignoredPaths: [dist, node_modules]
       operations:
+        setup: { command: npm, args: [run, brand:sync], environment: {}, timeoutSeconds: 120 }
         start: { command: docker, args: [compose, --file, compose.development.yml, --project-name, treeseed-admin-development, up, --abort-on-container-exit, --exit-code-from, admin-live], environment: { TREESEED_DEVELOPMENT_EDGE_HOST: admin-live }, timeoutSeconds: 86400 }
         cleanup: { command: docker, args: [compose, --file, compose.development.yml, --project-name, treeseed-admin-development, down, --remove-orphans], environment: {}, timeoutSeconds: 120 }
         build: { command: npm, args: [run, build], environment: {}, timeoutSeconds: 1800 }
@@ -44,9 +45,9 @@ development:
       outputs: []
       endpoints: [{ id: http, protocol: http, port: 4322, canonicalAlias: admin.treeseed.localhost, visibility: host, authentication: application }]
       dependencies:
-        - { id: sdk, target: package, locality: local, reaction: reload }
-        - { id: ui, target: package, locality: local, reaction: reload }
-        - { id: core, target: package, locality: local, reaction: reload }
+        - { id: sdk, target: package, locality: local, reaction: restart }
+        - { id: ui, target: package, locality: local, reaction: restart }
+        - { id: core, target: package, locality: local, reaction: restart }
         - { id: api, target: service, capability: control-plane-api, locality: either, reaction: none }
       statePolicy: stateless
       migrationPolicy: none

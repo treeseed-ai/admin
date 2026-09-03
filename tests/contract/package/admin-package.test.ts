@@ -20,6 +20,7 @@ const EXPECTED_ROUTES = [
 	'/app/account/appearance',
 	'/app/account/delete',
 	'/app/capacity',
+	'/app/chat',
 	'/app/command',
 	'/app/command/agents',
 	'/app/command/assignments/[assignmentId]',
@@ -174,7 +175,7 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('keeps navigation focused on active-team work and identity management', () => {
 		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
 		const publicLayout = readFileSync('src/layouts/PublicLayout.astro', 'utf8');
-		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/services', '/app/projects', '/app/work', '/app/knowledge', '/knowledge/market/', '/status/']) {
+		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/work', '/app/chat', '/app/work/inbox', '/app/work/find', '/app/knowledge', '/knowledge/market/', '/status/']) {
 			expect(appLayout).toContain(target);
 		}
 		for (const target of ['/market', '/cart', '/seller']) {
@@ -186,18 +187,22 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('SITE_SLOGAN');
 		expect(appLayout).toContain("from '@treeseed/ui/site-brand'");
 		expect(appLayout).toContain("from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro'");
-		for (const icon of ['start', 'teams', 'account', 'sign-out']) {
+		for (const icon of ['capacity', 'discussion', 'inbox', 'search', 'knowledge', 'teams', 'account', 'sign-out']) {
 			expect(appLayout).toContain(`icon: '${icon}'`);
 		}
 		expect(appLayout).not.toContain("{ label: 'Capacity'");
 		expect(appLayout).not.toContain("{ label: 'Work'");
 		expect(appLayout).not.toContain("{ label: 'Command'");
 		expect(appLayout).not.toContain("{ label: 'Focus'");
-		expect(appLayout).toContain("{ label: 'Agent Lab'");
+		expect(appLayout).toContain("{ label: 'Follow'");
+		expect(appLayout).toContain("{ label: 'Chat / Discuss'");
+		expect(appLayout).toContain("{ label: 'Inbox'");
+		expect(appLayout).toContain("{ label: 'Explore'");
+		expect(appLayout).toContain("{ label: 'Books'");
 		expect(appLayout).not.toContain("{ label: 'Teams'");
 		expect(appLayout).toContain('<ShellIcon name="teams"');
 		expect(appLayout).toContain('iconOnly: true');
-		expect(appLayout).toContain('title="Manage teams"');
+		expect(appLayout).toContain('title="Current team"');
 		expect(appLayout).not.toContain("from '@treeseed/ui'");
 		expect(appLayout).not.toContain('Identity and teams');
 		expect(publicLayout).toContain('SITE_SLOGAN');
@@ -213,7 +218,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
 		for (const path of appPages) {
 			const source = readFileSync(path, 'utf8');
-			const contentTemplateOwnsHeader = /<(?:AgentLabChrome|DashboardTemplate|PageHeader|SettingsTemplate)\b/u.test(source);
+			const contentTemplateOwnsHeader = /<(?:AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
 			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});

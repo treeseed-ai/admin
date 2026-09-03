@@ -16,13 +16,24 @@ describe('service management architecture', () => {
 	});
 
 	it('uses only shared UI components and the canonical enhanced form transport', () => {
+		const collectionPage = read('src/pages/app/services/index.astro');
+		expect(collectionPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionWorkspace.astro');
+		for (const component of ['ProviderCard.astro', 'Panel.astro', 'SettingsTemplate.astro', 'SemanticCollectionSurface.astro']) {
+			expect(collectionPage).not.toContain(component);
+		}
+		const workspace = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionWorkspace.astro');
+		for (const component of ['ProviderCard', 'Panel', 'SettingsTemplate', 'SemanticCollectionSurface']) expect(workspace).toContain(component);
+		const createPage = read('src/pages/app/services/new.astro');
+		expect(createPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionCreateSurface.astro');
+		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
+		for (const component of ['ProviderCard', 'Panel', 'SettingsTemplate', 'CapabilitySelector']) expect(createSurface).toContain(component);
 		const pages = [
 			read('src/pages/app/services/index.astro'),
 			read('src/pages/app/services/new.astro'),
 			read('src/pages/app/services/[connectionId].astro'),
 			read('src/pages/app/services/vault.astro'),
 		].join('\n');
-		expect(pages).toContain('@treeseed/ui/components/astro/service/ProviderCard.astro');
+		expect(createSurface).toContain('ProviderCard');
 		expect(pages).toContain('@treeseed/ui/components/astro/templates/SettingsTemplate.astro');
 		expect(pages).toContain('@treeseed/ui/components/astro/patterns/SetupProgress.astro');
 		expect(pages).toContain('data-ts-submit="enhanced"');
@@ -66,11 +77,11 @@ describe('service management architecture', () => {
 	});
 
 	it('supports portable topology references and isolated R2 state metadata', () => {
-		const createPage = read('src/pages/app/services/new.astro');
+		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
 		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
-		expect(createPage).toContain('Connection reference');
-		expect(createPage).toContain('exactly match the topology connectionRef');
-		expect(createPage).toContain('database IDs never belong in Platform');
+		expect(createSurface).toContain('Connection reference');
+		expect(createSurface).toContain('exactly match the topology connectionRef');
+		expect(createSurface).toContain('database IDs never belong in Platform');
 		for (const field of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef']) {
 			expect(providerContracts).toContain(`field("${field}"`);
 		}

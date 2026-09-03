@@ -7,16 +7,23 @@ const source = (path: string) => readFileSync(resolve(root, path), 'utf8');
 const dependencySource = (name: string, path: string) => readFileSync(resolve(root, 'node_modules', name, path), 'utf8');
 
 describe('knowledge management architecture', () => {
-	it('composes the workbench exclusively from shared UI knowledge primitives', () => {
+	it('delegates the library composition to the shared UI feature surface', () => {
 		const page = source('src/pages/app/knowledge/index.astro');
 		expect(page).toContain("import { items } from '../../../lib/operations/records'");
 		expect(page).toContain('items(await api.listTeamProjects');
 		expect(page).toContain("reviews = items(await api.request('GET'");
 		expect(page).toContain('collections = items(savedCollections); builds = items(packBuilds)');
-		for (const component of ['KnowledgeAuthoringForm', 'KnowledgeLifecyclePanel', 'KnowledgeOutline',
-			'KnowledgePackWorkbench', 'KnowledgeProjectCollection', 'KnowledgePublicationStatus', 'KnowledgeReviewCollection']) {
-			expect(page).toContain(`@treeseed/ui/components/astro/knowledge/${component}.astro`);
+		expect(page).toContain('@treeseed/ui/components/astro/knowledge/KnowledgeWorkbenchSurface.astro');
+		const workbench = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeWorkbenchSurface.astro');
+		for (const component of ['KnowledgeAuthoringForm', 'KnowledgeLifecyclePanel', 'KnowledgeLibrarySurface', 'KnowledgePackWorkbench', 'KnowledgeReviewCollection']) expect(workbench).toContain(component);
+		expect(page).not.toContain('KnowledgeOutline.astro');
+		expect(page).not.toContain('KnowledgeProjectCollection.astro');
+		expect(page).not.toContain('BookList.astro');
+		const library = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeLibrarySurface.astro');
+		for (const component of ['BookList', 'KnowledgeOutline', 'KnowledgeProjectCollection', 'SemanticCollectionSurface']) {
+			expect(library).toContain(component);
 		}
+		expect(page).not.toContain('/knowledge/publication-status');
 		expect(page).not.toContain('<style');
 		expect(page).not.toContain('fetch(');
 		expect(page).not.toMatch(/refresh:\s*\{\s*targets/gu);
@@ -25,19 +32,18 @@ describe('knowledge management architecture', () => {
 		expect(page).toContain('contextDigest: formValues.contextDigest');
 		expect(page).toContain('payload: { workspace: saved.workspace }');
 		expect(page.match(/payload: queued/gu)?.length).toBe(2);
-		expect(page).toContain('Knowledge lifecycle is unavailable');
-		expect(page).toContain('Archive and restore remain unavailable');
-		expect(page).toContain('Knowledge lifecycle is unavailable');
-		expect(page).toContain('Archive and restore remain unavailable');
+		expect(workbench).toContain('Knowledge lifecycle is unavailable');
+		expect(workbench).toContain('Archive and restore remain unavailable');
 	});
 
 	it('keeps authoring status server-controlled and exposes durable scene selectors', () => {
 		const page = source('src/pages/app/knowledge/index.astro');
 		for (const permission of ['knowledge:read', 'knowledge:author', 'knowledge:review', 'knowledge:publish',
 			'knowledge:manage-books', 'knowledge:build-packs']) expect(page).toContain(permission);
-		expect(page).toContain('Knowledge controls unavailable');
-		expect(page).toContain('No mutation controls have been rendered.');
-		expect(page).toContain('!canManageBooks ? null');
+		const workbench = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeWorkbenchSurface.astro');
+		expect(workbench).toContain('Knowledge controls unavailable');
+		expect(workbench).toContain('No mutation controls have been rendered.');
+		expect(workbench).toContain('!canManageBooks ? null');
 		expect(page).toContain("(canReview || canPublish) && Astro.url.searchParams.get('view') === 'reviews'");
 		expect(page).toContain("canBuildPacks && Astro.url.searchParams.get('view') === 'packs'");
 		const form = dependencySource('@treeseed/ui', 'dist/astro/knowledge/KnowledgeAuthoringForm.astro');

@@ -24,40 +24,30 @@ describe('Agent Lab command header and navigator', () => {
 		expect(Object.fromEntries(frame.overview.metrics.map((metric) => [metric.key, metric.value]))).toMatchObject({ workdays: 1, assignments: 1, agents: 1 });
 	});
 	it('uses one shared chrome without conventional page or Command navigation', () => {
-		const chrome = source('src/components/agent-lab/AgentLabChrome.astro');
-		expect(chrome).toContain('AgentLabMonitor');
-		expect(chrome).toContain('OperationsNavigator');
-		for (const route of navigatorRoutes) expect(chrome).toContain(`/app/work/${route}`);
-		for (const path of ['src/pages/app/work/index.astro', 'src/pages/app/work/[runId].astro', 'src/components/agent-lab/AgentLabEntityPage.astro']) {
-			const page = source(path); expect(page).toContain('AgentLabChrome'); expect(page).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
-		}
+		for (const removed of ['AgentLabChrome.astro', 'AgentLabMonitor.astro', 'AgentLabEntityPage.astro', 'AgentLabCommandPage.astro']) expect(() => source(`src/components/agent-lab/${removed}`)).toThrow();
+		expect(source('src/pages/app/work/index.astro')).toContain('AgentLabHomeSurface');
+		expect(source('src/pages/app/work/[runId].astro')).toContain('WorkdayDetailSurface');
 		const routes = source('src/routes.ts');
 		for (const route of entityRoutes) {
 			const entityPage = source(`src/pages/app/work/${route}/index.astro`);
 			expect(routes).toContain(`adminRoute('/app/work/${route}', 'pages/app/work/${route}/index.astro'`);
-			expect(entityPage).toContain('AgentLabEntityPage');
+			expect(entityPage).toContain('AgentLabEntitySurface');
 			expect(entityPage).not.toMatch(/<PageHeader\b|<ModeNavigation\b/u);
 		}
-		expect(source('src/pages/app/work/workdays/index.astro')).toContain('AgentLabChrome');
+		expect(source('src/pages/app/work/workdays/index.astro')).toContain('WorkdayCollectionSurface');
 	});
 
 	it('registers production-backed command routes with one reusable workspace', () => {
 		const routes = source('src/routes.ts');
 		for (const route of navigatorRoutes) {
 			expect(routes).toContain(`/app/work/${route}`);
-			expect(source(`src/pages/app/work/${route}/index.astro`)).toContain('AgentLabCommandPage');
+			expect(source(`src/pages/app/work/${route}/index.astro`)).toContain('AgentLabCommandSurface');
 		}
-		const page = source('src/components/agent-lab/AgentLabCommandPage.astro');
-		expect(page).toContain('CommandWorkspace');
-		expect(page).toContain('AgentLabChrome');
 	});
 
 	it('preserves workday scope and keeps realtime ownership in UI', () => {
-		const chrome = source('src/components/agent-lab/AgentLabChrome.astro');
-		expect(chrome).toContain("params.set('date'"); expect(chrome).toContain("params.set('workday'");
-		const monitor = source('src/components/agent-lab/AgentLabMonitor.astro');
-		expect(monitor).not.toMatch(/setInterval|setTimeout|localStorage|fetch\(/u);
-		expect(monitor).toContain('initialOverview={frame.overview}');
+		const workdays = source('src/pages/app/work/workdays/index.astro');
+		expect(workdays).toContain('WorkdayCollectionSurface');
 		const atlas = source('src/pages/app/work/index.astro');
 		expect(atlas).toContain("searchParams.get('focus') === 'atlas'");
 		expect(atlas).toContain("includes('workday:diagnose')");

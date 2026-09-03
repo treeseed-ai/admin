@@ -1,12 +1,10 @@
 ---
-import { AgentAtlasWorkspace } from '@treeseed/ui/components/react/AgentAtlas';
-import '@treeseed/ui/styles/agent-atlas.css';
-import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import AgentLabChrome from '../../../components/agent-lab/AgentLabChrome.astro';
+import AgentLabHomeSurface from '@treeseed/ui/components/astro/agent-lab/AgentLabHomeSurface.astro';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
 import { ApiClientFacade } from '../../../lib/market/api-client.ts';
 import { loadAppContext } from '../../../view-models/app-access.ts';
-import { loadAgentLabFrame } from '../../../view-models/agent-lab/agent-lab-frame.ts';
+import { agentLabMetricDestinations, loadAgentLabFrame } from '../../../view-models/agent-lab/agent-lab-frame.ts';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 const app = await loadAppContext(Astro);
@@ -19,20 +17,10 @@ const [frame, access] = await Promise.all([
 ]);
 const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
 const canDiagnose = Boolean((access?.permissions ?? access?.access?.permissions ?? []).includes('workday:diagnose'));
+const csrfToken = ensureCsrfToken(Astro);
 ---
 
 <TreeseedAppLayout title="Agent Lab" description="See the operating field, understand its signals, and direct agent work." currentPath="/app/work" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
-	<section class="ts-agent-lab-page" aria-label="Agent Lab" data-scene="agent-lab.home">
-		{frame ? <>
-			<AgentLabChrome {frame} />
-			<AgentAtlasWorkspace
-				client:load
-				initialProjection={frame.atlas}
-				endpoints={frame.atlasEndpoints}
-				{canManage}
-				{canDiagnose}
-				initialSurfaceMode={Astro.url.searchParams.get('focus') === 'atlas' || Astro.url.searchParams.get('research') === '1' ? 'focused' : 'inline'}
-			/>
-		</> : <EmptyState title="Choose an active team" description="Agent Lab operations are team-scoped." />}
-	</section>
+	<AgentLabHomeSurface {frame} {canManage} {canDiagnose} {csrfToken} metricDestinations={agentLabMetricDestinations}
+		initialSurfaceMode={Astro.url.searchParams.get('focus') === 'atlas' || Astro.url.searchParams.get('research') === '1' ? 'focused' : 'inline'} />
 </TreeseedAppLayout>

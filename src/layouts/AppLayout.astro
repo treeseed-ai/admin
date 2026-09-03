@@ -14,6 +14,7 @@ import { AppearancePersistenceIsland } from '@treeseed/ui/components/react/progr
 import { resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 import { compileGuidedThemePalette } from '@treeseed/ui/theme';
 import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
+import { resolveDevelopmentScene } from '@treeseed/ui/foundation';
 import { principalHasPlatformPermission } from '../lib/auth/support/rbac';
 import { createApiFacade, envValue } from '../lib/market/api-client';
 import { ensureCsrfToken } from '../lib/auth/support/csrf';
@@ -97,6 +98,7 @@ const discussionContext = principal && activeTeam ? {
 	realtime: { endpoint: '/v1/session/events', enabled: false },
 } : undefined;
 const reviewerCandidate = envValue(Astro.locals, 'TREESEED_REVIEWER_URL');
+const developmentScene = import.meta.env.DEV ? resolveDevelopmentScene(Astro.url.searchParams.get('devScene') ?? '') : undefined;
 let reviewerUrl = '';
 try {
 	const parsed = new URL(reviewerCandidate);
@@ -115,6 +117,7 @@ try {
 	helpContext={helpContext}
 	feedbackContext={feedbackContext}
 	discussionContext={discussionContext}
+	developmentScene={developmentScene}
 	brand={{
 		name: 'TreeSeed',
 		tag: SITE_SLOGAN,
@@ -123,18 +126,18 @@ try {
 		logoAlt: '',
 	}}
 	navItems={[
-		{ label: 'Start', href: '/app/', icon: 'start' },
-		{ label: 'Agent Lab', href: '/app/work', icon: 'capacity' },
-		...(canReadFeedback ? [{ label: 'Feedback', href: '/app/feedback', icon: 'feedback' as const }] : []),
-		{ label: 'Projects', href: '/app/projects', icon: 'projects' },
-		{ label: 'Services', href: '/app/services', icon: 'services' },
-		{ label: 'Knowledge', href: '/app/knowledge', icon: 'knowledge' },
+		{ label: 'Follow', href: '/app/work', icon: 'capacity' },
+		{ label: 'Chat / Discuss', href: '/app/chat', icon: 'discussion' },
+		{ label: 'Inbox', href: '/app/work/inbox', icon: 'inbox' },
+		{ label: 'Explore', href: '/app/work/find', icon: 'search' },
+		{ label: 'Books', href: '/app/knowledge', icon: 'knowledge' },
 	]}
 	siteItems={[{ label: 'Home', href: '/' }, { label: 'Guide', href: '/knowledge/market/' }, { label: 'Status', href: '/status/' }]}
 	quickActions={[
 		activeTeam
-			? { label: 'Team overview', href: `/app/teams/${encodeURIComponent(activeTeam.id)}`, variant: 'primary' as const, icon: 'teams' as const }
+			? { label: 'Manage teams', href: '/app/teams', variant: 'secondary' as const, icon: 'teams' as const }
 			: { label: 'Manage teams', href: '/app/teams', variant: 'primary' as const, icon: 'teams' as const },
+		...(canReadFeedback ? [{ label: 'Feedback', href: '/app/feedback', icon: 'feedback' as const, variant: 'secondary' as const }] : []),
 		...(reviewerUrl ? [{ label: 'Open local Reviewer', href: reviewerUrl, variant: 'secondary' as const }] : []),
 	]}
 	accountActions={[
@@ -155,7 +158,7 @@ try {
 						))}
 					</select>
 				</label>
-				<a class="ts-icon-button ts-team-manage-button" href="/app/teams" title="Manage teams" aria-label="Manage teams">
+				<a class="ts-icon-button ts-team-manage-button" href={activeTeam ? `/app/teams/${encodeURIComponent(activeTeam.id)}` : '/app/teams'} title="Current team" aria-label="View current team">
 					<ShellIcon name="teams" />
 				</a>
 			</form>

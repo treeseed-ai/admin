@@ -1,13 +1,6 @@
 ---
 import { SERVICE_PROVIDER_CATALOG } from '@treeseed/sdk/secrets-capability';
-import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
-import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import ProviderCard from '@treeseed/ui/components/astro/service/ProviderCard.astro';
-import SecretCustodyBadge from '@treeseed/ui/components/astro/service/SecretCustodyBadge.astro';
-import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import ServiceConnectionWorkspace from '@treeseed/ui/components/astro/service/workspace/ServiceConnectionWorkspace.astro';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { serviceSections } from '../../../lib/services/navigation';
@@ -40,106 +33,8 @@ if (team) {
 		}
 	}
 }
-const filtered = services.filter((service) =>
-	(!providerFilter || service.providerId === providerFilter)
-	&& (!capabilityFilter || service.capabilities?.some((item: any) => item.capabilityType === capabilityFilter)),
-);
-const provider = (id: string) => SERVICE_PROVIDER_CATALOG.find((item) => item.id === id);
 ---
 
 <TreeseedAppLayout title="Services" description="Connected provider accounts and reusable hosting capabilities." currentPath="/app/services" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader>
-	<SettingsTemplate
-		title="Services"
-		description={team ? `Connect and manage provider accounts for ${team.displayName ?? team.name}.` : 'Select an active team to manage its provider services.'}
-		sections={serviceSections({ current: 'connections' })}
-		knowledgePageId="services.connections"
-		actions={team && canManage ? [{
-			id: 'services.connection.create',
-			label: 'Add connection',
-			href: '/app/services/new',
-			state: 'allowed',
-			auditSensitivity: 'normal',
-		}] : []}
-		class="ts-service-workspace"
-	>
-		<section class="ts-stack" data-scene="service.collection" data-secret-custody="client-encrypted-vault">
-		{!team ? (
-			<EmptyState title="Select an active team" description="Service connections are isolated by team. Choose a team from the sidebar first." actions={[{ label: 'Manage teams', href: '/app/teams' }]} />
-		) : unavailable ? (
-			<EmptyState title="Services are temporarily unavailable" description="The service API did not respond. No empty state has been inferred.">
-				<div slot="actions"><Button href="/app/services" variant="secondary" reload>Retry</Button></div>
-			</EmptyState>
-		) : (
-			<>
-				{canManage ? (
-					<Panel
-						eyebrow="Credential custody"
-						title={vaultUnavailable ? 'Vault status unavailable' : vault ? 'Team vault ready' : 'Team vault setup required'}
-						description={vaultUnavailable ? 'Service connections remain available, but credential custody status could not be loaded.' : vault ? 'Provider credentials are encrypted for explicitly granted administrators.' : 'Initialize personal and team vault access before saving provider credentials.'}
-					>
-						<div class="ts-action-bar">
-							<Badge tone={vaultUnavailable ? 'danger' : vault ? 'success' : 'warning'} size="sm">{vaultUnavailable ? 'Retry required' : vault ? `Key version ${vault.activeKeyVersion}` : 'Not initialized'}</Badge>
-							<Button href="/app/services/vault" variant="secondary" size="sm">{vault ? 'Manage access' : 'Set up vault'}</Button>
-						</div>
-					</Panel>
-				) : null}
-
-				<form class="ts-template__filters" method="get" aria-label="Filter services">
-					<label class="ts-field">
-						<span class="ts-field__label">Provider</span>
-						<select class="ts-control" name="provider">
-							<option value="">All providers</option>
-							{SERVICE_PROVIDER_CATALOG.map((item) => <option value={item.id} selected={providerFilter === item.id}>{item.label}</option>)}
-						</select>
-					</label>
-					<label class="ts-field">
-						<span class="ts-field__label">Capability</span>
-						<select class="ts-control" name="capability">
-							<option value="">All capabilities</option>
-							{[...new Map(SERVICE_PROVIDER_CATALOG.flatMap((item) => item.capabilities).map((item) => [item.type, item])).values()].map((item) => (
-								<option value={item.type} selected={capabilityFilter === item.type}>{item.label}</option>
-							))}
-						</select>
-					</label>
-					<div class="ts-template__filter-actions">
-						<Button type="submit" variant="secondary" size="sm">Apply</Button>
-						<Button href="/app/services" variant="ghost" size="sm">Reset</Button>
-					</div>
-				</form>
-
-				{filtered.length ? (
-					<div class="ts-resource-grid" data-spacing="roomy">
-						{filtered.map((service) => {
-							const definition = provider(service.providerId);
-							return (
-								<ProviderCard
-									provider={service.providerId}
-									label={service.displayName}
-									description={definition?.label ?? service.providerId}
-									href={`/app/services/${encodeURIComponent(service.id)}`}
-									status={service.status}
-									statusTone={service.status === 'active' ? 'success' : service.status === 'degraded' ? 'warning' : 'muted'}
-								>
-									<div class="ts-badge-list">
-										{service.capabilities?.map((item: any) => <Badge tone={item.status === 'configured' ? 'info' : 'muted'} size="sm">{item.capabilityType.replaceAll('-', ' ')}</Badge>)}
-									</div>
-									<div class="ts-badge-list">
-										{service.credentialProfiles?.map((item: any) => <SecretCustodyBadge mode={item.custodyMode} />)}
-									</div>
-									<p>{service.lastValidatedAt ? <>Last validated <Timestamp value={service.lastValidatedAt} timeZone={preferences.timeZone} /></> : 'Not yet validated'}</p>
-								</ProviderCard>
-							);
-						})}
-					</div>
-				) : (
-					<EmptyState
-						title={services.length ? 'No services match these filters' : 'No services connected'}
-						description={services.length ? 'Change or reset the provider and capability filters.' : 'Connect GitHub, Cloudflare, Railway, or an external vault for this team.'}
-						actions={[]}
-					/>
-				)}
-			</>
-		)}
-		</section>
-	</SettingsTemplate>
+	<ServiceConnectionWorkspace teamName={team ? team.displayName ?? team.name : undefined} {services} providerCatalog={SERVICE_PROVIDER_CATALOG} sections={serviceSections({ current: 'connections' })} {providerFilter} {capabilityFilter} {vault} {unavailable} {vaultUnavailable} {canManage} timeZone={preferences.timeZone} />
 </TreeseedAppLayout>

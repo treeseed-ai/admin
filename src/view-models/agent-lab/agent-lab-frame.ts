@@ -57,7 +57,7 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 		series: series as AgentLabDelta<AgentLabMetricPoint>,
 		allocation: allocation as AllocationSnapshot,
 		endpoints: { overview: '', activity: '', metricSeries: '', allocation: '', viewState: '' },
-		atlasEndpoints:{projection:'',delta:'',stream:'',detail:'',assignmentGraphs:'',viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`},
+		atlasEndpoints:{projection:'',delta:'',stream:'',detail:'',assignmentGraphs:'',viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
 		targetEndpoint: '',
 		preference: { enabled: preferences.realTimeUpdates, intervalSeconds: preferences.realTimePollingIntervalSeconds },
 	};

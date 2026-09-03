@@ -9,6 +9,15 @@ export const OAUTH_STATE_COOKIE = 'ts_admin_oauth_state';
 export const OAUTH_RETURN_COOKIE = 'ts_admin_oauth_return';
 
 function adminOrigin(context: Pick<APIContext, 'locals' | 'url'>) {
+	const runtime = (context.locals as App.Locals | undefined)?.runtime?.env as Record<string, unknown> | undefined;
+	const developmentMode = ['TREESEED_DEVELOPMENT_MODE', 'TREESEED_LOCAL_DEV_MODE', 'LOCAL_DEV_MODE']
+		.some((name) => {
+			const value = runtime?.[name] ?? (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[name];
+			return typeof value === 'string' && ['1', 'true', 'yes', 'on', 'live', 'development', 'local'].includes(value.trim().toLowerCase());
+		});
+	if (developmentMode && ['localhost', '127.0.0.1', '::1', '[::1]'].includes(context.url.hostname)) {
+		return context.url.origin;
+	}
 	return new URL(getSiteAuthConfig(context).siteBaseUrl).origin;
 }
 

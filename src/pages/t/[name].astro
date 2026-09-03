@@ -1,10 +1,6 @@
 ---
 import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
-import KnowledgeActivityTrail from '@treeseed/ui/components/astro/public/profile/KnowledgeActivityTrail.astro';
-import KnowledgeProfileCollection from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileCollection.astro';
-import KnowledgeProfileIdentity from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileIdentity.astro';
-import KnowledgeProfileLayout from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileLayout.astro';
-import KnowledgeProfileStats from '@treeseed/ui/components/astro/public/profile/KnowledgeProfileStats.astro';
+import TeamViewer from '@treeseed/ui/components/astro/team/TeamViewer.astro';
 import TeamNavigation from '../../components/team/TeamNavigation.astro';
 import PublicNotFound from '../../components/runtime/PublicNotFound.astro';
 import { createApiFacade } from '../../lib/market/api-client';
@@ -24,13 +20,7 @@ const knowledge = profile?.knowledge ?? { stats: {}, catalog: [], knowledgePacks
 const displayName = team?.displayName ?? team?.name ?? 'Team';
 const principal = Astro.locals.auth?.principal;
 const api = createApiFacade(Astro);
-const [preferences, accessibleTeams] = principal
-	? await Promise.all([
-		api.accountPreferences().catch(() => ({ timeZone: 'UTC' })),
-		api.listTeamsForPrincipal().catch(() => []),
-	])
-	: [{ timeZone: 'UTC' }, []];
-const timeZone = preferences.timeZone;
+const accessibleTeams = principal ? await api.listTeamsForPrincipal().catch(() => []) : [];
 const memberTeam = team ? accessibleTeams.find((entry: any) => entry.name === team.name) ?? null : null;
 const memberRoles = memberTeam?.roles ?? [];
 const canManageTeam = Boolean(memberTeam?.allowedActions?.edit);
@@ -41,7 +31,16 @@ for (const item of [...(Array.isArray(knowledge.catalog) ? knowledge.catalog : [
 	if (!publishedBySlug.has(key)) publishedBySlug.set(key, item);
 }
 const published = [...publishedBySlug.values()];
-const projects = (Array.isArray(knowledge.projects) ? knowledge.projects : []).map((project: any) => ({ ...project, kind: 'project', title: project.name }));
+const projects = (Array.isArray(knowledge.projects) ? knowledge.projects : []).map((project: any) => ({ id: project.id, title: project.name, description: project.description ?? project.coreObjective ?? 'Public project', status: project.status ?? 'public', href: project.href }));
+const resources = published.map((item: any) => ({ id: item.id ?? item.slug, title: item.title ?? item.name ?? item.slug, description: item.description ?? item.summary ?? 'Published team resource', status: item.status ?? item.kind ?? 'published', href: item.href }));
+const metrics = [
+	{ label: 'Templates', value: knowledge.stats.templates ?? 0, description: 'Published templates' },
+	{ label: 'Knowledge packs', value: knowledge.stats.knowledgePacks ?? 0, description: 'Published knowledge' },
+	{ label: 'Public projects', value: knowledge.stats.projects ?? projects.length, description: 'Visible projects' },
+	{ label: 'Publications', value: knowledge.stats.publications ?? published.length, description: 'Released outcomes' },
+];
+const activity = (Array.isArray(knowledge.trail) ? knowledge.trail : []).map((item: any) => ({ ...item, title: item.title ?? item.label ?? 'Team activity', description: item.description ?? item.summary, timestamp: item.timestamp ?? item.occurredAt ?? item.createdAt }));
+const actions = memberTeam ? [{ label: 'Open team operations', href: `/app/teams/${encodeURIComponent(String(memberTeam.id))}`, variant: 'primary' as const }] : [];
 ---
 
 {!team ? <PublicNotFound currentPath={Astro.url.pathname} description="This team does not exist or has not published a public profile." /> : <TreeseedPublicLayout
@@ -50,42 +49,6 @@ const projects = (Array.isArray(knowledge.projects) ? knowledge.projects : []).m
 	currentPath={`/t/${team.name}`}
 	profilePage
 >
-	<KnowledgeProfileLayout>
-		{memberTeam ? (
-			<Fragment slot="navigation">
-				<TeamNavigation team={memberTeam} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} />
-			</Fragment>
-		) : null}
-		<KnowledgeProfileIdentity
-			slot="identity"
-			kind="team"
-			name={displayName}
-			handle={team.name}
-			imageSrc={team.logoUrl}
-			summary={team.profileSummary}
-			establishedAt={team.createdAt}
-			timeZone={timeZone}
-		/>
-		<KnowledgeProfileStats slot="stats" items={[
-			{ label: 'Templates', value: knowledge.stats.templates ?? 0 },
-			{ label: 'Knowledge packs', value: knowledge.stats.knowledgePacks ?? 0 },
-			{ label: 'Public projects', value: knowledge.stats.projects ?? 0 },
-			{ label: 'Publications', value: knowledge.stats.publications ?? 0 },
-		]} />
-		<KnowledgeProfileCollection
-			eyebrow="Public catalog"
-			title="Published knowledge"
-			items={published}
-			timeZone={timeZone}
-		/>
-		<KnowledgeProfileCollection
-			eyebrow="Public projects"
-			title="Public projects"
-			items={projects}
-			emptyTitle="No public projects yet"
-			emptyDescription="Projects remain private until the organization explicitly publishes their identity."
-			timeZone={timeZone}
-		/>
-		<KnowledgeActivityTrail items={knowledge.trail} timeZone={timeZone} />
-	</KnowledgeProfileLayout>
+	{memberTeam ? <TeamNavigation team={memberTeam} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} /> : null}
+	<TeamViewer name={displayName} handle={team.name} description={team.profileSummary} logoUrl={team.logoUrl} status={team.status} projectLabel="Public projects" metrics={metrics} projects={projects} resources={resources} activity={activity} actions={actions} publicView />
 </TreeseedPublicLayout>}

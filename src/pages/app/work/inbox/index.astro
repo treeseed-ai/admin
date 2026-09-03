@@ -1,7 +1,10 @@
 ---
-import AgentLabCommandPage from '../../../../components/agent-lab/AgentLabCommandPage.astro';
+import AgentLabCommandSurface from '@treeseed/ui/components/astro/agent-lab/AgentLabCommandSurface.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../../lib/auth/support/csrf.ts';
+import { agentLabMetricDestinations } from '../../../../view-models/agent-lab/agent-lab-frame.ts';
 import { loadAgentLabCommandPage } from '../../../../view-models/agent-lab/command-page.ts';
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 const frame = await loadAgentLabCommandPage(Astro, 'inbox');
 ---
-<AgentLabCommandPage {...frame} current="inbox" />
+<TreeseedAppLayout title={`Agent Lab · ${frame.surface.title}`} description={frame.surface.description} currentPath="/app/work" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader><AgentLabCommandSurface activeTeam={Boolean(frame.app.activeTeam)} {...frame} current="inbox" csrfToken={ensureCsrfToken(Astro)} metricDestinations={agentLabMetricDestinations} /></TreeseedAppLayout>

@@ -5,5 +5,5 @@ import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationR
 import type { AstroLike, ApiClientFacade } from '../../../../api-client.ts';
 import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, encodeAssertionPayload, signAssertionPayload, createTrustedWebUserAssertion, apiServiceHeaders, apiAccessTokenFromCookies, setApiAccessTokenCookie, clearApiAccessTokenCookie, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../../api-client.ts';
 export function getProjectByTeamAndSlugMethod(this: ApiClientFacade, teamId: string, slug: string) {
-    return this.listTeamProjects(teamId).then((projects) => projects.find((project: any) => project.slug === slug || project.id === slug) ?? null);
+    return this.listTeamProjects(teamId).then((page) => page.items.find((project: any) => project.slug === slug || project.id === slug) ?? null);
 }
