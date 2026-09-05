@@ -7,12 +7,9 @@ import Button from '@treeseed/ui/components/astro/forms/Button.astro';
 import Field from '@treeseed/ui/components/astro/forms/Field.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
 import CapabilitySelector from '@treeseed/ui/components/astro/service/CapabilitySelector.astro';
-import OperationAuthorizationDialog from '@treeseed/ui/components/astro/service/OperationAuthorizationDialog.astro';
 import PermissionChecklist from '@treeseed/ui/components/astro/service/PermissionChecklist.astro';
 import ProviderMark from '@treeseed/ui/components/astro/service/ProviderMark.astro';
 import ProviderAuthorityPanel from '@treeseed/ui/components/astro/service/ProviderAuthorityPanel.astro';
-import ExplicitCredentialAuthorityPanel from '@treeseed/ui/components/astro/service/ExplicitCredentialAuthorityPanel.astro';
-import SecretCustodyBadge from '@treeseed/ui/components/astro/service/SecretCustodyBadge.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
 import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
@@ -29,12 +26,10 @@ const connectionId = String(Astro.params.connectionId ?? '');
 const api = new ApiClientFacade(Astro);
 const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
 let connection: any = null;
-let vault: any = null;
-let userVaultKey: any = null;
-let envelopes: any[] = [];
+const credentials: Record<string, any> = {};
 let authorities: any[] = [];
 let unavailable = false;
-let vaultUnavailable = false;
+let custodyUnavailable = false;
 const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin']);
 const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.has(role)) || team?.currentUserRole && managementRoles.has(team.currentUserRole));
 if (team) {
@@ -47,32 +42,18 @@ if (team) {
 	if (connection && canManage) {
 		authorities = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connectionId)}/credential-authorities`).catch(() => []);
 		try {
-			[vault, userVaultKey] = await Promise.all([
-				api.request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/vault`),
-				api.request<any>('GET', '/v1/users/me/vault-key'),
-			]);
-			if (vault?.ownGrant) {
-			envelopes = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connectionId)}/credential-envelopes`);
-			}
-		} catch {
-			vaultUnavailable = true;
-		}
+      const profiles = getServiceProviderDefinition(connection.providerId)?.credentialProfiles.filter(profile =>
+        profile.authoritySchemes.includes('openbao') && connection.capabilities.some((binding: any) => binding.status === 'configured' && binding.credentialProfileId === profile.id)) ?? [];
+      await Promise.all(profiles.map(async profile => {
+        credentials[profile.id] = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connectionId)}/credentials/${encodeURIComponent(profile.id)}`);
+      }));
+    } catch { custodyUnavailable = true; }
 	}
 }
 const provider = connection ? getServiceProviderDefinition(connection.providerId) : null;
 const csrfToken = ensureCsrfToken(Astro);
-const profileEnvelopes = (definitionId: string) => {
-	const saved = connection?.credentialProfiles?.find((profile: any) => profile.definitionId === definitionId);
-	return envelopes.filter((item) => item.credentialProfileId === saved?.id);
-};
-const validationCapability = (types: string[]) => types.find((type) =>
-	connection?.capabilities?.some((item: any) => item.capabilityType === type && item.status === 'configured'),
-);
 const connectorConfig = (kind: 'repository' | 'workflow') => connection?.nonSecretConfig?.githubConnectors?.[kind] ?? {};
 const authorityStatus = (profileId: string) => authorities.find((item) => item.credentialProfileId === profileId)?.status ?? null;
-const profileAuthority = (profileId: string) => authorities.find((item) => item.credentialProfileId === profileId) ?? null;
-const environmentReference = (profileId: string) => `TREESEED_GITHUB_TOKEN_${String(connection?.nonSecretConfig?.organization ?? 'OWNER')
-	.toUpperCase().replace(/[^A-Z0-9]+/gu, '_')}_${profileId === 'github-repository-token' ? 'REPOSITORY' : 'WORKFLOW'}`;
 ---
 
 <TreeseedAppLayout title={connection?.displayName ?? 'Service'} description="Connected provider account and capability settings." currentPath="/app/services" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader={Boolean(connection)}>
@@ -104,14 +85,9 @@ const environmentReference = (profileId: string) => `TREESEED_GITHUB_TOKEN_${Str
 								.map(([key, value]) => ({ key: provider.connectionFields.find((field) => field.key === key)?.label ?? key, value: String(value) })),
 						]} />
 					</Panel>
-					<Panel eyebrow="Custody" title="Credential readiness" description="Sensitive values remain encrypted until an authorized administrator unlocks them locally." knowledgePageId="services.credentials">
-						<div class="ts-badge-list">
-							{connection.credentialProfiles?.length
-								? connection.credentialProfiles.map((profile: any) => <SecretCustodyBadge mode={profile.custodyMode} />)
-								: <Badge tone="warning" size="sm">Credentials required</Badge>}
-						</div>
-							<Button href="/app/services/vault" variant="secondary" size="sm">Manage service vault</Button>
-					</Panel>
+          <Panel eyebrow="Custody" title="Managed credentials" description="Core OpenBao stores encrypted team credentials. TreeSeed authorizes each use; this page never reads secret values." knowledgePageId="services.credentials">
+            <Badge tone="neutral">OpenBao</Badge>
+          </Panel>
 				</div>
 			</section>
 
@@ -140,119 +116,31 @@ const environmentReference = (profileId: string) => `TREESEED_GITHUB_TOKEN_${Str
 							permissions={provider.credentialProfiles.find((item) => item.id === 'github-workflow-app')?.permissions ?? []} />
 					</div>
 				) : null}
-				{provider.id === 'github' && canManage ? (
-					<div class="ts-resource-grid">
-						{provider.credentialProfiles.filter((profile) => profile.id.endsWith('-token')).map((profile) => (
-							<ExplicitCredentialAuthorityPanel teamId={team.id} connectionId={connection.id}
-								profileId={profile.id} title={profile.label} description={profile.description}
-								permissions={profile.permissions} csrfToken={csrfToken} authority={profileAuthority(profile.id)}
-								suggestedEnvironmentReference={environmentReference(profile.id)} />
-						))}
-					</div>
-				) : null}
-				{vaultUnavailable ? (
-					<EmptyState title="Vault status unavailable" description="The connection remains available, but encrypted credential custody could not be loaded." actions={[{ label: 'Retry', href: `${Astro.url.pathname}#service-panel-credentials` }]} />
-				) : !canManage ? (
-					<EmptyState title="Credential administration required" description="Your role can inspect service availability but cannot manage encrypted credentials." />
-				) : !vault || !userVaultKey || !vault.ownGrant ? (
-					<EmptyState title="Vault access required" description="Initialize the team vault or ask an existing credential administrator to grant your personal vault key access." actions={[{ label: 'Open service vault', href: '/app/services/vault' }]} />
-				) : (
-					<div class="ts-resource-grid">
-						{provider.id === 'openbao' && canManage ? (
-							<Panel eyebrow="Workload identity" title="External vault reference" description="TreeSeed stores only the HTTPS location and workload-identity role. Long-lived vault tokens are rejected." knowledgePageId="services.external-vault">
-								<form method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connection.id)}/external-vault-bindings`} data-ts-submit="enhanced" data-ts-form-adapter="external-vault-binding" data-ts-success-message="External vault reference configured.">
-									<input type="hidden" name="csrfToken" value={csrfToken} />
-									<Field label="Vault address" name="address" required>
-										<TextInput name="address" type="url" value={String(connection.nonSecretConfig.address ?? '')} required />
-									</Field>
-									<Field label="Secrets mount" name="mount" required>
-										<TextInput name="mount" value={String(connection.nonSecretConfig.mount ?? '')} required />
-									</Field>
-									<Field label="Workload identity role" name="role" required>
-										<TextInput name="role" value={String(connection.nonSecretConfig.role ?? '')} required />
-									</Field>
-									<Field label="Authentication" name="authMode" required>
-										<select class="ts-control" name="authMode" required>
-											<option value="oidc-jwt">OIDC / JWT workload identity</option>
-											<option value="workload-identity">Provider workload identity</option>
-											<option value="dynamic-credentials">Dynamic credentials</option>
-										</select>
-									</Field>
-									<Button type="submit">Configure vault reference</Button>
-								</form>
-							</Panel>
-						) : null}
-						{provider.credentialProfiles.filter((profile) => provider.id !== 'github' || !profile.id.endsWith('-app')).map((profile) => (
-							<Panel eyebrow={profile.sharing === 'provider-shared' ? 'Shared provider authority' : 'Capability scoped'} title={profile.label} description={profile.description} knowledgePageId={profile.knowledgePageIds?.[0] ?? "services.credentials"}>
-								<div class="ts-badge-list">
-									<SecretCustodyBadge mode="client_encrypted_vault" />
-									{envelopes.some((item) => item.credentialProfileId === connection.credentialProfiles?.find((saved: any) => saved.definitionId === profile.id)?.id)
-										? <Badge tone="success" size="sm">Configured</Badge>
-										: <Badge tone="warning" size="sm">Not configured</Badge>}
-								</div>
-								{profile.fields.filter((field) => field.sensitive).map((field) => (
-									<form
-										method="post"
-										action={`/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connection.id)}/credential-envelopes`}
-										data-ts-submit="enhanced"
-										data-ts-form-adapter="service-credential"
-										data-ts-refresh-target="#service-panel-credentials"
-										data-ts-success-message={`${profile.label} saved securely.`}
-										data-scene={`service.credential.${profile.id}.${field.key}`}
-									>
-										<input type="hidden" name="csrfToken" value={csrfToken} />
-										<input type="hidden" name="teamId" value={team.id} />
-										<input type="hidden" name="connectionId" value={connection.id} />
-										<input type="hidden" name="definitionId" value={profile.id} />
-										<input type="hidden" name="fieldKey" value={field.key} />
-										<input type="hidden" name="keyVersion" value={vault.activeKeyVersion} />
-										<input type="hidden" name="wrappedTeamVaultKey" value={vault.ownGrant.wrappedTeamVaultKey} />
-										<input type="hidden" name="encryptedPrivateKeyEnvelope" value={JSON.stringify(userVaultKey.encryptedPrivateKeyEnvelope)} />
-										<Field label={field.label} name="credentialValue" help={field.description} required>
-											<TextInput name="credentialValue" type="password" autocomplete="off" required />
-										</Field>
-										<Field label="Personal vault passphrase" name="passphrase" help="Used only in this browser to unlock your administrator key." required>
-											<TextInput name="passphrase" type="password" autocomplete="current-password" required />
-										</Field>
-										<Button type="submit">Encrypt and save</Button>
-									</form>
-								))}
-								<PermissionChecklist permissions={profile.permissions} />
-								{profile.fields.some((field) => field.sensitive) && profileEnvelopes(profile.id).length === profile.fields.filter((field) => field.sensitive).length && validationCapability(profile.capabilities) ? (
-									<form
-										method="post"
-										action={`/v1/teams/${encodeURIComponent(team.id)}/service-operation-leases`}
-										data-ts-submit="enhanced"
-										data-ts-form-adapter="service-validation"
-										data-scene={`service.validation.${profile.id}`}
-									>
-										<input type="hidden" name="csrfToken" value={csrfToken} />
-										<input type="hidden" name="teamId" value={team.id} />
-										<input type="hidden" name="connectionId" value={connection.id} />
-										<input type="hidden" name="capabilityType" value={validationCapability(profile.capabilities)} />
-										<input type="hidden" name="credentialProfileId" value={profile.id} />
-										<input type="hidden" name="purpose" value="provider-connection-validation" />
-										<input type="hidden" name="idempotencyKey" value={`validate-${connection.version}-${profile.id}-${Date.now()}`} />
-										<input type="hidden" name="wrappedTeamVaultKey" value={vault.ownGrant.wrappedTeamVaultKey} />
-										<input type="hidden" name="encryptedPrivateKeyEnvelope" value={JSON.stringify(userVaultKey.encryptedPrivateKeyEnvelope)} />
-										<input type="hidden" name="envelopes" value={JSON.stringify(profileEnvelopes(profile.id))} />
-										<OperationAuthorizationDialog
-											operation={`Validate ${profile.label} with a read-only provider request.`}
-											destination={provider.label}
-											requiredFields={profile.fields.filter((field) => field.sensitive).map((field) => field.label)}
-											submitLabel="Authorize validation"
-											knowledgePageId="services.validation"
-										>
-											<Field label="Personal vault passphrase" name="passphrase" required>
-												<TextInput name="passphrase" type="password" autocomplete="current-password" required />
-											</Field>
-										</OperationAuthorizationDialog>
-									</form>
-								) : null}
-							</Panel>
-						))}
-					</div>
-				)}
+        {!canManage ? <EmptyState title="Credential administration required" description="Your team role cannot manage credentials." />
+          : custodyUnavailable ? <EmptyState title="Managed custody unavailable" description="Core OpenBao must be healthy before credentials can be changed." />
+          : <div class="ts-resource-grid">
+            {provider.credentialProfiles.filter(profile => profile.authoritySchemes.includes('openbao') && credentials[profile.id]).map(profile => {
+              const status = credentials[profile.id];
+              const action = `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connection.id)}/credentials/${encodeURIComponent(profile.id)}`;
+              return <Panel title={profile.label} description={profile.description} knowledgePageId="services.credentials">
+                <Badge tone={status.configured ? 'success' : 'warning'}>{status.configured ? 'Configured in OpenBao' : 'Not configured'}</Badge>
+                <form method="post" action={action} class="ts-form-stack" data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="PUT" data-ts-refresh-target="#service-panel-credentials" data-ts-success-message="Credentials stored in OpenBao.">
+                  <input type="hidden" name="csrfToken" value={csrfToken} />
+                  <input type="hidden" name="expectedVersion" value={status.version} />
+                  {profile.fields.filter(field => field.sensitive).map(field => <Field label={field.label} name={`secret.${field.key}`} help={field.description} required={field.required}>
+                    <TextInput name={`secret.${field.key}`} type="password" autocomplete="off" required={field.required} />
+                  </Field>)}
+                  <Button type="submit">{status.configured ? 'Replace credentials' : 'Save credentials'}</Button>
+                </form>
+                <PermissionChecklist permissions={profile.permissions} />
+                {status.configured && ['validate','delete'].map(operation => <form method="post" action={operation === 'validate' ? action + '/validate' : action} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method={operation === 'validate' ? 'POST' : 'DELETE'} data-ts-refresh-target="#service-panel-credentials">
+                  <input type="hidden" name="csrfToken" value={csrfToken} />
+                  <input type="hidden" name="expectedVersion" value={status.version} />
+                  <Button type="submit" variant="secondary">{operation === 'validate' ? 'Validate credentials' : 'Delete credentials'}</Button>
+                </form>)}
+              </Panel>;
+            })}
+          </div>}
 			</section>
 
 			<section id="service-panel-activity">

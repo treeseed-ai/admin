@@ -9,7 +9,7 @@ const readDependency = (name: string, path: string) => readFileSync(resolve(root
 describe('service management architecture', () => {
 	it('owns one provider-first route family with no legacy host route', () => {
 		const routes = read('src/routes.ts');
-		for (const route of ['/app/services', '/app/services/new', '/app/services/vault', '/app/services/[connectionId]']) {
+		for (const route of ['/app/services', '/app/services/new', '/app/services/[connectionId]']) {
 			expect(routes).toContain(`'${route}'`);
 		}
 		expect(routes).not.toContain('/app/hosts');
@@ -31,11 +31,9 @@ describe('service management architecture', () => {
 			read('src/pages/app/services/index.astro'),
 			read('src/pages/app/services/new.astro'),
 			read('src/pages/app/services/[connectionId].astro'),
-			read('src/pages/app/services/vault.astro'),
 		].join('\n');
 		expect(createSurface).toContain('ProviderCard');
 		expect(pages).toContain('@treeseed/ui/components/astro/templates/SettingsTemplate.astro');
-		expect(pages).toContain('@treeseed/ui/components/astro/patterns/SetupProgress.astro');
 		expect(pages).toContain('data-ts-submit="enhanced"');
 		expect(pages).not.toMatch(/\bfetch\s*\(/u);
 		expect(pages).not.toContain('window.alert');
@@ -43,10 +41,10 @@ describe('service management architecture', () => {
 
 	it('uses one canonical routed tab model across collection, setup, detail, and vault pages', () => {
 		const navigation = read('src/lib/services/navigation.ts');
-		for (const label of ['Connections', 'Vault']) {
+		for (const label of ['Connections']) {
 			expect(navigation).toContain(`'${label}'`);
 		}
-		expect(navigation.match(/label: '/gu)).toHaveLength(2);
+		expect(navigation.match(/label: '/gu)).toHaveLength(1);
 		expect(navigation).not.toContain('Connect service');
 		const detail = read('src/pages/app/services/[connectionId].astro');
 		expect(detail).not.toContain('mode="panels"');
@@ -54,27 +52,17 @@ describe('service management architecture', () => {
 		expect(detail).not.toContain('searchParams.get(\'tab\')');
 	});
 
-	it('guides vault setup through shared progress and explanation primitives', () => {
-		const vault = read('src/pages/app/services/vault.astro');
-		expect(vault).toContain('Secure credential setup');
-		expect(vault).toContain('Credentials stay under your control');
-		expect(vault).toContain('TreeSeed never retains');
-		expect(vault).toContain('Recovery and custody rules');
-		expect(vault).toContain('Step 1 of 3');
-		expect(vault).toContain('Step 2 of 3');
-		expect(vault).toContain('Step 3 of 3');
-	});
+	it('uses core managed custody without a separate vault setup route', () => {
+    const detail=read('src/pages/app/services/[connectionId].astro');
+    expect(detail).toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
+    expect(read('src/routes.ts')).not.toContain('/app/services/vault');
+  });
 
-	it('keeps secret operations in browser adapters and sends only envelopes', () => {
-		const adapters = read('src/lib/services/form-adapters.ts');
-		expect(adapters).toContain('encryptServiceVaultPrivateKey');
-		expect(adapters).toContain('encryptServiceCredential');
-		expect(adapters).toContain('createTeamVaultGrant');
-		expect(adapters).toContain('openTeamVaultGrant');
-		expect(adapters).not.toContain('localStorage');
-		expect(adapters).not.toContain('sessionStorage');
-		expect(adapters).not.toContain('document.cookie');
-	});
+	it('sends credentials through authenticated enhanced forms without persistent browser custody', () => {
+    const adapters=read('src/lib/services/form-adapters.ts');
+    expect(adapters).toContain('Idempotency-Key');expect(adapters).toContain('x-treeseed-csrf');expect(adapters).toContain('expectedVersion');
+    for(const retired of ['encryptServiceCredential','createTeamVaultGrant','localStorage','sessionStorage','document.cookie'])expect(adapters).not.toContain(retired);
+  });
 
 	it('supports portable topology references and isolated R2 state metadata', () => {
 		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
@@ -88,7 +76,7 @@ describe('service management architecture', () => {
 	});
 
 	it('renders service activity in the persisted user timezone', () => {
-		for (const page of ['src/pages/app/services/index.astro', 'src/pages/app/services/[connectionId].astro', 'src/pages/app/services/vault.astro']) {
+		for (const page of ['src/pages/app/services/index.astro', 'src/pages/app/services/[connectionId].astro']) {
 			const source = read(page);
 			expect(source).toContain('api.accountPreferences()');
 			expect(source).toContain('timeZone={preferences.timeZone}');
