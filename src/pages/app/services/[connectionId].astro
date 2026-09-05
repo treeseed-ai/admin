@@ -3,6 +3,7 @@ import { getServiceProviderDefinition } from '@treeseed/sdk/secrets-capability';
 import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
 import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import ServiceWizard from '@treeseed/ui/components/astro/service/ServiceWizard.astro';
 import ConnectionFields from '@treeseed/ui/components/astro/service/ConnectionFields.astro';
 import HelpTrigger from '@treeseed/ui/components/astro/help/HelpTrigger.astro';
 import Field from '@treeseed/ui/components/astro/forms/Field.astro';
@@ -61,6 +62,11 @@ const {selectedProfiles, taskOptions} = serviceSetup(provider, connection?.capab
 const path = team ? '/v1/teams/' + encodeURIComponent(team.id) + '/services/' + encodeURIComponent(connectionId) : '';
 const needsAuthentication = selectedProfiles.some(profile => profile.authoritySchemes?.includes('openbao')
   ? !credentials[profile.id]?.configured : authorityStatus(profile.id) !== 'ready');
+const profileReady = (profile: typeof selectedProfiles[number]) => profile.authoritySchemes?.includes('openbao') ? Boolean(credentials[profile.id]?.configured) : authorityStatus(profile.id) === 'ready';
+const requestedAccess = selectedProfiles.findIndex(profile => profile.id === Astro.url.searchParams.get('access'));
+const accessIndex = requestedAccess >= 0 ? requestedAccess : Math.max(0, selectedProfiles.findIndex(profile => !profileReady(profile)));
+const editing = Astro.url.searchParams.get('edit') === 'true' || needsAuthentication || custodyUnavailable || !selectedProfiles.length;
+const initialStep = Astro.url.searchParams.get('step') === 'tasks' || !selectedProfiles.length ? 0 : 2;
 const profileTitle = (id: string, fallback: string) => id === 'github-repository-token' ? 'GitHub repository access'
   : id === 'github-workflow-token' ? 'GitHub Actions access' : id === 'cloudflare-storage' ? 'Cloudflare storage access' : fallback;
 ---
@@ -69,27 +75,22 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
   : unavailable ? <EmptyState title="Connection could not be loaded" description="Try again in a moment."><div slot="actions"><Button href={Astro.url.pathname} reload>Retry</Button></div></EmptyState>
   : !connection || !provider ? <EmptyState title="Service not found" description="This connection is not available for your team." actions={[{label: 'Back to services', href: '/app/services'}]} />
   : <SettingsTemplate title={connection.displayName} description={provider.label + ' · ' + (team.displayName ?? team.name)} sections={serviceSections({current: 'connections'})} knowledgePageId="services.connection" class="ts-service-workspace">
-    <section class="ts-stack" data-scene="service.detail" id="service-workspace" style="max-width: 48rem; width: 100%">
-      {!canManage ? <Panel title="Connection details" knowledgePageId="services.connection">
-        <p>Ask a team administrator to change this connection.</p>
+    <section class="ts-stack" data-scene="service.detail" id="service-workspace">
+      {!canManage || !editing ? <Panel title={canManage ? "Account access saved" : "Connection details"} knowledgePageId="services.connection">
+        {!canManage && <p>Ask a team administrator to change this connection.</p>}
         <CapabilitySelector capabilities={taskOptions} readonly />
-      </Panel> : <>
-        <details open={!selectedProfiles.length} id="service-panel-settings">
-          <summary>1. Connection settings</summary>
-          <Panel title="Choose what you need" knowledgePageId={provider.knowledgePageIds[0]}>
+        {canManage && <div class="ts-form-actions"><Button href={Astro.url.pathname + "?edit=true&step=tasks"}>Edit connection</Button><Button href={Astro.url.pathname + "?edit=true"} variant="secondary">Manage account access</Button></div>}
+      </Panel> : <ServiceWizard {initialStep} accountReady={!needsAuthentication && !custodyUnavailable}>
             <form method="post" action={path} class="ts-form-stack" data-ts-method="PUT" data-ts-submit="enhanced" data-ts-form-adapter="service-connection" data-ts-success-message="Settings saved." data-service-settings>
               <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="providerId" value={provider.id} /><input type="hidden" name="version" value={connection.version} />
-              <ConnectionFields {provider} {connection} />
-              <CapabilitySelector capabilities={taskOptions} />
-              <Button type="submit">Save and continue</Button>
+              <section data-service-step="0" hidden={initialStep !== 0}><h2 tabindex="-1">Choose your tasks</h2><p>Select what this connection will be used for.</p><CapabilitySelector capabilities={taskOptions} /></section>
+              <section data-service-step="1" hidden><h2 tabindex="-1">Name your connection</h2><p>Add the account details for your team.</p><ConnectionFields {provider} {connection} /></section>
             </form>
-          </Panel>
-        </details>
-        <section id="service-panel-credentials" class="ts-stack" aria-labelledby="service-auth-heading">
-          <div><h2 id="service-auth-heading">2. Connect your account <HelpTrigger knowledgePageId="services.credentials" label="Help connecting your account" /></h2>
+        <section data-service-step="2" hidden={initialStep !== 2} id="service-panel-credentials" class="ts-stack" aria-labelledby="service-auth-heading">
+          <div><h2 id="service-auth-heading" tabindex="-1">Connect your account <HelpTrigger knowledgePageId="services.credentials" label="Help connecting your account" /></h2>
             <p>{!selectedProfiles.length ? 'Choose at least one task in connection settings to continue.' : custodyUnavailable ? 'Account access could not be checked. Try again in a moment.' : needsAuthentication ? 'Complete the access below for your selected tasks.' : 'Account access is saved. You can check it or replace it below.'}</p>
           </div>
-          {custodyUnavailable ? <Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button> : selectedProfiles.map(profile => {
+          {custodyUnavailable ? <Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button> : selectedProfiles.filter((_, index) => index === accessIndex).map(profile => {
             if (profile.authoritySchemes?.includes('app-installation') && provider.id === 'github') {
               const kind = profile.id === 'github-repository-app' ? 'repository' : 'workflow';
               return <ProviderAuthorityPanel {kind} teamId={team.id} connectionId={connection.id} csrfToken={csrfToken}
@@ -98,41 +99,45 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
             const status = credentials[profile.id];
             if (!status) return null;
             const action = path + '/credentials/' + encodeURIComponent(profile.id);
+            if (status.configured && Astro.url.searchParams.get('remove') === profile.id) return <Panel title="Remove saved access?" knowledgePageId="services.disconnection">
+              <p>Tasks using this access will stop working. The connection itself will remain.</p>
+              <form method="post" action={action} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="DELETE" data-service-credentials>
+                <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
+                <div class="ts-form-actions"><Button type="submit" variant="danger">Remove saved access</Button><Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(profile.id)} variant="secondary">Keep access</Button></div>
+              </form>
+            </Panel>;
             return <Panel title={profileTitle(profile.id, profile.label)} knowledgePageId={provider.knowledgePageIds[0]}>
               <Badge tone={status.configured ? 'muted' : 'warning'}>{status.configured ? 'Access saved' : 'Needs account access'}</Badge>
               <PermissionChecklist permissions={profile.permissions} />
-              <details open={!status.configured}>
-                <summary>{status.configured ? 'Replace access details' : 'Add access details'}</summary>
+
                 <form method="post" action={action} class="ts-form-stack" data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="PUT" data-ts-success-message="Access details saved." data-service-credentials>
                   <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
                   {profile.fields.filter(field => field.sensitive).map(field => <Field label={field.label} name={'secret.' + field.key} required={field.required}>
                     <TextInput name={'secret.' + field.key} type="password" autocomplete="off" required={field.required} />
                   </Field>)}
-                  <Button type="submit">Save access details</Button>
+                  <Button type="submit">{status.configured ? 'Replace access details' : 'Save and continue'}</Button>
                 </form>
-              </details>
               {status.configured && <div class="ts-form-actions">
                 <form method="post" action={action + '/validate'} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="POST" data-ts-success-message="Credential check passed. Individual task permissions may still need review." data-service-credentials>
                   <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
                   <Button type="submit" variant="secondary">Check access</Button>
                 </form>
-                <details><summary>Remove access</summary>
-                  <p>Tasks using these credentials will stop working. The connection itself will remain.</p>
-                  <form method="post" action={action} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="DELETE" data-service-credentials>
-                    <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
-                    <Button type="submit" variant="danger">Confirm removal</Button>
-                  </form>
-                </details>
+                <Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(profile.id) + '&remove=' + encodeURIComponent(profile.id)} variant="ghost">Remove saved access</Button>
               </div>}
             </Panel>;
           })}
+          {!custodyUnavailable && selectedProfiles.length > 1 && <nav class="ts-form-actions" aria-label="Account access requests">
+            {accessIndex > 0 && <Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(selectedProfiles[accessIndex - 1].id)} variant="secondary">Previous access request</Button>}
+            <span>Account access {accessIndex + 1} of {selectedProfiles.length}</span>
+            {accessIndex < selectedProfiles.length - 1 && <Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(selectedProfiles[accessIndex + 1].id)} variant="secondary">Next access request</Button>}
+          </nav>
         </section>
-      </>}
-      <details><summary>Activity <HelpTrigger knowledgePageId="services.activity" label="Help with connection activity" /></summary>
+      </ServiceWizard>}
+      {!editing && <details class="ts-service-disclosure"><summary>Activity <HelpTrigger knowledgePageId="services.activity" label="Help with connection activity" /></summary>
         <p>Last changed: <Timestamp value={connection.updatedAt} timeZone={preferences.timeZone} /></p>
         <p>Last checked: {connection.lastValidatedAt ? <Timestamp value={connection.lastValidatedAt} timeZone={preferences.timeZone} /> : 'Not yet checked'}</p>
-      </details>
-      {canManage && <details><summary>Disconnect this service</summary>
+      </details>}
+      {canManage && !editing && <details class="ts-service-disclosure"><summary>Disconnect this service</summary>
         <p>This removes the team's connection. Projects must stop using it first. <HelpTrigger knowledgePageId="services.disconnection" label="Help disconnecting a service" /></p>
         <form method="post" action={path} data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Service disconnected." data-service-disconnect>
           <input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="danger">Confirm disconnect</Button>
@@ -148,7 +153,8 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
   document.querySelector('[data-service-disconnect]')?.addEventListener('treeseed:form-success', () => window.location.assign('/app/services'));
   document.querySelectorAll('[data-service-settings], [data-service-credentials]').forEach(form =>
     form.addEventListener('treeseed:form-success', event => {
-      const url = new URL(window.location.href);
+      const url = new URL(window.location.pathname, window.location.origin);
+      if (form.hasAttribute('data-service-settings')) url.searchParams.set('edit', 'true');
       url.searchParams.set('tsToastSuccess', (event as CustomEvent).detail?.message ?? 'Saved.');
       window.location.assign(url.href);
     }));

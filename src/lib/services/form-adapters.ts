@@ -21,7 +21,10 @@ export function registerServiceFormAdapters() {
 		}),
 		registerFormAdapter('service-connection', {
 			buildRequest(context) {
-				const capabilities = context.formData.getAll('capabilities').map(String);
+				const capabilities = [...new Set(context.formData.getAll('capabilities').map(String))];
+				if (text(context.formData, 'combinedWorkflowEnvironment') === 'true' && capabilities.includes('workflow-configuration')) capabilities.push('secret-enclave');
+				const githubMethod = text(context.formData, 'githubAuthMethod');
+				if (text(context.formData, 'providerId') === 'github' && !['app', 'token'].includes(githubMethod)) throw new Error('Choose how to connect to GitHub.');
 				if (!capabilities.length) throw new Error('Choose at least one task for this connection.');
 				const config = Object.fromEntries(
 					[...context.formData.entries()]
@@ -33,7 +36,9 @@ export function registerServiceFormAdapters() {
 					displayName: text(context.formData, 'displayName'),
 					nonSecretConfig: config,
 					capabilities: capabilities.map((capabilityType) => ({ capabilityType, status: 'configured',
-						credentialProfileId: text(context.formData, `capabilityProfile.${capabilityType}`) || undefined })),
+						credentialProfileId: text(context.formData, 'providerId') === 'github'
+							? `github-${capabilityType === 'repository-hosting' ? 'repository' : 'workflow'}-${githubMethod}`
+							: text(context.formData, `capabilityProfile.${capabilityType}`) || undefined })),
 				};
 				const version = text(context.formData, 'version');
 				if (version) body.version = Number(version);

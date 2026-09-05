@@ -27,7 +27,12 @@ describe('service management architecture', () => {
 		const createPage = read('src/pages/app/services/new.astro');
 		expect(createPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionCreateSurface.astro');
 		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
-		for (const component of ['ProviderCard', 'Panel', 'SettingsTemplate', 'CapabilitySelector']) expect(createSurface).toContain(component);
+		for (const component of ['ProviderCard', 'ServiceWizard', 'SettingsTemplate', 'CapabilitySelector']) expect(createSurface).toContain(component);
+		const detail = read('src/pages/app/services/[connectionId].astro');
+		expect(detail).toContain('ServiceWizard');
+		for (const step of [0, 1, 2]) expect(detail).toContain(`data-service-step="${step}"`);
+		expect(createSurface + detail).not.toContain('max-width: 48rem');
+		expect(detail).toContain('selectedProfiles.filter((_, index) => index === accessIndex)');
 		const pages = [
 			read('src/pages/app/services/index.astro'),
 			read('src/pages/app/services/new.astro'),
