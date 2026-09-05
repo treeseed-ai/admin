@@ -17,6 +17,7 @@ import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { serviceSections } from '../../../lib/services/navigation';
+import { loadServiceItems } from '../../../lib/services/collections';
 import { loadAppContext } from '../../../view-models/app-access.js';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
@@ -40,8 +41,8 @@ if (team) {
 		else unavailable = true;
 	}
 	if (connection && canManage) {
-		authorities = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connectionId)}/credential-authorities`).catch(() => []);
 		try {
+      authorities = await loadServiceItems(api, 'services.credential.authorities.list', { teamId: team.id, connectionId });
       const profiles = getServiceProviderDefinition(connection.providerId)?.credentialProfiles.filter(profile =>
         profile.authoritySchemes.includes('openbao') && connection.capabilities.some((binding: any) => binding.status === 'configured' && binding.credentialProfileId === profile.id)) ?? [];
       await Promise.all(profiles.map(async profile => {
