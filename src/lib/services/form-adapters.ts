@@ -1,12 +1,21 @@
 import { registerFormAdapter } from '@treeseed/ui/forms/client';
-function jsonRequest(url: string, body: unknown, csrfToken: string, method = 'POST') {
+function jsonRequest(url: string, body: unknown, csrfToken: string, method = 'POST', ifMatch?: string) {
   return {url, init: {method, headers: {accept: 'application/json', 'content-type': 'application/json',
-    'x-treeseed-csrf': csrfToken, 'x-treeseed-form': 'enhanced', 'Idempotency-Key': crypto.randomUUID()},
+    'x-treeseed-csrf': csrfToken, 'x-treeseed-form': 'enhanced', 'Idempotency-Key': crypto.randomUUID(),
+    ...(ifMatch === undefined ? {} : {'If-Match': ifMatch})},
     body: JSON.stringify(body), credentials: 'same-origin' as const}};
 }
 function text(data: FormData, key: string) { return String(data.get(key) ?? '').trim(); }
+function connectionRevision(data: FormData) {
+  const revision = text(data, 'version');
+  if (!/^\d+$/.test(revision) || !Number.isSafeInteger(Number(revision))) throw new Error('Reload this connection before saving; its revision is missing or invalid.');
+  return revision;
+}
 export function registerServiceFormAdapters() {
   const disposers = [
+    registerFormAdapter('service-disconnect', {
+      buildRequest(context) { return jsonRequest(context.form.action, {}, text(context.formData, 'csrfToken'), 'DELETE', connectionRevision(context.formData)); },
+    }),
 		registerFormAdapter('github-connector', {
 			buildRequest(context) {
 				return jsonRequest(context.form.action, {
@@ -42,7 +51,8 @@ export function registerServiceFormAdapters() {
 				};
 				const version = text(context.formData, 'version');
 				if (version) body.version = Number(version);
-				return jsonRequest(context.form.action, body, text(context.formData, 'csrfToken'), context.form.dataset.tsMethod || 'POST');
+				const method = context.form.dataset.tsMethod || 'POST';
+				return jsonRequest(context.form.action, body, text(context.formData, 'csrfToken'), method, method === 'PUT' ? connectionRevision(context.formData) : undefined);
 			},
 			async parseResponse(response, context) {
 				const body = await response.json().catch(() => null);

@@ -139,8 +139,8 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
       </details>}
       {canManage && !editing && <details class="ts-service-disclosure"><summary>Disconnect this service</summary>
         <p>This removes the team's connection. Projects must stop using it first. <HelpTrigger knowledgePageId="services.disconnection" label="Help disconnecting a service" /></p>
-        <form method="post" action={path} data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Service disconnected." data-service-disconnect>
-          <input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="danger">Confirm disconnect</Button>
+        <form method="post" action={path} data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="service-disconnect" data-ts-success-message="Service disconnected." data-service-disconnect>
+          <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="version" value={connection.version} /><Button type="submit" variant="danger">Confirm disconnect</Button>
         </form>
       </details>}
     </section>
