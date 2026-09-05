@@ -22,6 +22,7 @@ export function registerServiceFormAdapters() {
 		registerFormAdapter('service-connection', {
 			buildRequest(context) {
 				const capabilities = context.formData.getAll('capabilities').map(String);
+				if (!capabilities.length) throw new Error('Choose at least one task for this connection.');
 				const config = Object.fromEntries(
 					[...context.formData.entries()]
 						.filter(([key]) => key.startsWith('config.'))
@@ -37,6 +38,16 @@ export function registerServiceFormAdapters() {
 				const version = text(context.formData, 'version');
 				if (version) body.version = Number(version);
 				return jsonRequest(context.form.action, body, text(context.formData, 'csrfToken'), context.form.dataset.tsMethod || 'POST');
+			},
+			async parseResponse(response, context) {
+				const body = await response.json().catch(() => null);
+				const payload = body?.data ?? body?.payload ?? body;
+				const ok = response.ok && body !== null && body?.ok !== false;
+				const creating = !context.form.dataset.tsMethod;
+				return {ok, code: ok ? 'saved' : 'save_failed',
+					message: ok ? 'Settings saved.' : String(body?.detail ?? body?.error?.message ?? body?.message ?? 'Could not save this connection.'),
+					fieldErrors: body?.fieldErrors,
+					redirect: ok && creating ? (typeof payload?.id === 'string' ? '/app/services/' + encodeURIComponent(payload.id) : '/app/services') : undefined};
 			},
 		}),
 

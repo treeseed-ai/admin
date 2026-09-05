@@ -14,18 +14,14 @@ const provider = getServiceProviderDefinition(selectedProvider);
 const csrfToken = ensureCsrfToken(Astro);
 const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin']);
 const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.has(role)) || team?.currentUserRole && managementRoles.has(team.currentUserRole));
-const permissions = provider ? [...new Set(provider.credentialProfiles.flatMap((profile) => profile.permissions))] : [];
 ---
 
 <TreeseedAppLayout title="Connect service" description="Add a provider account to the active team." currentPath="/app/services" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
-	<ServiceConnectionCreateSurface {team} {canManage} {provider} providers={[...SERVICE_PROVIDER_CATALOG]} {permissions} {csrfToken} sections={serviceSections({ current: 'connections' })} />
+	<ServiceConnectionCreateSurface {team} {canManage} {provider} providers={[...SERVICE_PROVIDER_CATALOG]} {csrfToken} sections={serviceSections({ current: 'connections' })} />
 </TreeseedAppLayout>
 
 <script>
 	import { registerServiceFormAdapters } from '../../../lib/services/form-adapters';
 	const dispose = registerServiceFormAdapters();
 	document.addEventListener('astro:before-swap', dispose, { once: true });
-	document.querySelector('[data-scene="service.create.submit"]')?.addEventListener('treeseed:form-success', () => {
-		window.location.assign('/app/services');
-	}, { once: true });
 </script>

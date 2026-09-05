@@ -51,7 +51,7 @@ describe('Admin contextual help architecture', () => {
 
 	it('explains managed custody without asking for personal vault keys', () => {
     const page=read('src/pages/app/services/[connectionId].astro');
-    expect(page).toContain('Core OpenBao stores encrypted team credentials.');
+    expect(page).not.toContain('Core OpenBao stores encrypted team credentials.');
     expect(page).toContain('knowledgePageId="services.credentials"');
     expect(page).toContain('class="ts-form-stack"');
     expect(page).not.toContain('passphrase');

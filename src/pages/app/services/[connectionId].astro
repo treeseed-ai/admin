@@ -1,14 +1,14 @@
 ---
 import { getServiceProviderDefinition } from '@treeseed/sdk/secrets-capability';
 import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
-import KeyValueList from '@treeseed/ui/components/astro/data/KeyValueList.astro';
 import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
 import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import ConnectionFields from '@treeseed/ui/components/astro/service/ConnectionFields.astro';
+import HelpTrigger from '@treeseed/ui/components/astro/help/HelpTrigger.astro';
 import Field from '@treeseed/ui/components/astro/forms/Field.astro';
 import TextInput from '@treeseed/ui/components/astro/forms/TextInput.astro';
 import CapabilitySelector from '@treeseed/ui/components/astro/service/CapabilitySelector.astro';
 import PermissionChecklist from '@treeseed/ui/components/astro/service/PermissionChecklist.astro';
-import ProviderMark from '@treeseed/ui/components/astro/service/ProviderMark.astro';
 import ProviderAuthorityPanel from '@treeseed/ui/components/astro/service/ProviderAuthorityPanel.astro';
 import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
@@ -18,6 +18,7 @@ import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { serviceSections } from '../../../lib/services/navigation';
 import { loadServiceItems } from '../../../lib/services/collections';
+import { serviceSetup } from '../../../lib/services/setup';
 import { loadAppContext } from '../../../view-models/app-access.js';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
@@ -44,7 +45,7 @@ if (team) {
 		try {
       authorities = await loadServiceItems(api, 'services.credential.authorities.list', { teamId: team.id, connectionId });
       const profiles = getServiceProviderDefinition(connection.providerId)?.credentialProfiles.filter(profile =>
-        profile.authoritySchemes.includes('openbao') && connection.capabilities.some((binding: any) => binding.status === 'configured' && binding.credentialProfileId === profile.id)) ?? [];
+        profile.authoritySchemes?.includes('openbao') && connection.capabilities.some((binding: any) => binding.status === 'configured' && binding.credentialProfileId === profile.id)) ?? [];
       await Promise.all(profiles.map(async profile => {
         credentials[profile.id] = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connectionId)}/credentials/${encodeURIComponent(profile.id)}`);
       }));
@@ -55,157 +56,100 @@ const provider = connection ? getServiceProviderDefinition(connection.providerId
 const csrfToken = ensureCsrfToken(Astro);
 const connectorConfig = (kind: 'repository' | 'workflow') => connection?.nonSecretConfig?.githubConnectors?.[kind] ?? {};
 const authorityStatus = (profileId: string) => authorities.find((item) => item.credentialProfileId === profileId)?.status ?? null;
+
+const {selectedProfiles, taskOptions} = serviceSetup(provider, connection?.capabilities);
+const path = team ? '/v1/teams/' + encodeURIComponent(team.id) + '/services/' + encodeURIComponent(connectionId) : '';
+const needsAuthentication = selectedProfiles.some(profile => profile.authoritySchemes?.includes('openbao')
+  ? !credentials[profile.id]?.configured : authorityStatus(profile.id) !== 'ready');
+const profileTitle = (id: string, fallback: string) => id === 'github-repository-token' ? 'GitHub repository access'
+  : id === 'github-workflow-token' ? 'GitHub Actions access' : id === 'cloudflare-storage' ? 'Cloudflare storage access' : fallback;
 ---
-
-<TreeseedAppLayout title={connection?.displayName ?? 'Service'} description="Connected provider account and capability settings." currentPath="/app/services" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader={Boolean(connection)}>
-	{!team ? (
-		<EmptyState title="Select an active team" description="Service connections are isolated by active team." />
-	) : unavailable ? (
-		<EmptyState title="Service unavailable" description="The provider connection could not be loaded.">
-			<div slot="actions"><Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button></div>
-		</EmptyState>
-	) : !connection || !provider ? (
-		<EmptyState title="Service not found" description="This connection does not exist for the active team." actions={[{ label: 'Back to services', href: '/app/services' }]} />
-	) : (
-		<SettingsTemplate
-			title={connection.displayName}
-			description={`Connected to ${provider.label} for ${team.displayName ?? team.name}.`}
-			sections={serviceSections({ current: 'connections' })}
-			knowledgePageId="services.connection"
-			class="ts-service-workspace"
-		>
-		<section class="ts-stack" data-scene="service.detail">
-			<section id="service-panel-overview">
-				<div class="ts-resource-grid">
-					<Panel eyebrow="Connection" title="Provider account" knowledgePageId="services.connection">
-						<ProviderMark provider={provider.id} label={provider.label} size="md" />
-						<KeyValueList items={[
-							{ key: 'Provider', value: provider.label },
-							{ key: 'Status', value: connection.status },
-							...Object.entries(connection.nonSecretConfig ?? {}).filter(([, value]) => typeof value !== 'object')
-								.map(([key, value]) => ({ key: provider.connectionFields.find((field) => field.key === key)?.label ?? key, value: String(value) })),
-						]} />
-					</Panel>
-          <Panel eyebrow="Custody" title="Managed credentials" description="Core OpenBao stores encrypted team credentials. TreeSeed authorizes each use; this page never reads secret values." knowledgePageId="services.credentials">
-            <Badge tone="neutral">OpenBao</Badge>
+<TreeseedAppLayout title={connection?.displayName ?? 'Service'} description="Connect your team's services." currentPath="/app/services" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader={Boolean(connection)}>
+  {!team ? <EmptyState title="Choose a team first" description="Select the team that owns this connection." />
+  : unavailable ? <EmptyState title="Connection could not be loaded" description="Try again in a moment."><div slot="actions"><Button href={Astro.url.pathname} reload>Retry</Button></div></EmptyState>
+  : !connection || !provider ? <EmptyState title="Service not found" description="This connection is not available for your team." actions={[{label: 'Back to services', href: '/app/services'}]} />
+  : <SettingsTemplate title={connection.displayName} description={provider.label + ' · ' + (team.displayName ?? team.name)} sections={serviceSections({current: 'connections'})} knowledgePageId="services.connection" class="ts-service-workspace">
+    <section class="ts-stack" data-scene="service.detail" id="service-workspace" style="max-width: 48rem; width: 100%">
+      {!canManage ? <Panel title="Connection details" knowledgePageId="services.connection">
+        <p>Ask a team administrator to change this connection.</p>
+        <CapabilitySelector capabilities={taskOptions} readonly />
+      </Panel> : <>
+        <details open={!selectedProfiles.length} id="service-panel-settings">
+          <summary>1. Connection settings</summary>
+          <Panel title="Choose what you need" knowledgePageId={provider.knowledgePageIds[0]}>
+            <form method="post" action={path} class="ts-form-stack" data-ts-method="PUT" data-ts-submit="enhanced" data-ts-form-adapter="service-connection" data-ts-success-message="Settings saved." data-service-settings>
+              <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="providerId" value={provider.id} /><input type="hidden" name="version" value={connection.version} />
+              <ConnectionFields {provider} {connection} />
+              <CapabilitySelector capabilities={taskOptions} />
+              <Button type="submit">Save and continue</Button>
+            </form>
           </Panel>
-				</div>
-			</section>
-
-			<section id="service-panel-capabilities">
-				<Panel title="Enabled capabilities" description="Each capability remains independently selectable even when it shares provider authority." knowledgePageId="services.capabilities">
-					<CapabilitySelector capabilities={provider.capabilities.map((item) => ({
-						...item,
-						checked: connection.capabilities?.some((binding: any) => binding.capabilityType === item.type && binding.status === 'configured'),
-						credentialProfileId: connection.capabilities?.find((binding: any) => binding.capabilityType === item.type)?.credentialProfileId,
-						credentialProfiles: item.credentialProfileIds.map((id) => ({ id,
-							label: provider.credentialProfiles.find((profile) => profile.id === id)?.label ?? id })),
-					}))} readonly />
-				</Panel>
-			</section>
-
-			<section id="service-panel-credentials">
-				{provider.id === 'github' && canManage ? (
-					<div class="ts-resource-grid">
-						<ProviderAuthorityPanel kind="repository" teamId={team.id} connectionId={connection.id} csrfToken={csrfToken}
-							status={authorityStatus('github-repository-app')} accountLogin={connectorConfig('repository').accountLogin}
-							installationId={connectorConfig('repository').installationId}
-							permissions={provider.credentialProfiles.find((item) => item.id === 'github-repository-app')?.permissions ?? []} />
-						<ProviderAuthorityPanel kind="workflow" teamId={team.id} connectionId={connection.id} csrfToken={csrfToken}
-							status={authorityStatus('github-workflow-app')} accountLogin={connectorConfig('workflow').accountLogin}
-							installationId={connectorConfig('workflow').installationId}
-							permissions={provider.credentialProfiles.find((item) => item.id === 'github-workflow-app')?.permissions ?? []} />
-					</div>
-				) : null}
-        {!canManage ? <EmptyState title="Credential administration required" description="Your team role cannot manage credentials." />
-          : custodyUnavailable ? <EmptyState title="Managed custody unavailable" description="Core OpenBao must be healthy before credentials can be changed." />
-          : <div class="ts-resource-grid">
-            {provider.credentialProfiles.filter(profile => profile.authoritySchemes.includes('openbao') && credentials[profile.id]).map(profile => {
-              const status = credentials[profile.id];
-              const action = `/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connection.id)}/credentials/${encodeURIComponent(profile.id)}`;
-              return <Panel title={profile.label} description={profile.description} knowledgePageId="services.credentials">
-                <Badge tone={status.configured ? 'success' : 'warning'}>{status.configured ? 'Configured in OpenBao' : 'Not configured'}</Badge>
-                <form method="post" action={action} class="ts-form-stack" data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="PUT" data-ts-refresh-target="#service-panel-credentials" data-ts-success-message="Credentials stored in OpenBao.">
-                  <input type="hidden" name="csrfToken" value={csrfToken} />
-                  <input type="hidden" name="expectedVersion" value={status.version} />
-                  {profile.fields.filter(field => field.sensitive).map(field => <Field label={field.label} name={`secret.${field.key}`} help={field.description} required={field.required}>
-                    <TextInput name={`secret.${field.key}`} type="password" autocomplete="off" required={field.required} />
+        </details>
+        <section id="service-panel-credentials" class="ts-stack" aria-labelledby="service-auth-heading">
+          <div><h2 id="service-auth-heading">2. Connect your account <HelpTrigger knowledgePageId="services.credentials" label="Help connecting your account" /></h2>
+            <p>{!selectedProfiles.length ? 'Choose at least one task in connection settings to continue.' : custodyUnavailable ? 'Account access could not be checked. Try again in a moment.' : needsAuthentication ? 'Complete the access below for your selected tasks.' : 'Account access is saved. You can check it or replace it below.'}</p>
+          </div>
+          {custodyUnavailable ? <Button href={Astro.url.pathname} variant="secondary" reload>Retry</Button> : selectedProfiles.map(profile => {
+            if (profile.authoritySchemes?.includes('app-installation') && provider.id === 'github') {
+              const kind = profile.id === 'github-repository-app' ? 'repository' : 'workflow';
+              return <ProviderAuthorityPanel {kind} teamId={team.id} connectionId={connection.id} csrfToken={csrfToken}
+                status={authorityStatus(profile.id)} accountLogin={connectorConfig(kind).accountLogin} installationId={connectorConfig(kind).installationId} permissions={profile.permissions} />;
+            }
+            const status = credentials[profile.id];
+            if (!status) return null;
+            const action = path + '/credentials/' + encodeURIComponent(profile.id);
+            return <Panel title={profileTitle(profile.id, profile.label)} knowledgePageId={provider.knowledgePageIds[0]}>
+              <Badge tone={status.configured ? 'muted' : 'warning'}>{status.configured ? 'Access saved' : 'Needs account access'}</Badge>
+              <PermissionChecklist permissions={profile.permissions} />
+              <details open={!status.configured}>
+                <summary>{status.configured ? 'Replace access details' : 'Add access details'}</summary>
+                <form method="post" action={action} class="ts-form-stack" data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="PUT" data-ts-success-message="Access details saved." data-service-credentials>
+                  <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
+                  {profile.fields.filter(field => field.sensitive).map(field => <Field label={field.label} name={'secret.' + field.key} required={field.required}>
+                    <TextInput name={'secret.' + field.key} type="password" autocomplete="off" required={field.required} />
                   </Field>)}
-                  <Button type="submit">{status.configured ? 'Replace credentials' : 'Save credentials'}</Button>
+                  <Button type="submit">Save access details</Button>
                 </form>
-                <PermissionChecklist permissions={profile.permissions} />
-                {status.configured && ['validate','delete'].map(operation => <form method="post" action={operation === 'validate' ? action + '/validate' : action} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method={operation === 'validate' ? 'POST' : 'DELETE'} data-ts-refresh-target="#service-panel-credentials">
-                  <input type="hidden" name="csrfToken" value={csrfToken} />
-                  <input type="hidden" name="expectedVersion" value={status.version} />
-                  <Button type="submit" variant="secondary">{operation === 'validate' ? 'Validate credentials' : 'Delete credentials'}</Button>
-                </form>)}
-              </Panel>;
-            })}
-          </div>}
-			</section>
-
-			<section id="service-panel-activity">
-				<Panel title="Connection activity" description="Security-sensitive changes are recorded without credential values." knowledgePageId="services.activity">
-					<dl class="ts-key-value-list">
-						<div><dt>Connected</dt><dd><Timestamp value={connection.createdAt} timeZone={preferences.timeZone} /></dd></div>
-						<div><dt>Last updated</dt><dd><Timestamp value={connection.updatedAt} timeZone={preferences.timeZone} /></dd></div>
-						<div><dt>Last validation</dt><dd>{connection.lastValidatedAt ? <Timestamp value={connection.lastValidatedAt} timeZone={preferences.timeZone} /> : 'Not validated'}</dd></div>
-					</dl>
-				</Panel>
-			</section>
-
-			{canManage ? (
-				<section id="service-panel-settings">
-					<div class="ts-resource-grid">
-						<Panel title="Connection settings" description="Update non-secret account identifiers and enabled capabilities." knowledgePageId="services.settings">
-							<form
-								method="post"
-								action={`/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connection.id)}`}
-								data-ts-method="PUT"
-								data-ts-submit="enhanced"
-								data-ts-form-adapter="service-connection"
-								data-ts-success-message="Service settings updated."
-							>
-								<input type="hidden" name="csrfToken" value={csrfToken} />
-								<input type="hidden" name="providerId" value={provider.id} />
-								<input type="hidden" name="version" value={connection.version} />
-								<Field label="Connection reference" name="displayName" help="Stable provider-scoped name used by portable Platform topology." required>
-									<TextInput name="displayName" value={connection.displayName} required />
-								</Field>
-								{provider.connectionFields.map((field) => (
-									<Field label={field.label} name={`config.${field.key}`} help={field.description} required={field.required}>
-										<TextInput name={`config.${field.key}`} value={String(connection.nonSecretConfig?.[field.key] ?? '')} required={field.required} />
-									</Field>
-								))}
-								<CapabilitySelector capabilities={provider.capabilities.map((item) => ({
-									...item,
-									checked: connection.capabilities?.some((binding: any) => binding.capabilityType === item.type && binding.status === 'configured'),
-									credentialProfileId: connection.capabilities?.find((binding: any) => binding.capabilityType === item.type)?.credentialProfileId,
-									credentialProfiles: item.credentialProfileIds.map((id) => ({ id,
-										label: provider.credentialProfiles.find((profile) => profile.id === id)?.label ?? id })),
-								}))} />
-								<Button type="submit">Save settings</Button>
-							</form>
-						</Panel>
-						<Panel eyebrow="Danger zone" title="Disconnect provider" description="Disconnecting is blocked while projects or allocations still reference this service." tone="danger" knowledgePageId="services.disconnection">
-							<form method="post" action={`/v1/teams/${encodeURIComponent(team.id)}/services/${encodeURIComponent(connection.id)}`} data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Service disconnected.">
-								<input type="hidden" name="csrfToken" value={csrfToken} />
-								<Button type="submit" variant="danger">Disconnect service</Button>
-							</form>
-						</Panel>
-					</div>
-				</section>
-			) : null}
-		</section>
-		</SettingsTemplate>
-	)}
+              </details>
+              {status.configured && <div class="ts-form-actions">
+                <form method="post" action={action + '/validate'} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="POST" data-ts-success-message="Credential check passed. Individual task permissions may still need review." data-service-credentials>
+                  <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
+                  <Button type="submit" variant="secondary">Check access</Button>
+                </form>
+                <details><summary>Remove access</summary>
+                  <p>Tasks using these credentials will stop working. The connection itself will remain.</p>
+                  <form method="post" action={action} data-ts-submit="enhanced" data-ts-form-adapter="managed-credentials" data-ts-method="DELETE" data-service-credentials>
+                    <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="expectedVersion" value={status.version} />
+                    <Button type="submit" variant="danger">Confirm removal</Button>
+                  </form>
+                </details>
+              </div>}
+            </Panel>;
+          })}
+        </section>
+      </>}
+      <details><summary>Activity <HelpTrigger knowledgePageId="services.activity" label="Help with connection activity" /></summary>
+        <p>Last changed: <Timestamp value={connection.updatedAt} timeZone={preferences.timeZone} /></p>
+        <p>Last checked: {connection.lastValidatedAt ? <Timestamp value={connection.lastValidatedAt} timeZone={preferences.timeZone} /> : 'Not yet checked'}</p>
+      </details>
+      {canManage && <details><summary>Disconnect this service</summary>
+        <p>This removes the team's connection. Projects must stop using it first. <HelpTrigger knowledgePageId="services.disconnection" label="Help disconnecting a service" /></p>
+        <form method="post" action={path} data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Service disconnected." data-service-disconnect>
+          <input type="hidden" name="csrfToken" value={csrfToken} /><Button type="submit" variant="danger">Confirm disconnect</Button>
+        </form>
+      </details>}
+    </section>
+  </SettingsTemplate>}
 </TreeseedAppLayout>
-
 <script>
-	import { registerServiceFormAdapters } from '../../../lib/services/form-adapters';
-	const dispose = registerServiceFormAdapters();
-	document.addEventListener('astro:before-swap', dispose, { once: true });
-	document.querySelectorAll('[data-ts-method="DELETE"]').forEach((form) => {
-		form.addEventListener('treeseed:form-success', () => window.location.assign('/app/services'), { once: true });
-	});
+  import { registerServiceFormAdapters } from '../../../lib/services/form-adapters';
+  const dispose = registerServiceFormAdapters();
+  document.addEventListener('astro:before-swap', dispose, {once: true});
+  document.querySelector('[data-service-disconnect]')?.addEventListener('treeseed:form-success', () => window.location.assign('/app/services'));
+  document.querySelectorAll('[data-service-settings], [data-service-credentials]').forEach(form =>
+    form.addEventListener('treeseed:form-success', event => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tsToastSuccess', (event as CustomEvent).detail?.message ?? 'Saved.');
+      window.location.assign(url.href);
+    }));
 </script>

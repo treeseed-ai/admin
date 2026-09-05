@@ -22,7 +22,8 @@ describe('service management architecture', () => {
 			expect(collectionPage).not.toContain(component);
 		}
 		const workspace = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionWorkspace.astro');
-		for (const component of ['ProviderCard', 'Panel', 'SettingsTemplate', 'SemanticCollectionSurface']) expect(workspace).toContain(component);
+		for (const component of ['ProviderCard', 'SettingsTemplate', 'SemanticCollectionSurface']) expect(workspace).toContain(component);
+		expect(workspace).not.toContain('Managed OpenBao');
 		const createPage = read('src/pages/app/services/new.astro');
 		expect(createPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionCreateSurface.astro');
 		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
@@ -54,7 +55,10 @@ describe('service management architecture', () => {
 
 	it('uses core managed custody without a separate vault setup route', () => {
     const detail=read('src/pages/app/services/[connectionId].astro');
-    expect(detail).toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
+    expect(detail).not.toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
+    expect(detail).toContain('knowledgePageId="services.credentials"');
+    expect(detail).toContain('data-service-disconnect');
+    expect(detail).not.toContain('querySelectorAll(\'[data-ts-method="DELETE"]\')');
     expect(read('src/routes.ts')).not.toContain('/app/services/vault');
   });
 
@@ -67,9 +71,10 @@ describe('service management architecture', () => {
 	it('supports portable topology references and isolated R2 state metadata', () => {
 		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
 		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
-		expect(createSurface).toContain('Connection reference');
-		expect(createSurface).toContain('exactly match the topology connectionRef');
-		expect(createSurface).toContain('database IDs never belong in Platform');
+		expect(createSurface).toContain('ConnectionFields');
+		const fields = readDependency('@treeseed/ui', 'dist/astro/service/ConnectionFields.astro');
+		expect(fields).toContain('name="displayName"');
+		expect(fields).toContain('Keep it unchanged if a deployment already uses it.');
 		for (const field of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef']) {
 			expect(providerContracts).toContain(`field("${field}"`);
 		}
