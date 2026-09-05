@@ -7,7 +7,7 @@ import {registerServiceFormAdapters} from '../../../src/lib/services/form-adapte
 function context(method = '') {
   const formData = new FormData();
   for (const [key, value] of Object.entries({csrfToken: 'fixture', providerId: 'github', displayName: 'source', version: '3',
-    capabilities: 'repository-hosting', 'capabilityProfile.repository-hosting': 'github-repository-token', 'config.organization': 'example'})) formData.set(key, value);
+    capabilities: 'repository-hosting', githubAuthMethod: 'token', 'config.organization': 'example'})) formData.set(key, value);
   return {formData, form: {action: '/v1/teams/test/services/connection', dataset: {tsMethod: method}}};
 }
 describe('guided service forms', () => {
@@ -17,6 +17,21 @@ describe('guided service forms', () => {
     expect(request.url).toBe('/v1/teams/test/services/connection');
     expect(request.init.headers['x-treeseed-csrf']).toBe('fixture');
     expect(JSON.parse(request.init.body)).toMatchObject({version: 3, capabilities: [{credentialProfileId: 'github-repository-token'}]});
+  });
+  it.each(['app', 'token'])('maps one %s choice to all tasks and both environment capabilities', method => {
+    const ctx = context(); ctx.formData.set('githubAuthMethod', method);
+    ctx.formData.append('capabilities', 'workflow-execution');
+    ctx.formData.append('capabilities', 'workflow-configuration');
+    ctx.formData.set('combinedWorkflowEnvironment', 'true');
+    const body = JSON.parse(adapters.get('service-connection').buildRequest(ctx).init.body);
+    expect(body.capabilities).toEqual([
+      {capabilityType: 'repository-hosting', status: 'configured', credentialProfileId: 'github-repository-' + method},
+      ...['workflow-execution', 'workflow-configuration', 'secret-enclave'].map(capabilityType => ({capabilityType, status: 'configured', credentialProfileId: 'github-workflow-' + method})),
+    ]);
+  });
+  it('requires an explicit method when saved GitHub methods conflict', () => {
+    const ctx = context(); ctx.formData.delete('githubAuthMethod');
+    expect(() => adapters.get('service-connection').buildRequest(ctx)).toThrow('Choose how to connect');
   });
   it('requires a task before creating a connection', () => {
     const ctx = context(); ctx.formData.delete('capabilities');
