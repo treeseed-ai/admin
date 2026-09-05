@@ -28,7 +28,6 @@ const EXPECTED_ROUTES = [
 	'/app/feedback/[feedbackId]',
 	'/app/services',
 	'/app/services/new',
-	'/app/services/vault',
 	'/app/services/[connectionId]',
 	'/app/knowledge',
 	'/app/knowledge/packs/[buildId]/download',

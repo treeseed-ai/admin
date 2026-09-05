@@ -14,9 +14,7 @@ const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC
 const providerFilter = Astro.url.searchParams.get('provider') ?? '';
 const capabilityFilter = Astro.url.searchParams.get('capability') ?? '';
 let services: any[] = [];
-let vault: any = null;
 let unavailable = false;
-let vaultUnavailable = false;
 const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin']);
 const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.has(role)) || team?.currentUserRole && managementRoles.has(team.currentUserRole));
 if (team) {
@@ -25,16 +23,9 @@ if (team) {
 	} catch {
 		unavailable = true;
 	}
-	if (canManage) {
-		try {
-			vault = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(team.id)}/vault`);
-		} catch {
-			vaultUnavailable = true;
-		}
-	}
 }
 ---
 
 <TreeseedAppLayout title="Services" description="Connected provider accounts and reusable hosting capabilities." currentPath="/app/services" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader>
-	<ServiceConnectionWorkspace teamName={team ? team.displayName ?? team.name : undefined} {services} providerCatalog={SERVICE_PROVIDER_CATALOG} sections={serviceSections({ current: 'connections' })} {providerFilter} {capabilityFilter} {vault} {unavailable} {vaultUnavailable} {canManage} timeZone={preferences.timeZone} />
+	<ServiceConnectionWorkspace teamName={team ? team.displayName ?? team.name : undefined} {services} providerCatalog={SERVICE_PROVIDER_CATALOG} sections={serviceSections({ current: 'connections' })} {providerFilter} {capabilityFilter} {unavailable} {canManage} timeZone={preferences.timeZone} />
 </TreeseedAppLayout>

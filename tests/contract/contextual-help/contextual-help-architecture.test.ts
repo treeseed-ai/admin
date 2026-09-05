@@ -19,7 +19,7 @@ describe('Admin contextual help architecture', () => {
 		const routedPages = [...routes.matchAll(/knowledgePageIds:\s*\['([^']+)'\]/gu)].map((match) => match[1]);
 		expect(routedPages.length).toBeGreaterThanOrEqual(15);
 		for (const id of routedPages) expect(id).toMatch(/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/u);
-		for (const route of ['/app/account', '/app/teams', '/app/services', '/app/services/vault', '/team-invites/[token]/accept']) {
+		for (const route of ['/app/account', '/app/teams', '/app/services', '/team-invites/[token]/accept']) {
 			const line = routes.split('\n').find((candidate) => candidate.includes(`adminRoute('${route}'`));
 			expect(line, route).toContain('knowledgePageIds');
 		}
@@ -42,7 +42,6 @@ describe('Admin contextual help architecture', () => {
 			'src/pages/app/services/index.astro',
 			'src/pages/app/services/new.astro',
 			'src/pages/app/services/[connectionId].astro',
-			'src/pages/app/services/vault.astro',
 		].map(read)).join('\n');
 		const literalIds = [...sources.matchAll(/knowledgePageId="([^"]+)"/gu)].map((match) => match[1]);
 		expect(literalIds.length).toBeGreaterThan(20);
@@ -50,15 +49,13 @@ describe('Admin contextual help architecture', () => {
 		expect(read('src/lib/help/context.ts')).toContain('/v1/knowledge/pages/{pageId}');
 	});
 
-	it('makes vault passphrase reuse explicit and uses shared form spacing', () => {
-		const vault = read('src/pages/app/services/vault.astro');
-		expect(vault).toContain('Re-enter the personal vault passphrase you created in step 1.');
-		expect(vault).toContain('This does not create a second or shared passphrase.');
-		expect(vault).toContain('label="Step 1 personal vault passphrase"');
-		expect(vault.match(/knowledgePageId="vault\.(?:personal-key|team-custody|recovery)"/gu)?.length).toBeGreaterThanOrEqual(3);
-		expect(vault).toContain('class="ts-form-stack"');
-		expect(vault).toContain('<FormActions');
-	});
+	it('explains managed custody without asking for personal vault keys', () => {
+    const page=read('src/pages/app/services/[connectionId].astro');
+    expect(page).toContain('Core OpenBao stores encrypted team credentials.');
+    expect(page).toContain('knowledgePageId="services.credentials"');
+    expect(page).toContain('class="ts-form-stack"');
+    expect(page).not.toContain('passphrase');
+  });
 
 	it('has one shared dialog transport and no legacy help implementation', () => {
 		const uiPackage = readDependency('@treeseed/ui', 'package.json');
