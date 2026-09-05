@@ -4,6 +4,7 @@ import ServiceConnectionWorkspace from '@treeseed/ui/components/astro/service/wo
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import { ApiClientFacade } from '../../../lib/market/api-client';
 import { serviceSections } from '../../../lib/services/navigation';
+import { loadServiceItems } from '../../../lib/services/collections';
 import { loadAppContext } from '../../../view-models/app-access.js';
 
 if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/services')}`);
@@ -19,7 +20,7 @@ const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin'])
 const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.has(role)) || team?.currentUserRole && managementRoles.has(team.currentUserRole));
 if (team) {
 	try {
-		services = await api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(team.id)}/services`);
+		services = await loadServiceItems(api, 'services.connections.list', { teamId: team.id });
 	} catch {
 		unavailable = true;
 	}
