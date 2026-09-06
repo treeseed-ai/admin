@@ -6,6 +6,11 @@ function source(path: string) {
 }
 
 describe('team management architecture audit', () => {
+	it('links AI management beside capacity from the team overview', () => {
+		const overview = source('src/pages/app/teams/[teamId]/index.astro');
+		expect(overview).toMatch(/label: 'Manage capacity'[^\n]+\n\s*\{ label: 'Manage AI', href: '\/app\/ai'/);
+		expect(existsSync('src/pages/app/ai/index.astro')).toBe(true);
+	});
 	it('owns one canonical route for each team administration responsibility', () => {
 		const routes = source('src/routes.ts');
 		for (const route of [

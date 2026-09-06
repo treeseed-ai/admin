@@ -81,6 +81,7 @@ const metrics = [
 const actions = [
 	{ label: 'Connect service', href: '/app/services/new', variant: 'secondary' as const },
 	{ label: 'Manage capacity', href: '/app/capacity', variant: 'secondary' as const },
+	{ label: 'Manage AI', href: '/app/ai', variant: 'secondary' as const },
 	{ label: 'Open projects', href: '/app/projects', variant: 'primary' as const },
 	...(canManageTeam ? [{ label: 'Manage members', href: `/app/teams/${encodeURIComponent(team?.id ?? '')}/members`, variant: 'secondary' as const }] : []),
 ];
