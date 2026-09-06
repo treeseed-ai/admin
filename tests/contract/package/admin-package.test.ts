@@ -28,6 +28,7 @@ const EXPECTED_ROUTES = [
 	'/app/feedback/[feedbackId]',
 	'/app/services',
 	'/app/services/new',
+	'/app/services/vaults',
 	'/app/services/[connectionId]',
 	'/app/knowledge',
 	'/app/knowledge/packs/[buildId]/download',
@@ -217,7 +218,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
 		for (const path of appPages) {
 			const source = readFileSync(path, 'utf8');
-			const contentTemplateOwnsHeader = /<(?:AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
+			const contentTemplateOwnsHeader = /<(?:VaultSetupPreview|AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
 			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});

@@ -49,10 +49,12 @@ describe('service management architecture', () => {
 
 	it('uses one canonical routed tab model across collection, setup, detail, and vault pages', () => {
 		const navigation = read('src/lib/services/navigation.ts');
-		for (const label of ['Connections']) {
+		for (const label of ['Connections','Vaults']) {
 			expect(navigation).toContain(`'${label}'`);
 		}
-		expect(navigation.match(/label: '/gu)).toHaveLength(1);
+		expect(navigation.match(/label: '/gu)).toHaveLength(2);
+		expect(navigation).toContain('import.meta.env.DEV');
+		expect(read('src/pages/app/services/vaults.astro')).toContain("if (!import.meta.env.DEV) return Astro.redirect('/app/services')");
 		expect(navigation).not.toContain('Connect service');
 		const detail = read('src/pages/app/services/[connectionId].astro');
 		expect(detail).not.toContain('mode="panels"');
@@ -70,13 +72,14 @@ describe('service management architecture', () => {
     expect(detail).toContain('hidden={initialStep !== 1}');
   });
 
-	it('uses core managed custody without a separate vault setup route', () => {
+	it('preserves current credential handling while vault migration is preview-only', () => {
     const detail=read('src/pages/app/services/[connectionId].astro');
     expect(detail).not.toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
     expect(detail).toContain('knowledgePageId="services.credentials"');
     expect(detail).toContain('data-service-disconnect');
     expect(detail).not.toContain('querySelectorAll(\'[data-ts-method="DELETE"]\')');
-    expect(read('src/routes.ts')).not.toContain('/app/services/vault');
+    expect(read('src/routes.ts')).toContain('/app/services/vaults');
+    expect(read('src/pages/app/services/vaults.astro')).toContain('!import.meta.env.DEV');
   });
 
 	it('sends credentials through authenticated enhanced forms without persistent browser custody', () => {
