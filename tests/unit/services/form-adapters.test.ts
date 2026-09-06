@@ -35,6 +35,7 @@ describe('guided service forms', () => {
     const built = adapter.buildRequest(ctx);
     let version = 3;
     const upstream = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(new Headers(built.init.headers).get('Idempotency-Key'));
       if (new Headers(init?.headers).get('If-Match') !== String(version))
         return Response.json({detail: 'The service connection changed after it was inspected.'}, {status: 412});
       version++;

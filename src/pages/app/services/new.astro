@@ -21,7 +21,6 @@ const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.ha
 </TreeseedAppLayout>
 
 <script>
-	import { registerServiceFormAdapters } from '../../../lib/services/form-adapters';
-	const dispose = registerServiceFormAdapters();
-	document.addEventListener('astro:before-swap', dispose, { once: true });
+	import { initializeServiceForms } from '../../../lib/services/form-lifecycle';
+	initializeServiceForms();
 </script>

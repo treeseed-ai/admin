@@ -147,15 +147,6 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
   </SettingsTemplate>}
 </TreeseedAppLayout>
 <script>
-  import { registerServiceFormAdapters } from '../../../lib/services/form-adapters';
-  const dispose = registerServiceFormAdapters();
-  document.addEventListener('astro:before-swap', dispose, {once: true});
-  document.querySelector('[data-service-disconnect]')?.addEventListener('treeseed:form-success', () => window.location.assign('/app/services'));
-  document.querySelectorAll('[data-service-settings], [data-service-credentials]').forEach(form =>
-    form.addEventListener('treeseed:form-success', event => {
-      const url = new URL(window.location.pathname, window.location.origin);
-      if (form.hasAttribute('data-service-settings')) url.searchParams.set('edit', 'true');
-      url.searchParams.set('tsToastSuccess', (event as CustomEvent).detail?.message ?? 'Saved.');
-      window.location.assign(url.href);
-    }));
+  import { initializeServiceForms } from '../../../lib/services/form-lifecycle';
+  initializeServiceForms();
 </script>
