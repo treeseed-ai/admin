@@ -15,7 +15,7 @@ function context(method = '') {
   const formData = new FormData();
   for (const [key, value] of Object.entries({csrfToken: 'fixture', providerId: 'github', displayName: 'source', version: '3',
     capabilities: 'repository-hosting', githubAuthMethod: 'token', 'config.organization': 'example'})) formData.set(key, value);
-  return {formData, form: {action: '/v1/teams/test/services/connection', dataset: {tsMethod: method}}};
+  return {formData, form: {action: '/v1/teams/test/services/connection', dataset: {tsMethod: method, connectionName: 'source'}}};
 }
 describe('guided service forms', () => {
   beforeEach(() => {adapters.clear(); registerServiceFormAdapters();});
@@ -59,9 +59,14 @@ describe('guided service forms', () => {
   });
   it('sends the exact revision when disconnecting without task fields', () => {
     const ctx = context('DELETE'); ctx.formData.delete('capabilities');
+    ctx.formData.set('confirmation', 'source');
     const request = adapters.get('service-disconnect').buildRequest(ctx);
     expect(new Headers(request.init.headers).get('If-Match')).toBe('3');
     expect(request.init.method).toBe('DELETE');
+  });
+  it.each(['', 'SOURCE', ' source'])('rejects incorrect disconnect confirmation %s', confirmation => {
+    const ctx = context('DELETE'); ctx.formData.set('confirmation', confirmation);
+    expect(() => adapters.get('service-disconnect').buildRequest(ctx)).toThrow('Type the connection name exactly');
   });
   it.each(['app', 'token'])('maps one %s choice to all tasks and both environment capabilities', method => {
     const ctx = context(); ctx.formData.set('githubAuthMethod', method);

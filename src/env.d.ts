@@ -1,4 +1,5 @@
 /// <reference types="astro/client" />
+declare module 'virtual:treeseed-source-update' { const updatedAt: string | null; export default updatedAt; }
 
 declare module 'astro:middleware' {
 	import type { MiddlewareHandler } from 'astro';

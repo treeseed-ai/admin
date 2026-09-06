@@ -14,7 +14,12 @@ function connectionRevision(data: FormData) {
 export function registerServiceFormAdapters() {
   const disposers = [
     registerFormAdapter('service-disconnect', {
-      buildRequest(context) { return jsonRequest(context.form.action, {}, text(context.formData, 'csrfToken'), 'DELETE', connectionRevision(context.formData)); },
+      buildRequest(context) {
+        const expected = context.form.dataset.connectionName;
+        if (!expected || String(context.formData.get('confirmation') ?? '') !== expected)
+          throw new Error('Type the connection name exactly to confirm disconnection.');
+        return jsonRequest(context.form.action, {}, text(context.formData, 'csrfToken'), 'DELETE', connectionRevision(context.formData));
+      },
     }),
 		registerFormAdapter('github-connector', {
 			buildRequest(context) {

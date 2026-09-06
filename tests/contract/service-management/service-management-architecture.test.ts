@@ -104,6 +104,15 @@ describe('service management architecture', () => {
 			expect(source).toContain('timeZone={preferences.timeZone}');
 		}
 	});
+	it('separates statistics from editable details and isolates confirmed disconnection', () => {
+		const detail = read('src/pages/app/services/[connectionId].astro');
+		expect(detail).toContain('<table aria-label="Connection statistics">');
+		expect(detail).toContain('Last credential check');
+		expect(detail).toContain('data-service-step="3"');
+		expect(detail).toContain('data-connection-name={connection.displayName}');
+		expect(detail).not.toContain('<details');
+		expect(detail).toContain('</nav>}');
+	});
 
 	it('does not expose the removed shared-passphrase or hardcoded host permission components', () => {
 		const layout = readDependency('@treeseed/ui', 'dist/astro/layouts/AppLayout.astro');
