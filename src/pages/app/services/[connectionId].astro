@@ -142,7 +142,7 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
             {accessIndex < selectedProfiles.length - 1 && <Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(selectedProfiles[accessIndex + 1].id)} variant="secondary">Next access request</Button>}
           </nav>}
         </section>
-        <section data-service-step="3" hidden={initialStep !== 3} class="ts-stack">
+        <section data-service-step="3" hidden class="ts-stack">
           <h2 tabindex="-1">Disconnect this service <HelpTrigger knowledgePageId="services.disconnection" label="Help disconnecting a service" /></h2>
           <p>This removes this team's connection to {provider.label}. It does not delete your provider account or its resources. Tasks that depend on this connection will lose access; move those tasks to another connection first.</p>
           <p>Project impact is not available here yet. TreeSeed will check dependencies when you disconnect and reject removal while the connection is in use.</p>
