@@ -1,0 +1,41 @@
+---
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import ManagementWizard from '@treeseed/ui/components/astro/navigation/ManagementWizard.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import {ApiClientFacade} from '../../../lib/market/api-client';
+import {loadServiceItems} from '../../../lib/services/collections';
+import {loadAppContext} from '../../../view-models/app-access';
+if(!Astro.locals.auth?.principal)return Astro.redirect('/auth/sign-in');
+const context=await loadAppContext(Astro),team=context.activeTeam,api=new ApiClientFacade(Astro);
+let services:any[]=[],unavailable=false;
+if(team)try{services=await loadServiceItems(api,'services.connections.list',{teamId:team.id});}catch{unavailable=true;}
+const offers=(cap:string)=>services.filter(service=>service.status==='active'&&service.capabilities?.some((binding:any)=>binding.status==='configured'&&binding.capabilityType===cap));
+const hosting=services.filter(service=>service.providerId==='hyperstack'&&service.status==='active'&&service.capabilities?.some((binding:any)=>binding.status==='configured'&&['ai-inference-hosting','ai-training-hosting'].includes(binding.capabilityType)));
+---
+<TreeseedAppLayout title="Set up AI instance" description="Choose what to run and which connected accounts to use." currentPath="/app/command" teams={context.teams} activeTeam={team}>
+<section class="ts-template" style="padding-bottom:2rem" data-ai-setup>
+{!team?<p>Choose a team first.</p>:unavailable?<p role="alert">Connections could not be loaded. Reload before continuing.</p>:<ManagementWizard steps={['Purpose','Hosting','Models and storage','Schedule','Review']}>
+<section data-management-step="Purpose"><Panel title="What will this instance do?" knowledgePageId="ai.deployments"><form class="ts-form-stack" onsubmit="return false"><label>Instance name<input class="ts-control" name="name" required placeholder="Team AI"/></label><label>Purpose<select class="ts-control" name="purpose"><option value="inference">Inference · vLLM</option><option value="training">Training · Axolotl</option><option value="both">Inference and training</option></select></label></form></Panel></section>
+<section data-management-step="Hosting" hidden><Panel title="Choose a hosting connection" knowledgePageId="provider.hyperstack"><form class="ts-form-stack" onsubmit="return false"><label>Hyperstack connection<select class="ts-control" name="hosting" required><option value="">Choose a connection</option>{hosting.map(service=><option value={service.id} data-inference={String(service.capabilities.some((b:any)=>b.status==='configured'&&b.capabilityType==='ai-inference-hosting'))} data-training={String(service.capabilities.some((b:any)=>b.status==='configured'&&b.capabilityType==='ai-training-hosting'))}>{service.displayName}</option>)}</select></label><p>Credentials stay in your team's vault. Saving an account does not rent a machine.</p><p>Live regions, GPU sizes and prices are not available yet; hardware selection is a release blocker.</p><Button href="/app/services/new?provider=hyperstack" variant="secondary">Connect another account</Button></form></Panel></section>
+<section data-management-step="Models and storage" hidden><Panel title="Models and storage" knowledgePageId="ai.storage"><form class="ts-form-stack" onsubmit="return false"><label>Model or training recipe<input class="ts-control" name="model" required placeholder="Model identifier or published training recipe"/></label><label>Storage connection<select class="ts-control" name="storage"><option value="">No storage selected</option>{offers('object-storage').map(service=><option value={service.id}>{service.displayName}</option>)}</select></label><p>Datasets and checkpoints require a separately authorized storage grant. Selecting an account here does not grant access to all of its files.</p></form></Panel></section>
+<section data-management-step="Schedule" hidden><Panel title="When should it run?" knowledgePageId="ai.schedule"><form class="ts-form-stack" onsubmit="return false"><label>Schedule<select class="ts-control" name="schedule"><option>Always on</option><option>Weekdays</option></select></label><label>Time zone<input class="ts-control" name="timezone" required placeholder="America/New_York"/></label><p>Schedule activation and safe checkpoint/drain handling must pass deployment acceptance before use.</p></form></Panel></section>
+<section data-management-step="Review" hidden><Panel title="Setup review" knowledgePageId="ai.deployments"><dl data-ai-review></dl><p>This flow is available for review. The selections are not saved, and no machine will be rented.</p><p>Creation remains blocked on instance inventory, live GPU selection, exact engine releases, scoped storage grants and deployment acceptance.</p><Button disabled>Create instance · not available yet</Button></Panel></section>
+</ManagementWizard>}
+</section>
+</TreeseedAppLayout>
+<script>
+function initialize(){document.querySelectorAll<HTMLElement>('[data-ai-setup]').forEach(root=>{
+if(root.dataset.mounted)return;root.dataset.mounted='true';
+const refresh=()=>{
+const timezone=root.querySelector<HTMLInputElement>('[name="timezone"]');if(timezone?.value){try{new Intl.DateTimeFormat('en',{timeZone:timezone.value});timezone.setCustomValidity('');}catch{timezone.setCustomValidity('Enter a valid IANA time zone.');}}
+const purpose=root.querySelector<HTMLSelectElement>('[name="purpose"]')?.value;
+const host=root.querySelector<HTMLSelectElement>('[name="hosting"]');host?.querySelectorAll<HTMLOptionElement>('option[data-inference]').forEach(option=>{option.disabled=(purpose!=='training'&&option.dataset.inference!=='true')||(purpose!=='inference'&&option.dataset.training!=='true');if(option.selected&&option.disabled)host.value='';});
+const storage=root.querySelector<HTMLSelectElement>('[name="storage"]');if(storage)storage.required=purpose!=='inference';
+const review=root.querySelector('[data-ai-review]');if(review){review.replaceChildren();for(const [name,label] of [['name','Instance'],['purpose','Purpose'],['hosting','Hosting connection'],['model','Model / recipe'],['storage','Storage connection'],['schedule','Schedule'],['timezone','Time zone']]){
+const field=root.querySelector<HTMLInputElement|HTMLSelectElement>('[name="'+name+'"]');const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=field instanceof HTMLSelectElement?field.selectedOptions[0]?.textContent??'Not selected':field?.value||'Not specified';review.append(dt,dd);
+}}
+};root.addEventListener('input',refresh);root.addEventListener('change',refresh);root.addEventListener('treeseed:wizard-change',refresh);refresh();
+});}initialize();document.addEventListener('astro:page-load',initialize);
+</script>
+<style>[data-ai-review]{display:grid;grid-template-columns:1fr 2fr;gap:.65rem}[data-ai-review] :global(dd){margin:0}</style>

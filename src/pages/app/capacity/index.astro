@@ -1,50 +1,54 @@
 ---
-import CapacityWorkspace from '@treeseed/ui/components/astro/capacity/CapacityWorkspace.astro';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
-import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
-import { ApiClientFacade } from '../../../lib/market/api-client.ts';
-import { items, text } from '../../../lib/operations/records.ts';
-import { loadAppContext } from '../../../view-models/app-access.ts';
-import { loadCommandSnapshot } from '../../../view-models/command/command-state.ts';
-
-if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
-const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro); const team = context.activeTeam; const base = team ? `/v1/teams/${encodeURIComponent(team.id)}/capacity` : '';
-const [snapshot, access, preferences, registrationKey, requestPage, membershipPage] = await Promise.all([
-	team ? loadCommandSnapshot(api, team.id) : null,
-	team ? api.getTeamAccessSummary(team.id).catch(() => null) : null,
-	api.accountPreferences().catch(() => ({ timeZone: 'UTC' })),
-	team ? api.request('GET', `/v1/teams/${encodeURIComponent(team.id)}/capacity-registration-key`).catch(() => null) : null,
-	team ? api.request('GET', `/v1/teams/${encodeURIComponent(team.id)}/capacity-provider-requests?limit=100`).catch(() => null) : null,
-	team ? api.request('GET', `/v1/teams/${encodeURIComponent(team.id)}/capacity-provider-memberships?limit=100`).catch(() => null) : null,
-]);
-const usagePages = team && snapshot ? await Promise.all(snapshot.projects.map((project) => api.request('GET', `${base}/usage?projectId=${encodeURIComponent(String(project.id))}&limit=100`).catch(() => null))) : [];
-const providerStatuses = team && snapshot ? await Promise.all(snapshot.providers.map((provider: any) => {
-	const providerId=String(provider.providerId ?? provider.id ?? '');
-	return providerId?api.request('GET',`/v1/teams/${encodeURIComponent(team.id)}/capacity-providers/${encodeURIComponent(providerId)}/status`).catch(()=>null):null;
-})) : [];
-const reservationItems = snapshot?.reservations ?? []; const usageItems = usagePages.flatMap(items); const ledgerItems = snapshot?.ledger ?? [];
-const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role))); const csrfToken = ensureCsrfToken(Astro);
-const providerRequests = items(requestPage); const memberships = items(membershipPage);
-const providerAlerts=providerStatuses.flatMap((status:any)=>Array.isArray(status?.alerts)?status.alerts:[]);
-const object = (value: unknown) => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {};
-const number = (...values: unknown[]) => values.map(Number).find(Number.isFinite) ?? 0;
-const fleet = (snapshot?.providers ?? []).map((provider: any) => {
-	const native = object(provider.nativeCapacity ?? provider.capacity ?? provider.supply); const budget = object(provider.budget ?? native.budget);
-	const membership = memberships.find((entry: any) => String(entry.providerId) === String(provider.providerId));
-	const concurrency = number(native.maxConcurrentRunners, provider.maxConcurrentRunners, object(membership?.supplyOffer).maxConcurrentRunners, 1);
-	return { id: String(provider.providerId ?? provider.id), name: text(provider.providerName, provider.displayName, provider.providerId, 'Capacity provider'),
-		providerClass: String(object(provider.metadata).providerClass ?? object(membership?.metadata).providerClass ?? 'agent'), status: String(provider.status ?? 'unknown'),
-		owner: object(membership?.metadata).ownerType === 'team' ? 'team owned' : 'approved provider', assignments: number(provider.activeAssignmentCount),
-		capabilities: Array.isArray(provider.capabilitySummary) ? provider.capabilitySummary.map(String) : Array.isArray(provider.capabilities) ? provider.capabilities.map(String) : [],
-		updatedAt: provider.updatedAt ?? provider.lastHeartbeatAt ?? null,
-		meters: [
-			{ label: 'Runner lanes', used: number(provider.activeAssignmentCount), reserved: number(provider.reservedAssignmentCount), total: concurrency, unit: '' },
-			...(number(budget.inputTokens, native.inputTokens) ? [{ label: 'Input tokens', used: number(provider.usedInputTokens), reserved: number(provider.reservedInputTokens), total: number(budget.inputTokens, native.inputTokens), tone: 'violet' as const }] : []),
-			...(number(budget.usd, native.usd) ? [{ label: 'Cost', used: number(provider.usedUsd), reserved: number(provider.reservedUsd), total: number(budget.usd, native.usd), unit: ' USD', tone: 'amber' as const }] : []),
-		],
-	};
-});
+import OperationalList from '@treeseed/ui/components/astro/surface/OperationalList.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import ManagementWizard from '@treeseed/ui/components/astro/navigation/ManagementWizard.astro';
+import {ApiClientFacade} from '../../../lib/market/api-client';
+import {loadAppContext} from '../../../view-models/app-access';
+import {capacityRows} from '../../../view-models/capacity-list';
+import {items} from '../../../lib/operations/records';
+import {ensureCsrfToken} from '../../../lib/auth/support/csrf';
+if(!Astro.locals.auth?.principal)return Astro.redirect('/auth/sign-in');
+const context=await loadAppContext(Astro),team=context.activeTeam,api=new ApiClientFacade(Astro);
+const base='/v1/teams/'+encodeURIComponent(team?.id??'');
+let providers:any[]=[],sessions:any[]=[],requests:any[]=[],unavailable=false;
+if(team)try{const results=await Promise.all(['capacity-providers','capacity/availability-sessions','capacity-provider-requests'].map(path=>api.request('GET',base+'/'+path+'?limit=100')));[providers,sessions,requests]=results.map(items);}catch{unavailable=true;}
+const rows=capacityRows(providers,sessions,requests),selected=providers.find(p=>p.providerId===Astro.url.searchParams.get('provider')),request=requests.find(r=>r.id===Astro.url.searchParams.get('request'));
+const selectedRow=selected&&rows.find(r=>r.id===selected.providerId);
+const latest=selected&&sessions.filter(s=>s.providerId===selected.providerId).sort((a,b)=>Date.parse(b.refreshedAt)-Date.parse(a.refreshedAt))[0];
+const preferences=await api.accountPreferences().catch(()=>({timeZone:'UTC'}));
+const csrfToken=ensureCsrfToken(Astro),canManage=Boolean(team?.roles?.some((r:string)=>['team_owner','project_lead'].includes(r))||['team_owner','project_lead'].includes(team?.currentUserRole));
+let status:any=null,profiles:any[]=[],detailUnavailable=false;
+if(selected)try{[status,profiles]=await Promise.all([api.request('GET',base+'/capacity-providers/'+encodeURIComponent(selected.providerId)+'/status'),api.request('GET',base+'/capacity-providers/'+encodeURIComponent(selected.providerId)+'/environment-profiles').then(items)]);}catch{detailUnavailable=true;}
 ---
-<TreeseedAppLayout title="Command capacity" description="Provider availability, allocation, reservations, usage, routing, and settlement." currentPath="/app/command" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
-	<CapacityWorkspace teamId={team?.id} timeZone={preferences.timeZone} fleet={fleet} providers={snapshot?.providers ?? []} {providerAlerts} {providerRequests} {memberships} reservations={reservationItems} usageCount={usageItems.length} ledgerCount={ledgerItems.length} registrationKey={object(registrationKey)} {canManage} {csrfToken} />
+<TreeseedAppLayout title="Capacity" description="Your team's connected machines and pending requests." currentPath="/app/command" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+<section class="ts-template capacity-workspace" data-scene="command.capacity">
+<PageHeader title={selected?'Provider details':request?'Review provider':'Capacity'} description="Connect your machines, approve access, and see whether they can accept work.">
+{selected||request?<Button slot="actions" href="/app/capacity" variant="secondary">All providers</Button>:canManage&&<Button slot="actions" href="/app/capacity/registration">Registration</Button>}
+</PageHeader>
+{!team?<p>Choose a team to see its providers.</p>:selected?<ManagementWizard steps={['Overview','Permissions','Activity',...(canManage?['Disconnect']:[])]} direct>
+<section data-management-step="Overview">
+<Panel title={selectedRow?.name??'Provider'} knowledgePageId="capacity.providers">
+<dl><dt>Connection</dt><dd>{selectedRow?.status}</dd><dt>Accepting work</dt><dd>{selectedRow?.description}</dd><dt>Last contact</dt><dd>{latest?.refreshedAt?<Timestamp value={latest.refreshedAt} timeZone={preferences.timeZone}/>:'Unknown'}</dd><dt>Identity</dt><dd><code>{selected.providerId}</code></dd><dt>Team approval</dt><dd>{selected.status}</dd></dl>
+{detailUnavailable&&<p role="alert">Detailed health or environment profiles could not be loaded. No permissions have been inferred.</p>}
+{(status?.alerts??[]).map((alert:any)=><p role="alert">{alert.message??alert.code}</p>)}
+</Panel>
+</section>
+<section data-management-step="Permissions" hidden>
+<Panel title="Environment permissions" knowledgePageId="capacity.permissions"><p>Approval connects this provider. Each assignment still needs explicit permission to use its environment variables and secrets.</p>
+{profiles.length?profiles.map((profile:any)=><p>{profile.displayName??profile.name??profile.id} · {profile.status??'Reported'}</p>):<p>No environment profiles are available{detailUnavailable?' to display':' from this provider'}.</p>}
+<p>Assignment-scoped grant editing is not available here yet. Provider approval does not grant blanket access.</p></Panel>
+</section>
+<section data-management-step="Activity" hidden><Panel title="Recent availability" knowledgePageId="capacity.activity"><p>These are reported connection sessions, not a live stream of running work.</p>{sessions.filter(s=>s.providerId===selected.providerId).map(session=><p>{session.status} · <Timestamp value={session.refreshedAt??session.openedAt} timeZone={preferences.timeZone}/></p>)}</Panel></section>
+{canManage&&<section data-management-step="Disconnect" hidden><Panel title="Disconnect provider" knowledgePageId="capacity.disconnect"><p>This revokes this team's provider connection. New assignments will no longer be authorized through it. Running work may be interrupted; it does not uninstall the machine.</p><form method="post" action={base+'/capacity-provider-connections/'+encodeURIComponent(selected.id)+'/disconnect'} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-confirm="Revoke this provider connection?" data-ts-refresh-target='[data-scene="command.capacity"]'><input type="hidden" name="csrfToken" value={csrfToken}/><label>Type DISCONNECT to confirm<input class="ts-control" required pattern="DISCONNECT" aria-label="Disconnect confirmation"/></label><Button type="submit" variant="danger">Disconnect provider</Button></form></Panel></section>}
+</ManagementWizard>:request?<Panel title={request.displayName??'Provider request'} knowledgePageId="capacity.approval">
+<dl><dt>Status</dt><dd>{request.status}</dd><dt>Identity</dt><dd><code>{request.providerId}</code></dd></dl>
+<details><summary>Offered capabilities ({request.capabilitySummary?.length??0})</summary><ul>{(request.capabilitySummary??[]).map((cap:string)=><li>{cap}</li>)}</ul></details>
+{canManage&&request.status==='pending'&&<div class="ts-button-row">{['approve','reject'].map(action=><form method="post" action={base+'/capacity-provider-requests/'+encodeURIComponent(request.id)+'/'+action} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-confirm={action+' this provider identity?'} data-ts-refresh-target='[data-scene="command.capacity"]'><input type="hidden" name="csrfToken" value={csrfToken}/>{action==='reject'&&<label>Reason<input class="ts-control" name="reason" required/></label>}<Button type="submit" variant={action==='reject'?'danger':'primary'}>{action==='approve'?'Approve provider':'Reject request'}</Button></form>)}</div>}
+</Panel>:<OperationalList title="Providers" {rows} {unavailable} empty="No providers have connected yet. Open Registration to connect a machine."/>}
+</section>
 </TreeseedAppLayout>
+<style>.capacity-workspace{padding-bottom:2rem}dl{display:grid;grid-template-columns:minmax(8rem,1fr) 3fr;gap:.75rem}dd{margin:0;overflow-wrap:anywhere}dt{font-weight:600}</style>
