@@ -1,0 +1,29 @@
+---
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
+import { loadAppContext } from '../../../view-models/app-access';
+import { resolveApiBaseUrl } from '../../../lib/market/api-client';
+if (!Astro.locals.auth?.principal) return Astro.redirect('/auth/sign-in');
+const context = await loadAppContext(Astro), team = context.activeTeam;
+const csrfToken = ensureCsrfToken(Astro), server = resolveApiBaseUrl(Astro.locals);
+const local = new URL(server).hostname.endsWith('.localhost') || ['localhost','127.0.0.1','::1'].includes(new URL(server).hostname);
+---
+<TreeseedAppLayout title="Install capacity" description="Connect your own machine to this team." currentPath="/app/command" teams={context.teams} activeTeam={team}>
+  <Panel title="Install a capacity provider" knowledgePageId="capacity.install">
+    <div class="ts-form-stack">
+      <p>Use your physical server, Linux laptop or VM with Ubuntu 26.04 and working KVM. A VM must expose nested virtualization. TreeSeed verifies Kata isolation before assignments can run.</p>
+      <p>Team: {team?.displayName ?? team?.name ?? 'Select a team'} · Control plane: {server}</p>
+      {local && <p role="alert">This control-plane address is local to this computer. Other machines cannot use it as-is. Configure a trusted, reachable HTTPS control-plane address before installing elsewhere.</p>}
+      <p>First install the generic signed TreeSeed Debian package on the new machine. This download supplies the current team registration code; it does not include your login session or a preapproved provider identity.</p>
+      {team && <form method="post" action="/app/capacity/install-download">
+        <input type="hidden" name="csrfToken" value={csrfToken}/><input type="hidden" name="teamId" value={team.id}/>
+        <Button type="submit">Download team configuration</Button>
+      </form>}
+      <p>Copy the file to the new machine, restrict its permissions, inspect the plan, then initialize:</p>
+      <pre><code>{'chmod 600 treeseed-capacity.json\ntrsd host initialize --profile capacity-provider --plan --json\ntrsd host initialize --profile capacity-provider --input-file treeseed-capacity.json --confirm --yes'}</code></pre>
+      <p>Security initialization and team approval still apply. Keep the file private and remove it after installation. Rotating the registration code invalidates unused copies, not approved providers.</p>
+    </div>
+  </Panel>
+</TreeseedAppLayout>

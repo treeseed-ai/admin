@@ -1,0 +1,21 @@
+---
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { AI_HOSTING_TARGETS } from '@treeseed/sdk/deployment';
+import AiDeploymentWorkspace from '@treeseed/ui/components/astro/capacity/AiDeploymentWorkspace.astro';
+import { ApiClientFacade } from '../../../lib/market/api-client';
+import { loadServiceItems } from '../../../lib/services/collections';
+import { loadAppContext } from '../../../view-models/app-access';
+if (!Astro.locals.auth?.principal) return Astro.redirect('/auth/sign-in?returnTo=%2Fapp%2Fai');
+const context = await loadAppContext(Astro), team = context.activeTeam;
+const api = new ApiClientFacade(Astro);
+let connections:any[] = [], unavailable = false;
+if (team) {
+  try { connections = (await loadServiceItems(api,'services.connections.list',{teamId:team.id})).filter((connection:any)=>connection.providerId==='hyperstack'&&connection.status!=='disconnected'); }
+  catch { unavailable = true; }
+}
+const roles = new Set(['team_owner','project_lead','service_admin']);
+const canManage = Boolean(team?.roles?.some((role:string)=>roles.has(role)) || team?.currentUserRole&&roles.has(team.currentUserRole));
+---
+<TreeseedAppLayout title="AI deployments" description="Team GPU inference and training hosting." currentPath="/app/command" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+  <AiDeploymentWorkspace targets={AI_HOSTING_TARGETS} teamName={team?.displayName??team?.name} {connections} {unavailable} {canManage}/>
+</TreeseedAppLayout>
