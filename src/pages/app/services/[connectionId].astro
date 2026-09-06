@@ -76,14 +76,6 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
   : !connection || !provider ? <EmptyState title="Service not found" description="This connection is not available for your team." actions={[{label: 'Back to services', href: '/app/services'}]} />
   : <SettingsTemplate title={connection.displayName} description={provider.label + ' · ' + (team.displayName ?? team.name)} sections={serviceSections({current: 'connections'})} knowledgePageId="services.connection" class="ts-service-workspace">
     <section class="ts-stack" data-scene="service.detail" id="service-workspace">
-      {!canManage ? <Panel title="Connection details" knowledgePageId="services.connection">
-        {!canManage && <p>Ask a team administrator to change this connection.</p>}
-        <CapabilitySelector capabilities={taskOptions} readonly />
-      </Panel> : <ServiceWizard {initialStep} existing accountReady={!needsAuthentication && !custodyUnavailable}>
-            <form method="post" action={path} class="ts-form-stack" data-ts-method="PUT" data-ts-submit="enhanced" data-ts-form-adapter="service-connection" data-ts-success-message="Settings saved." data-service-settings>
-              <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="providerId" value={provider.id} /><input type="hidden" name="version" value={connection.version} />
-              <section data-service-step="0" hidden={initialStep !== 0}><h2 tabindex="-1">Choose your tasks</h2><p>Choose what your team will use this account for. These tasks determine the access requested in the final step. You can change them later; selecting a task does not deploy anything or grant access by itself.</p><CapabilitySelector capabilities={taskOptions} /></section>
-              <section data-service-step="1" hidden={initialStep !== 1}><h2 tabindex="-1">Connection details</h2>
                 <div class="connection-statistics">
                   <table aria-label="Connection statistics">
                     <tbody>
@@ -94,7 +86,16 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
                     </tbody>
                   </table>
                 </div>
-                <p>Update the account details for your team.</p><ConnectionFields {provider} {connection} /></section>
+      {!canManage ? <Panel title="Connection details" knowledgePageId="services.connection">
+        {!canManage && <p>Ask a team administrator to change this connection.</p>}
+        <CapabilitySelector capabilities={taskOptions} readonly />
+      </Panel> : <ServiceWizard {initialStep} existing accountReady={!needsAuthentication && !custodyUnavailable}>
+            <form method="post" action={path} class="ts-form-stack" data-ts-method="PUT" data-ts-submit="enhanced" data-ts-form-adapter="service-connection" data-ts-success-message="Settings saved." data-service-settings>
+              <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="providerId" value={provider.id} /><input type="hidden" name="version" value={connection.version} />
+              <section data-service-step="0" hidden={initialStep !== 0}><Panel title="Choose your tasks"><div class="ts-form-stack"><p>Choose what your team will use this account for. These tasks determine the access requested in the final step. You can change them later; selecting a task does not deploy anything or grant access by itself.</p><CapabilitySelector capabilities={taskOptions} /></div></Panel></section>
+              <section data-service-step="1" hidden={initialStep !== 1}><Panel title="Connection details"><div class="ts-form-stack">
+
+                <p>Update the account details for your team.</p><ConnectionFields {provider} {connection} /></div></Panel></section>
             </form>
         <section data-service-step="2" hidden={initialStep !== 2} id="service-panel-credentials" class="ts-stack" aria-labelledby="service-auth-heading">
           <div><h2 id="service-auth-heading" tabindex="-1">Connect your account <HelpTrigger knowledgePageId="services.credentials" label="Help connecting your account" /></h2>
@@ -143,7 +144,7 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
           </nav>}
         </section>
         <section data-service-step="3" hidden class="ts-stack">
-          <h2 tabindex="-1">Disconnect this service <HelpTrigger knowledgePageId="services.disconnection" label="Help disconnecting a service" /></h2>
+          <Panel title="Disconnect this service" knowledgePageId="services.disconnection"><div class="ts-form-stack">
           <p>This removes this team's connection to {provider.label}. It does not delete your provider account or its resources. Tasks that depend on this connection will lose access; move those tasks to another connection first.</p>
           <p>Project impact is not available here yet. TreeSeed will check dependencies when you disconnect and reject removal while the connection is in use.</p>
           <form method="post" action={path} class="ts-form-stack" data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="service-disconnect" data-ts-success-message="Service disconnected." data-service-disconnect data-connection-name={connection.displayName}>
@@ -153,6 +154,7 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
             </Field>
             <Button type="submit" variant="danger">Disconnect</Button>
           </form>
+          </div></Panel>
         </section>
       </ServiceWizard>}
     </section>
