@@ -60,6 +60,16 @@ describe('service management architecture', () => {
 		expect(detail).not.toContain('searchParams.get(\'tab\')');
 	});
 
+  it('opens the editable wizard directly while preserving read-only access', () => {
+    const detail = read('src/pages/app/services/[connectionId].astro');
+    expect(detail).not.toMatch(/\bediting\b/);
+    expect(detail).not.toContain('Account access saved');
+    expect(detail).toContain('!canManage ? <Panel');
+    expect(detail).toContain(': <ServiceWizard {initialStep}');
+    expect(detail).toContain('? 2 : 1');
+    expect(detail).toContain('hidden={initialStep !== 1}');
+  });
+
 	it('uses core managed custody without a separate vault setup route', () => {
     const detail=read('src/pages/app/services/[connectionId].astro');
     expect(detail).not.toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
