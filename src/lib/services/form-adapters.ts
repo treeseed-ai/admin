@@ -1,4 +1,5 @@
 import { registerFormAdapter } from '@treeseed/ui/forms/client';
+import { getServiceProviderDefinition } from '@treeseed/sdk/secrets-capability';
 function jsonRequest(url: string, body: unknown, csrfToken: string, method = 'POST', ifMatch?: string) {
   return {url, init: {method, headers: {accept: 'application/json', 'content-type': 'application/json',
     'x-treeseed-csrf': csrfToken, 'x-treeseed-form': 'enhanced', 'Idempotency-Key': crypto.randomUUID(),
@@ -40,9 +41,12 @@ export function registerServiceFormAdapters() {
 				const githubMethod = text(context.formData, 'githubAuthMethod');
 				if (text(context.formData, 'providerId') === 'github' && !['app', 'token'].includes(githubMethod)) throw new Error('Choose how to connect to GitHub.');
 				if (!capabilities.length) throw new Error('Choose at least one task for this connection.');
+				const provider = getServiceProviderDefinition(text(context.formData, 'providerId'));
+				if (!provider) throw new Error('Choose a supported service provider.');
+				const allowedFields = new Set(provider.connectionFields.map(field => 'config.' + field.key));
 				const config = Object.fromEntries(
 					[...context.formData.entries()]
-						.filter(([key]) => key.startsWith('config.'))
+						.filter(([key]) => allowedFields.has(key))
 						.map(([key, value]) => [key.slice('config.'.length), String(value).trim()]),
 				);
 				const body: Record<string, unknown> = {

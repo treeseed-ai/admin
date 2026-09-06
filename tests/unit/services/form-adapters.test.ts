@@ -18,6 +18,16 @@ function context(method = '') {
   return {formData, form: {action: '/v1/teams/test/services/connection', dataset: {tsMethod: method, connectionName: 'source'}}};
 }
 describe('guided service forms', () => {
+  it('submits only declared provider settings, never injected state-backend fields', () => {
+    registerServiceFormAdapters();
+    const ctx = context(); ctx.formData.set('providerId', 'cloudflare');
+    ctx.formData.set('capabilities', 'object-storage');
+    ctx.formData.set('config.accountId', 'account');
+    ctx.formData.set('config.deploymentEnvironment', 'staging');
+    for (const key of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef', 'vaultPath']) ctx.formData.set('config.' + key, 'not-a-provider-setting');
+    const body = JSON.parse(adapters.get('service-connection').buildRequest(ctx).init.body);
+    expect(body.nonSecretConfig).toEqual({accountId: 'account', deploymentEnvironment: 'staging'});
+  });
   beforeEach(() => {adapters.clear(); registerServiceFormAdapters();});
   it('retains selected authority, team path, CSRF and optimistic version', () => {
     const request = adapters.get('service-connection').buildRequest(context('PUT'));

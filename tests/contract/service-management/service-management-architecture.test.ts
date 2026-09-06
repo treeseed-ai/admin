@@ -85,7 +85,7 @@ describe('service management architecture', () => {
     for(const retired of ['encryptServiceCredential','createTeamVaultGrant','localStorage','sessionStorage','document.cookie'])expect(adapters).not.toContain(retired);
   });
 
-	it('supports portable topology references and isolated R2 state metadata', () => {
+	it('keeps state-backend configuration out of provider connection forms', () => {
 		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
 		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
 		expect(createSurface).toContain('ConnectionFields');
@@ -93,7 +93,7 @@ describe('service management architecture', () => {
 		expect(fields).toContain('name="displayName"');
 		expect(fields).toContain('Keep it unchanged if a deployment already uses it.');
 		for (const field of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef']) {
-			expect(providerContracts).toContain(`field("${field}"`);
+			expect(providerContracts).not.toContain(`field("${field}"`);
 		}
 	});
 
