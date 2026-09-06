@@ -65,8 +65,8 @@ const needsAuthentication = selectedProfiles.some(profile => profile.authoritySc
 const profileReady = (profile: typeof selectedProfiles[number]) => profile.authoritySchemes?.includes('openbao') ? Boolean(credentials[profile.id]?.configured) : authorityStatus(profile.id) === 'ready';
 const requestedAccess = selectedProfiles.findIndex(profile => profile.id === Astro.url.searchParams.get('access'));
 const accessIndex = requestedAccess >= 0 ? requestedAccess : Math.max(0, selectedProfiles.findIndex(profile => !profileReady(profile)));
-const editing = Astro.url.searchParams.get('edit') === 'true' || needsAuthentication || custodyUnavailable || !selectedProfiles.length;
-const initialStep = Astro.url.searchParams.get('step') === 'tasks' || !selectedProfiles.length ? 0 : 2;
+const initialStep = Astro.url.searchParams.get('step') === 'tasks' || !selectedProfiles.length ? 0
+  : needsAuthentication || custodyUnavailable || Astro.url.searchParams.get('access') || Astro.url.searchParams.get('edit') === 'true' ? 2 : 1;
 const profileTitle = (id: string, fallback: string) => id === 'github-repository-token' ? 'GitHub repository access'
   : id === 'github-workflow-token' ? 'GitHub Actions access' : id === 'cloudflare-storage' ? 'Cloudflare storage access' : fallback;
 ---
@@ -76,15 +76,14 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
   : !connection || !provider ? <EmptyState title="Service not found" description="This connection is not available for your team." actions={[{label: 'Back to services', href: '/app/services'}]} />
   : <SettingsTemplate title={connection.displayName} description={provider.label + ' · ' + (team.displayName ?? team.name)} sections={serviceSections({current: 'connections'})} knowledgePageId="services.connection" class="ts-service-workspace">
     <section class="ts-stack" data-scene="service.detail" id="service-workspace">
-      {!canManage || !editing ? <Panel title={canManage ? "Account access saved" : "Connection details"} knowledgePageId="services.connection">
+      {!canManage ? <Panel title="Connection details" knowledgePageId="services.connection">
         {!canManage && <p>Ask a team administrator to change this connection.</p>}
         <CapabilitySelector capabilities={taskOptions} readonly />
-        {canManage && <div class="ts-form-actions"><Button href={Astro.url.pathname + "?edit=true&step=tasks"}>Edit connection</Button><Button href={Astro.url.pathname + "?edit=true"} variant="secondary">Manage account access</Button></div>}
       </Panel> : <ServiceWizard {initialStep} accountReady={!needsAuthentication && !custodyUnavailable}>
             <form method="post" action={path} class="ts-form-stack" data-ts-method="PUT" data-ts-submit="enhanced" data-ts-form-adapter="service-connection" data-ts-success-message="Settings saved." data-service-settings>
               <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="providerId" value={provider.id} /><input type="hidden" name="version" value={connection.version} />
-              <section data-service-step="0" hidden={initialStep !== 0}><h2 tabindex="-1">Choose your tasks</h2><p>Select what this connection will be used for.</p><CapabilitySelector capabilities={taskOptions} /></section>
-              <section data-service-step="1" hidden><h2 tabindex="-1">Name your connection</h2><p>Add the account details for your team.</p><ConnectionFields {provider} {connection} /></section>
+              <section data-service-step="0" hidden={initialStep !== 0}><h2 tabindex="-1">Choose your tasks</h2><p>Choose what your team will use this account for. These tasks determine the access requested in the final step. You can change them later; selecting a task does not deploy anything or grant access by itself.</p><CapabilitySelector capabilities={taskOptions} /></section>
+              <section data-service-step="1" hidden={initialStep !== 1}><h2 tabindex="-1">Name your connection</h2><p>Add the account details for your team.</p><ConnectionFields {provider} {connection} /></section>
             </form>
         <section data-service-step="2" hidden={initialStep !== 2} id="service-panel-credentials" class="ts-stack" aria-labelledby="service-auth-heading">
           <div><h2 id="service-auth-heading" tabindex="-1">Connect your account <HelpTrigger knowledgePageId="services.credentials" label="Help connecting your account" /></h2>
