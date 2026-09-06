@@ -12,6 +12,6 @@ const team=context.activeTeam;
 const roles=new Set(['team_owner','project_lead','service_admin']);
 const canManage=Boolean(team?.roles?.some((role:string)=>roles.has(role)) || team?.currentUserRole && roles.has(team.currentUserRole));
 ---
-<TreeseedAppLayout title="Vaults" description="Choose credential storage for your team." currentPath="/app/services" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+<TreeseedAppLayout title="Vault" description="Choose credential storage for your team." currentPath="/app/services" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
   {team ? <VaultSetupPreview sections={serviceSections({current:'vaults'})} teamName={team.displayName??team.name} {canManage} /> : <p>Select a team to review vault setup.</p>}
 </TreeseedAppLayout>

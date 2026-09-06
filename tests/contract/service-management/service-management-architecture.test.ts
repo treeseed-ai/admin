@@ -49,7 +49,7 @@ describe('service management architecture', () => {
 
 	it('uses one canonical routed tab model across collection, setup, detail, and vault pages', () => {
 		const navigation = read('src/lib/services/navigation.ts');
-		for (const label of ['Connections','Vaults']) {
+		for (const label of ['Connections','Vault']) {
 			expect(navigation).toContain(`'${label}'`);
 		}
 		expect(navigation.match(/label: '/gu)).toHaveLength(2);
