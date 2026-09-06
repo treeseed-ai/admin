@@ -26,7 +26,7 @@ describe('guided service forms', () => {
     ctx.formData.set('config.deploymentEnvironment', 'staging');
     for (const key of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef', 'vaultPath']) ctx.formData.set('config.' + key, 'not-a-provider-setting');
     const body = JSON.parse(adapters.get('service-connection').buildRequest(ctx).init.body);
-    expect(body.nonSecretConfig).toEqual({accountId: 'account', deploymentEnvironment: 'staging'});
+    expect(body.nonSecretConfig).toEqual({accountId: 'account'});
   });
   beforeEach(() => {adapters.clear(); registerServiceFormAdapters();});
   it('retains selected authority, team path, CSRF and optimistic version', () => {
@@ -78,15 +78,14 @@ describe('guided service forms', () => {
     const ctx = context('DELETE'); ctx.formData.set('confirmation', confirmation);
     expect(() => adapters.get('service-disconnect').buildRequest(ctx)).toThrow('Type the connection name exactly');
   });
-  it.each(['app', 'token'])('maps one %s choice to all tasks and both environment capabilities', method => {
+  it.each(['app', 'token'])('maps one %s choice without hidden configuration grants', method => {
     const ctx = context(); ctx.formData.set('githubAuthMethod', method);
     ctx.formData.append('capabilities', 'workflow-execution');
-    ctx.formData.append('capabilities', 'workflow-configuration');
     ctx.formData.set('combinedWorkflowEnvironment', 'true');
     const body = JSON.parse(adapters.get('service-connection').buildRequest(ctx).init.body);
     expect(body.capabilities).toEqual([
       {capabilityType: 'repository-hosting', status: 'configured', credentialProfileId: 'github-repository-' + method},
-      ...['workflow-execution', 'workflow-configuration', 'secret-enclave'].map(capabilityType => ({capabilityType, status: 'configured', credentialProfileId: 'github-workflow-' + method})),
+      {capabilityType: 'workflow-execution', status: 'configured', credentialProfileId: 'github-workflow-' + method},
     ]);
   });
   it('requires an explicit method when saved GitHub methods conflict', () => {

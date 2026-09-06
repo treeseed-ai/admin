@@ -37,7 +37,6 @@ export function registerServiceFormAdapters() {
 		registerFormAdapter('service-connection', {
 			buildRequest(context) {
 				const capabilities = [...new Set(context.formData.getAll('capabilities').map(String))];
-				if (text(context.formData, 'combinedWorkflowEnvironment') === 'true' && capabilities.includes('workflow-configuration')) capabilities.push('secret-enclave');
 				const githubMethod = text(context.formData, 'githubAuthMethod');
 				if (text(context.formData, 'providerId') === 'github' && !['app', 'token'].includes(githubMethod)) throw new Error('Choose how to connect to GitHub.');
 				if (!capabilities.length) throw new Error('Choose at least one task for this connection.');
