@@ -10,6 +10,7 @@ import '@treeseed/ui/styles/account/forms.css';
 import '@treeseed/ui/styles/auth.css';
 import ProductShell from '@treeseed/ui/components/astro/shell/ProductShell.astro';
 import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro';
+import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
 import { AppearancePersistenceIsland } from '@treeseed/ui/components/react/progressive';
 import { resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
 import { compileGuidedThemePalette } from '@treeseed/ui/theme';
@@ -169,6 +170,7 @@ try {
 			</a>
 		)}
 	</div>
+	{import.meta.env.DEV && process.env.TREESEED_DEVELOPMENT_MODE === 'live' && <p role="status" data-live-development><Badge tone="warning">Live development</Badge> Local source · not a released build</p>}
 	<slot />
 </ProductShell>
 

@@ -411,6 +411,9 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(astroConfig).toContain('vite:');
 		expect(astroConfig).toContain('fs:');
 		expect(astroConfig).toContain('allow:');
+		expect(astroConfig).toContain("allowedHosts: ['admin.treeseed.localhost']");
+		expect(manifest).toContain('start: { command: node, args: [--import, tsx, scripts/development/live-web.ts]');
+		expect(manifest).not.toContain('command: docker');
 		const developmentCompose = readFileSync('compose.development.yml', 'utf8');
 		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKSPACE_ROOT:');
 		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKTREE:');

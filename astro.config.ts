@@ -19,6 +19,7 @@ export default {
 			ssr: { ...site.vite?.ssr, noExternal: ['@treeseed/ui'] },
 			server: {
 				...site.vite?.server,
+				allowedHosts: ['admin.treeseed.localhost'],
 				fs: { ...site.vite?.server?.fs, allow: [...(site.vite?.server?.fs?.allow ?? []), developmentWorkspaceRoot] },
 			},
 		},
