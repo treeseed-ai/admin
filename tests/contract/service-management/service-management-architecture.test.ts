@@ -22,7 +22,9 @@ describe('service management architecture', () => {
 			expect(collectionPage).not.toContain(component);
 		}
 		const workspace = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionWorkspace.astro');
-		for (const component of ['ProviderCard', 'SettingsTemplate', 'SemanticCollectionSurface']) expect(workspace).toContain(component);
+		for (const component of ['ProviderCard', 'SettingsTemplate', 'SemanticCollectionSurface', 'ItemPicker', 'CollapsibleMultiSelect']) expect(workspace).toContain(component);
+		expect(collectionPage).toContain("searchParams.getAll('capability')");
+		expect(collectionPage).toContain('capabilityFilters');
 		expect(workspace).not.toContain('Managed OpenBao');
 		const createPage = read('src/pages/app/services/new.astro');
 		expect(createPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionCreateSurface.astro');

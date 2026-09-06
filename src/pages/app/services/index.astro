@@ -13,7 +13,7 @@ const team = context.activeTeam;
 const api = new ApiClientFacade(Astro);
 const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
 const providerFilter = Astro.url.searchParams.get('provider') ?? '';
-const capabilityFilter = Astro.url.searchParams.get('capability') ?? '';
+const capabilityFilters = Astro.url.searchParams.getAll('capability').filter(Boolean);
 let services: any[] = [];
 let unavailable = false;
 const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin']);
@@ -28,5 +28,5 @@ if (team) {
 ---
 
 <TreeseedAppLayout title="Services" description="Connected provider accounts and reusable hosting capabilities." currentPath="/app/services" teams={context.teams} activeTeam={team} timeZone={preferences.timeZone} contentOwnsPageHeader>
-	<ServiceConnectionWorkspace teamName={team ? team.displayName ?? team.name : undefined} {services} providerCatalog={SERVICE_PROVIDER_CATALOG} sections={serviceSections({ current: 'connections' })} {providerFilter} {capabilityFilter} {unavailable} {canManage} timeZone={preferences.timeZone} />
+	<ServiceConnectionWorkspace teamName={team ? team.displayName ?? team.name : undefined} {services} providerCatalog={SERVICE_PROVIDER_CATALOG} sections={serviceSections({ current: 'connections' })} {providerFilter} {capabilityFilters} {unavailable} {canManage} timeZone={preferences.timeZone} />
 </TreeseedAppLayout>
