@@ -1,4 +1,5 @@
 import { registerFormAdapter } from '@treeseed/ui/forms/client';
+import { getServiceProviderDefinition } from '@treeseed/sdk/secrets-capability';
 function jsonRequest(url: string, body: unknown, csrfToken: string, method = 'POST', ifMatch?: string) {
   return {url, init: {method, headers: {accept: 'application/json', 'content-type': 'application/json',
     'x-treeseed-csrf': csrfToken, 'x-treeseed-form': 'enhanced', 'Idempotency-Key': crypto.randomUUID(),
@@ -14,7 +15,12 @@ function connectionRevision(data: FormData) {
 export function registerServiceFormAdapters() {
   const disposers = [
     registerFormAdapter('service-disconnect', {
-      buildRequest(context) { return jsonRequest(context.form.action, {}, text(context.formData, 'csrfToken'), 'DELETE', connectionRevision(context.formData)); },
+      buildRequest(context) {
+        const expected = context.form.dataset.connectionName;
+        if (!expected || String(context.formData.get('confirmation') ?? '') !== expected)
+          throw new Error('Type the connection name exactly to confirm disconnection.');
+        return jsonRequest(context.form.action, {}, text(context.formData, 'csrfToken'), 'DELETE', connectionRevision(context.formData));
+      },
     }),
 		registerFormAdapter('github-connector', {
 			buildRequest(context) {
@@ -31,13 +37,15 @@ export function registerServiceFormAdapters() {
 		registerFormAdapter('service-connection', {
 			buildRequest(context) {
 				const capabilities = [...new Set(context.formData.getAll('capabilities').map(String))];
-				if (text(context.formData, 'combinedWorkflowEnvironment') === 'true' && capabilities.includes('workflow-configuration')) capabilities.push('secret-enclave');
 				const githubMethod = text(context.formData, 'githubAuthMethod');
 				if (text(context.formData, 'providerId') === 'github' && !['app', 'token'].includes(githubMethod)) throw new Error('Choose how to connect to GitHub.');
 				if (!capabilities.length) throw new Error('Choose at least one task for this connection.');
+				const provider = getServiceProviderDefinition(text(context.formData, 'providerId'));
+				if (!provider) throw new Error('Choose a supported service provider.');
+				const allowedFields = new Set(provider.connectionFields.map(field => 'config.' + field.key));
 				const config = Object.fromEntries(
 					[...context.formData.entries()]
-						.filter(([key]) => key.startsWith('config.'))
+						.filter(([key]) => allowedFields.has(key))
 						.map(([key, value]) => [key.slice('config.'.length), String(value).trim()]),
 				);
 				const body: Record<string, unknown> = {

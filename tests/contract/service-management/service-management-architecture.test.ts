@@ -49,10 +49,12 @@ describe('service management architecture', () => {
 
 	it('uses one canonical routed tab model across collection, setup, detail, and vault pages', () => {
 		const navigation = read('src/lib/services/navigation.ts');
-		for (const label of ['Connections']) {
+		for (const label of ['Connections','Vault']) {
 			expect(navigation).toContain(`'${label}'`);
 		}
-		expect(navigation.match(/label: '/gu)).toHaveLength(1);
+		expect(navigation.match(/label: '/gu)).toHaveLength(2);
+		expect(navigation).toContain('import.meta.env.DEV');
+		expect(read('src/pages/app/services/vaults.astro')).toContain("if (!import.meta.env.DEV) return Astro.redirect('/app/services')");
 		expect(navigation).not.toContain('Connect service');
 		const detail = read('src/pages/app/services/[connectionId].astro');
 		expect(detail).not.toContain('mode="panels"');
@@ -60,13 +62,24 @@ describe('service management architecture', () => {
 		expect(detail).not.toContain('searchParams.get(\'tab\')');
 	});
 
-	it('uses core managed custody without a separate vault setup route', () => {
+  it('opens the editable wizard directly while preserving read-only access', () => {
+    const detail = read('src/pages/app/services/[connectionId].astro');
+    expect(detail).not.toMatch(/\bediting\b/);
+    expect(detail).not.toContain('Account access saved');
+    expect(detail).toContain('!canManage ? <Panel');
+    expect(detail).toContain(': <ServiceWizard {initialStep}');
+    expect(detail).toContain('? 2 : 1');
+    expect(detail).toContain('hidden={initialStep !== 1}');
+  });
+
+	it('preserves current credential handling while vault migration is preview-only', () => {
     const detail=read('src/pages/app/services/[connectionId].astro');
     expect(detail).not.toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
     expect(detail).toContain('knowledgePageId="services.credentials"');
     expect(detail).toContain('data-service-disconnect');
     expect(detail).not.toContain('querySelectorAll(\'[data-ts-method="DELETE"]\')');
-    expect(read('src/routes.ts')).not.toContain('/app/services/vault');
+    expect(read('src/routes.ts')).toContain('/app/services/vaults');
+    expect(read('src/pages/app/services/vaults.astro')).toContain('!import.meta.env.DEV');
   });
 
 	it('sends credentials through authenticated enhanced forms without persistent browser custody', () => {
@@ -75,7 +88,7 @@ describe('service management architecture', () => {
     for(const retired of ['encryptServiceCredential','createTeamVaultGrant','localStorage','sessionStorage','document.cookie'])expect(adapters).not.toContain(retired);
   });
 
-	it('supports portable topology references and isolated R2 state metadata', () => {
+	it('keeps state-backend configuration out of provider connection forms', () => {
 		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
 		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
 		expect(createSurface).toContain('ConnectionFields');
@@ -83,7 +96,7 @@ describe('service management architecture', () => {
 		expect(fields).toContain('name="displayName"');
 		expect(fields).toContain('Keep it unchanged if a deployment already uses it.');
 		for (const field of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef']) {
-			expect(providerContracts).toContain(`field("${field}"`);
+			expect(providerContracts).not.toContain(`field("${field}"`);
 		}
 	});
 
@@ -93,6 +106,15 @@ describe('service management architecture', () => {
 			expect(source).toContain('api.accountPreferences()');
 			expect(source).toContain('timeZone={preferences.timeZone}');
 		}
+	});
+	it('separates statistics from editable details and isolates confirmed disconnection', () => {
+		const detail = read('src/pages/app/services/[connectionId].astro');
+		expect(detail).toContain('<table aria-label="Connection statistics">');
+		expect(detail).toContain('Last credential check');
+		expect(detail).toContain('data-service-step="3"');
+		expect(detail).toContain('data-connection-name={connection.displayName}');
+		expect(detail).not.toContain('<details');
+		expect(detail).toContain('</nav>}');
 	});
 
 	it('does not expose the removed shared-passphrase or hardcoded host permission components', () => {

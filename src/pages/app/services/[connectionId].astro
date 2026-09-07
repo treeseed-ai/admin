@@ -65,8 +65,8 @@ const needsAuthentication = selectedProfiles.some(profile => profile.authoritySc
 const profileReady = (profile: typeof selectedProfiles[number]) => profile.authoritySchemes?.includes('openbao') ? Boolean(credentials[profile.id]?.configured) : authorityStatus(profile.id) === 'ready';
 const requestedAccess = selectedProfiles.findIndex(profile => profile.id === Astro.url.searchParams.get('access'));
 const accessIndex = requestedAccess >= 0 ? requestedAccess : Math.max(0, selectedProfiles.findIndex(profile => !profileReady(profile)));
-const editing = Astro.url.searchParams.get('edit') === 'true' || needsAuthentication || custodyUnavailable || !selectedProfiles.length;
-const initialStep = Astro.url.searchParams.get('step') === 'tasks' || !selectedProfiles.length ? 0 : 2;
+const initialStep = Astro.url.searchParams.get('step') === 'tasks' || !selectedProfiles.length ? 0
+  : needsAuthentication || custodyUnavailable || Astro.url.searchParams.get('access') || Astro.url.searchParams.get('edit') === 'true' ? 2 : 1;
 const profileTitle = (id: string, fallback: string) => id === 'github-repository-token' ? 'GitHub repository access'
   : id === 'github-workflow-token' ? 'GitHub Actions access' : id === 'cloudflare-storage' ? 'Cloudflare storage access' : fallback;
 ---
@@ -76,15 +76,26 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
   : !connection || !provider ? <EmptyState title="Service not found" description="This connection is not available for your team." actions={[{label: 'Back to services', href: '/app/services'}]} />
   : <SettingsTemplate title={connection.displayName} description={provider.label + ' · ' + (team.displayName ?? team.name)} sections={serviceSections({current: 'connections'})} knowledgePageId="services.connection" class="ts-service-workspace">
     <section class="ts-stack" data-scene="service.detail" id="service-workspace">
-      {!canManage || !editing ? <Panel title={canManage ? "Account access saved" : "Connection details"} knowledgePageId="services.connection">
+                <div class="connection-statistics">
+                  <table aria-label="Connection statistics">
+                    <tbody>
+                      <tr><th scope="row">Provider</th><td>{provider.label}</td></tr>
+                      <tr><th scope="row">Credentials <HelpTrigger knowledgePageId="services.credentials" label="Help with saved credentials" /></th><td>{custodyUnavailable ? 'Could not check' : needsAuthentication ? 'Setup needed' : 'Saved'}<small>Saved access is not a guarantee that every task has permission.</small></td></tr>
+                      <tr><th scope="row">Last changed</th><td><Timestamp value={connection.updatedAt} timeZone={preferences.timeZone} /></td></tr>
+                      <tr><th scope="row">Last credential check</th><td>{connection.lastValidatedAt ? <Timestamp value={connection.lastValidatedAt} timeZone={preferences.timeZone} /> : 'No recorded check'}<small>A recorded check, not continuous monitoring.</small></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+      {!canManage ? <Panel title="Connection details" knowledgePageId="services.connection">
         {!canManage && <p>Ask a team administrator to change this connection.</p>}
         <CapabilitySelector capabilities={taskOptions} readonly />
-        {canManage && <div class="ts-form-actions"><Button href={Astro.url.pathname + "?edit=true&step=tasks"}>Edit connection</Button><Button href={Astro.url.pathname + "?edit=true"} variant="secondary">Manage account access</Button></div>}
-      </Panel> : <ServiceWizard {initialStep} accountReady={!needsAuthentication && !custodyUnavailable}>
+      </Panel> : <ServiceWizard {initialStep} existing accountReady={!needsAuthentication && !custodyUnavailable}>
             <form method="post" action={path} class="ts-form-stack" data-ts-method="PUT" data-ts-submit="enhanced" data-ts-form-adapter="service-connection" data-ts-success-message="Settings saved." data-service-settings>
               <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="providerId" value={provider.id} /><input type="hidden" name="version" value={connection.version} />
-              <section data-service-step="0" hidden={initialStep !== 0}><h2 tabindex="-1">Choose your tasks</h2><p>Select what this connection will be used for.</p><CapabilitySelector capabilities={taskOptions} /></section>
-              <section data-service-step="1" hidden><h2 tabindex="-1">Name your connection</h2><p>Add the account details for your team.</p><ConnectionFields {provider} {connection} /></section>
+              <section data-service-step="0" hidden={initialStep !== 0}><Panel title="Choose your tasks"><div class="ts-form-stack"><p>Choose what your team will use this account for. These tasks determine the access requested in the final step. You can change them later; selecting a task does not deploy anything or grant access by itself.</p><CapabilitySelector capabilities={taskOptions} /></div></Panel></section>
+              <section data-service-step="1" hidden={initialStep !== 1}><Panel title="Connection details"><div class="ts-form-stack">
+
+                <p>Update the account details for your team.</p><ConnectionFields {provider} {connection} /></div></Panel></section>
             </form>
         <section data-service-step="2" hidden={initialStep !== 2} id="service-panel-credentials" class="ts-stack" aria-labelledby="service-auth-heading">
           <div><h2 id="service-auth-heading" tabindex="-1">Connect your account <HelpTrigger knowledgePageId="services.credentials" label="Help connecting your account" /></h2>
@@ -130,22 +141,33 @@ const profileTitle = (id: string, fallback: string) => id === 'github-repository
             {accessIndex > 0 && <Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(selectedProfiles[accessIndex - 1].id)} variant="secondary">Previous access request</Button>}
             <span>Account access {accessIndex + 1} of {selectedProfiles.length}</span>
             {accessIndex < selectedProfiles.length - 1 && <Button href={Astro.url.pathname + '?edit=true&access=' + encodeURIComponent(selectedProfiles[accessIndex + 1].id)} variant="secondary">Next access request</Button>}
-          </nav>
+          </nav>}
+        </section>
+        <section data-service-step="3" hidden class="ts-stack">
+          <Panel title="Disconnect this service" knowledgePageId="services.disconnection"><div class="ts-form-stack">
+          <p>This removes this team's connection to {provider.label}. It does not delete your provider account or its resources. Tasks that depend on this connection will lose access; move those tasks to another connection first.</p>
+          <p>Project impact is not available here yet. TreeSeed will check dependencies when you disconnect and reject removal while the connection is in use.</p>
+          <form method="post" action={path} class="ts-form-stack" data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="service-disconnect" data-ts-success-message="Service disconnected." data-service-disconnect data-connection-name={connection.displayName}>
+            <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="version" value={connection.version} />
+            <Field label={'Type “' + connection.displayName + '” to confirm'} name="confirmation" required>
+              <TextInput name="confirmation" autocomplete="off" required />
+            </Field>
+            <Button type="submit" variant="danger">Disconnect</Button>
+          </form>
+          </div></Panel>
         </section>
       </ServiceWizard>}
-      {!editing && <details class="ts-service-disclosure"><summary>Activity <HelpTrigger knowledgePageId="services.activity" label="Help with connection activity" /></summary>
-        <p>Last changed: <Timestamp value={connection.updatedAt} timeZone={preferences.timeZone} /></p>
-        <p>Last checked: {connection.lastValidatedAt ? <Timestamp value={connection.lastValidatedAt} timeZone={preferences.timeZone} /> : 'Not yet checked'}</p>
-      </details>}
-      {canManage && !editing && <details class="ts-service-disclosure"><summary>Disconnect this service</summary>
-        <p>This removes the team's connection. Projects must stop using it first. <HelpTrigger knowledgePageId="services.disconnection" label="Help disconnecting a service" /></p>
-        <form method="post" action={path} data-ts-method="DELETE" data-ts-submit="enhanced" data-ts-form-adapter="service-disconnect" data-ts-success-message="Service disconnected." data-service-disconnect>
-          <input type="hidden" name="csrfToken" value={csrfToken} /><input type="hidden" name="version" value={connection.version} /><Button type="submit" variant="danger">Confirm disconnect</Button>
-        </form>
-      </details>}
     </section>
   </SettingsTemplate>}
 </TreeseedAppLayout>
+<style>
+  .connection-statistics { margin: 1.5rem 0 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--ts-color-border); }
+  .connection-statistics table { width: 100%; border-collapse: collapse; text-align: left; }
+  .connection-statistics th, .connection-statistics td { padding: .85rem 1rem; border-bottom: 1px solid var(--ts-color-border); vertical-align: top; }
+  .connection-statistics th { width: 35%; font-weight: 600; }
+  .connection-statistics small { display: block; margin-top: .35rem; color: var(--ts-color-text-muted); }
+  @media (max-width: 40rem) { .connection-statistics th, .connection-statistics td { padding: .75rem .4rem; } }
+</style>
 <script>
   import { initializeServiceForms } from '../../../lib/services/form-lifecycle';
   initializeServiceForms();

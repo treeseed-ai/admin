@@ -6,11 +6,12 @@ export interface ServiceSection {
 }
 
 interface ServiceNavigationOptions {
-	current: 'connections';
+	current: 'connections' | 'vaults';
 }
 
 export function serviceSections(options: ServiceNavigationOptions): ServiceSection[] {
 	return [
 		{ id: 'connections', label: 'Connections', href: '/app/services', current: options.current === 'connections' },
+		...(import.meta.env.DEV ? [{ id: 'vaults', label: 'Vault', href: '/app/services/vaults', current: options.current === 'vaults' }] : []),
 	];
 }

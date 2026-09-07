@@ -15,9 +15,19 @@ function context(method = '') {
   const formData = new FormData();
   for (const [key, value] of Object.entries({csrfToken: 'fixture', providerId: 'github', displayName: 'source', version: '3',
     capabilities: 'repository-hosting', githubAuthMethod: 'token', 'config.organization': 'example'})) formData.set(key, value);
-  return {formData, form: {action: '/v1/teams/test/services/connection', dataset: {tsMethod: method}}};
+  return {formData, form: {action: '/v1/teams/test/services/connection', dataset: {tsMethod: method, connectionName: 'source'}}};
 }
 describe('guided service forms', () => {
+  it('submits only declared provider settings, never injected state-backend fields', () => {
+    registerServiceFormAdapters();
+    const ctx = context(); ctx.formData.set('providerId', 'cloudflare');
+    ctx.formData.set('capabilities', 'object-storage');
+    ctx.formData.set('config.accountId', 'account');
+    ctx.formData.set('config.deploymentEnvironment', 'staging');
+    for (const key of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef', 'vaultPath']) ctx.formData.set('config.' + key, 'not-a-provider-setting');
+    const body = JSON.parse(adapters.get('service-connection').buildRequest(ctx).init.body);
+    expect(body.nonSecretConfig).toEqual({accountId: 'account'});
+  });
   beforeEach(() => {adapters.clear(); registerServiceFormAdapters();});
   it('retains selected authority, team path, CSRF and optimistic version', () => {
     const request = adapters.get('service-connection').buildRequest(context('PUT'));
@@ -59,19 +69,23 @@ describe('guided service forms', () => {
   });
   it('sends the exact revision when disconnecting without task fields', () => {
     const ctx = context('DELETE'); ctx.formData.delete('capabilities');
+    ctx.formData.set('confirmation', 'source');
     const request = adapters.get('service-disconnect').buildRequest(ctx);
     expect(new Headers(request.init.headers).get('If-Match')).toBe('3');
     expect(request.init.method).toBe('DELETE');
   });
-  it.each(['app', 'token'])('maps one %s choice to all tasks and both environment capabilities', method => {
+  it.each(['', 'SOURCE', ' source'])('rejects incorrect disconnect confirmation %s', confirmation => {
+    const ctx = context('DELETE'); ctx.formData.set('confirmation', confirmation);
+    expect(() => adapters.get('service-disconnect').buildRequest(ctx)).toThrow('Type the connection name exactly');
+  });
+  it.each(['app', 'token'])('maps one %s choice without hidden configuration grants', method => {
     const ctx = context(); ctx.formData.set('githubAuthMethod', method);
     ctx.formData.append('capabilities', 'workflow-execution');
-    ctx.formData.append('capabilities', 'workflow-configuration');
     ctx.formData.set('combinedWorkflowEnvironment', 'true');
     const body = JSON.parse(adapters.get('service-connection').buildRequest(ctx).init.body);
     expect(body.capabilities).toEqual([
       {capabilityType: 'repository-hosting', status: 'configured', credentialProfileId: 'github-repository-' + method},
-      ...['workflow-execution', 'workflow-configuration', 'secret-enclave'].map(capabilityType => ({capabilityType, status: 'configured', credentialProfileId: 'github-workflow-' + method})),
+      {capabilityType: 'workflow-execution', status: 'configured', credentialProfileId: 'github-workflow-' + method},
     ]);
   });
   it('requires an explicit method when saved GitHub methods conflict', () => {

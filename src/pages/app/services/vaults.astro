@@ -1,0 +1,17 @@
+---
+import VaultSetupPreview from '@treeseed/ui/components/astro/service/workspace/VaultSetupPreview.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import {serviceSections} from '../../../lib/services/navigation';
+import {loadAppContext} from '../../../view-models/app-access.js';
+
+// The preview is deliberately absent from released builds until API adoption is ready.
+if (!import.meta.env.DEV) return Astro.redirect('/app/services');
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/services/vaults')}`);
+const context=await loadAppContext(Astro);
+const team=context.activeTeam;
+const roles=new Set(['team_owner','project_lead','service_admin']);
+const canManage=Boolean(team?.roles?.some((role:string)=>roles.has(role)) || team?.currentUserRole && roles.has(team.currentUserRole));
+---
+<TreeseedAppLayout title="Vault" description="Choose credential storage for your team." currentPath="/app/services" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+  {team ? <VaultSetupPreview sections={serviceSections({current:'vaults'})} teamName={team.displayName??team.name} {canManage} /> : <p>Select a team to review vault setup.</p>}
+</TreeseedAppLayout>

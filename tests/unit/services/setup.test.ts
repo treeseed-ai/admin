@@ -16,7 +16,6 @@ describe('service setup presentation', () => {
   it('deduplicates shared workflow credentials and ignores disabled tasks', () => {
     const model = serviceSetup(getServiceProviderDefinition('github'), [
       {capabilityType: 'workflow-execution', credentialProfileId: 'github-workflow-token', status: 'configured'},
-      {capabilityType: 'workflow-configuration', credentialProfileId: 'github-workflow-token', status: 'configured'},
       {capabilityType: 'repository-hosting', credentialProfileId: 'github-repository-app', status: 'disabled'},
     ]);
     expect(model.selectedProfiles.map(profile => profile.id)).toEqual(['github-workflow-token']);

@@ -56,7 +56,8 @@ describe('Agent Lab content architecture', () => {
 		expect(commandState).not.toContain('capacity/reservations?limit=');
 		expect(commandState).not.toContain('capacity/ledger?limit=');
 		const capacityPage = source('src/pages/app/capacity/index.astro');
-		expect(capacityPage).toContain('/usage?projectId=');
+		expect(capacityPage).toContain('capacityRows(providers,sessions,requests');
+		expect(capacityPage).toContain("'/capacity-providers/'");
 		expect(capacityPage).not.toContain('/usage?limit=');
 	});
 });

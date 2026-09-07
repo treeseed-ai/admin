@@ -1,0 +1,22 @@
+---
+import Badge from '@treeseed/ui/components/astro/data/Badge.astro';
+import Timestamp from '@treeseed/ui/components/astro/data/Timestamp.astro';
+import updatedAt from 'virtual:treeseed-source-update';
+interface Props { timeZone?: string }
+const {timeZone = 'UTC'} = Astro.props;
+---
+{import.meta.env.DEV && updatedAt && <p role="status" data-live-development data-time-zone={timeZone}>
+  <Badge tone="warning">Live development</Badge> Local source - last updated: <Timestamp value={updatedAt} {timeZone} />
+</p>}
+<script>
+  import {formatTimestamp} from '@treeseed/ui/timestamps';
+  if (import.meta.hot) import.meta.hot.on('treeseed:source-update', ({updatedAt}: {updatedAt: string}) => {
+    const root = document.querySelector<HTMLElement>('[data-live-development]');
+    const time = root?.querySelector('time');
+    if (!root || !time) return;
+    time.dateTime = updatedAt;
+    time.dataset.tsTimestamp = updatedAt;
+    time.textContent = formatTimestamp(updatedAt, {timeZone: root.dataset.timeZone ?? 'UTC'});
+    time.title = formatTimestamp(updatedAt, {timeZone: 'UTC'}) + ' (UTC)';
+  });
+</script>

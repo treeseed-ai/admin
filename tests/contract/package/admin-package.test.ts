@@ -20,6 +20,11 @@ const EXPECTED_ROUTES = [
 	'/app/account/appearance',
 	'/app/account/delete',
 	'/app/capacity',
+	'/app/capacity/registration',
+	'/app/capacity/install',
+	'/app/capacity/install-download',
+	'/app/ai',
+	'/app/ai/new',
 	'/app/chat',
 	'/app/command',
 	'/app/command/agents',
@@ -28,6 +33,7 @@ const EXPECTED_ROUTES = [
 	'/app/feedback/[feedbackId]',
 	'/app/services',
 	'/app/services/new',
+	'/app/services/vaults',
 	'/app/services/[connectionId]',
 	'/app/knowledge',
 	'/app/knowledge/packs/[buildId]/download',
@@ -217,7 +223,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
 		for (const path of appPages) {
 			const source = readFileSync(path, 'utf8');
-			const contentTemplateOwnsHeader = /<(?:AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
+			const contentTemplateOwnsHeader = /<(?:AiDeploymentWorkspace|VaultSetupPreview|AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
 			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});
@@ -284,6 +290,7 @@ describe('@treeseed/admin identity and team surface', () => {
 			'src/pages/auth/authorize.astro',
 			'src/pages/auth/confirm-email.astro',
 			'src/pages/auth/sign-in.astro',
+			'src/pages/app/capacity/install.astro', // Browser-owned file download, not a JSON mutation response.
 		]);
 		const astroSources = filesUnder('src')
 			.filter((path) => path.endsWith('.astro'))
@@ -411,6 +418,9 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(astroConfig).toContain('vite:');
 		expect(astroConfig).toContain('fs:');
 		expect(astroConfig).toContain('allow:');
+		expect(astroConfig).toContain("allowedHosts: ['admin.treeseed.localhost']");
+		expect(manifest).toContain('start: { command: node, args: [--import, tsx, scripts/development/live-web.ts]');
+		expect(manifest).not.toContain('command: docker');
 		const developmentCompose = readFileSync('compose.development.yml', 'utf8');
 		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKSPACE_ROOT:');
 		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKTREE:');
