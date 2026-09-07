@@ -16,3 +16,9 @@ expect(rows).toHaveLength(2);expect(rows[0].status).toBe('Pending approval');
 it('does not report a suspended provider as online',()=>{
 expect(capacityRows([{...provider,status:'suspended'}],[{providerId:'p',status:'active',expiresAt:'2030-01-01'}],[],0)[0].status).toBe('suspended');
 });
+it('requires authoritative execution readiness in addition to a fresh heartbeat',()=>{
+ const sessions=[{providerId:'p',status:'active',expiresAt:'2030-01-01'}];
+ expect(capacityRows([provider],sessions,[],0,{p:{healthy:false}})[0].status).toBe('Needs attention');
+ expect(capacityRows([provider],sessions,[],0,{p:null})[0].status).toBe('Unknown');
+ expect(capacityRows([provider],sessions,[],0,{p:{healthy:true}})[0].status).toBe('Online');
+});

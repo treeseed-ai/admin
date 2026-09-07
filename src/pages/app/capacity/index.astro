@@ -10,19 +10,24 @@ import {ApiClientFacade} from '../../../lib/market/api-client';
 import {loadAppContext} from '../../../view-models/app-access';
 import {capacityRows} from '../../../view-models/capacity-list';
 import {items} from '../../../lib/operations/records';
+import {loadCursorItems} from '../../../lib/operations/cursor-items';
+import {providerPermissions} from '../../../view-models/provider-permissions';
 import {ensureCsrfToken} from '../../../lib/auth/support/csrf';
 if(!Astro.locals.auth?.principal)return Astro.redirect('/auth/sign-in');
 const context=await loadAppContext(Astro),team=context.activeTeam,api=new ApiClientFacade(Astro);
 const base='/v1/teams/'+encodeURIComponent(team?.id??'');
 let providers:any[]=[],sessions:any[]=[],requests:any[]=[],unavailable=false;
-if(team)try{const results=await Promise.all(['capacity-providers','capacity/availability-sessions','capacity-provider-requests'].map(path=>api.request('GET',base+'/'+path+'?limit=100')));[providers,sessions,requests]=results.map(items);}catch{unavailable=true;}
-const rows=capacityRows(providers,sessions,requests),selected=providers.find(p=>p.providerId===Astro.url.searchParams.get('provider')),request=requests.find(r=>r.id===Astro.url.searchParams.get('request'));
+if(team)try{[providers,sessions,requests]=await Promise.all(['capacity-providers','capacity/availability-sessions','capacity-provider-requests'].map(path=>loadCursorItems(api,base+'/'+path)));}catch{unavailable=true;}
+const health=Object.fromEntries(await Promise.all(providers.map(async provider=>[provider.providerId,await api.request('GET',base+'/capacity-providers/'+encodeURIComponent(provider.providerId)+'/status').catch(()=>null)])));
+const rows=capacityRows(providers,sessions,requests,Date.now(),health),selected=providers.find(p=>p.providerId===Astro.url.searchParams.get('provider')),request=requests.find(r=>r.id===Astro.url.searchParams.get('request'));
 const selectedRow=selected&&rows.find(r=>r.id===selected.providerId);
 const latest=selected&&sessions.filter(s=>s.providerId===selected.providerId).sort((a,b)=>Date.parse(b.refreshedAt)-Date.parse(a.refreshedAt))[0];
 const preferences=await api.accountPreferences().catch(()=>({timeZone:'UTC'}));
 const csrfToken=ensureCsrfToken(Astro),canManage=Boolean(team?.roles?.some((r:string)=>['team_owner','project_lead'].includes(r))||['team_owner','project_lead'].includes(team?.currentUserRole));
-let status:any=null,profiles:any[]=[],detailUnavailable=false;
-if(selected)try{[status,profiles]=await Promise.all([api.request('GET',base+'/capacity-providers/'+encodeURIComponent(selected.providerId)+'/status'),api.request('GET',base+'/capacity-providers/'+encodeURIComponent(selected.providerId)+'/environment-profiles').then(items)]);}catch{detailUnavailable=true;}
+let status:any=selected?health[selected.providerId]:null,profiles:any[]=[],detailUnavailable=false;
+if(selected)try{profiles=await loadCursorItems(api,base+'/capacity-providers/'+encodeURIComponent(selected.providerId)+'/environment-profiles');detailUnavailable=!status;}catch{detailUnavailable=true;}
+let permissionState:any=null,permissionUnavailable=false;
+if(selected)try{permissionState=await providerPermissions(api,team.id,selected.providerId);}catch{permissionUnavailable=true;}
 ---
 <TreeseedAppLayout title="Capacity" description="Your team's connected machines and pending requests." currentPath="/app/command" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
 <section class="ts-template capacity-workspace" data-scene="command.capacity">
@@ -40,7 +45,11 @@ if(selected)try{[status,profiles]=await Promise.all([api.request('GET',base+'/ca
 <section data-management-step="Permissions" hidden>
 <Panel title="Environment permissions" knowledgePageId="capacity.permissions"><p>Approval connects this provider. Each assignment still needs explicit permission to use its environment variables and secrets.</p>
 {profiles.length?profiles.map((profile:any)=><p>{profile.displayName??profile.name??profile.id} · {profile.status??'Reported'}</p>):<p>No environment profiles are available{detailUnavailable?' to display':' from this provider'}.</p>}
-<p>Assignment-scoped grant editing is not available here yet. Provider approval does not grant blanket access.</p></Panel>
+{permissionUnavailable?<p role="alert">Assignment permissions could not be loaded. This is not an empty grant list.</p>:<>
+<h3>Assignment access</h3>
+{permissionState?.grants.length?permissionState.grants.map(({assignment,grant}:any)=><article><a href={'/app/command/assignments/'+encodeURIComponent(assignment.id)}>Open assignment</a><p>{grant.profileId} · {Date.parse(grant.expiresAt)>Date.now()?'Granted':'Expired'}</p><p>Variables: {grant.variables.join(', ')}</p><p>Network: {grant.network.allowed?grant.network.destinations.join(', ')||'No destinations declared':'Denied'}</p><p>Expires: <Timestamp value={grant.expiresAt} timeZone={preferences.timeZone}/></p></article>):<p>No environment grants are recorded for this provider's assignments.</p>}
+</>}
+<p>New grants require verified assignment policy. Provider approval does not grant blanket access; grant creation is not enabled in this editor yet.</p></Panel>
 </section>
 <section data-management-step="Activity" hidden><Panel title="Recent availability" knowledgePageId="capacity.activity"><p>These are reported connection sessions, not a live stream of running work.</p>{sessions.filter(s=>s.providerId===selected.providerId).map(session=><p>{session.status} · <Timestamp value={session.refreshedAt??session.openedAt} timeZone={preferences.timeZone}/></p>)}</Panel></section>
 {canManage&&<section data-management-step="Disconnect" hidden><Panel title="Disconnect provider" knowledgePageId="capacity.disconnect"><p>This revokes this team's provider connection. New assignments will no longer be authorized through it. Running work may be interrupted; it does not uninstall the machine.</p><form method="post" action={base+'/capacity-provider-connections/'+encodeURIComponent(selected.id)+'/disconnect'} data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-confirm="Revoke this provider connection?" data-ts-refresh-target='[data-scene="command.capacity"]'><input type="hidden" name="csrfToken" value={csrfToken}/><label>Type DISCONNECT to confirm<input class="ts-control" required pattern="DISCONNECT" aria-label="Disconnect confirmation"/></label><Button type="submit" variant="danger">Disconnect provider</Button></form></Panel></section>}
