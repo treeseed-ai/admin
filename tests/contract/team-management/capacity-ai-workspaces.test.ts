@@ -11,5 +11,5 @@ const page=read('pages/app/capacity/registration.astro');
 expect(page).toContain("'private, no-store'");expect(page).toContain("'If-Match'");expect(page).toContain("'Idempotency-Key'");expect(page).toContain("'x-treeseed-csrf'");expect(page).not.toContain('localStorage');
 });
 it('reuses the UI wizard and keeps unpaid setup separate from cloud activation',()=>{
-const page=read('pages/app/ai/new.astro');expect(page).toContain('ManagementWizard');expect(page).toContain("'services.connections.list'");expect(page).toContain('Create instance · not available yet');expect(page).toContain('data-ai-review');
+const page=read('pages/app/ai/new.astro');expect(page).toContain('ManagementWizard');expect(page).toContain("'services.connections.list'");expect(page).toContain('Save draft');expect(page).toContain('data-ai-review');expect(page).toContain("'If-Match'");expect(page).toContain('No machine has been provisioned.');
 });

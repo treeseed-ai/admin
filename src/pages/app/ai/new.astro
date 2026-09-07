@@ -1,4 +1,7 @@
 ---
+import {randomUUID} from 'node:crypto';
+import {ensureCsrfToken} from '../../../lib/auth/support/csrf';
+import {items} from '../../../lib/operations/records';
 import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
 import ManagementWizard from '@treeseed/ui/components/astro/navigation/ManagementWizard.astro';
 import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
@@ -8,31 +11,47 @@ import {loadServiceItems} from '../../../lib/services/collections';
 import {loadAppContext} from '../../../view-models/app-access';
 if(!Astro.locals.auth?.principal)return Astro.redirect('/auth/sign-in');
 const context=await loadAppContext(Astro),team=context.activeTeam,api=new ApiClientFacade(Astro);
-let services:any[]=[],unavailable=false;
+const managementRoles=new Set(['team_owner','project_lead','service_admin']);
+const canManage=Boolean(team?.roles?.some((role:string)=>managementRoles.has(role))||managementRoles.has(team?.currentUserRole));
+if(team&&!canManage)return Astro.redirect('/app/ai');
+let services:any[]=[],projects:any[]=[],existing:any=null,unavailable=false;
+const requestedId=Astro.url.searchParams.get('instance'),instanceId=requestedId??randomUUID(),csrfToken=ensureCsrfToken(Astro);
+if(team)try{projects=items(await api.listTeamProjects(team.id));if(requestedId)existing=await api.request('GET','/v1/teams/'+encodeURIComponent(team.id)+'/ai-instances/'+encodeURIComponent(requestedId));}catch{unavailable=true;}
 if(team)try{services=await loadServiceItems(api,'services.connections.list',{teamId:team.id});}catch{unavailable=true;}
 const offers=(cap:string)=>services.filter(service=>service.status==='active'&&service.capabilities?.some((binding:any)=>binding.status==='configured'&&binding.capabilityType===cap));
 const hosting=services.filter(service=>service.providerId==='hyperstack'&&service.status==='active'&&service.capabilities?.some((binding:any)=>binding.status==='configured'&&['ai-inference-hosting','ai-training-hosting'].includes(binding.capabilityType)));
 ---
 <TreeseedAppLayout title="Set up AI instance" description="Choose what to run and which connected accounts to use." currentPath="/app/command" teams={context.teams} activeTeam={team}>
-<section class="ts-template" style="padding-bottom:2rem" data-ai-setup>
-{!team?<p>Choose a team first.</p>:unavailable?<p role="alert">Connections could not be loaded. Reload before continuing.</p>:<ManagementWizard steps={['Purpose','Hosting','Models and storage','Schedule','Review']}>
-<section data-management-step="Purpose"><Panel title="What will this instance do?" knowledgePageId="ai.deployments"><form class="ts-form-stack" onsubmit="return false"><label>Instance name<input class="ts-control" name="name" required placeholder="Team AI"/></label><label>Purpose<select class="ts-control" name="purpose"><option value="inference">Inference · vLLM</option><option value="training">Training · Axolotl</option><option value="both">Inference and training</option></select></label></form></Panel></section>
+<section class="ts-template" style="padding-bottom:2rem" data-ai-setup data-team={team?.id} data-instance={instanceId} data-version={existing?.version??'new'} data-initial={JSON.stringify(existing?.configuration??{})} data-csrf={csrfToken}>
+{!team?<p>Choose a team first.</p>:unavailable?<p role="alert">Connections could not be loaded. Reload before continuing.</p>:<ManagementWizard direct={Boolean(existing)} steps={['Purpose','Hosting','Models and storage','Schedule','Review']}>
+<section data-management-step="Purpose"><Panel title="What will this instance do?" knowledgePageId="ai.deployments"><form class="ts-form-stack" onsubmit="return false"><label>Instance name<input class="ts-control" name="name" required placeholder="Team AI"/></label><label>Project<select class="ts-control" name="project" required><option value="">Choose a project</option>{projects.map(project=><option value={project.id}>{project.displayName??project.name??project.id}</option>)}</select></label><label>Purpose<select class="ts-control" name="purpose"><option value="inference">Inference · vLLM</option><option value="training">Training · Axolotl</option><option value="both">Inference and training</option></select></label></form></Panel></section>
 <section data-management-step="Hosting" hidden><Panel title="Choose a hosting connection" knowledgePageId="provider.hyperstack"><form class="ts-form-stack" onsubmit="return false"><label>Hyperstack connection<select class="ts-control" name="hosting" required><option value="">Choose a connection</option>{hosting.map(service=><option value={service.id} data-inference={String(service.capabilities.some((b:any)=>b.status==='configured'&&b.capabilityType==='ai-inference-hosting'))} data-training={String(service.capabilities.some((b:any)=>b.status==='configured'&&b.capabilityType==='ai-training-hosting'))}>{service.displayName}</option>)}</select></label><p>Credentials stay in your team's vault. Saving an account does not rent a machine.</p><p>Live regions, GPU sizes and prices are not available yet; hardware selection is a release blocker.</p><Button href="/app/services/new?provider=hyperstack" variant="secondary">Connect another account</Button></form></Panel></section>
 <section data-management-step="Models and storage" hidden><Panel title="Models and storage" knowledgePageId="ai.storage"><form class="ts-form-stack" onsubmit="return false"><label>Model or training recipe<input class="ts-control" name="model" required placeholder="Model identifier or published training recipe"/></label><label>Storage connection<select class="ts-control" name="storage"><option value="">No storage selected</option>{offers('object-storage').map(service=><option value={service.id}>{service.displayName}</option>)}</select></label><p>Datasets and checkpoints require a separately authorized storage grant. Selecting an account here does not grant access to all of its files.</p></form></Panel></section>
-<section data-management-step="Schedule" hidden><Panel title="When should it run?" knowledgePageId="ai.schedule"><form class="ts-form-stack" onsubmit="return false"><label>Schedule<select class="ts-control" name="schedule"><option>Always on</option><option>Weekdays</option></select></label><label>Time zone<input class="ts-control" name="timezone" required placeholder="America/New_York"/></label><p>Schedule activation and safe checkpoint/drain handling must pass deployment acceptance before use.</p></form></Panel></section>
-<section data-management-step="Review" hidden><Panel title="Setup review" knowledgePageId="ai.deployments"><dl data-ai-review></dl><p>This flow is available for review. The selections are not saved, and no machine will be rented.</p><p>Creation remains blocked on instance inventory, live GPU selection, exact engine releases, scoped storage grants and deployment acceptance.</p><Button disabled>Create instance · not available yet</Button></Panel></section>
+<section data-management-step="Schedule" hidden><Panel title="When should it run?" knowledgePageId="ai.schedule"><form class="ts-form-stack" onsubmit="return false"><label>Schedule<select class="ts-control" name="schedule"><option value="always">Always on</option><option value="weekdays">Weekdays</option></select></label><label>Time zone<input class="ts-control" name="timezone" required placeholder="America/New_York"/></label><p>Schedule activation and safe checkpoint/drain handling must pass deployment acceptance before use.</p></form></Panel></section>
+<section data-management-step="Review" hidden><Panel title="Setup review" knowledgePageId="ai.deployments"><dl data-ai-review></dl><p>Save this configuration as a draft. No machine will be rented. Activation still requires qualified hardware, exact engine releases and scoped storage grants.</p><div class="ts-button-row"><Button type="button" data-save-ai>Save draft</Button>{existing&&<Button type="button" variant="danger" data-delete-ai>Delete draft</Button>}<Button href="/app/ai" variant="secondary">All instances</Button></div><p role="status" data-save-feedback></p></Panel></section>
 </ManagementWizard>}
 </section>
 </TreeseedAppLayout>
 <script>
 function initialize(){document.querySelectorAll<HTMLElement>('[data-ai-setup]').forEach(root=>{
 if(root.dataset.mounted)return;root.dataset.mounted='true';
+const initial=JSON.parse(root.dataset.initial??'{}');const mapping:Record<string,string>={name:'name',project:'projectId',purpose:'purpose',hosting:'hostingConnectionId',storage:'storageConnectionId',model:'model',schedule:'schedule',timezone:'timeZone'};
+for(const [name,key] of Object.entries(mapping)){const input=root.querySelector<HTMLInputElement|HTMLSelectElement>('[name="'+name+'"]');if(input&&initial[key]!=null)input.value=initial[key];}
+root.addEventListener('click',async event=>{const button=(event.target as Element).closest<HTMLButtonElement>('[data-save-ai],[data-delete-ai]');if(!button)return;
+const remove=button.hasAttribute('data-delete-ai');if(remove&&!confirm('Delete this unprovisioned draft? This does not affect any running machines.'))return;
+const feedback=root.querySelector<HTMLElement>('[data-save-feedback]')!;button.disabled=true;
+try{const body:Record<string,unknown>={};for(const [name,key] of Object.entries(mapping)){const input=root.querySelector<HTMLInputElement|HTMLSelectElement>('[name="'+name+'"]');body[key]=input?.value??'';}if(!body.storageConnectionId)body.storageConnectionId=null;
+const response=await fetch('/v1/teams/'+encodeURIComponent(root.dataset.team!)+'/ai-instances/'+encodeURIComponent(root.dataset.instance!),{method:remove?'DELETE':'PUT',headers:{'Content-Type':'application/json','x-treeseed-csrf':root.dataset.csrf!,'Idempotency-Key':crypto.randomUUID(),'If-Match':root.dataset.version!},body:JSON.stringify(remove?{}:body)});
+if(!response.ok){feedback.textContent=response.status===412?'This draft changed. Reload before saving.':'Could not save. Check the project, required fields and connection permissions.';return;}
+const result=await response.json(),saved=result.data??result;if(remove){location.assign('/app/ai');return;}root.dataset.version=String(saved.version);feedback.textContent='Draft saved. No machine has been provisioned.';history.replaceState(null,'','/app/ai/new?instance='+encodeURIComponent(saved.id));
+}catch{feedback.textContent='The API could not be reached. Your selections remain in this page.';}finally{button.disabled=false;}
+});
 const refresh=()=>{
 const timezone=root.querySelector<HTMLInputElement>('[name="timezone"]');if(timezone?.value){try{new Intl.DateTimeFormat('en',{timeZone:timezone.value});timezone.setCustomValidity('');}catch{timezone.setCustomValidity('Enter a valid IANA time zone.');}}
 const purpose=root.querySelector<HTMLSelectElement>('[name="purpose"]')?.value;
 const host=root.querySelector<HTMLSelectElement>('[name="hosting"]');host?.querySelectorAll<HTMLOptionElement>('option[data-inference]').forEach(option=>{option.disabled=(purpose!=='training'&&option.dataset.inference!=='true')||(purpose!=='inference'&&option.dataset.training!=='true');if(option.selected&&option.disabled)host.value='';});
 const storage=root.querySelector<HTMLSelectElement>('[name="storage"]');if(storage)storage.required=purpose!=='inference';
-const review=root.querySelector('[data-ai-review]');if(review){review.replaceChildren();for(const [name,label] of [['name','Instance'],['purpose','Purpose'],['hosting','Hosting connection'],['model','Model / recipe'],['storage','Storage connection'],['schedule','Schedule'],['timezone','Time zone']]){
+const review=root.querySelector('[data-ai-review]');if(review){review.replaceChildren();for(const [name,label] of [['name','Instance'],['project','Project'],['purpose','Purpose'],['hosting','Hosting connection'],['model','Model / recipe'],['storage','Storage connection'],['schedule','Schedule'],['timezone','Time zone']]){
 const field=root.querySelector<HTMLInputElement|HTMLSelectElement>('[name="'+name+'"]');const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=field instanceof HTMLSelectElement?field.selectedOptions[0]?.textContent??'Not selected':field?.value||'Not specified';review.append(dt,dd);
 }}
 };root.addEventListener('input',refresh);root.addEventListener('change',refresh);root.addEventListener('treeseed:wizard-change',refresh);refresh();
