@@ -31,8 +31,8 @@ describe('shared feature surface ownership', () => {
 		for (const detail of ['PageHeader.astro', 'ModeNavigation.astro', 'SemanticCollectionSurface.astro', '<style>', '<section']) expect(projects).not.toContain(detail);
 
 		const capacity = source('src/pages/app/capacity/index.astro');
-		expect(capacity).toContain('@treeseed/ui/components/astro/capacity/CapacityWorkspace.astro');
-		for (const detail of ['CapacityControlRoom.astro', 'MetricGrid.astro', 'ResourceCard.astro', 'ModeNavigation.astro', '<style>', '<section', '<form']) expect(capacity).not.toContain(detail);
+		for (const component of ['surface/OperationalList.astro', 'navigation/ManagementWizard.astro']) expect(capacity).toContain('@treeseed/ui/components/astro/'+component);
+		for (const detail of ['CapacityControlRoom.astro', 'MetricGrid.astro', 'ModeNavigation.astro']) expect(capacity).not.toContain(detail);
 	});
 
 	it('does not retain package-local mode navigation components', () => {

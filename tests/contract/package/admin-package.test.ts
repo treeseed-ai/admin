@@ -20,6 +20,11 @@ const EXPECTED_ROUTES = [
 	'/app/account/appearance',
 	'/app/account/delete',
 	'/app/capacity',
+	'/app/capacity/registration',
+	'/app/capacity/install',
+	'/app/capacity/install-download',
+	'/app/ai',
+	'/app/ai/new',
 	'/app/chat',
 	'/app/command',
 	'/app/command/agents',
@@ -218,7 +223,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
 		for (const path of appPages) {
 			const source = readFileSync(path, 'utf8');
-			const contentTemplateOwnsHeader = /<(?:VaultSetupPreview|AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
+			const contentTemplateOwnsHeader = /<(?:AiDeploymentWorkspace|VaultSetupPreview|AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
 			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
 		}
 	});
@@ -285,6 +290,7 @@ describe('@treeseed/admin identity and team surface', () => {
 			'src/pages/auth/authorize.astro',
 			'src/pages/auth/confirm-email.astro',
 			'src/pages/auth/sign-in.astro',
+			'src/pages/app/capacity/install.astro', // Browser-owned file download, not a JSON mutation response.
 		]);
 		const astroSources = filesUnder('src')
 			.filter((path) => path.endsWith('.astro'))
