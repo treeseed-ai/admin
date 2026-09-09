@@ -1,67 +1,46 @@
 # @treeseed/admin
 
-`@treeseed/admin` is the distributable AGPLv3 administration portal and independently deployable management site for Treeseed. Its rendered surface includes authentication, account and team management, projects, capacity, agent work, knowledge operations, and service connections.
+TreeSeed's independently deployable administration application and reusable route package. Admin manages teams, projects, capacity, AI, work, knowledge, service connections, and application profiles. Market remains independently built and deployed.
 
-The removed pre-redesign surface is archived in the root [legacy route inventory](../../docs/legacy-routes.md). The redesign direction is described in [ui-redesign.md](../../docs/ui-redesign.md).
-
-## Run the standalone site
-
-The repository owns a root `treeseed.site.yaml` and can run without Market:
+## Build and run
 
 ```bash
+npm ci
 npm run dev
 npm run build:app
-npm run preview
-```
-
-The app uses the open TreeSeed API through its configured HTTP connection. Runtime content comes from the team-scoped R2 overlay through TreeDX; the site does not require a checked-out content repository. The npm library output remains in `dist`, while the deployable Cloudflare application is built separately under `.treeseed/app-dist`.
-
-## Install and compose as a library
-
-```bash
-npm install @treeseed/admin @treeseed/core @treeseed/ui @treeseed/sdk
-```
-
-Add `@treeseed/admin/plugin` to another host's `treeseed.site.yaml`, use the config helper from `@treeseed/admin/config`, and delegate host middleware to `@treeseed/admin/middleware`. Market may consume these public package surfaces, but it is not the owner of Admin's standalone deployment.
-
-## Current route surface
-
-- `/app` and focused account routes for Identity, Sessions, Notifications, Appearance, and Delete
-- `/app/teams`, team creation, edit, delete, membership, and active-team selection
-- registration, verification, sign-in/out, recovery, OAuth callback, username, and device approval
-- `/u/[username]` and `/t/[name]` public knowledge profiles with explicit attribution and privacy-safe publication trails
-- invitation acceptance and the shared `/v1/[...all]` API facade
-
-`ADMIN_ROUTES` and `ADMIN_SUPPORT_ROUTES` are exported from `@treeseed/admin/routes`, use the SDK route-capability contract, and are tested against the package page tree. Account routes contain only focused controllers and standardized UI-package composition. There are no project, capacity, host, work, knowledge, catalog, seller, commerce, or Markdown-preview routes and no compatibility redirects for them.
-
-Browser mutations use one double-submit CSRF contract at the cookie-to-bearer boundary. Registration checks both permanent username availability and privacy-safe email usability. Provider state/nonce/PKCE, account policy, notifications, personal themes, and deletion cleanup remain API-owned; Admin owns only session glue and focused view models.
-
-## Preserved non-UI contracts
-
-The generic API facade, auth/session integration, middleware, commerce extension contract, and secret-manager contracts remain exported so backend capabilities and future redesign work keep their package boundaries. Admin does not import backend implementation from `@treeseed/api`; runtime behavior stays behind HTTP/proxy surfaces.
-
-Reusable components and styles remain owned by `@treeseed/ui` and were not removed as part of this cleanup. React and email dependencies remain because authentication email flows require them.
-
-## Public exports
-
-- `@treeseed/admin`
-- `@treeseed/admin/config`
-- `@treeseed/admin/content-config`
-- `@treeseed/admin/plugin`
-- `@treeseed/admin/routes`
-- `@treeseed/admin/middleware`
-- `@treeseed/admin/commerce`
-- `@treeseed/admin/secret-managers`
-- `@treeseed/admin/lib/*`
-- `@treeseed/admin/view-models/*`
-- retained app/public layouts
-
-## Verification and release
-
-```bash
-npm run check
-npm test
+npm run build:pages
 npm run release:verify
 ```
 
-`verify.yml`, the manual `release-gate.yml`, and `publish.yml` remain package-owned. Hosted deployment is suspended while the reviewed OpenTofu deployment design is completed; the package must not contain a push-triggered `deploy.yml`.
+The Node and Cloudflare applications use the same package-owned Identity integration. The npm library is emitted under `dist`; the hosted application is emitted under `.treeseed/app-dist`.
+
+## Identity configuration
+
+Deployment supplies these runtime settings, separately from source configuration:
+
+| Setting | Purpose |
+| --- | --- |
+| `TREESEED_SITE_URL` | This application's HTTPS origin |
+| `TREESEED_API_BASE_URL` | The exact HTTPS API resource |
+| `TREESEED_IDENTITY_ISSUER` | The explicitly selected, API-advertised issuer |
+| `TREESEED_IDENTITY_ACCOUNT_URL` | That authority's HTTPS account-management page |
+| `TREESEED_IDENTITY_WORKLOAD_CLIENT_ID` | This application's independent workload client |
+| `TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY` | Protected PKCS8 asymmetric workload key, never browser configuration |
+
+The API must register the application's browser client and exact `/auth/callback` redirect, and authorize its workload client for the SDK's browser-session bridge scope and permission. The browser and workload clients are distinct. Production must not select this artifact before the coordinated API, Identity, database, and Deployment migration passes.
+
+Sign-in redirects to Identity; Admin never collects a login password, issues access tokens, or stores refresh tokens in browser cookies. The shared Identity adapter sends opaque, host-only, Secure/HttpOnly application handles to the browser. API stores encrypted one-use PKCE transactions and session credentials. Resource-bound access tokens exist only on the server and are never serialized into Astro locals.
+
+Profile and contact-email changes remain API-owned application operations. Confirming a contact email does not link sign-in identities or grant team membership. Passwords, MFA, and recovery are managed at the configured Identity account page. App logout revokes this application session; it does not silently terminate other applications' identity sessions.
+
+Applications need independent browser clients, workload clients, and cookies. Never copy these credentials to another Market API or forward one resource's bearer token to another. There is no fallback to legacy password, shared-secret assertion, or access-token-cookie authentication.
+
+## Composition
+
+Install `@treeseed/admin`, `@treeseed/core`, `@treeseed/ui`, and `@treeseed/sdk`; add `@treeseed/admin/plugin` to the host site declaration and delegate middleware to `@treeseed/admin/middleware`. Public exports are authoritative in `package.json`. Reusable forms and account components belong to UI; backend access remains HTTP through the configured API, not imported API implementation.
+
+## Acceptance ownership
+
+Admin retains application sign-in/callback/logout and contact-email scenarios. Registration and password recovery belong to Identity and its managed Deployment acceptance, not duplicate Admin forms. The login scene requires a disposable Identity account and explicit API principal mapping; its fixture password is test-only. Unit contracts are not a substitute for that managed browser acceptance.
+
+Changes ship through Issues, PRs, Actions, staging candidates, and exact Platform composition. Human review is reserved for production PRs to `main`. Rollback requires a coordinated application/database restore point; never run an old authentication writer against migrated data.

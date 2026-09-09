@@ -9,10 +9,8 @@ summary: Establish an authenticated session for Market/admin surfaces; downstrea
   authenticated user context.
 status: active
 dependencies:
-  journeys:
-    - 3
-  guarantees:
-    - guarantee.user.auth.forgot-reset-password.003
+  journeys: []
+  guarantees: []
 actors:
   allowed:
     - anonymous_user
@@ -31,7 +29,7 @@ gates:
 preconditions:
   fixtures: []
   notes:
-    - "Journey dependencies must be satisfied: 2"
+    - Deployment provisions a disposable Identity account and an explicit API principal mapping before the scene.
 scene:
   required: true
   manifest: ./scenes/user-login.scene.yaml
@@ -41,7 +39,7 @@ scene:
     demo: true
     training: true
   entryRoute: /auth/sign-in
-  componentContract: auth-form guarantee harness
+  componentContract: Identity OIDC redirect and opaque application-session boundary
   expectedEvidence:
     - playwright_trace
     - scene_video

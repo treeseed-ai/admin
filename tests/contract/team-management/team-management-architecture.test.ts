@@ -134,8 +134,8 @@ describe('team management architecture audit', () => {
 		expect(consent).not.toMatch(/method=["']get["'][^>]*accept/iu);
 		const logout = source('src/pages/auth/logout.ts');
 		expect(logout).toContain('requestedReturnTo');
-		expect(logout).toContain("signInParams.set('inviteToken'");
-		expect(source('src/pages/auth/sign-in.astro')).toContain("registrationParams.set('inviteToken'");
+		expect(logout).toContain("switchAccount: '1'");
+		expect(source('src/pages/auth/sign-in.ts')).toContain('normalizeReturnTo');
 
 		const lifecycle = source('src/pages/app/teams/[teamId]/delete.astro');
 		for (const action of ['team.archive', 'team.restore', 'team.delete']) {

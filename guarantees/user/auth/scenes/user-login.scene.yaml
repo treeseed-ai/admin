@@ -13,9 +13,7 @@ journey:
     - credentials are entered once and approval reaches the authenticated app shell or returns a visible auth error
   minimumSteps: 7
   requiresInteractiveAction: true
-  consumesState:
-    - key: credentials.reset
-      kind: marker
+  consumesState: []
   producesState:
     - key: auth.primary-session
       kind: browser-storage
@@ -24,7 +22,7 @@ mode:
   demo: true
   training: true
 target:
-  app: market
+  app: admin
   environment: local
   baseUrl: auto
   browser: chromium
@@ -108,126 +106,72 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-sign-in
-    title: Open User Login
+    title: Redirect to the configured Identity authority
     action:
       goto: /auth/sign-in
     expect:
-      urlIncludes: /auth/sign-in
-      text: Sign in
-  - id: enter-authorization-identifier
-    title: Enter the account identifier at the sign-in boundary
+      urlIncludes: /protocol/openid-connect/auth
+      visible:
+        - css: "input[name='username']"
+          internal: true
+  - id: enter-identifier
+    title: Enter the disposable identity at Keycloak, not Admin
     action:
       fill:
-        role: textbox
-        name: Email or username
+        css: "input[name='username']"
+        internal: true
         value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
       visible:
-        - role: button
-          name: Sign in
-  - id: enter-invalid-authorization-password
-    title: Enter invalid credentials at the sign-in boundary
+        - css: "input[name='password']"
+          internal: true
+  - id: enter-invalid-password
+    title: Enter an invalid password at the identity authority
     action:
       fill:
-        css: input[name='password']
+        css: "input[name='password']"
         internal: true
         value: incorrect-password
     expect:
       visible:
-        - css: "input[name='password']"
+        - css: "input[name='login']"
           internal: true
-  - id: reject-invalid-authorization
-    title: Reject invalid sign-in credentials
+  - id: reject-invalid-credentials
+    title: Reject invalid credentials without creating an application session
     action:
       click:
-        role: button
-        name: Sign in
+        css: "input[name='login']"
+        internal: true
     expect:
-      urlIncludes: /auth/sign-in
+      urlIncludes: /login-actions/authenticate
       visible:
-        - role: button
-          name: Sign in
-  - id: enter-correct-password
-    title: Enter the reset password
+        - css: "input[name='password']"
+          internal: true
+  - id: enter-fixture-password
+    title: Enter the disposable fixture password at the identity authority
     action:
       fill:
-        css: input[name='password']
+        css: "input[name='password']"
         internal: true
         value: TreeSeedGuaranteeReset123!
     expect:
       visible:
-        - css: "input[name='password']"
+        - css: "input[name='login']"
           internal: true
-  - id: submit-sign-in
-    title: Submit valid sign in
+  - id: complete-sign-in
+    title: Complete PKCE callback and enter the mapped application account
     action:
       click:
-        role: button
-        name: Sign in
+        css: "input[name='login']"
+        internal: true
     expect:
       urlIncludes: /app
       visible:
         - scene: app-shell
-  - id: reload-authenticated-dashboard
-    title: Reload the authenticated dashboard
+  - id: reload-session
+    title: Reuse the opaque application session
     action:
-      goto: /app
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-sign-in
-    title: Redirect an active session away from sign in
-    action:
-      goto: /auth/sign-in
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-registration
-    title: Redirect an active session away from registration
-    action:
-      goto: /auth/register
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-password-recovery
-    title: Redirect an active session away from password recovery
-    action:
-      goto: /auth/forgot-password
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-password-reset
-    title: Redirect an active session away from password reset
-    action:
-      goto: /auth/reset-password?token=active-session-must-not-consume
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-email-continuation
-    title: Redirect an active session away from the check-email page
-    action:
-      goto: /auth/check-email
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-email-confirmation
-    title: Redirect an active session away from email confirmation
-    action:
-      goto: /auth/confirm-email
-    expect:
-      urlIncludes: /app
-      visible:
-        - scene: app-shell
-  - id: reject-authenticated-provider-callback
-    title: Redirect an active session away from provider callbacks
-    action:
-      goto: /auth/callback/github
+      goto: /app/
     expect:
       urlIncludes: /app
       visible:

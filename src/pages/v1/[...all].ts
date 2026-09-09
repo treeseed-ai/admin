@@ -1,11 +1,6 @@
 import type { APIRoute } from 'astro';
-import {
-	apiAccessTokenFromCookies,
-	clearApiAccessTokenCookie,
-	apiServiceHeaders,
-	resolveApiBaseUrl,
-	setApiAccessTokenCookie,
-} from '../../lib/market/api-client';
+import { resolveApiBaseUrl } from '../../lib/market/api-client';
+import { apiRequestHeaders } from '../../lib/auth/application-session';
 import { csrfMatches, WEB_CSRF_HEADER } from '../../lib/auth/support/csrf';
 import { promoteConcurrencyHeader, signedConfirmationHeader } from '../../lib/market/proxy-request';
 
@@ -23,55 +18,21 @@ const hopByHopHeaders = new Set([
 	'host',
 ]);
 
-function isRedirectedDeviceApproval(path: string) {
-	const parts = path.split('/').filter(Boolean);
-	return parts[0] === 'auth' && parts[1] === 'device' && parts[2] === 'approve';
-}
-
 function copyClientHeaders(request: Request) {
 	const headers = new Headers();
 	for (const [name, value] of request.headers) {
 		const lower = name.toLowerCase();
 		if (hopByHopHeaders.has(lower)) continue;
 		if (lower === 'cookie') continue;
-		if (lower === 'authorization') continue;
+		if (lower === 'authorization' || lower.startsWith('x-treeseed-service-') || lower === 'x-treeseed-user-assertion') continue;
 		if (lower === 'x-treeseed-feedback-path') continue;
 		headers.set(name, value);
 	}
 	return headers;
 }
 
-function isAuthPath(path: string) {
-	return path.split('/').filter(Boolean)[0] === 'auth';
-}
-
-function shouldClearAuthCookie(path: string, method: string, ok: boolean) {
-	if (!ok) return false;
-	const parts = path.split('/').filter(Boolean);
-	if (parts[0] !== 'auth') return false;
-	if (parts[1] === 'logout') return true;
-	if (parts[1] === 'web' && parts[2] === 'account' && method === 'DELETE') return true;
-	return false;
-}
-
-function redactAuthTokens(value: unknown): unknown {
-	if (!value || typeof value !== 'object') return value;
-	if (Array.isArray(value)) return value.map(redactAuthTokens);
-	const next: Record<string, unknown> = {};
-	for (const [key, entry] of Object.entries(value)) {
-		if (key === 'accessToken' || key === 'refreshToken') continue;
-		next[key] = redactAuthTokens(entry);
-	}
-	return next;
-}
-
 export const ALL: APIRoute = async (context) => {
 	const path = context.params.all ?? '';
-	if (isRedirectedDeviceApproval(path) && context.request.method.toUpperCase() === 'GET') {
-		const target = new URL('/auth/device/approve', context.url.origin);
-		target.search = context.url.search;
-		return context.redirect(target.toString(), 302);
-	}
 
 	const upstreamPath = path === 'healthz' || path.startsWith('healthz/')
 		? `/${path}`
@@ -93,11 +54,7 @@ export const ALL: APIRoute = async (context) => {
 			return new Response(JSON.stringify({ ok: false, error: 'The request failed CSRF validation.', code: 'csrf' }), { status: 403, headers: { 'content-type': 'application/json' } });
 		}
 	}
-	const token = apiAccessTokenFromCookies(context);
-	for (const [name, value] of apiServiceHeaders(context, { skipUserAssertion: Boolean(token) })) {
-		headers.set(name, value);
-	}
-	if (token) headers.set('authorization', `Bearer ${token}`);
+	for (const [name, value] of apiRequestHeaders(context)) headers.set(name, value);
 
 	const method = context.request.method.toUpperCase();
 	const body = ['GET', 'HEAD'].includes(method) ? undefined : await context.request.arrayBuffer();
@@ -117,28 +74,9 @@ export const ALL: APIRoute = async (context) => {
 
 	const responseHeaders = new Headers();
 	for (const [name, value] of response.headers) {
-		if (!hopByHopHeaders.has(name.toLowerCase())) responseHeaders.set(name, value);
+		if (!hopByHopHeaders.has(name.toLowerCase()) && name.toLowerCase() !== 'set-cookie') responseHeaders.set(name, value);
 	}
-	if (isAuthPath(path) && (response.headers.get('content-type') ?? '').includes('application/json')) {
-		const envelope = await response.clone().json().catch(() => null);
-		const token = envelope?.payload?.accessToken;
-		if (response.ok && typeof token === 'string' && token.trim()) {
-			setApiAccessTokenCookie(context, token, Number(envelope.payload.expiresInSeconds ?? 15 * 60));
-		}
-		if (shouldClearAuthCookie(path, method, response.ok)) {
-			clearApiAccessTokenCookie(context);
-		}
-		for (const cookie of context.cookies.headers()) {
-			responseHeaders.append('set-cookie', cookie);
-		}
-		if (envelope && typeof envelope === 'object') {
-			return new Response(JSON.stringify(redactAuthTokens(envelope)), {
-				status: response.status,
-				statusText: response.statusText,
-				headers: responseHeaders,
-			});
-		}
-	}
+
 	return new Response(response.body, {
 		status: response.status,
 		statusText: response.statusText,

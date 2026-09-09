@@ -70,17 +70,11 @@ const EXPECTED_ROUTES = [
 	'/app/teams/[teamId]/edit',
 	'/app/teams/[teamId]/delete',
 	'/app/teams/[teamId]/members',
-	'/auth/register',
-	'/auth/check-email',
 	'/auth/confirm-email',
 	'/auth/sign-in',
 	'/auth/logout',
-	'/auth/forgot-password',
-	'/auth/reset-password',
 	'/auth/username',
-	'/auth/authorize',
-	'/auth/device/approve',
-	'/auth/callback/[provider]',
+	'/auth/callback',
 	'/u/[username]',
 	'/t/[name]',
 	'/team-invites/[token]/accept',
@@ -143,30 +137,21 @@ describe('@treeseed/admin identity and team surface', () => {
 
 	it('keeps anonymous authentication routes inaccessible to active sessions', () => {
 		const anonymousRoutes = [
-			'/auth/register',
-			'/auth/check-email',
 			'/auth/sign-in',
-			'/auth/forgot-password',
-			'/auth/reset-password',
-			'/auth/callback/github',
 		];
 		for (const route of anonymousRoutes) {
 			expect(isAnonymousAuthRoute(route), route).toBe(true);
 			expect(authenticatedAuthRedirect(route, true), route).toBe('/app/');
-			expect(authenticatedAuthRedirect(route, false), route).toBe('/auth/username?returnTo=%2Fapp%2F');
+			expect(authenticatedAuthRedirect(route, false), route).toBe('/auth/username');
 		}
-		for (const route of ['/auth/confirm-email', '/auth/logout', '/auth/username', '/auth/device/approve', '/team-invites/token/accept']) {
+		for (const route of ['/auth/confirm-email', '/auth/logout', '/auth/username', '/auth/callback', '/team-invites/token/accept']) {
 			expect(isAnonymousAuthRoute(route), route).toBe(false);
 			expect(authenticatedAuthRedirect(route, true), route).toBeNull();
 		}
 		const routes = new Map(ADMIN_ROUTES.map((route) => [route.pattern, route.capability?.accessPolicy ?? []]));
 		for (const route of [
-			'/auth/register',
-			'/auth/check-email',
 			'/auth/sign-in',
-			'/auth/forgot-password',
-			'/auth/reset-password',
-			'/auth/callback/[provider]',
+			'/auth/callback',
 		]) {
 			expect(routes.get(route), route).toContain('anonymous principal only');
 		}
@@ -242,25 +227,17 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(css).not.toContain('@treeseed/ui/styles/operations.css');
 		expect(css).not.toContain('@treeseed/ui/styles/market.css');
 		expect(ADMIN_CAPABILITIES.ecommerce.bundled).toBe(false);
-		expect(Object.keys(ADMIN_ENV_SCHEMA)).toContain('TREESEED_BETTER_AUTH_SECRET');
+		expect(Object.keys(ADMIN_ENV_SCHEMA)).toContain('TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY');
 	});
 
-	it('uses one password setup interaction for registration, reset, and account changes', () => {
-		const reset = readFileSync('src/pages/auth/reset-password.astro', 'utf8');
-		const accountSettings = readFileSync('src/view-models/account-settings.ts', 'utf8');
-		const registrationScene = readFileSync('guarantees/user/auth/scenes/register-user.scene.yaml', 'utf8');
-
-		expect(reset).toContain("PasswordSetupFields from '@treeseed/ui/components/astro/forms/fields/PasswordSetupFields.astro'");
-		expect(reset).toContain('passwordId="resetPassword"');
-		expect(reset).toContain('confirmLabel="Confirm new password"');
-		expect(reset).toContain("token && !error ? <form");
-		expect(reset).toContain('Password reset link unavailable');
-		expect(reset).not.toContain('Market login');
-		expect(accountSettings).toContain("const confirmPassword = String(form.get('confirmPassword') ?? '')");
-		expect(accountSettings).toContain("if (password !== confirmPassword) throw new Error('Passwords do not match.')");
-		expect(accountSettings).toContain('if (!passwordMeetsPolicy(password))');
-		expect(registrationScene).toContain('[data-ts-confirm-password-input]');
-		expect(registrationScene).not.toContain('[data-confirm-password-input]');
+	it('delegates password and sign-in security without retaining password routes', () => {
+		const signIn = readFileSync('src/pages/auth/sign-in.ts', 'utf8');
+		const account = readFileSync('src/pages/app/account/index.astro', 'utf8');
+		expect(signIn).toContain('applicationSession');
+		expect(account).toContain('identityManagementUrl');
+		expect(readFileSync('src/view-models/account-settings.ts', 'utf8')).not.toContain("intent === 'password'");
+		for (const name of ['register','reset-password','forgot-password','authorize']) expect(existsSync(`src/pages/auth/${name}.astro`)).toBe(false);
+		expect(Object.keys(ADMIN_ENV_SCHEMA)).not.toContain('TREESEED_BETTER_AUTH_SECRET');
 	});
 
 	it('uses one account timezone and timestamp presentation contract', () => {
@@ -287,9 +264,7 @@ describe('@treeseed/admin identity and team surface', () => {
 
 	it('routes network forms through the UI-owned enhanced submission contract', () => {
 		const navigationForms = new Set([
-			'src/pages/auth/authorize.astro',
 			'src/pages/auth/confirm-email.astro',
-			'src/pages/auth/sign-in.astro',
 			'src/pages/app/capacity/install.astro', // Browser-owned file download, not a JSON mutation response.
 		]);
 		const astroSources = filesUnder('src')
@@ -305,16 +280,12 @@ describe('@treeseed/admin identity and team surface', () => {
 			}
 			expect(source, `${path} should use delegated enhancement`).toContain('data-ts-submit="enhanced"');
 		}
-		expect(readFileSync('src/pages/auth/sign-in.astro', 'utf8')).toContain('data-astro-reload');
+		expect(readFileSync('src/pages/auth/sign-in.ts', 'utf8')).toContain('applicationSession');
 
 		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
 		const pageHelper = readFileSync('src/lib/forms/page-submission.ts', 'utf8');
 		const memberPage = readFileSync('src/pages/app/teams/[teamId]/members.astro', 'utf8');
 		const authPages = [
-			'src/pages/auth/register.astro',
-			'src/pages/auth/sign-in.astro',
-			'src/pages/auth/forgot-password.astro',
-			'src/pages/auth/reset-password.astro',
 			'src/pages/auth/username.astro',
 		].map((path) => readFileSync(path, 'utf8')).join('\n');
 
@@ -440,7 +411,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(existsSync('dist/standards/guarantee-catalog.json')).toBe(true);
 		const catalog = JSON.parse(readFileSync('dist/standards/guarantee-catalog.json', 'utf8')) as { schemaVersion: string; guarantees: unknown[]; verifierRegistries: unknown[] };
 		expect(catalog.schemaVersion).toBe('treeseed.guarantee-catalog/v1');
-		expect(catalog.guarantees).toHaveLength(92);
+		expect(catalog.guarantees).toHaveLength(90);
 		expect(catalog.verifierRegistries).toHaveLength(2);
 		expect(existsSync('dist/standards/verifiers/team-ui-contract.json')).toBe(true);
 	});

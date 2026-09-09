@@ -85,7 +85,6 @@ const canAccept = previewStatus === 200 && state === 'pending' && !emailMismatch
 					{!Astro.locals.auth?.principal ? (
 						<div class="ts-panel__actions">
 							<Button href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>Sign in to accept</Button>
-							<Button href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}&email=${encodeURIComponent(invite.email ?? '')}&inviteToken=${encodeURIComponent(token)}`} variant="secondary">Create account</Button>
 						</div>
 					) : emailMismatch ? (
 						<>

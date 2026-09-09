@@ -1,48 +1,38 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { API_REFRESH_COOKIE, API_SESSION_COOKIE } from '../../src/lib/market/api-client.js';
-import { loadApiBackedWebSession } from '../../src/lib/auth/session-refresh.js';
-
-function context(values: Record<string, string>) {
-	const written = new Map<string, string>();
-	const deleted: string[] = [];
-	return {
-		value: {
-			locals: { runtime: { env: { TREESEED_API_BASE_URL: 'https://api.test' } } },
-			url: new URL('https://admin.test/app'),
-			cookies: {
-				get: (name: string) => values[name] ? { value: values[name] } : undefined,
-				set: (name: string, value: string) => written.set(name, value),
-				delete: (name: string) => deleted.push(name),
-			},
-		},
-		written,
-		deleted,
-	};
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+const bridge = vi.hoisted(() => ({ session: vi.fn(), set: vi.fn() }));
+vi.mock('../../src/lib/auth/application-session', () => ({
+  applicationSession: async () => ({ session: bridge.session }), apiResource: () => 'https://api.test', setRequestCredential: bridge.set,
+}));
+import { loadApiBackedWebSession } from '../../src/lib/auth/session-refresh';
+function context(cookie = '__Host-treeseed-admin=opaque-handle') {
+  return { locals: {}, request: new Request('https://admin.test/app', { headers: { cookie } }) } as any;
 }
-
+const credential = { accessToken: 'server-only-token', resource: 'https://api.test', expiresAt: Date.now() + 60000, principal: { principalId: 'preserved' } };
+beforeEach(() => { bridge.session.mockReset().mockResolvedValue(credential); bridge.set.mockReset(); });
 afterEach(() => vi.unstubAllGlobals());
-
-describe('Admin browser session refresh', () => {
-	it('rotates the refresh token when the expired access cookie is already absent', async () => {
-		const test = context({ [API_REFRESH_COOKIE]: 'refresh-one' });
-		const fetch = vi.fn()
-			.mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'access-two', refresh_token: 'refresh-two', expires_in: 900 }), { status: 200 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify({ data: { sessionId: 'session-two', principal: { id: 'user-one' } } }), { status: 200 }));
-		vi.stubGlobal('fetch', fetch);
-
-		const session = await loadApiBackedWebSession(test.value as any);
-
-		expect(fetch.mock.calls.map(([url]) => String(url))).toEqual(['https://api.test/oauth/token', 'https://api.test/v1/me']);
-		expect(test.written.get(API_SESSION_COOKIE)).toBe('access-two');
-		expect(test.written.get(API_REFRESH_COOKIE)).toBe('refresh-two');
-		expect(session).toMatchObject({ id: 'session-two', userId: 'user-one' });
-	});
-
-	it('clears both credentials when a missing-access refresh is rejected', async () => {
-		const test = context({ [API_REFRESH_COOKIE]: 'replayed-refresh' });
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 })));
-
-		expect(await loadApiBackedWebSession(test.value as any)).toBeNull();
-		expect(test.deleted).toEqual([API_SESSION_COOKIE, API_REFRESH_COOKIE]);
-	});
+describe('Admin opaque Identity session', () => {
+  it('obtains API authority server-side without serializing token material', async () => {
+    const request = context(), fetch = vi.fn().mockResolvedValue(Response.json({ data: { principal: { id: 'preserved' } } }));
+    vi.stubGlobal('fetch', fetch);
+    const session = await loadApiBackedWebSession(request);
+    expect(session?.userId).toBe('preserved');
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://api.test/v1/me');
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ credentials: 'omit', redirect: 'error', headers: { authorization: 'Bearer server-only-token' } });
+    expect(bridge.set).toHaveBeenCalledWith(request, credential);
+    expect(JSON.stringify({ session, locals: request.locals })).not.toContain('server-only-token');
+  });
+  it('does not accept retired token cookies', async () => {
+    expect(await loadApiBackedWebSession(context('ts_market_api_access=old; ts_market_api_refresh=old'))).toBeNull();
+    expect(bridge.session).not.toHaveBeenCalled();
+  });
+  it('rejects changed local principal mappings without installing a credential', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ data: { principal: { id: 'different' } } })));
+    await expect(loadApiBackedWebSession(context())).rejects.toThrow('does not match');
+    expect(bridge.set).not.toHaveBeenCalled();
+  });
+  it('treats removed sessions as signed out without local refresh retries', async () => {
+    bridge.session.mockResolvedValue(null);
+    expect(await loadApiBackedWebSession(context())).toBeNull();
+    expect(bridge.set).not.toHaveBeenCalled();
+  });
 });

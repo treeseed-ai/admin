@@ -39,14 +39,13 @@ if (token && Astro.request.method === 'POST') {
 <AuthShell title="Confirm Email | TreeSeed" description="Confirm your email to continue." appearance={appearance}>
 	<AuthCard
 		title={confirmed ? 'Email confirmed' : error ? 'Email confirmation failed' : 'Confirm your email'}
-		description={confirmed ? 'Your email is confirmed. Sign in to continue.' : error ? 'The confirmation link is invalid or expired.' : 'Activate this email address once. This link cannot be reused.'}
+		description={confirmed ? 'Your application contact email is confirmed.' : error ? 'The confirmation link is invalid or expired.' : 'Activate this email address once. This link cannot be reused.'}
 		error={error}
 		appearance={appearance}
 	>
 		{!confirmed && !error ? <form method="POST"><input type="hidden" name="csrfToken" value={csrfToken} /><FormActions><Button type="submit">Confirm email</Button></FormActions></form> : null}
 		{confirmed ? <p><a class="ts-button" href={`/auth/sign-in?verified=1&returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a></p> : null}
 		<Fragment slot="sidebarLinks">
-			<a href={`/auth/register?returnTo=${encodeURIComponent(returnTo)}`}>Create account</a>
 			<a href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}>Sign in</a>
 		</Fragment>
 	</AuthCard>
