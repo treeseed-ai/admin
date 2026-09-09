@@ -31,6 +31,9 @@ jobs:
       - name: Verify package
         run: npm run verify:direct
 
+      - name: Verify independent Cloudflare application
+        run: npm run build:pages
+
       - name: Pack verified artifact
         run: mkdir -p artifacts && npm pack --json --ignore-scripts --pack-destination artifacts
 
