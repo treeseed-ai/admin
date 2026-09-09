@@ -36,12 +36,10 @@ export function runTeamUiContractsVerifier() {
 			'CONTROL_PLANE_OPERATIONS.teams.memberRemovalBlockers', 'CONTROL_PLANE_OPERATIONS.teams.transferOwnership']],
 	]);
 	const identityDiagnostics = verifyRequirements([
-		['dist/pages/auth/authorize.astro', ['oauthProtocolRequest', 'value="approve"', 'value="deny"', 'requireCsrf']],
-		['dist/pages/auth/device/approve.astro', ['api.approveDevice', 'requireCsrf', 'Approve login']],
+		['dist/pages/auth/sign-in.js', ['applicationSession', '.login(']],
+		['dist/pages/auth/callback.js', ['applicationSession', '.callback(']],
 		['dist/pages/auth/confirm-email.astro', ['api.confirmEmail', 'requireCsrf', 'Sign in']],
-		['dist/pages/auth/register.astro', ['submitMarketEmailAuthFlow', 'confirmationRequired', 'RegistrationForm']],
-		['dist/pages/auth/forgot-password.astro', ['api.requestPasswordReset', 'data-ts-submit="enhanced"']],
-		['dist/pages/auth/logout.js', ['/oauth/revoke', 'clearApiAccessTokenCookie', 'clearApiRefreshTokenCookie']],
+		['dist/pages/auth/logout.js', ['applicationSession', 'requireCsrf', 'getSetCookie']],
 		['dist/pages/app/account/index.astro', ['loadAccountFrame', 'AccountIdentitySettings']],
 		['dist/pages/app/account/appearance.astro', ['handleAppearanceRequest', 'loadAccountFrame']],
 		['dist/pages/app/account/notifications.astro', ['handleNotificationRequest', 'loadAccountFrame']],

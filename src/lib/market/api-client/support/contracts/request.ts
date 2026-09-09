@@ -1,10 +1,9 @@
 import type { APIContext } from 'astro';
 import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/site-contracts/catalog';
-import { getSiteAuthConfig } from "../../../../auth/configuration/config";
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 import type { AstroLike, ApiClientFacade } from '../../../api-client.ts';
 import { controlPlaneOperation, type ControlPlaneOperationBinding, type ControlPlaneOperationBody, type ControlPlaneOperationOutput, type ControlPlaneOperationPath, type ControlPlaneOperationQuery } from '@treeseed/sdk/operator-contracts';
-import { API_SESSION_COOKIE, getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, encodeAssertionPayload, signAssertionPayload, createTrustedWebUserAssertion, apiServiceHeaders, apiAccessTokenFromCookies, setApiAccessTokenCookie, clearApiAccessTokenCookie, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../api-client.ts';
+import { getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../api-client.ts';
 export async function requestMethod<T = unknown>(this: ApiClientFacade, method: string, path: string, options: {
     body?: unknown;
     headers?: HeadersInit;
@@ -13,13 +12,18 @@ export async function requestMethod<T = unknown>(this: ApiClientFacade, method: 
     signal?: AbortSignal;
 } = {}): Promise<T> {
     const headers = this.headers(options.body !== undefined);
-    new Headers(options.headers).forEach((value, name) => headers.set(name, value));
+    new Headers(options.headers).forEach((value, name) => {
+        if (['authorization', 'cookie', 'host', 'x-treeseed-user-assertion'].includes(name) || name.startsWith('x-treeseed-service-'))
+            throw new Error('API credentials cannot be supplied by operation headers.');
+        headers.set(name, value);
+    });
     if (options.idempotencyKey)
         headers.set('idempotency-key', options.idempotencyKey);
     if (options.ifMatch)
         headers.set('if-match', options.ifMatch);
     const response = await fetch(this.url(path), {
         method,
+        redirect: 'error', credentials: 'omit',
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: options.signal,

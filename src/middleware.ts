@@ -1,12 +1,9 @@
 import { defineMiddleware } from 'astro:middleware';
 import { resolveEditorialPreview } from '@treeseed/core/middleware/editorial-preview';
-import { getSiteAuthConfig, localAuthCanonicalRedirectUrl } from './lib/auth/configuration/config';
-import { clearApiAccessTokenCookie, clearApiRefreshTokenCookie } from './lib/market/api-client';
 import { loadApiBackedWebSession } from './lib/auth/session-refresh';
 import { ensureLocalCloudflareRuntime } from './lib/runtime/local-cloudflare';
 import { authenticatedAuthRedirect } from './lib/auth/support/access-policy';
 
-const DEV_RESET_COOKIE = 'ts_market_dev_reset';
 const PUBLIC_ROUTE_PREFIXES = [
 	'/auth/',
 	'/u/',
@@ -46,17 +43,6 @@ const PUBLIC_FILE_EXTENSIONS = [
 	'.xml',
 ];
 
-function runtimeEnv(context: any) {
-	return context.locals?.runtime?.env as Record<string, unknown> | undefined;
-}
-
-function envValue(context: any, name: string) {
-	const runtimeValue = runtimeEnv(context)?.[name];
-	if (typeof runtimeValue === 'string' && runtimeValue.trim()) return runtimeValue.trim();
-	const processValue = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[name];
-	return typeof processValue === 'string' && processValue.trim() ? processValue.trim() : '';
-}
-
 function isPublicRoute(pathname: string) {
 	if (pathname === '/app' || pathname.startsWith('/app/')) return false;
 	if (pathname === '/' || pathname === '/favicon.svg' || pathname === '/logo.svg' || pathname === '/robots.txt') return true;
@@ -84,41 +70,13 @@ function authRedirectFor(context: any) {
 	return context.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`, 302);
 }
 
-function applyLocalDevResetCookieBoundary(context: any) {
-	const resetId = envValue(context, 'TREESEED_DEV_RESET_ID');
-	if (!resetId) return { changed: false, clearedAuth: false };
-	const existingResetId = context.cookies.get(DEV_RESET_COOKIE)?.value;
-	if (existingResetId === resetId) return { changed: false, clearedAuth: false };
-	const clearedAuth = Boolean(existingResetId);
-	if (clearedAuth) {
-		clearApiAccessTokenCookie(context);
-		clearApiRefreshTokenCookie(context);
-	}
-	context.cookies.set(DEV_RESET_COOKIE, resetId, {
-		httpOnly: true,
-		path: '/',
-		sameSite: 'lax',
-		secure: context.url.protocol === 'https:',
-		maxAge: 30 * 24 * 60 * 60,
-	});
-	return { changed: true, clearedAuth };
-}
-
 export const onRequest = defineMiddleware(async (context, next) => {
 	await ensureLocalCloudflareRuntime(context.locals);
-	const config = getSiteAuthConfig(context);
-	const resetCookieBoundary = applyLocalDevResetCookieBoundary(context);
-	const canonicalLocalUrl = localAuthCanonicalRedirectUrl(context.url, config.siteBaseUrl);
-	if (canonicalLocalUrl && ['GET', 'HEAD'].includes(context.request.method.toUpperCase())) {
-		const response = context.redirect(canonicalLocalUrl.toString(), 308);
-		if (resetCookieBoundary.changed) {
-			for (const cookie of context.cookies.headers()) {
-				response.headers.append('set-cookie', cookie);
-			}
-		}
-		return response;
-	}
-	const webSession = resetCookieBoundary.clearedAuth ? null : await loadApiBackedWebSession(context);
+	// A fresh callback must not depend on an old or revoked application session.
+	// Sign-in also remains reachable when a prior session cannot be refreshed.
+	let webSession;
+	try { webSession = ['/auth/sign-in', '/auth/callback'].includes(context.url.pathname) ? null : await loadApiBackedWebSession(context); }
+	catch { return new Response('Account access is temporarily unavailable. Please try again.', { status: 503, headers: { 'cache-control': 'no-store' } }); }
 	context.locals.auth = webSession
 		? {
 			session: webSession,
@@ -129,10 +87,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	if (authRedirect) return authRedirect;
 	resolveEditorialPreview(context);
 	const response = await next();
-	if (resetCookieBoundary.changed) {
-		for (const cookie of context.cookies.headers()) {
-			response.headers.append('set-cookie', cookie);
-		}
-	}
 	return response;
 });

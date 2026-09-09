@@ -3,10 +3,9 @@ import { NOTIFICATION_CONTENT_CAPABILITIES, normalizeNotificationPreferences, ty
 import { validateGuidedThemePalette } from '@treeseed/ui/theme';
 import { formSubmissionResponse, type FormSubmissionResponse } from '@treeseed/ui/forms';
 import { isValidTimeZone } from '@treeseed/ui/timestamps';
-import { passwordMeetsPolicy, passwordPolicyMessage } from '../lib/auth/accounts/password-policy';
 import { ensureCsrfToken, requireCsrf } from '../lib/auth/support/csrf';
 import { ACCOUNT_SECTIONS } from '../lib/accounts/navigation';
-import { clearApiAccessTokenCookie, createApiFacade } from '../lib/market/api-client';
+import { createApiFacade } from '../lib/market/api-client';
 import { loadAppContext } from './app-access';
 
 export { ACCOUNT_SECTIONS } from '../lib/accounts/navigation';
@@ -66,37 +65,21 @@ export async function handleIdentityRequest(context: APIContext, api: ReturnType
 		else if (intent === 'resend-email') await api.resendAccountEmail(String(form.get('emailId') ?? ''));
 		else if (intent === 'primary-email') await api.setPrimaryAccountEmail(String(form.get('emailId') ?? ''), expectedRevision(form));
 		else if (intent === 'delete-email') await api.deleteAccountEmail(String(form.get('emailId') ?? ''), expectedRevision(form));
-		else if (intent === 'password') {
-			const password = String(form.get('password') ?? '');
-			const confirmPassword = String(form.get('confirmPassword') ?? '');
-			if (password !== confirmPassword) throw new Error('Passwords do not match.');
-			if (!passwordMeetsPolicy(password)) throw new Error(passwordPolicyMessage());
-			await api.updateAccountPassword({ currentPassword: String(form.get('currentPassword') ?? ''), password, reauthenticationGrantId: String(form.get('reauthenticationGrantId') ?? '') || undefined });
-		}
-		else if (intent === 'unlink-provider') await api.unlinkAccountProvider(String(form.get('identityId') ?? ''));
 		else throw new Error('Unknown account action.');
 		return respond(context, '/app/account', {
 			ok: true,
-			code: intent === 'password' ? 'password_updated' : 'account_updated',
+			code: 'account_updated',
 			message: intent === 'profile'
 				? 'Identity saved.'
 				: intent === 'time-zone'
 					? 'Time zone saved.'
-					: intent === 'password'
-						? 'Password updated.'
 						: intent === 'add-email' || intent === 'resend-email'
 							? 'Verification email sent.'
 							: 'Account updated.',
 		});
 	} catch (error) {
 		const message = errorMessage(error);
-		const fieldErrors: Record<string, string> | undefined = intent === 'password'
-			? message === 'Passwords do not match.'
-				? { confirmPassword: message }
-				: /current password|reauthentication/iu.test(message)
-					? { currentPassword: message }
-					: { password: message }
-			: intent === 'add-email'
+		const fieldErrors: Record<string, string> | undefined = intent === 'add-email'
 				? { email: message }
 				: intent === 'time-zone'
 					? { timeZone: message }
@@ -165,7 +148,7 @@ export async function handleDeletionRequest(context: APIContext, api: ReturnType
 	try {
 		requireCsrf(context, form.get('csrfToken'));
 		await api.deleteCurrentAccount({ confirmation: String(form.get('confirmation') ?? ''), currentPassword: String(form.get('currentPassword') ?? ''), reauthenticationGrantId: String(form.get('reauthenticationGrantId') ?? '') || undefined }, expectedRevision(form));
-		clearApiAccessTokenCookie(context);
+		context.cookies.delete('__Host-treeseed-admin', { path: '/', secure: true });
 		return respond(context, '/app/account/delete', { ok: true, code: 'account_deleted', message: 'Account deleted.', redirect: '/auth/sign-in?deleted=1' });
 	} catch (error) { return respond(context, '/app/account/delete', failure(error)); }
 }

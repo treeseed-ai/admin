@@ -5,7 +5,7 @@ import UsernameClaimForm from '@treeseed/ui/components/astro/auth/UsernameClaimF
 import { resolveAuthenticatedThemePreference } from '../../lib/auth/accounts/appearance';
 import { normalizeReturnTo } from '../../lib/auth/support/flow';
 import { ensureCsrfToken, requireCsrf } from '../../lib/auth/support/csrf';
-import { createApiFacade, setApiAccessTokenCookie } from '../../lib/market/api-client';
+import { createApiFacade } from '../../lib/market/api-client';
 import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
 export const prerender = false;
@@ -22,8 +22,7 @@ if (Astro.request.method === 'POST') {
 	value = String(form.get('username') ?? '');
 	try {
 		requireCsrf(Astro, form.get('csrfToken'));
-		const result = await api.claimUsername(value, String(form.get('expectedUpdatedAt') ?? ''));
-		if (result.accessToken) setApiAccessTokenCookie(Astro, result.accessToken, Number(result.expiresInSeconds ?? 900));
+		await api.claimUsername(value, String(form.get('expectedUpdatedAt') ?? ''));
 		return pageFormResponse(Astro, { ok: true, code: 'username_claimed', message: 'Username saved.', redirect: returnTo }, Astro.url.pathname + Astro.url.search);
 	} catch (caught) {
 		return pageFormFailure(Astro, 'Please correct the highlighted fields.', Astro.url.pathname + Astro.url.search, {

@@ -1,10 +1,8 @@
 import type { APIContext } from 'astro';
 import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/site-contracts/catalog';
-import { getSiteAuthConfig } from '../auth/configuration/config';
+import { identityEndpointSchema } from '@treeseed/sdk/identity';
 import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
 export type AstroLike = Pick<APIContext, 'locals' | 'cookies' | 'url' | 'request'>;
-export const API_SESSION_COOKIE = 'ts_market_api_access';
-export const API_REFRESH_COOKIE = 'ts_market_api_refresh';
 export function getNodeCrypto(): {
     createHmac?: (algorithm: string, secret: string) => {
         update: (value: string) => {
@@ -49,89 +47,7 @@ export function envValue(locals: App.Locals | Record<string, unknown> | null | u
     return typeof processValue === 'string' && processValue.trim() ? processValue.trim() : '';
 }
 export function resolveApiBaseUrl(locals?: App.Locals | Record<string, unknown> | null) {
-    return (envValue(locals, 'TREESEED_API_BASE_URL')
-        || envValue(locals, 'TREESEED_MARKET_API_BASE_URL')
-        || 'https://api.treeseed.dev').replace(/\/+$/u, '');
-}
-export function encodeAssertionPayload(payload: Record<string, unknown>) {
-    return Buffer.from(JSON.stringify(payload)).toString('base64url');
-}
-export function signAssertionPayload(payload: string, secret: string) {
-    const nodeCrypto = getNodeCrypto();
-    if (!nodeCrypto?.createHmac) {
-        throw new Error('Trusted web user assertions require an HMAC-capable runtime.');
-    }
-    return nodeCrypto.createHmac('sha256', secret).update(payload).digest('base64url');
-}
-export function createTrustedWebUserAssertion(context: Pick<APIContext, 'locals' | 'url'>) {
-    const principal = context.locals.auth?.principal;
-    if (!principal?.id)
-        return null;
-    const config = getSiteAuthConfig(context);
-    const session = context.locals.auth?.session;
-    const payload = encodeAssertionPayload({
-        userId: principal.id,
-        sessionId: session?.id ?? principal.metadata?.sessionId ?? null,
-        identityId: session?.identityId ?? principal.metadata?.identityId ?? null,
-        authTime: session?.authenticatedAt ?? principal.metadata?.authTime ?? new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-        nonce: randomId(),
-    });
-    return `${payload}.${signAssertionPayload(payload, config.apiAssertionSecret)}`;
-}
-export function apiServiceHeaders(context: Pick<APIContext, 'locals' | 'url'>, options: {
-    forceService?: boolean;
-    skipUserAssertion?: boolean;
-} = {}) {
-    const config = getSiteAuthConfig(context);
-    const headers = new Headers({
-        accept: 'application/json',
-        [REMOTE_CONTRACT_HEADER]: String(REMOTE_CONTRACT_VERSION),
-    });
-    const assertion = options.skipUserAssertion ? null : createTrustedWebUserAssertion(context);
-    if (assertion || options.forceService) {
-        headers.set('x-treeseed-service-id', config.apiServiceId);
-        headers.set('x-treeseed-service-secret', config.apiServiceSecret);
-    }
-    if (assertion)
-        headers.set('x-treeseed-user-assertion', assertion);
-    return headers;
-}
-export function apiAccessTokenFromCookies(context: Pick<APIContext, 'cookies'>) {
-    return context.cookies.get(API_SESSION_COOKIE)?.value ?? null;
-}
-export function setApiAccessTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>, token: string, maxAgeSeconds: number) {
-    context.cookies.set(API_SESSION_COOKIE, token, {
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secure: context.url.protocol === 'https:',
-        maxAge: maxAgeSeconds,
-    });
-}
-export function apiRefreshTokenFromCookies(context: Pick<APIContext, 'cookies'>) {
-    return context.cookies.get(API_REFRESH_COOKIE)?.value ?? null;
-}
-export function setApiRefreshTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>, token: string) {
-    context.cookies.set(API_REFRESH_COOKIE, token, {
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secure: context.url.protocol === 'https:',
-        maxAge: 30 * 24 * 60 * 60,
-    });
-}
-export function clearApiAccessTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>) {
-    context.cookies.delete(API_SESSION_COOKIE, {
-        path: '/',
-        secure: context.url.protocol === 'https:',
-    });
-}
-export function clearApiRefreshTokenCookie(context: Pick<APIContext, 'cookies' | 'url'>) {
-    context.cookies.delete(API_REFRESH_COOKIE, {
-        path: '/',
-        secure: context.url.protocol === 'https:',
-    });
+    return identityEndpointSchema.parse(envValue(locals, 'TREESEED_API_BASE_URL')).replace(/\/+$/u, '');
 }
 export function isObject(value: unknown): value is Record<string, unknown> {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));

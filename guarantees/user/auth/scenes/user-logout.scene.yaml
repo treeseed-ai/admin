@@ -26,7 +26,7 @@ mode:
   demo: true
   training: true
 target:
-  app: market
+  app: admin
   environment: local
   baseUrl: auto
   browser: chromium
@@ -113,8 +113,8 @@ workflow:
         name: Sign out
         revealWith: { role: button, name: Open team operations }
     expect:
-      urlIncludes: /auth/sign-in
-      text: Sign in
+      urlIncludes: /
+      text: TreeSeed
 chapters: []
 overlays: []
 diagrams: []

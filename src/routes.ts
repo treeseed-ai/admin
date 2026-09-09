@@ -2,14 +2,7 @@ import { defineRoute, validateRouteCapabilities, type RouteCapability, type Site
 
 type CapabilityInput = Partial<RouteCapability> & Pick<RouteCapability, 'id' | 'description'>;
 
-const anonymousAuthPatterns = new Set([
-	'/auth/register',
-	'/auth/check-email',
-	'/auth/sign-in',
-	'/auth/forgot-password',
-	'/auth/reset-password',
-	'/auth/callback/[provider]',
-]);
+const anonymousAuthPatterns = new Set(['/auth/sign-in', '/auth/callback']);
 
 function adminRoute(pattern: string, resourcePath: string, input: CapabilityInput): SiteRouteContribution {
 	const auth = pattern.startsWith('/auth');
@@ -97,27 +90,17 @@ export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapab
 	adminRoute('/app/knowledge', 'pages/app/knowledge/index.astro', { id: 'admin.knowledge.workbench', description: 'Active-team repository-native book authoring, review, linking, and pack workbench.', guarantees: ['guarantee.project.book.create-book.065', 'guarantee.project.book.edit-book.066', 'guarantee.project.book.delete-book.067', 'guarantee.project.book.search-books.068', 'guarantee.project.knowledge.create-book-page.069', 'guarantee.project.book.download-book.070', 'guarantee.project.knowledge.edit-book-page.071', 'guarantee.project.knowledge.delete-book-page.072', 'guarantee.project.library.download-library.073', 'guarantee.project.library.rebuild-library-index.090', 'guarantee.project.knowledge.review-backlinks.091'], knowledgePageIds: ['knowledge.authoring'] }),
 	adminRoute('/app/knowledge/packs/[buildId]/download', 'pages/app/knowledge/packs/[buildId]/download.ts', { id: 'admin.knowledge.pack-download', description: 'Authorized no-store knowledge-pack artifact download.', responseKind: 'data', archetype: 'action', navigation: 'hidden', guarantees: ['guarantee.project.book.download-book.070', 'guarantee.project.library.download-library.073'] }),
 	adminRoute('/app/market', 'pages/app/market/index.astro', { id: 'admin.domain.market', description: 'Bounded active-team catalog and billing domain landing page.', guarantees: ['guarantee.team.team.view-team-overview.015'] }),
-	adminRoute('/auth/register', 'pages/auth/register.astro', { id: 'admin.auth.register', description: 'Credential registration with username/email availability and immutable username disclosure.', guarantees: ['guarantee.user.auth.register-user.001'] }),
-	adminRoute('/auth/check-email', 'pages/auth/check-email.astro', { id: 'admin.auth.check-email', description: 'Hidden verification/reset check-inbox continuation.', archetype: 'message', template: 'MessageTemplate' }),
 	adminRoute('/auth/confirm-email', 'pages/auth/confirm-email.astro', {
 		id: 'admin.auth.confirm-email',
-		description: 'Email-confirmation token result and recovery for registration and signed-in account email management.',
+		description: 'One-time application contact-email verification, not sign-in identity linking.',
 		archetype: 'message',
 		accessPolicy: ['valid one-time confirmation token', 'anonymous or signed-in principal', 'safe return URL'],
 		guarantees: ['guarantee.user.auth.verify-email.002', 'guarantee.user.account.edit-account-settings.006'],
 	}),
-	adminRoute('/auth/sign-in', 'pages/auth/sign-in.astro', { id: 'admin.auth.sign-in', description: 'OAuth and configured-provider sign-in entry.', guarantees: ['guarantee.user.auth.user-login.004'] }),
-	adminRoute('/auth/logout', 'pages/auth/logout.ts', { id: 'admin.auth.logout', description: 'CSRF-safe POST session termination; non-mutating GET redirect.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['GET is non-mutating', 'POST requires signed-in session and double-submit CSRF'], guarantees: ['guarantee.user.auth.user-logout.005'] }),
-	adminRoute('/auth/forgot-password', 'pages/auth/forgot-password.astro', { id: 'admin.auth.forgot-password', description: 'Privacy-safe password-reset request.' }),
-	adminRoute('/auth/reset-password', 'pages/auth/reset-password.astro', { id: 'admin.auth.reset-password', description: 'Token-bound password reset.', guarantees: ['guarantee.user.auth.forgot-reset-password.003'] }),
+	adminRoute('/auth/sign-in', 'pages/auth/sign-in.ts', { id: 'admin.auth.sign-in', description: 'Redirect to the configured Identity provider.', responseKind: 'redirect', archetype: 'redirect', knowledgePageIds: ['identity.sign-in'], guarantees: ['guarantee.user.auth.user-login.004'] }),
+	adminRoute('/auth/logout', 'pages/auth/logout.ts', { id: 'admin.auth.logout', description: 'CSRF-safe POST application session termination.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['POST requires signed-in session and double-submit CSRF'], guarantees: ['guarantee.user.auth.user-logout.005'] }),
 	adminRoute('/auth/username', 'pages/auth/username.astro', { id: 'admin.auth.username-claim', description: 'Permanent username claim for first-time provider users.', accessPolicy: ['restricted provider-onboarding session', 'username not already assigned', 'safe return URL'] }),
-	adminRoute('/auth/authorize', 'pages/auth/authorize.astro', {
-		id: 'admin.auth.authorize',
-		description: 'OAuth client and scope review with explicit approval or denial.',
-		accessPolicy: ['valid authorization request', 'signed-in principal or credential authentication', 'exact registered redirect URI'],
-	}),
-	adminRoute('/auth/device/approve', 'pages/auth/device/approve.astro', { id: 'admin.auth.device-approve', description: 'Authenticated CLI/device authorization approval.', accessPolicy: ['signed-in principal', 'valid pending device request'] }),
-	adminRoute('/auth/callback/[provider]', 'pages/auth/callback/[provider].ts', { id: 'admin.auth.provider-callback', description: 'Hidden configured-provider callback with one-time state, nonce, PKCE, and safe redirect.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['anonymous principal only', 'configured provider', 'one-time database state', 'nonce and PKCE validation', 'safe return URL'] }),
+	adminRoute('/auth/callback', 'pages/auth/callback.ts', { id: 'admin.auth.provider-callback', description: 'Hidden configured-provider callback with one-time state, nonce, PKCE, and safe redirect.', responseKind: 'redirect', archetype: 'redirect', accessPolicy: ['anonymous principal only', 'configured provider', 'one-time database state', 'nonce and PKCE validation', 'safe return URL'] }),
 	adminRoute('/u/[username]', 'pages/u/[username].astro', { id: 'admin.profile.user', description: 'Public identity-only user profile.', guarantees: ['guarantee.user.account.view-user-profile.010'] }),
 	adminRoute('/t/[name]', 'pages/t/[name].astro', { id: 'admin.profile.team', description: 'Public identity-only team profile.', guarantees: ['guarantee.team.team.view-public-team-profile.021'] }),
 	adminRoute('/team-invites/[token]/accept', 'pages/team-invites/[token]/accept.astro', { id: 'admin.team.invite-accept', description: 'Idempotent invitation acceptance and safe destination.', guarantees: ['guarantee.team.membership.accept-team-invitation.018'], knowledgePageIds: ['team.invitation'] }),

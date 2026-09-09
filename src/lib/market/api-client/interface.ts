@@ -12,7 +12,6 @@ declare module "../api-client.ts" {
     approveCommerceCapacityInquiryForScoping: typeof import("./commerce/capacity/lifecycle/approve-commerce-capacity-inquiry-for-scoping.ts").approveCommerceCapacityInquiryForScopingMethod;
     approveCommerceCapacityListing: typeof import("./commerce/capacity/lifecycle/approve-commerce-capacity-listing.ts").approveCommerceCapacityListingMethod;
     approveCommerceOwnershipTransfer: typeof import("./commerce/ownership/lifecycle/approve-commerce-ownership-transfer.ts").approveCommerceOwnershipTransferMethod;
-    approveDevice: typeof import("./runtime/lifecycle/approve-device.ts").approveDeviceMethod;
     archiveCommerceCapacityListing: typeof import("./commerce/capacity/retirement/archive-commerce-capacity-listing.ts").archiveCommerceCapacityListingMethod;
     backfillCommonsParticipants: typeof import("./governance/commons/contracts/backfill-commons-participants.ts").backfillCommonsParticipantsMethod;
     buyerApproveCommerceServiceQuote: typeof import("./commerce/services/contracts/buyer-approve-commerce-service-quote.ts").buyerApproveCommerceServiceQuoteMethod;
@@ -21,7 +20,6 @@ declare module "../api-client.ts" {
     cancelCommerceServiceContract: typeof import("./commerce/services/retirement/cancel-commerce-service-contract.ts").cancelCommerceServiceContractMethod;
     cancelCommerceServiceRequest: typeof import("./commerce/services/retirement/cancel-commerce-service-request.ts").cancelCommerceServiceRequestMethod;
     claimUsername: typeof import("./accounts/lifecycle/claim-username.ts").claimUsernameMethod;
-    completePasswordReset: typeof import("./accounts/lifecycle/complete-password-reset.ts").completePasswordResetMethod;
     confirmEmail: typeof import("./accounts/lifecycle/confirm-email.ts").confirmEmailMethod;
     createCommerceCapacityListingInquiry: typeof import("./commerce/capacity/creation/create-commerce-capacity-listing-inquiry.ts").createCommerceCapacityListingInquiryMethod;
     createCommerceCapacityListing: typeof import("./commerce/capacity/creation/create-commerce-capacity-listing.ts").createCommerceCapacityListingMethod;
@@ -141,7 +139,6 @@ declare module "../api-client.ts" {
     rejectCommerceOwnershipTransfer: typeof import("./commerce/ownership/lifecycle/reject-commerce-ownership-transfer.ts").rejectCommerceOwnershipTransferMethod;
     rejectCommerceServiceQuote: typeof import("./commerce/services/lifecycle/reject-commerce-service-quote.ts").rejectCommerceServiceQuoteMethod;
     requestCommerceVendor: typeof import("./commerce/vendors/creation/request-commerce-vendor.ts").requestCommerceVendorMethod;
-    requestPasswordReset: typeof import("./accounts/creation/request-password-reset.ts").requestPasswordResetMethod;
     request: typeof import("./support/contracts/request.ts").requestMethod;
     resendAccountEmail: typeof import("./accounts/contracts/resend-account-email.ts").resendAccountEmailMethod;
     reviewCommerceCapacityInquiry: typeof import("./commerce/capacity/lifecycle/review-commerce-capacity-inquiry.ts").reviewCommerceCapacityInquiryMethod;
@@ -157,8 +154,6 @@ declare module "../api-client.ts" {
     submitCommerceOwnershipTransfer: typeof import("./commerce/ownership/creation/submit-commerce-ownership-transfer.ts").submitCommerceOwnershipTransferMethod;
     submitCommerceServiceQuote: typeof import("./commerce/services/creation/submit-commerce-service-quote.ts").submitCommerceServiceQuoteMethod;
     suspendCommerceCapacityListing: typeof import("./commerce/capacity/retirement/suspend-commerce-capacity-listing.ts").suspendCommerceCapacityListingMethod;
-    unlinkAccountProvider: typeof import("./capacity/providers/contracts/unlink-account-provider.ts").unlinkAccountProviderMethod;
-    updateAccountPassword: typeof import("./accounts/updates/update-account-password.ts").updateAccountPasswordMethod;
     updateAccountPreferences: typeof import("./accounts/updates/update-account-preferences.ts").updateAccountPreferencesMethod;
     updateAccountProfile: typeof import("./accounts/updates/update-account-profile.ts").updateAccountProfileMethod;
     updateCommerceCapacityListing: typeof import("./commerce/capacity/updates/update-commerce-capacity-listing.ts").updateCommerceCapacityListingMethod;

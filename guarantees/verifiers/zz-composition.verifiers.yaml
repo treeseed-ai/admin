@@ -135,7 +135,7 @@ verifiers:
     artifactId: "@treeseed/admin/team-ui-contracts"
     entrypoint: dist/standards/verifiers/team-ui-contracts.js
     caseId: admin.identity-account.ui-contracts
-    description: The packed Admin artifact retains genuine OAuth consent, device approval, email confirmation, registration, password reset, logout, and account management routes.
+    description: The packed Admin artifact retains shared Identity redirects and callback, contact-email confirmation, CSRF-safe app logout, and delegated account management without local password forms.
   sdk.team.ui-evidence-trust:
     kind: artifact
     ownerPackage: "@treeseed/sdk"
