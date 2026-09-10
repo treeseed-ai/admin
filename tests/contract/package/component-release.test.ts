@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { componentReleaseSchema, deploymentDigest } from '@treeseed/sdk/deployment';
+import { parse } from 'yaml';
 
 it('publishes a digest of the emitted schema-normalized component runtime', () => {
   const root = mkdtempSync(resolve(tmpdir(), 'treeseed-component-proof-'));
@@ -25,5 +26,12 @@ it('publishes a digest of the emitted schema-normalized component runtime', () =
     expect(parsed.runtimeDigest).toBe(deploymentDigest(parsed.runtime));
     expect(componentReleaseSchema.parse(JSON.parse(JSON.stringify(parsed)))).toEqual(parsed);
     expect(parsed.runtime.configuration).toBeDefined();
+    expect(parsed.runtime.configuration.secretEnvironment).toContainEqual({ name: 'TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY', required: true });
+    const compose = parse(readFileSync(resolve(root, 'release-assets/compose.yml'), 'utf8'));
+    expect(compose.services.admin.env_file).toBe('/etc/treeseed/components/admin/environment');
+    expect(compose.services.admin.environment.NODE_EXTRA_CA_CERTS).toBe('/run/treeseed/identity/ca.crt');
+    expect(compose.services.admin.environment.TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY).toBeUndefined();
+    expect(compose.services.admin.volumes).toContainEqual({ type: 'bind', source: '/etc/treeseed/cli/localhost-ca.crt',
+      target: '/run/treeseed/identity/ca.crt', read_only: true });
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
