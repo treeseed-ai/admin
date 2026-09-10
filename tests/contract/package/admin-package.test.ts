@@ -358,7 +358,7 @@ describe('@treeseed/admin identity and team surface', () => {
 		expect(publish).toContain("test -f .treeseed/app-dist/_routes.json");
 		expect(publish).toContain("environment: ${{ contains(github.ref_name, '-') && 'staging' || 'production' }}");
 		expect(publish).toContain('candidate_branch=staging; else candidate_branch=main');
-		expect(publish).toContain("paths-ignore: ['.github/workflows/publish.yml']");
+		expect(publish).toContain("paths-ignore: ['.github/workflows/publish.yml', '.github/workflows/component-revision.yml', 'scripts/release/reissue-component.ts', 'tests/contract/package/component-revision.test.ts', 'tests/contract/package/admin-package.test.ts']");
 		expect(custody).toContain("name === 'admin-pages.tar.gz' ? 'admin-pages'");
 	});
 

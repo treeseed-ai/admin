@@ -62,4 +62,9 @@ jobs:
           REVISION: ${{ inputs.revision }}
         run: |
           asset="component-release-r${REVISION}.json"
-          gh release upload "$RELEASE" "revised/$asset"
+          mkdir -p existing
+          if gh release download "$RELEASE" --pattern "$asset" --dir existing; then
+            cmp "existing/$asset" "revised/$asset"
+          else
+            gh release upload "$RELEASE" "revised/$asset"
+          fi
