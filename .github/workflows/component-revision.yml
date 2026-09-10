@@ -1,0 +1,70 @@
+name: Publish Admin metadata-only component revision
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Existing immutable Admin RC release
+        required: true
+      manifest_sha256:
+        description: Exact existing component-release.json SHA256 from Platform lock
+        required: true
+      revision:
+        description: Next component packaging revision
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: admin-component-revision-${{ inputs.release }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    environment: staging
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { fetch-depth: 0 }
+      - name: Require protected current tooling and bounded selection
+        env:
+          RELEASE: ${{ inputs.release }}
+          REVISION: ${{ inputs.revision }}
+          DIGEST: ${{ inputs.manifest_sha256 }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/staging
+          git fetch origin staging
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/staging)"
+          [[ "$RELEASE" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]
+          [[ "$REVISION" =~ ^[1-9][0-9]*$ ]]
+          [[ "$DIGEST" =~ ^[a-f0-9]{64}$ ]]
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24 }
+      - run: npm ci --ignore-scripts --workspaces=false --no-audit --no-fund
+      - run: npx vitest run tests/contract/package/component-release.test.ts tests/contract/package/component-revision.test.ts
+      - name: Verify original bytes and preserve image/source custody
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE: ${{ inputs.release }}
+          REVISION: ${{ inputs.revision }}
+          DIGEST: ${{ inputs.manifest_sha256 }}
+        run: |
+          mkdir -p original revised
+          gh release download "$RELEASE" --pattern component-release.json --dir original
+          node --import tsx scripts/release/reissue-component.ts original/component-release.json "$DIGEST" "$REVISION" "revised/component-release-r${REVISION}.json"
+          test "$(jq -r .applicationVersion original/component-release.json)" = "$RELEASE"
+          test "$(jq -r .source.commit original/component-release.json)" = "$(git rev-parse "refs/tags/$RELEASE^{commit}")"
+          git diff --exit-code
+          sha256sum revised/* > revised/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: "admin-component-revision-${{ inputs.release }}-${{ inputs.revision }}", path: revised/, if-no-files-found: error, retention-days: 14 }
+      - name: Add immutable revision without replacing any existing asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE: ${{ inputs.release }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          asset="component-release-r${REVISION}.json"
+          mkdir -p existing
+          if gh release download "$RELEASE" --pattern "$asset" --dir existing; then
+            cmp "existing/$asset" "revised/$asset"
+          else
+            gh release upload "$RELEASE" "revised/$asset"
+          fi
