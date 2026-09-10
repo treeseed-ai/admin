@@ -9,3 +9,5 @@ const publicLogo = resolve('public/logo.svg');
 
 mkdirSync(dirname(publicLogo), { recursive: true });
 copyFileSync(canonicalLogo, publicLogo);
+// ShellFrame advertises this exact URL on both public and authenticated pages.
+copyFileSync(canonicalLogo, resolve('public/favicon.svg'));
