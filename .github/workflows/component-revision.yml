@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p original revised
           gh release download "$RELEASE" --pattern component-release.json --dir original
-          node --import tsx scripts/reissue-component.ts original/component-release.json "$DIGEST" "$REVISION" "revised/component-release-r${REVISION}.json"
+          node --import tsx scripts/release/reissue-component.ts original/component-release.json "$DIGEST" "$REVISION" "revised/component-release-r${REVISION}.json"
           test "$(jq -r .applicationVersion original/component-release.json)" = "$RELEASE"
           test "$(jq -r .source.commit original/component-release.json)" = "$(git rev-parse "refs/tags/$RELEASE^{commit}")"
           git diff --exit-code

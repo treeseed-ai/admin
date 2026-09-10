@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { componentReleaseSchema, deploymentDigest } from '@treeseed/sdk/deployment';
 import { expect, it } from 'vitest';
-import { reissueAdminComponent } from '../../../scripts/reissue-component.ts';
+import { reissueAdminComponent } from '../../../scripts/release/reissue-component.ts';
 
 function fixture() {
   const digest = `sha256:${'a'.repeat(64)}`;
