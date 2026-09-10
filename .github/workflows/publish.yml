@@ -3,7 +3,7 @@ on:
   push:
     branches: [staging, main]
     tags: ["*.*.*"]
-    paths-ignore: ['.github/workflows/publish.yml']
+    paths-ignore: ['.github/workflows/publish.yml', '.github/workflows/component-revision.yml', 'scripts/release/reissue-component.ts', 'tests/contract/package/component-revision.test.ts', 'tests/contract/package/admin-package.test.ts']
 jobs:
   candidate-package:
     if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'
