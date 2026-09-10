@@ -20,6 +20,12 @@ const runtime = packageRuntimeSchema.parse({
 		visibility: 'host' as const, defaultAlias: 'admin.treeseed.localhost', aliasOverride: false, tls: 'edge' as const,
 		authentication: 'application' as const, healthGate: { protocol: 'http' as const, path: '/healthz', timeoutSeconds: 120 } }] }],
 	stateVolumes: [], migrations: [], requiredCapabilities: ['docker-compose'],
+	configuration: {
+		environment: ['TREESEED_SITE_URL', 'TREESEED_IDENTITY_ISSUER', 'TREESEED_IDENTITY_ACCOUNT_URL',
+			'TREESEED_IDENTITY_WORKLOAD_CLIENT_ID'].map(name => ({ name, required: true, source: 'configuration' as const })),
+		secretEnvironment: [{ name: 'TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY', required: true }],
+		secretFiles: [], files: [],
+	},
 	dependencies: [{ id: 'api', capability: 'control-plane-api', locality: 'either' as const, optional: false }],
 });
 const tagUrl = `https://hub.docker.com/r/treeseed/admin/tags?name=${encodeURIComponent(release)}`;
