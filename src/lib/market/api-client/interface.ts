@@ -44,7 +44,6 @@ declare module "../api-client.ts" {
     evaluateTeamDeletionBlockers: typeof import("./teams/contracts/evaluate-team-deletion-blockers.ts").evaluateTeamDeletionBlockersMethod;
     fulfillCommerceOrderItemArtifact: typeof import("./commerce/orders/lifecycle/fulfill-commerce-order-item-artifact.ts").fulfillCommerceOrderItemArtifactMethod;
     fulfillCommerceServiceContract: typeof import("./commerce/services/lifecycle/fulfill-commerce-service-contract.ts").fulfillCommerceServiceContractMethod;
-    getCapacityPlan: typeof import("./capacity/planning/queries/get-capacity-plan.ts").getCapacityPlanMethod;
     getCatalogItemBySlug: typeof import("./commerce/catalog/queries/get-catalog-item-by-slug.ts").getCatalogItemBySlugMethod;
     getCommerceCapacityListingForProduct: typeof import("./commerce/capacity/queries/get-commerce-capacity-listing-for-product.ts").getCommerceCapacityListingForProductMethod;
     getCommerceCapacityListingInquiry: typeof import("./commerce/capacity/queries/get-commerce-capacity-listing-inquiry.ts").getCommerceCapacityListingInquiryMethod;
@@ -61,7 +60,6 @@ declare module "../api-client.ts" {
     getCommonsParticipantMe: typeof import("./governance/commons/queries/get-commons-participant-me.ts").getCommonsParticipantMeMethod;
     getCommonsProposal: typeof import("./governance/commons/queries/get-commons-proposal.ts").getCommonsProposalMethod;
     getCommonsSummary: typeof import("./governance/commons/queries/get-commons-summary.ts").getCommonsSummaryMethod;
-    getDecisionPlanningStatus: typeof import("./support/queries/get-decision-planning-status.ts").getDecisionPlanningStatusMethod;
     getProjectAgentsSummary: typeof import("./projects/projects-core/queries/get-project-agents-summary.ts").getProjectAgentsSummaryMethod;
     getProjectByTeamAndSlug: typeof import("./projects/projects-core/queries/get-project-by-team-and-slug.ts").getProjectByTeamAndSlugMethod;
     getProjectCapacityRuntimeDiagnostics: typeof import("./capacity/observability/queries/get-project-capacity-runtime-diagnostics.ts").getProjectCapacityRuntimeDiagnosticsMethod;
@@ -82,9 +80,7 @@ declare module "../api-client.ts" {
     listApprovalRequestsForProject: typeof import("./projects/projects-core/queries/list-approval-requests-for-project.ts").listApprovalRequestsForProjectMethod;
     listApprovalRequestsForTeam: typeof import("./teams/queries/list-approval-requests-for-team.ts").listApprovalRequestsForTeamMethod;
     listAuditEventsForTarget: typeof import("./support/queries/list-audit-events-for-target.ts").listAuditEventsForTargetMethod;
-    listCapacityAllocationSets: typeof import("./capacity/allocations/queries/list-capacity-allocation-sets.ts").listCapacityAllocationSetsMethod;
     listCapacityLedgerEntries: typeof import("./capacity/accounting/queries/list-capacity-ledger-entries.ts").listCapacityLedgerEntriesMethod;
-    listCapacityRoutingDecisionsForProject: typeof import("./capacity/planning/queries/list-capacity-routing-decisions-for-project.ts").listCapacityRoutingDecisionsForProjectMethod;
     listCatalogArtifactVersions: typeof import("./commerce/orders/queries/list-catalog-artifact-versions.ts").listCatalogArtifactVersionsMethod;
     listCatalogItems: typeof import("./commerce/catalog/queries/list-catalog-items.ts").listCatalogItemsMethod;
     listCommerceCapacityListingInquiries: typeof import("./commerce/capacity/queries/list-commerce-capacity-listing-inquiries.ts").listCommerceCapacityListingInquiriesMethod;
@@ -105,8 +101,6 @@ declare module "../api-client.ts" {
     listCommonsParticipants: typeof import("./governance/commons/queries/list-commons-participants.ts").listCommonsParticipantsMethod;
     listCommonsProposals: typeof import("./governance/commons/queries/list-commons-proposals.ts").listCommonsProposalsMethod;
     listCommonsQuestions: typeof import("./governance/commons/queries/list-commons-questions.ts").listCommonsQuestionsMethod;
-    listDecisionCapacityPlans: typeof import("./capacity/planning/queries/list-decision-capacity-plans.ts").listDecisionCapacityPlansMethod;
-    listDecisionExecutionInputs: typeof import("./support/queries/list-decision-execution-inputs.ts").listDecisionExecutionInputsMethod;
     listExecutionRuns: typeof import("./support/queries/list-execution-runs.ts").listExecutionRunsMethod;
     listPersistedTeamInboxItems: typeof import("./teams/queries/list-persisted-team-inbox-items.ts").listPersistedTeamInboxItemsMethod;
     listProjectAgentClasses: typeof import("./projects/agents/queries/list-project-agent-classes.ts").listProjectAgentClassesMethod;

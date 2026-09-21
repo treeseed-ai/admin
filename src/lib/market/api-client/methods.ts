@@ -135,7 +135,6 @@ import { getProjectTreeDxLibraryMethod } from "./projects/knowledge/queries/get-
 import { upsertProjectTreeDxLibraryMethod } from "./projects/knowledge/creation/upsert-project-tree-dx-library.ts";
 import { getProjectRepositoryTopologyMethod } from "./projects/repositories/queries/get-project-repository-topology.ts";
 import { updateProjectRepositoryTopologyMethod } from "./projects/repositories/updates/update-project-repository-topology.ts";
-import { listCapacityAllocationSetsMethod } from "./capacity/allocations/queries/list-capacity-allocation-sets.ts";
 import { listProviderAvailabilitySessionsMethod } from "./capacity/providers/queries/list-provider-availability-sessions.ts";
 import { listProviderAssignmentsMethod } from "./capacity/assignments/queries/list-provider-assignments.ts";
 import { listExecutionRunsMethod } from "./support/queries/list-execution-runs.ts";
@@ -145,16 +144,11 @@ import { listProjectAgentFallbackOutputsMethod } from "./projects/agents/queries
 import { listProjectTreeDxProxyAuditMethod } from "./projects/knowledge/queries/list-project-tree-dx-proxy-audit.ts";
 import { getProjectCapacityRuntimeDiagnosticsMethod } from "./capacity/observability/queries/get-project-capacity-runtime-diagnostics.ts";
 import { getProviderAssignmentExplanationMethod } from "./capacity/assignments/queries/get-provider-assignment-explanation.ts";
-import { getDecisionPlanningStatusMethod } from "./support/queries/get-decision-planning-status.ts";
-import { listDecisionExecutionInputsMethod } from "./support/queries/list-decision-execution-inputs.ts";
-import { listDecisionCapacityPlansMethod } from "./capacity/planning/queries/list-decision-capacity-plans.ts";
-import { getCapacityPlanMethod } from "./capacity/planning/queries/get-capacity-plan.ts";
 import { getWorkdayCapacitySummaryMethod } from "./capacity/workdays/queries/get-workday-capacity-summary.ts";
 import { listWorkdayRunsMethod } from "./capacity/workdays/queries/list-workday-runs.ts";
 import { createWorkdayRunMethod } from "./capacity/workdays/creation/create-workday-run.ts";
 import { getWorkdayRunMethod } from "./capacity/workdays/queries/get-workday-run.ts";
 import { listCapacityLedgerEntriesMethod } from "./capacity/accounting/queries/list-capacity-ledger-entries.ts";
-import { listCapacityRoutingDecisionsForProjectMethod } from "./capacity/planning/queries/list-capacity-routing-decisions-for-project.ts";
 import { listSeedRunsMethod } from "./seeds/queries/list-seed-runs.ts";
 import { listCatalogItemsMethod } from "./commerce/catalog/queries/list-catalog-items.ts";
 import { getCatalogItemBySlugMethod } from "./commerce/catalog/queries/get-catalog-item-by-slug.ts";
@@ -336,7 +330,6 @@ export function installApiClientFacadeMethods(prototype: ApiClientFacade) {
   prototype.getProjectRepositoryTopology = getProjectRepositoryTopologyMethod;
   prototype.updateProjectRepositoryTopology =
     updateProjectRepositoryTopologyMethod;
-  prototype.listCapacityAllocationSets = listCapacityAllocationSetsMethod;
   prototype.listProviderAvailabilitySessions =
     listProviderAvailabilitySessionsMethod;
   prototype.listProviderAssignments = listProviderAssignmentsMethod;
@@ -350,17 +343,11 @@ export function installApiClientFacadeMethods(prototype: ApiClientFacade) {
     getProjectCapacityRuntimeDiagnosticsMethod;
   prototype.getProviderAssignmentExplanation =
     getProviderAssignmentExplanationMethod;
-  prototype.getDecisionPlanningStatus = getDecisionPlanningStatusMethod;
-  prototype.listDecisionExecutionInputs = listDecisionExecutionInputsMethod;
-  prototype.listDecisionCapacityPlans = listDecisionCapacityPlansMethod;
-  prototype.getCapacityPlan = getCapacityPlanMethod;
   prototype.getWorkdayCapacitySummary = getWorkdayCapacitySummaryMethod;
   prototype.listWorkdayRuns = listWorkdayRunsMethod;
   prototype.createWorkdayRun = createWorkdayRunMethod;
   prototype.getWorkdayRun = getWorkdayRunMethod;
   prototype.listCapacityLedgerEntries = listCapacityLedgerEntriesMethod;
-  prototype.listCapacityRoutingDecisionsForProject =
-    listCapacityRoutingDecisionsForProjectMethod;
   prototype.listSeedRuns = listSeedRunsMethod;
   prototype.listCatalogItems = listCatalogItemsMethod;
   prototype.getCatalogItemBySlug = getCatalogItemBySlugMethod;

@@ -81,14 +81,6 @@ export function deriveCommandSituations(snapshot: CommandSnapshot, now = Date.no
 			timestamp: dateValue(item.updatedAt, item.createdAt), href: text(item.href, '/app/projects'), actionLabel: 'Inspect evidence',
 			evidence: 'Persisted operational inbox evidence', inferred: false, priority: 94 }));
 	}
-	for (const decision of snapshot.decisions) {
-		const accepted = ['accepted', 'approved', 'decided'].includes(String(decision.status ?? decision.outcome ?? ''));
-		if (!accepted || decision.capacityPlanId || decision.capacity_plan_id) continue;
-		values.push(situation({ id: `decision:${decision.id}`, title: 'Decision ready but not capacity-planned',
-			description: text(decision.title, decision.summary, 'An authorized decision has no linked capacity plan.'), status: 'planning required', tone: 'warning',
-			timestamp: dateValue(decision.decidedAt, decision.updatedAt, decision.createdAt), href: '/app/focus/decisions', actionLabel: 'Enter focused review',
-			evidence: 'Decision planning provenance', inferred: true, priority: 80 }));
-	}
 	for (const project of snapshot.projects) {
 		const state = `${project.status ?? ''} ${project.releaseStatus ?? ''} ${project.forecastStatus ?? ''}`.toLowerCase();
 		if (!['at_risk', 'blocked', 'delayed', 'failed'].some((value) => state.includes(value))) continue;
