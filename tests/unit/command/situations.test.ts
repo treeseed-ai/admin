@@ -17,7 +17,8 @@ describe('command situations', () => {
 		snapshot.decisions = [{ id: 'd', status: 'accepted', title: 'Ship it' }];
 		snapshot.projects = [{ id: 'p1', name: 'Market', forecastStatus: 'at_risk' }];
 		const derived = deriveCommandSituations(snapshot, Date.parse('2026-08-03T16:00:00.000Z'));
-		for (const id of ['workday:w', 'execution:e', 'lease:x', 'providers:none', 'approval:a', 'budget:r', 'guarantee:g', 'decision:d', 'project:p1']) expect(derived.map((item) => item.id), id).toContain(id);
+		for (const id of ['workday:w', 'execution:e', 'lease:x', 'providers:none', 'approval:a', 'budget:r', 'guarantee:g', 'project:p1']) expect(derived.map((item) => item.id), id).toContain(id);
+		expect(derived.some((item) => item.id === 'decision:d')).toBe(false);
 		expect(derived[0].priority).toBeGreaterThanOrEqual(derived.at(-1)!.priority);
 		expect(derived.find((item) => item.id === 'lease:x')?.inferred).toBe(true);
 	});
