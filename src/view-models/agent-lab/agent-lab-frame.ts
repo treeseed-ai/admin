@@ -47,7 +47,7 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 	});
 	const activity = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
 	const series = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
-	const allocation = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), canManage: false, activeAllocationSetId: null,
+	const allocation = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(),
 		time: { availableSeconds: null, requestedSeconds: 0, reservedSeconds: 0, activeSeconds: 0, elapsedSeconds: 0, releasedSeconds: 0, remainingSeconds: null, overrunSeconds: 0 }, projects: [], agentClasses: [], workdayTime: [] };
 	const atlas = fallbackAtlas(team.id, overview);
 	return {
@@ -56,7 +56,7 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 		activity: activity as AgentLabDelta<AgentLabActivityInterval>,
 		series: series as AgentLabDelta<AgentLabMetricPoint>,
 		allocation: allocation as AllocationSnapshot,
-		endpoints: { overview: '', activity: '', metricSeries: '', allocation: '', viewState: '' },
+		endpoints: { overview: '', activity: '', metricSeries: '', viewState: '' },
 		atlasEndpoints:{projection:'',delta:'',stream:'',detail:'',assignmentGraphs:'',viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
 		targetEndpoint: '',
 		preference: { enabled: preferences.realTimeUpdates, intervalSeconds: preferences.realTimePollingIntervalSeconds },
