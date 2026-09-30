@@ -26,7 +26,21 @@ jobs:
 
       - name: Install dependencies
         timeout-minutes: 20
+        env:
+          TREESEED_SKIP_PACKAGE_PREPARE: "1"
         run: npm run release:setup
+
+      - name: Download exact integrated UI package
+        uses: actions/download-artifact@v4
+        with:
+          repository: treeseed-ai/ui
+          run-id: 36729378278
+          name: ui-b0c9a2bdf1eed181950c1202a24ab3d9af012833
+          github-token: ${{ github.token }}
+          path: .treeseed/ci-ui
+
+      - name: Install exact integrated UI package
+        run: npm install --ignore-scripts --no-save --package-lock=false .treeseed/ci-ui/*.tgz
 
       - name: Verify package
         run: npm run verify:direct
