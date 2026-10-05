@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.work.focus.review-governance.032
+journeyIndex: 737
+type: work
+subtype: focus
+journey: "Review governance evidence in Focus"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "An authorized member can inspect proposal rationale, evidence, objections, consequences, and legal governance controls."
+status: planned
+dependencies: { journeys: [736], guarantees: [guarantee.work.focus.enter-focus-mode.031] }
+actors: { allowed: [authenticated_user, team_owner, project_lead], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: ["A proposal exists."] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: ["Unauthorized mutation remains rejected by the API."]
+evidence: { required: [guarantee_report] }
+notes: ["Planned until proposal review scene evidence is repeatable."]

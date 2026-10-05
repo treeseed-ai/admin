@@ -1,0 +1,29 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.project.site.deploy-standalone-admin-site.754
+journeyIndex: 754
+type: project
+subtype: site
+journey: Deploy standalone Admin site
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Run Admin independently from Market against the public API and TreeDX-backed R2 content runtime.
+status: planned
+dependencies: { journeys: [], guarantees: [] }
+actors: { allowed: [platform_admin], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium] }
+gates: [future]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes: [Hosted deployment remains suspended pending reviewed OpenTofu acceptance.]
+api:
+  required: true
+  verifierRefs: []
+content:
+  required: true
+  verifierRefs: []
+audit: { required: false, verifierRefs: [] }
+negativeCases: []
+evidence: { required: [guarantee_report] }
+notes:
+  - Package metadata is covered by tests/contract/package/admin-package.test.ts and npm run release:verify.
+  - Activation still requires isolated GitHub and Cloudflare reconciliation, deployed route, API, and R2 overlay evidence.

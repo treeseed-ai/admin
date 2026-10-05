@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.security.monitoring-auditing.retain-audit-evidence-by-policy.635
+journeyIndex: 635
+type: security
+subtype: monitoring-auditing
+journey: "Retain audit evidence by policy"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "Guarantee that TreeSeed can retain audit evidence by policy."
+status: planned
+dependencies: { journeys: [], guarantees: [] }
+actors: { allowed: [authenticated_user, team_owner, platform_admin], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: [] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: []
+evidence: { required: [guarantee_report] }
+notes: ["Planned from the TreeSeed Guide platform coverage audit."]

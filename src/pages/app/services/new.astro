@@ -1,0 +1,26 @@
+---
+import { SERVICE_PROVIDER_CATALOG, getServiceProviderDefinition } from '@treeseed/sdk/secrets-capability';
+import ServiceConnectionCreateSurface from '@treeseed/ui/components/astro/service/workspace/ServiceConnectionCreateSurface.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf';
+import { serviceSections } from '../../../lib/services/navigation';
+import { loadAppContext } from '../../../view-models/app-access.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/services/new')}`);
+const context = await loadAppContext(Astro);
+const team = context.activeTeam;
+const selectedProvider = Astro.url.searchParams.get('provider') ?? '';
+const provider = getServiceProviderDefinition(selectedProvider);
+const csrfToken = ensureCsrfToken(Astro);
+const managementRoles = new Set(['team_owner', 'project_lead', 'service_admin']);
+const canManage = Boolean(team?.roles?.some((role: string) => managementRoles.has(role)) || team?.currentUserRole && managementRoles.has(team.currentUserRole));
+---
+
+<TreeseedAppLayout title="Connect service" description="Add a provider account to the active team." currentPath="/app/services" teams={context.teams} activeTeam={team} contentOwnsPageHeader>
+	<ServiceConnectionCreateSurface {team} {canManage} {provider} providers={[...SERVICE_PROVIDER_CATALOG]} {csrfToken} sections={serviceSections({ current: 'connections' })} />
+</TreeseedAppLayout>
+
+<script>
+	import { initializeServiceForms } from '../../../lib/services/form-lifecycle';
+	initializeServiceForms();
+</script>

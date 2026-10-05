@@ -1,0 +1,30 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.admin.feedback.authenticated-submission.028
+type: admin
+subtype: feedback
+journey: Authenticated Feedback Submission
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: An authenticated user can report feedback inline with immutable server-verified context while the complete desktop page and other open state remain visible.
+status: active
+dependencies: { journeys: [], guarantees: [guarantee.user.auth.user-login.004] }
+actors: { allowed: [authenticated_user], forbidden: [anonymous_user, service_principal] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, security, release]
+preconditions: { fixtures: [integrated_treeseed_project], notes: [The authenticated session and active-team state exist.] }
+scene:
+  required: true
+  manifest: ./scenes/submit-feedback.scene.yaml
+  executionKey: admin.feedback.submit
+  mode: { acceptance: true, demo: true, training: true }
+  entryRoute: /app/
+  componentContract: admin.feedback-management
+  expectedEvidence: [playwright_trace, screenshot_on_failure, console_log, network_log]
+api: { required: true, verifierRefs: [api.feedback.management] }
+content: { required: false, verifierRefs: [] }
+audit: { required: true, verifierRefs: [api.feedback.management] }
+negativeCases:
+  - { id: anonymous-denied, actor: anonymous_user, verifierRefs: [api.feedback.management] }
+evidence: { required: [execution_graph, playwright_trace, api_verification_log] }
+notes: [This release-required guarantee intentionally has no CSV journey index.]
+run: { timeoutSeconds: 600, requiredForRelease: true }

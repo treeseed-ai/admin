@@ -1,0 +1,78 @@
+schemaVersion: treeseed.guarantee-reconciliation/v1
+ownerPackage: "@treeseed/admin"
+requirementsInput: /home/adrian/Downloads/treeseed.journeys.csv
+scope: [12, 13, 14, 15, 16, 17, 18, 19, 20]
+generatedFrom: package-local guarantee manifests
+status: active
+notes:
+  - The downloaded CSV is requirements input and was not edited.
+  - Current routes and execution keys are canonical in the package manifests.
+  - Journey 15 is the authenticated operational overview. The anonymous redacted profile is supplemental guarantee 021.
+  - Active status authorizes current-source execution; every run still fails closed unless rendered positive and forbidden-actor scenes, correlated API/audit evidence, exact devices, and cleanup pass.
+journeys:
+  - index: 12
+    id: guarantee.team.team.create-team.012
+    inputRoute: /admin/teams/:teamId/create-team
+    canonicalRoute: /app/teams/new
+    executionKey: admin.team.create
+    correction: Creation has no pre-existing team identifier and does not implicitly select the new team.
+  - index: 13
+    id: guarantee.team.team.switch-active-team.013
+    inputRoute: /admin/teams/:teamId/switch-active-team
+    canonicalRoute: /app/teams
+    actionRoute: /app/teams/active
+    executionKey: admin.team.select-active
+    correction: Active selection is an explicit membership-validated action and never a page-visit side effect.
+  - index: 14
+    id: guarantee.team.team.edit-team-settings.014
+    inputRoute: /admin/teams/:teamId/edit-team-settings
+    canonicalRoute: /app/teams/[teamId]/edit
+    executionKey: admin.team.edit
+    correction: Settings include identity, visibility, validation, conflict, authorization, preview, and reload persistence.
+  - index: 15
+    id: guarantee.team.team.view-team-overview.015
+    inputId: guarantee.team.team.view-team-profile.015
+    inputJourney: View Team Profile
+    inputRoute: /admin/teams/:teamId/view-team-profile
+    canonicalRoute: /app/teams/[teamId]
+    executionKey: admin.team.overview
+    correction: This is the authenticated operational overview; it is not the anonymous public profile.
+  - index: 16
+    id: guarantee.team.team.delete-team.016
+    inputRoute: /admin/teams/:teamId/delete-team
+    canonicalRoute: /app/teams/[teamId]/delete
+    executionKey: admin.team.delete
+    correction: The lifecycle separates reversible archive and restore with a timezone-aware recovery countdown from immediate permanent deletion guarded by blockers, exact-name confirmation, and reauthentication.
+  - index: 17
+    id: guarantee.team.membership.invite-team-members.017
+    inputRoute: /admin/teams/:teamId/invite-team-members
+    canonicalRoute: /app/teams/[teamId]/members
+    executionKey: admin.team.invite
+    correction: Pending invitations are visible and support accurate send, resend, revoke, expiry, and audit states.
+  - index: 18
+    id: guarantee.team.membership.accept-team-invitation.018
+    inputRoute: /admin/teams/:teamId/accept-team-invitation
+    canonicalRoute: /team-invites/[token]/accept
+    executionKey: admin.team.accept-invite
+    correction: GET previews consent state; a CSRF-protected POST accepts for the exact verified recipient.
+  - index: 19
+    id: guarantee.team.membership.change-member-role.019
+    inputRoute: /admin/teams/:teamId/change-member-role
+    canonicalRoute: /app/teams/[teamId]/members
+    executionKey: admin.team.change-member-role
+    correction: Role changes prove owner restrictions, last-owner safety, visible-control changes, and API permission changes.
+  - index: 20
+    id: guarantee.team.membership.remove-team-member.020
+    inputRoute: /admin/teams/:teamId/remove-team-member
+    canonicalRoute: /app/teams/[teamId]/members
+    executionKey: admin.team.remove-member
+    correction: Removal and self-leave expose blockers, require confirmation, preserve the last owner, and prove lost access.
+supplemental:
+  - id: guarantee.team.team.view-public-team-profile.021
+    journeyIndex: null
+    route: /t/[name]
+    executionKey: admin.team.public-profile
+    purpose: Anonymous active-team identity-only profile with operational and membership redaction.
+  - id: guarantee.team.team.team-management-production-readiness.022
+    journeyIndex: null
+    purpose: Release-required aggregate over the feature contract and all team journeys.

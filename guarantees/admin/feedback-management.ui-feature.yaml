@@ -1,0 +1,38 @@
+schemaVersion: treeseed.ui-feature/v1
+id: admin.feedback-management
+ownerPackage: "@treeseed/admin"
+routes: [/app/feedback, "/app/feedback/[feedbackId]"]
+devices: [desktop_chromium, tablet_chromium, mobile_chromium]
+states: [loading, empty, unavailable, forbidden, validation, conflict, success, resolved, reopened]
+capabilities:
+  - id: feedback.submission
+    routes: [/app/*]
+    actions: [open-panel, preserve-full-page-view-on-desktop, preserve-underlying-overlay, attach-verified-context, validate-message, submit-inline]
+    states: [validation, success, unavailable]
+    actors: { allowed: [authenticated_user], forbidden: [anonymous_user, service_principal] }
+    guaranteeIds: [guarantee.admin.feedback.authenticated-submission.028]
+  - id: feedback.screenshot-privacy
+    routes: [/app/*]
+    actions: [capture-full-page, preserve-active-overlays, stop-at-feedback-boundary, mask-sensitive-values, preserve-nonsensitive-navigation, preview, expand-preview, close-expanded-preview, replace, remove, submit-private-attachment]
+    states: [success, validation, unavailable]
+    actors: { allowed: [authenticated_user], forbidden: [anonymous_user] }
+    guaranteeIds: [guarantee.admin.feedback.screenshot-privacy.029]
+  - id: feedback.administration
+    routes: [/app/feedback, "/app/feedback/[feedbackId]"]
+    actions: [search, filter, view, triage, start-progress, resolve-with-note, reopen-with-note]
+    states: [loading, empty, unavailable, forbidden, conflict, success, resolved, reopened]
+    actors: { allowed: [platform_admin], forbidden: [market_admin, team_owner, anonymous_user] }
+    guaranteeIds: [guarantee.admin.feedback.manage-feedback.030]
+  - id: feedback.export
+    routes: [/app/feedback]
+    actions: [export-bounded-filter, observe-operation, download-private-bundle]
+    states: [loading, success, unavailable, forbidden]
+    actors: { allowed: [platform_admin], forbidden: [market_admin, team_owner, anonymous_user] }
+    guaranteeIds: [guarantee.admin.feedback.privacy-safe-export.031]
+requiredGuarantees:
+  - guarantee.admin.feedback.authenticated-submission.028
+  - guarantee.admin.feedback.screenshot-privacy.029
+  - guarantee.admin.feedback.manage-feedback.030
+  - guarantee.admin.feedback.privacy-safe-export.031
+  - guarantee.admin.feedback.production-readiness.032
+requirements: { accessibility: true, console: true, network: true, visual: true, durableState: true, cleanup: true }

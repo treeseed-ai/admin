@@ -1,0 +1,15 @@
+---
+import ProjectCommandSurface from '@treeseed/ui/components/astro/project/ProjectCommandSurface.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../../lib/market/api-client.ts';
+import { items, record, text } from '../../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../../view-models/app-access.ts';
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const projectId = String(Astro.params.projectId ?? ''); const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro);
+const owned = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])).some((project) => String(project.id) === projectId) : false;
+const [details, summaryData, agentsData, capacityData, releasesData, repository, approvalsData] = owned ? await Promise.all([api.getProjectDetails(projectId).catch(() => null), api.getProjectSummary(projectId).catch(() => null), api.getProjectAgentsSummary(projectId).catch(() => null), api.getProjectCapacitySummary(projectId).catch(() => null), api.getProjectReleasesSummary(projectId).catch(() => null), api.getProjectRepositoryTopology(projectId).catch(() => null), api.listApprovalRequestsForTeam(context.activeTeam!.id, { limit: 100 }).catch(() => null)]) : [null, null, null, null, null, null, null];
+const project = record(details); const summary = record(summaryData); const agents = record(agentsData); const capacity = record(capacityData); const releases = record(releasesData);
+const approvals = items(approvalsData).filter((entry) => String(entry.projectId ?? entry.project_id ?? '') === projectId);
+if (context.activeTeam && (!owned || !project.id)) Astro.response.status = 404;
+---
+<TreeseedAppLayout title={project.id ? text(project.displayName, project.name, 'Project') : 'Project unavailable'} description="Project command overview across approvals, releases, capacity, agents, and repository state." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader><ProjectCommandSurface activeTeam={Boolean(context.activeTeam)} {projectId} {project} {summary} {agents} {capacity} {releases} {repository} {approvals} /></TreeseedAppLayout>

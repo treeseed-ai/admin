@@ -1,0 +1,4 @@
+---
+const query = new URLSearchParams(Astro.url.searchParams); query.set('kind', 'proposal');
+return Astro.redirect(`/app/work/inbox?${query}`, 308);
+---

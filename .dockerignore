@@ -1,0 +1,11 @@
+.git
+.github
+.local
+.treeseed
+dist
+node_modules
+release-assets
+artifacts
+coverage
+docs
+tests

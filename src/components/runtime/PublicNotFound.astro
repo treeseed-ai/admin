@@ -1,0 +1,18 @@
+---
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import PageHeader from '@treeseed/ui/components/astro/layout/PageHeader.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
+
+interface Props { currentPath: string; description?: string }
+const { currentPath, description = 'This TreeSeed page does not exist or is not publicly available.' } = Astro.props as Props;
+---
+
+<TreeseedPublicLayout title="Page not found | TreeSeed" description={description} currentPath={currentPath}>
+	<main class="ts-template" aria-label="Page not found" data-scene="public.not-found">
+		<PageHeader eyebrow="404" title="Page not found" description={description} />
+		<Panel title="Continue exploring TreeSeed" description="Private teams and unpublished knowledge are intentionally unavailable on public routes.">
+			<div class="ts-action-bar"><Button href="/" variant="primary">Go home</Button><Button href="/auth/sign-in" variant="secondary">Sign in</Button></div>
+		</Panel>
+	</main>
+</TreeseedPublicLayout>

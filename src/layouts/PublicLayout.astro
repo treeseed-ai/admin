@@ -1,0 +1,67 @@
+---
+import '@treeseed/ui/styles/tokens.css';
+import '@treeseed/ui/styles/theme.css';
+import '@treeseed/ui/styles/ui.css';
+import '@treeseed/ui/styles/forms.css';
+import '@treeseed/ui/styles/app-shell.css';
+import '@treeseed/ui/styles/site.css';
+import '@treeseed/ui/styles/knowledge-profile.css';
+import PublicShell from '@treeseed/ui/components/astro/shell/PublicShell.astro';
+import PublicFooter from '@treeseed/ui/components/astro/shell/PublicFooter.astro';
+import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
+import { resolveAnonymousThemePreference, resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
+import { createApiFacade } from '../lib/market/api-client';
+import { loadRouteHelpContext } from '../lib/help/context';
+
+interface Props {
+	title?: string;
+	description?: string;
+	currentPath?: string;
+	profilePage?: boolean;
+}
+
+const {
+	title = 'TreeSeed',
+	description = 'TreeSeed public knowledge profiles and publication trails.',
+	currentPath = '/',
+	profilePage = false,
+} = Astro.props as Props;
+const isSignedIn = Boolean(Astro.locals.auth?.principal);
+const appearance = isSignedIn
+	? await resolveAuthenticatedThemePreference(Astro)
+	: resolveAnonymousThemePreference(Astro);
+const timeZone = isSignedIn
+	? (await createApiFacade(Astro).accountPreferences().catch(() => ({ timeZone: 'UTC' }))).timeZone
+	: 'UTC';
+const helpContext = await loadRouteHelpContext(Astro, currentPath, undefined, {
+	shell: 'public',
+	context: 'public',
+});
+---
+
+<PublicShell
+	title={title}
+	description={description}
+	currentPath={currentPath}
+	appearance={appearance}
+	brand={{ name: 'TreeSeed', tag: SITE_SLOGAN, href: '/', logoSrc: '/logo.svg', logoAlt: '' }}
+	navItems={[{ label: 'Home', href: '/' }]}
+	actions={isSignedIn ? [] : [{ label: 'Sign in', href: '/auth/sign-in', variant: 'ghost' as const }]}
+	showAppearanceControl
+	preferServerAppearance={isSignedIn}
+	timeZone={timeZone}
+	helpContext={helpContext}
+	showFooter={!profilePage}
+>
+	{!profilePage ? (
+		<PublicFooter
+			slot="footer"
+			brandName="TreeSeed"
+			summary="Public knowledge identities, reusable work, and the trails that connect them."
+			stageLabel="Knowledge commons"
+			stageDescription="Follow what people and organizations learn, build, and publish."
+			groups={[{ label: 'Explore', items: [{ label: 'Browse public knowledge', href: '/market/' }] }]}
+		/>
+	) : null}
+	<slot />
+</PublicShell>

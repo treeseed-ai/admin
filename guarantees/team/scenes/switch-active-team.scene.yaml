@@ -1,0 +1,187 @@
+schemaVersion: treeseed.scene/v1
+id: team.team.switch-active-team.013
+title: Switch Active Team
+description: Acceptance scene for guarantee.team.team.switch-active-team.013.
+audience:
+  - operator
+  - evaluator
+journey:
+  kind: service
+  proves:
+    - team.active-selection
+  minimumSteps: 4
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.primary
+      kind: marker
+  producesState:
+    - key: team.active-session
+      kind: browser-storage
+    - key: team.active
+      kind: marker
+mode:
+  test: true
+  demo: true
+  training: true
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport:
+    width: 1600
+    height: 900
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      orientation: landscape
+      viewport:
+        width: 1600
+        height: 900
+      video:
+        width: 1600
+        height: 900
+      output:
+        width: 1920
+        height: 1080
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport:
+        width: 820
+        height: 1180
+      video:
+        width: 820
+        height: 1180
+      output:
+        width: 820
+        height: 1180
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+    - id: mobile_chromium
+      title: Mobile Chromium
+      orientation: portrait
+      viewport:
+        width: 390
+        height: 844
+      video:
+        width: 390
+        height: 844
+      output:
+        width: 390
+        height: 844
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev:
+    required: true
+    reuseExisting: true
+  auth:
+    role: owner
+    required: true
+artifacts:
+  trace: true
+  video: true
+  screenshots: true
+  console: true
+  network: true
+  timeline: true
+  appLogs: true
+workflow:
+  - id: open-entry-route
+    title: Open Switch Active Team
+    action:
+      goto: /app/teams
+    expect:
+      urlIncludes: /app/teams
+      visible:
+        - css: '[data-scene="team.collection"]'
+          internal: true
+        - css: '[data-team-display-name="Tree Seed"]'
+          internal: true
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+        - css: '[data-scene="team.collection"] > .ts-page-header'
+          internal: true
+      notVisible:
+        - css: '[data-scene="team.collection"] [data-active="true"]'
+          internal: true
+  - id: switch-to-personal-team
+    title: Select the personal team through its explicit collection control
+    action:
+      click:
+        css: '[data-team-display-name="Tree Seed"] [data-scene="team.active.set"] button'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-team-display-name="Tree Seed"][data-active="true"]'
+          internal: true
+  - id: switch-to-created-team
+    title: Select the created team through its explicit collection control
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] [data-scene="team.active.set"] button'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"][data-active="true"]'
+          internal: true
+  - id: reload-active-team
+    title: Prove active-team cookie persistence after reload
+    action:
+      goto: /app
+    expect:
+      urlIncludes: /app
+      visible:
+        - css: '[data-scene="start.orientation"] .ts-page-header'
+          internal: true
+        - css: '[data-scene="start.orientation"] .ts-page-header:has-text("Choose how to engage with Guarantee {{runShort}} {{deviceId}}")'
+          internal: true
+        - css: '[data-scene="start.orientation"] a:has-text("Enter Agent Lab")'
+          internal: true
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output:
+      format: mp4
+      fps: 30
+      resolution:
+        width: 1920
+        height: 1080
+    capture:
+      viewport:
+        width: 1600
+        height: 900
+      video:
+        width: 1600
+        height: 900
+      evidenceFit: fixed-browser
+runtime:
+  mode: training
+  timeouts:
+    sceneSeconds: 300
+    chapterSeconds: 120
+    stepSeconds: 60
+  checkpoints:
+    enabled: true
+    defaultResumable: true
+    everyStep: true
+  progress:
+    heartbeatSeconds: 15
+  failure:
+    continueOnFailure: false
+training: {}
+visualAudit:
+  enabled: true

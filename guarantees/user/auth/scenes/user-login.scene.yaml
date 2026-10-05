@@ -9,22 +9,20 @@ journey:
   kind: service
   proves:
     - anonymous user can open sign-in
-    - sign-in form accepts credentials
-    - sign-in submission reaches authenticated app shell or returns a visible auth error
-  minimumSteps: 4
+    - sign-in continues to the OAuth sign-in boundary without collecting credentials
+    - credentials are entered once and approval reaches the authenticated app shell or returns a visible auth error
+  minimumSteps: 7
   requiresInteractiveAction: true
-  consumesState:
-    - key: auth.verified-owner
-      kind: user
+  consumesState: []
   producesState:
-    - key: auth.session
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
 mode:
   test: true
   demo: true
   training: true
 target:
-  app: market
+  app: admin
   environment: local
   baseUrl: auto
   browser: chromium
@@ -64,6 +62,21 @@ devices:
       deviceScaleFactor: 2
       isMobile: true
       hasTouch: true
+    - id: tablet_chromium
+      title: Tablet Chromium
+      orientation: portrait
+      viewport:
+        width: 820
+        height: 1180
+      video:
+        width: 820
+        height: 1180
+      output:
+        width: 820
+        height: 1180
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
     - id: mobile_webkit
       title: Mobile WebKit
       orientation: portrait
@@ -83,10 +96,6 @@ setup:
   dev:
     required: true
     reuseExisting: true
-  auth:
-    role: owner
-    required: true
-    seedOnly: true
 artifacts:
   trace: true
   video: true
@@ -97,38 +106,72 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-sign-in
-    title: Open User Login
+    title: Redirect to the configured Identity authority
     action:
       goto: /auth/sign-in
     expect:
-      urlIncludes: /auth/sign-in
-      text: Sign in
+      urlIncludes: /protocol/openid-connect/auth
+      visible:
+        - css: "input[name='username']"
+          internal: true
   - id: enter-identifier
-    title: Enter email or username
+    title: Enter the disposable identity at Keycloak, not Admin
     action:
       fill:
-        role: textbox
-        name: Email or username
-        value: visual.owner@treeseed.io
+        css: "input[name='username']"
+        internal: true
+        value: guarantee-{{runId}}-{{deviceId}}@treeseed.local
     expect:
       visible:
-        - role: textbox
-          name: Email or username
-  - id: enter-password
-    title: Enter password
+        - css: "input[name='password']"
+          internal: true
+  - id: enter-invalid-password
+    title: Enter an invalid password at the identity authority
     action:
       fill:
-        css: input[name='password']
+        css: "input[name='password']"
         internal: true
-        value: TreeSeedVisualAudit!2026
+        value: incorrect-password
     expect:
-      text: Password
-  - id: submit-sign-in
-    title: Submit sign in
+      visible:
+        - css: "input[name='login']"
+          internal: true
+  - id: reject-invalid-credentials
+    title: Reject invalid credentials without creating an application session
     action:
       click:
-        role: button
-        name: Sign in
+        css: "input[name='login']"
+        internal: true
+    expect:
+      urlIncludes: /login-actions/authenticate
+      visible:
+        - css: "input[name='password']"
+          internal: true
+  - id: enter-fixture-password
+    title: Enter the disposable fixture password at the identity authority
+    action:
+      fill:
+        css: "input[name='password']"
+        internal: true
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      visible:
+        - css: "input[name='login']"
+          internal: true
+  - id: complete-sign-in
+    title: Complete PKCE callback and enter the mapped application account
+    action:
+      click:
+        css: "input[name='login']"
+        internal: true
+    expect:
+      urlIncludes: /app
+      visible:
+        - scene: app-shell
+  - id: reload-session
+    title: Reuse the opaque application session
+    action:
+      goto: /app/
     expect:
       urlIncludes: /app
       visible:

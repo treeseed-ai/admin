@@ -3,7 +3,7 @@ site:
     src: https://treeseed.ai/logo.svg
     alt: TreeSeed admin Knowledge Hub logo
   name: TreeSeed Admin Knowledge Hub
-  statement: TreeSeed Admin package knowledge, agents, and workday memory
+  statement: Grow what you know
   siteUrl: https://admin.treeseed.ai
   githubRepository: https://github.com/treeseed-ai/admin
   discordLink: https://discord.gg/example
@@ -48,33 +48,33 @@ models:
     defaults:
       author: TreeSeed Admin Team
       draft: false
-      tags: []
+      groupIds: []
   questions:
     defaults:
       draft: false
-      tags: []
+      groupIds: []
   objectives:
     defaults:
       draft: false
-      tags: []
+      groupIds: []
   proposals:
     defaults:
       draft: false
-      tags: []
+      groupIds: []
   decisions:
     defaults:
       draft: false
-      tags: []
+      groupIds: []
   people:
     defaults:
       status: live
-      tags: []
+      groupIds: []
   agents:
     defaults:
-      tags: []
+      groupIds: []
   books:
     defaults:
-      tags: []
+      groupIds: []
   docs:
     defaults:
-      tags: []
+      groupIds: []

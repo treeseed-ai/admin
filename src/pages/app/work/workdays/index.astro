@@ -1,0 +1,20 @@
+---
+import WorkdayCollectionSurface from '@treeseed/ui/components/astro/agent-lab/WorkdayCollectionSurface.astro';
+import TreeseedAppLayout from '../../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../../lib/market/api-client.ts';
+import { loadAgentLabEntityPage } from '../../../../view-models/agent-lab/entity-page.ts';
+import { agentLabMetricDestinations } from '../../../../view-models/agent-lab/agent-lab-frame.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const frame = await loadAgentLabEntityPage(Astro, 'workdays');
+const api = new ApiClientFacade(Astro);
+const access = frame.app.activeTeam ? await api.getTeamAccessSummary(frame.app.activeTeam.id).catch(() => null) : null;
+const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+const csrfToken = ensureCsrfToken(Astro);
+const action = frame.app.activeTeam ? `/v1/teams/${encodeURIComponent(frame.app.activeTeam.id)}/workday-runs` : '';
+---
+
+<TreeseedAppLayout title="Agent Lab · Workdays" description="Create and inspect bounded team operating sessions." currentPath="/app/work" teams={frame.app.teams} activeTeam={frame.app.activeTeam} timeZone={frame.preferences.timeZone} contentOwnsPageHeader>
+	<WorkdayCollectionSurface activeTeam={Boolean(frame.app.activeTeam)} monitor={frame.monitor} {canManage} {csrfToken} {action} items={frame.items} query={frame.query} status={frame.status} nextHref={frame.nextHref} metricDestinations={agentLabMetricDestinations} />
+</TreeseedAppLayout>

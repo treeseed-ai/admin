@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const semverTagPattern = /^\d+\.\d+\.\d+$/;
+const semverTagPattern = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const tagName = process.argv[2] || process.env.GITHUB_REF_NAME;
 
 if (!tagName) {
@@ -12,7 +12,7 @@ if (!tagName) {
 }
 
 if (!semverTagPattern.test(tagName)) {
-  console.error(`Release tag "${tagName}" must use "{MAJOR}.{MINOR}.{PATCH}", for example "${packageJson.version}".`);
+  console.error(`Release tag "${tagName}" must use semantic version syntax, for example "${packageJson.version}".`);
   process.exit(1);
 }
 

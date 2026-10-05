@@ -1,1 +1,1 @@
-export { createTreeseedTenantCollections as createTreeseedAdminCollections } from '@treeseed/core/content-config';
+export { createTenantCollections as createAdminCollections } from '@treeseed/core/content-config';

@@ -1,4 +1,5 @@
 /// <reference types="astro/client" />
+declare module 'virtual:treeseed-source-update' { const updatedAt: string | null; export default updatedAt; }
 
 declare module 'astro:middleware' {
 	import type { MiddlewareHandler } from 'astro';
@@ -19,14 +20,9 @@ declare module 'cloudflare:sockets' {
 	): Socket;
 }
 
-declare module 'libsodium-wrappers-sumo' {
-	const sodium: any;
-	export default sodium;
-}
-
 declare namespace App {
 	interface Locals {
-		runtime?: import('@treeseed/sdk/types/cloudflare').CloudflareRuntime;
+		runtime?: import('@treeseed/sdk/site-contracts/cloudflare').CloudflareRuntime;
 		contentPreview?: import('@treeseed/sdk').EditorialPreviewTokenPayload | null;
 		auth?: {
 			session: {
@@ -39,7 +35,7 @@ declare namespace App {
 				authenticatedAt?: string | null;
 				expiresAt?: string | null;
 			};
-			principal: import('@treeseed/sdk/remote').ApiPrincipal;
+			principal: import('@treeseed/sdk/site-contracts/catalog').ApiPrincipal;
 		} | null;
 	}
 }

@@ -4,11 +4,11 @@ import { resolve } from 'node:path';
 export default defineConfig({
   resolve: {
     alias: {
-      '@treeseed/sdk/platform/plugin': resolve(__dirname, 'test/shims/sdk-platform-plugin.ts'),
+      '@treeseed/sdk/platform/plugin': resolve(__dirname, 'tests/support/shims/sdk-platform-plugin.ts'),
     },
   },
   test: {
-    include: ['test/**/*.test.ts'],
+    include: ['tests/{unit,integration,contract}/**/*.test.ts'],
     testTimeout: 30000,
   },
 });

@@ -1,0 +1,19 @@
+---
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import NotificationPreferencePanel from '@treeseed/ui/components/astro/account/NotificationPreferencePanel.astro';
+import { handleNotificationRequest, loadAccountFrame, NOTIFICATION_CONTENT_CAPABILITIES } from '../../../view-models/account-settings';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/notifications')}`);
+const frame = await loadAccountFrame(Astro, 'notifications');
+const response = await handleNotificationRequest(Astro, frame.api);
+if (response) return response;
+const [preferences, projects] = await Promise.all([frame.api.notificationPreferences(), frame.api.listProjectsForPrincipal()]);
+const projectItems = Array.isArray(projects) ? projects : ((projects as unknown as { items?: typeof projects })?.items ?? []);
+---
+
+<TreeseedAppLayout title="Notifications" description="Choose project content notifications and email cadence." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
+	<SettingsTemplate title="Notification preferences" description="One global content policy with focused project overrides." sections={frame.sections} knowledgePageId="account.notifications">
+		<NotificationPreferencePanel preferences={preferences} capabilities={NOTIFICATION_CONTENT_CAPABILITIES} projects={projectItems} csrfToken={frame.csrfToken} />
+	</SettingsTemplate>
+</TreeseedAppLayout>

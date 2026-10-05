@@ -1,0 +1,51 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.team.team.team-management-production-readiness.022
+type: team
+subtype: team
+journey: Team Management Production Readiness
+ownerPackage: "@treeseed/admin"
+surface: scene
+summary: Fail-closed aggregate proving every team UI capability, actor boundary, device, durable postcondition, audit event, and cleanup contract.
+status: active
+dependencies:
+  journeys: [12, 13, 14, 15, 16, 17, 18, 19, 20]
+  guarantees:
+    - guarantee.team.team.view-public-team-profile.021
+actors:
+  allowed: [release_operator]
+  forbidden: []
+devices:
+  required: [desktop_chromium, mobile_chromium]
+gates: [core, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes:
+    - Every required feature guarantee must be active and pass against the same current source closure.
+uiFeature:
+  contract: ../team-management.ui-feature.yaml
+  capabilities: []
+api:
+  required: true
+  verifierRefs:
+    - admin.team.production-readiness
+    - admin.team.ui-contracts
+    - api.team.lifecycle-contracts
+    - sdk.team.ui-evidence-trust
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: false
+  verifierRefs: []
+negativeCases:
+  - id: stale-or-mismatched-evidence-denied
+    verifierRefs: [sdk.team.ui-evidence-trust]
+    notes:
+      - Device mismatch, source drift, blocked requirements, and copied aggregate status must fail closed.
+evidence:
+  required: [execution_graph, api_verification_log, cleanup_report]
+notes:
+  - Fails closed unless every required team guarantee, feature contract, current-source verifier, and cleanup check passes.
+run:
+  timeoutSeconds: 900
+  requiredForRelease: true

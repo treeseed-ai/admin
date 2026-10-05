@@ -11,11 +11,14 @@ journey:
     - Manage Appearance opens the canonical @treeseed/admin dashboard read model workflow.
     - Manage Appearance exercises a service journey instead of only loading /app/account.
     - Manage Appearance records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 8
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
+  producesState:
+    - key: account.appearance-updated
+      kind: marker
 mode:
   test: true
   demo: true
@@ -80,15 +83,88 @@ workflow:
   - id: open-entry-route
     title: Open Manage Appearance
     action:
-      goto: /app/account
+      goto: /app/account/appearance
     expect:
-      urlIncludes: /app/account
-  - id: inspect-service-surface
-    title: Inspect Manage Appearance service surface
+      urlIncludes: /app/account/appearance
+      visible:
+        - scene: account-appearance
+        - css: '[data-built-in-theme-table]'
+          internal: true
+  - id: open-theme-dialog
+    title: Open personal theme creation
     action:
-      keyboard: Tab
+      click:
+        role: button
+        name: Create theme
     expect:
-      urlIncludes: /app/account
+      text: Create a personal theme
+  - id: name-personal-theme
+    title: Name the personal theme
+    action:
+      fill:
+        role: textbox
+        name: Theme name
+        value: Guarantee {{runShort}} {{deviceId}}
+    expect:
+      visible:
+        - css: "[data-personal-theme-builder] [data-personal-theme-base]"
+          internal: true
+  - id: change-personal-theme-base
+    title: Seed the custom palette from another built-in theme
+    action:
+      select:
+        role: combobox
+        name: Base theme
+        label: Cedar Clay
+    expect:
+      visible:
+        - css: '[data-personal-theme-builder][data-theme-palette-source="cedar"] [data-theme-color-mode="light"][data-theme-color-key="accent"][data-theme-color-value="#b86b3c"]'
+          internal: true
+  - id: create-personal-theme
+    title: Create the personal theme
+    action:
+      click:
+        testId: create-personal-theme-submit
+    expect:
+      urlIncludes: /app/account/appearance
+      text: Theme saved.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
+  - id: reload-personal-theme
+    title: Reload the personal theme collection
+    action:
+      goto: /app/account/appearance
+    expect:
+      visible:
+        - scene: account-appearance
+  - id: open-appearance-selector
+    title: Open the application appearance selector
+    action:
+      click:
+        css: '[data-testid="appearance-menu-trigger"]:visible'
+        internal: true
+    expect:
+      text: Color scheme
+  - id: activate-personal-theme
+    title: Select the personal theme from the application header
+    action:
+      select:
+        role: combobox
+        name: Color scheme
+        label: Guarantee {{runShort}} {{deviceId}}
+        settleNavigation: true
+    expect:
+      urlIncludes: /app/account/appearance
+  - id: reload-active-personal-theme
+    title: Reload and prove the active personal theme is durable
+    action:
+      goto: /app/account/appearance
+    expect:
+      urlIncludes: /app/account/appearance
+      visible:
+        - css: '[data-active-personal-theme-name="Guarantee {{runShort}} {{deviceId}}"]'
+          internal: true
 chapters: []
 overlays: []
 diagrams: []

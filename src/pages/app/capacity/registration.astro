@@ -1,0 +1,45 @@
+---
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
+import Button from '@treeseed/ui/components/astro/forms/Button.astro';
+import {loadAppContext} from '../../../view-models/app-access';
+import {ensureCsrfToken} from '../../../lib/auth/support/csrf';
+if(!Astro.locals.auth?.principal)return Astro.redirect('/auth/sign-in');
+const context=await loadAppContext(Astro),team=context.activeTeam,csrfToken=ensureCsrfToken(Astro);
+Astro.response.headers.set('Cache-Control','private, no-store');
+---
+<TreeseedAppLayout title="Provider registration" description="Connect a machine to your team." currentPath="/app/command" teams={context.teams} activeTeam={team}>
+<section class="ts-template" style="padding-bottom:2rem">
+<Panel title="Team registration code" knowledgePageId="capacity.registration">
+<p>Install TreeSeed on your machine and supply this team's code. It requests a connection; you must still approve the provider before it can work.</p>
+{team?<form data-registration-code data-base={'/v1/teams/'+encodeURIComponent(team.id)+'/capacity-provider-registration-code'}>
+<input type="hidden" name="csrfToken" value={csrfToken}/>
+<label>Registration code<input class="ts-control" readonly autocomplete="off" data-code placeholder="Select Show code to reveal"/></label>
+<div class="ts-button-row"><Button type="button" data-action="reveal">Show code</Button><Button type="button" variant="danger" data-action="rotate">Rotate code</Button></div>
+<p>Rotation immediately invalidates the old code and unused installation files. Already-approved providers stay connected.</p>
+<p role="status" data-feedback></p>
+</form>:<p>Choose a team first.</p>}
+</Panel>
+<div class="ts-button-row"><Button href="/app/capacity/install" variant="secondary">Download installation configuration</Button><Button href="/app/capacity" variant="ghost">Back to providers</Button></div>
+</section>
+</TreeseedAppLayout>
+<style>.ts-button-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-block:1rem}label{display:grid;gap:.5rem}</style>
+<script>
+function mount(){document.querySelectorAll<HTMLFormElement>('[data-registration-code]').forEach(form=>{
+if(form.dataset.mounted)return;form.dataset.mounted='true';
+form.addEventListener('click',async event=>{
+const button=(event.target as Element).closest<HTMLButtonElement>('[data-action]');if(!button)return;
+const action=button.dataset.action;if(action==='rotate'&&!confirm('Invalidate the current registration code immediately? Approved providers will remain connected.'))return;
+const field=form.querySelector<HTMLInputElement>('[data-code]')!,feedback=form.querySelector<HTMLElement>('[data-feedback]')!;
+field.value='';feedback.textContent='';form.querySelectorAll('button').forEach(b=>b.disabled=true);
+try{
+const headers:Record<string,string>={'Content-Type':'application/json','x-treeseed-csrf':String(new FormData(form).get('csrfToken')),'Idempotency-Key':crypto.randomUUID()};
+if(action==='rotate'){const status=await fetch(form.dataset.base!,{cache:'no-store'});if(!status.ok)throw new Error();const etag=status.headers.get('etag');if(!etag)throw new Error();headers['If-Match']=etag;}
+const response=await fetch(form.dataset.base+'/'+action,{method:'POST',headers,body:'{}',cache:'no-store'});
+if(!response.ok)throw new Error();const result=await response.json(),receipt=result.data??result;
+if(typeof receipt.registrationCode!=='string')throw new Error();field.value=receipt.registrationCode;feedback.textContent=action==='rotate'?'Code rotated. The old code is no longer valid.':'Code revealed. Share only with intended provider operators.';
+}catch{feedback.textContent='The code could not be accessed. Check team management permission and retry.';}
+finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
+});
+});}mount();document.addEventListener('astro:page-load',mount);
+</script>

@@ -1,0 +1,31 @@
+services:
+  admin:
+    image: "@ADMIN_IMAGE@"
+    restart: unless-stopped
+    env_file: /etc/treeseed/components/admin/environment
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4322"
+      TREESEED_WEB_RUNTIME_TARGET: managed-node
+      NODE_EXTRA_CA_CERTS: /run/treeseed/identity/ca.crt
+    extra_hosts:
+      - "${TREESEED_IDENTITY_HOSTNAME:?Managed Identity hostname required}:host-gateway"
+      - "${TREESEED_API_HOSTNAME:?Managed API hostname required}:host-gateway"
+    volumes:
+      - type: bind
+        source: /etc/treeseed/cli/localhost-ca.crt
+        target: /run/treeseed/identity/ca.crt
+        read_only: true
+    networks: [platform, treeseed-edge]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4322/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+networks:
+  platform:
+    name: treeseed-platform
+    external: true
+  treeseed-edge:
+    name: treeseed-edge
+    external: true

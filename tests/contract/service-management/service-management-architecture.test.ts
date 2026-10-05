@@ -1,0 +1,127 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const root = resolve(import.meta.dirname, '../../..');
+const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
+const readDependency = (name: string, path: string) => readFileSync(resolve(root, 'node_modules', name, path), 'utf8');
+
+describe('service management architecture', () => {
+	it('owns one provider-first route family with no legacy host route', () => {
+		const routes = read('src/routes.ts');
+		for (const route of ['/app/services', '/app/services/new', '/app/services/[connectionId]']) {
+			expect(routes).toContain(`'${route}'`);
+		}
+		expect(routes).not.toContain('/app/hosts');
+	});
+
+	it('uses only shared UI components and the canonical enhanced form transport', () => {
+		const collectionPage = read('src/pages/app/services/index.astro');
+		expect(collectionPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionWorkspace.astro');
+		for (const component of ['ProviderCard.astro', 'Panel.astro', 'SettingsTemplate.astro', 'SemanticCollectionSurface.astro']) {
+			expect(collectionPage).not.toContain(component);
+		}
+		const workspace = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionWorkspace.astro');
+		for (const component of ['ProviderCard', 'SettingsTemplate', 'SemanticCollectionSurface', 'ItemPicker', 'CollapsibleMultiSelect']) expect(workspace).toContain(component);
+		expect(collectionPage).toContain("searchParams.getAll('capability')");
+		expect(collectionPage).toContain('capabilityFilters');
+		expect(workspace).not.toContain('Managed OpenBao');
+		const createPage = read('src/pages/app/services/new.astro');
+		expect(createPage).toContain('@treeseed/ui/components/astro/service/workspace/ServiceConnectionCreateSurface.astro');
+		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
+		for (const component of ['ProviderCard', 'ServiceWizard', 'SettingsTemplate', 'CapabilitySelector']) expect(createSurface).toContain(component);
+		const detail = read('src/pages/app/services/[connectionId].astro');
+		expect(detail).toContain('ServiceWizard');
+		for (const step of [0, 1, 2]) expect(detail).toContain(`data-service-step="${step}"`);
+		expect(createSurface + detail).not.toContain('max-width: 48rem');
+		expect(detail).toContain('selectedProfiles.filter((_, index) => index === accessIndex)');
+		const pages = [
+			read('src/pages/app/services/index.astro'),
+			read('src/pages/app/services/new.astro'),
+			read('src/pages/app/services/[connectionId].astro'),
+		].join('\n');
+		expect(createSurface).toContain('ProviderCard');
+		expect(pages).toContain('@treeseed/ui/components/astro/templates/SettingsTemplate.astro');
+		expect(pages).toContain('data-ts-submit="enhanced"');
+		expect(pages).not.toMatch(/\bfetch\s*\(/u);
+		expect(pages).not.toContain('window.alert');
+	});
+
+	it('uses one canonical routed tab model across collection, setup, detail, and vault pages', () => {
+		const navigation = read('src/lib/services/navigation.ts');
+		for (const label of ['Connections','Vault']) {
+			expect(navigation).toContain(`'${label}'`);
+		}
+		expect(navigation.match(/label: '/gu)).toHaveLength(2);
+		expect(navigation).toContain('import.meta.env.DEV');
+		expect(read('src/pages/app/services/vaults.astro')).toContain("if (!import.meta.env.DEV) return Astro.redirect('/app/services')");
+		expect(navigation).not.toContain('Connect service');
+		const detail = read('src/pages/app/services/[connectionId].astro');
+		expect(detail).not.toContain('mode="panels"');
+		expect(detail).not.toContain('SurfaceTabs');
+		expect(detail).not.toContain('searchParams.get(\'tab\')');
+	});
+
+  it('opens the editable wizard directly while preserving read-only access', () => {
+    const detail = read('src/pages/app/services/[connectionId].astro');
+    expect(detail).not.toMatch(/\bediting\b/);
+    expect(detail).not.toContain('Account access saved');
+    expect(detail).toContain('!canManage ? <Panel');
+    expect(detail).toContain(': <ServiceWizard {initialStep}');
+    expect(detail).toContain('? 2 : 1');
+    expect(detail).toContain('hidden={initialStep !== 1}');
+  });
+
+	it('preserves current credential handling while vault migration is preview-only', () => {
+    const detail=read('src/pages/app/services/[connectionId].astro');
+    expect(detail).not.toContain('Core OpenBao');expect(detail).toContain('managed-credentials');
+    expect(detail).toContain('knowledgePageId="services.credentials"');
+    expect(detail).toContain('data-service-disconnect');
+    expect(detail).not.toContain('querySelectorAll(\'[data-ts-method="DELETE"]\')');
+    expect(read('src/routes.ts')).toContain('/app/services/vaults');
+    expect(read('src/pages/app/services/vaults.astro')).toContain('!import.meta.env.DEV');
+  });
+
+	it('sends credentials through authenticated enhanced forms without persistent browser custody', () => {
+    const adapters=read('src/lib/services/form-adapters.ts');
+    expect(adapters).toContain('Idempotency-Key');expect(adapters).toContain('x-treeseed-csrf');expect(adapters).toContain('expectedVersion');
+    for(const retired of ['encryptServiceCredential','createTeamVaultGrant','localStorage','sessionStorage','document.cookie'])expect(adapters).not.toContain(retired);
+  });
+
+	it('keeps state-backend configuration out of provider connection forms', () => {
+		const createSurface = readDependency('@treeseed/ui', 'dist/astro/service/workspace/ServiceConnectionCreateSurface.astro');
+		const providerContracts = readDependency('@treeseed/sdk', 'dist/secrets-capability/service-provider-contracts.js');
+		expect(createSurface).toContain('ConnectionFields');
+		const fields = readDependency('@treeseed/ui', 'dist/astro/service/ConnectionFields.astro');
+		expect(fields).toContain('name="displayName"');
+		expect(fields).toContain('Keep it unchanged if a deployment already uses it.');
+		for (const field of ['stateBucket', 'stateEndpoint', 'stateRegion', 'stateEncryptionKeyRef']) {
+			expect(providerContracts).not.toContain(`field("${field}"`);
+		}
+	});
+
+	it('renders service activity in the persisted user timezone', () => {
+		for (const page of ['src/pages/app/services/index.astro', 'src/pages/app/services/[connectionId].astro']) {
+			const source = read(page);
+			expect(source).toContain('api.accountPreferences()');
+			expect(source).toContain('timeZone={preferences.timeZone}');
+		}
+	});
+	it('separates statistics from editable details and isolates confirmed disconnection', () => {
+		const detail = read('src/pages/app/services/[connectionId].astro');
+		expect(detail).toContain('<table aria-label="Connection statistics">');
+		expect(detail).toContain('Last credential check');
+		expect(detail).toContain('data-service-step="3"');
+		expect(detail).toContain('data-connection-name={connection.displayName}');
+		expect(detail).not.toContain('<details');
+		expect(detail).toContain('</nav>}');
+	});
+
+	it('does not expose the removed shared-passphrase or hardcoded host permission components', () => {
+		const layout = readDependency('@treeseed/ui', 'dist/astro/layouts/AppLayout.astro');
+		const uiPackage = readDependency('@treeseed/ui', 'package.json');
+		expect(layout).not.toContain('SensitiveDataUnlock');
+		expect(uiPackage).not.toContain('SensitiveDataUnlock');
+		expect(uiPackage).not.toContain('HostCredentialPermissionNote');
+	});
+});

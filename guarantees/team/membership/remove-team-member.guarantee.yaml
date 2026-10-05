@@ -9,16 +9,15 @@ summary: Remove or deactivate a team member with auditability; must avoid orphan
 status: active
 dependencies:
   journeys:
-    - 18
+    - 19
   guarantees:
-    - guarantee.team.membership.accept-team-invitation.018
+    - guarantee.team.membership.change-member-role.019
 actors:
   allowed:
     - team_admin
     - team_owner
   forbidden:
-    - anonymous_user
-    - unauthorized_user
+    - contributor
 devices:
   required:
     - desktop_chromium
@@ -30,16 +29,19 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
     - "Journey dependencies must be satisfied: 18"
+uiFeature:
+  contract: ../team-management.ui-feature.yaml
+  capabilities: [team.member-removal, team.member-leave]
 scene:
   required: true
   manifest: ./scenes/remove-team-member.scene.yaml
+  executionKey: admin.team.remove-member
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/teams/visual-audit-team/members
+  entryRoute: /app/teams/[teamId]/members
   componentContract: record-action service journey
   expectedEvidence:
     - playwright_trace
@@ -50,18 +52,19 @@ scene:
 api:
   required: true
   verifierRefs:
-    - api.team.member.remove
+    - api.team.remove.correlated
 content:
   required: false
   verifierRefs: []
 audit:
-  required: false
-  verifierRefs: []
+  required: true
+  verifierRefs: [api.team.remove.correlated]
 negativeCases:
-  - id: non-member-denied
-    actor: non_member
-    verifierRefs:
-      - api.team.members.nonmember
+  - id: contributor-denied
+    actor: contributor
+    sceneManifest: ../scenes/negative/members-contributor.scene.yaml
+    executionKey: admin.team.negative.members-contributor
+    verifierRefs: [api.team.remove.contributor-denied]
 evidence:
   required:
     - playwright_trace

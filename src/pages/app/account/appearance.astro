@@ -1,0 +1,21 @@
+---
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import SettingsTemplate from '@treeseed/ui/components/astro/templates/SettingsTemplate.astro';
+import PersonalThemeManager from '@treeseed/ui/components/astro/account/PersonalThemeManager.astro';
+import RealtimeExperienceSettings from '@treeseed/ui/components/astro/account/RealtimeExperienceSettings.astro';
+import { resolveAuthenticatedThemePreference } from '../../../lib/auth/accounts/appearance';
+import { handleAppearanceRequest, loadAccountFrame } from '../../../view-models/account-settings';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/account/appearance')}`);
+const frame = await loadAccountFrame(Astro, 'appearance');
+const response = await handleAppearanceRequest(Astro, frame.api);
+if (response) return response;
+const [themes, appearance] = await Promise.all([frame.api.personalThemes(), resolveAuthenticatedThemePreference(Astro)]);
+---
+
+<TreeseedAppLayout title="Appearance" description="Create personal themes for the TreeSeed selector." currentPath={Astro.url.pathname} teams={frame.app.teams} activeTeam={frame.app.activeTeam} contentOwnsPageHeader>
+	<SettingsTemplate title="Personal themes" description="Create and maintain themes here; select the active theme only from the application header." sections={frame.sections} knowledgePageId="account.appearance">
+		<RealtimeExperienceSettings enabled={frame.preferences.realTimeUpdates} intervalSeconds={frame.preferences.realTimePollingIntervalSeconds} expectedUpdatedAt={frame.preferences.updatedAt} csrfToken={frame.csrfToken} />
+		<PersonalThemeManager themes={themes} activeScheme={appearance.scheme} workspaceScheme={appearance.workspace.scheme} csrfToken={frame.csrfToken} />
+	</SettingsTemplate>
+</TreeseedAppLayout>

@@ -5,71 +5,24 @@ type: project
 subtype: library
 journey: Rebuild Library Index
 ownerPackage: "@treeseed/admin"
-summary: Refresh searchable project content indexes after book page or note changes; supports search and export journeys without filesystem scans.
+surface: admin-ui
+summary: Refresh the TreeDX graph and search index for the exact published content commit.
 status: active
-dependencies:
-  journeys:
-    - 65
-    - 69
-  guarantees:
-    - guarantee.project.book.create-book.065
-    - guarantee.project.knowledge.create-book-page.069
-actors:
-  allowed:
-    - project_manager
-    - project_contributor
-  forbidden:
-    - anonymous_user
-    - unauthorized_user
-devices:
-  required:
-    - desktop_chromium
-    - mobile_chromium
-gates:
-  - core
-  - release
-preconditions:
-  fixtures:
-    - integrated_treeseed_project
-  notes:
-    - "Journey dependencies must be satisfied: 65, 69"
-scene:
-  required: true
-  manifest: ./scenes/rebuild-library-index.scene.yaml
-  mode:
-    acceptance: true
-    demo: true
-    training: true
-  entryRoute: /app/knowledge
-  componentContract: record-action service journey
-  expectedEvidence:
-    - playwright_trace
-    - scene_video
-    - screenshot_on_failure
-    - console_log
-    - network_log
-api:
-  required: true
-  verifierRefs:
-    - admin.project.library.rebuild-library-index.api
-content:
-  required: true
-  verifierRefs:
-    - admin.project.library.rebuild-library-index.content
-audit:
-  required: true
-  verifierRefs:
-    - admin.project.library.rebuild-library-index.audit
+dependencies: { journeys: [65, 69], guarantees: [guarantee.project.book.create-book.065, guarantee.project.knowledge.create-book-page.069] }
+actors: { allowed: [project_manager], forbidden: [anonymous_user, non_member, project_viewer, project_contributor] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.review-publication] }
+scene: { required: true, manifest: ../book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: publication operation status }
+api: { required: true, verifierRefs: [api.knowledge.control-plane, api.knowledge.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.content-sync] }
+audit: { required: true, verifierRefs: [api.knowledge.run-correlated] }
 negativeCases:
-  - id: unauthorized-actor-denied
-    actor: anonymous_user
-    verifierRefs:
-      - admin.project.library.rebuild-library-index.negative
-evidence:
-  required:
-    - playwright_trace
-    - scene_video
-    - api_verification_log
-    - audit_event_id
-notes:
-  - Refresh searchable project content indexes after book page or note changes; supports search and export journeys without filesystem scans.
+  - { id: anonymous-publication-denied, actor: anonymous_user, sceneManifest: ../book/scenes/negative/anonymous-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.anonymous, verifierRefs: [api.knowledge.control-plane] }
+  - { id: nonmember-publication-denied, actor: non_member, sceneManifest: ../book/scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.control-plane] }
+  - { id: readonly-publication-denied, actor: project_viewer, sceneManifest: ../book/scenes/negative/readonly-knowledge-controls.scene.yaml, executionKey: admin.knowledge.negative.readonly, verifierRefs: [api.knowledge.control-plane] }
+  - { id: author-publication-denied, actor: project_contributor, sceneManifest: ../book/scenes/negative/contributor-knowledge-lifecycle.scene.yaml, executionKey: admin.knowledge.negative.contributor, verifierRefs: [api.knowledge.control-plane] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref, audit_event_id] }
+notes: [The shared publication operation requires exact Git commit and TreeDX graph parity before atomic promotion.]
+run: { requiredForRelease: true }

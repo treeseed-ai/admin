@@ -1,0 +1,281 @@
+schemaVersion: treeseed.scene/v1
+id: team.team.delete-team.016
+title: Delete Team
+description: Acceptance scene for guarantee.team.team.delete-team.016.
+audience:
+  - operator
+  - evaluator
+journey:
+  kind: service
+  proves:
+    - team.lifecycle
+  minimumSteps: 14
+  requiresInteractiveAction: true
+  consumesState:
+    - key: auth.primary-session-after-membership
+      kind: browser-storage
+    - key: team.member-removed
+      kind: marker
+  producesState:
+    - key: team.deleted
+      kind: marker
+      value:
+        name: gt-{{runShort}}-{{deviceId}}
+mode:
+  test: true
+  demo: true
+  training: true
+target:
+  app: market
+  environment: local
+  baseUrl: auto
+  browser: chromium
+  viewport:
+    width: 1600
+    height: 900
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - id: desktop_chromium
+      title: Desktop Chromium
+      orientation: landscape
+      viewport:
+        width: 1600
+        height: 900
+      video:
+        width: 1600
+        height: 900
+      output:
+        width: 1920
+        height: 1080
+      deviceScaleFactor: 1
+      isMobile: false
+      hasTouch: false
+    - id: mobile_chromium
+      title: Mobile Chromium
+      orientation: portrait
+      viewport:
+        width: 390
+        height: 844
+      video:
+        width: 390
+        height: 844
+      output:
+        width: 390
+        height: 844
+      deviceScaleFactor: 2
+      isMobile: true
+      hasTouch: true
+setup:
+  dev:
+    required: true
+    reuseExisting: true
+  auth:
+    role: owner
+    required: true
+artifacts:
+  trace: true
+  video: true
+  screenshots: true
+  console: true
+  network: true
+  timeline: true
+  appLogs: true
+workflow:
+  - id: open-entry-route
+    title: Open the run-owned team collection
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-members-for-invitation-cleanup
+    title: Open members to resolve the deliberate mismatch invitation blocker
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/members"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
+  - id: revoke-mismatch-invitation
+    title: Revoke the remaining mismatched-account invitation before deletion
+    action:
+      click:
+        css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"] form[data-ts-method="DELETE"] button'
+        internal: true
+    expect:
+      text: Invitation revoked.
+      notVisible:
+        - css: '[data-invite-email="mismatch-{{runId}}-{{deviceId}}@treeseed.local"]'
+          internal: true
+  - id: return-to-lifecycle-entry
+    title: Return to the team collection after blocker cleanup
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: open-lifecycle
+    title: Open owner-only lifecycle controls
+    action:
+      clickVisibleSequence:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+          internal: true
+        - role: link
+          name: Lifecycle
+    expect:
+      text: No active archive blockers were found.
+  - id: archive-team
+    title: Archive the team through the visible lifecycle control
+    action:
+      click:
+        css: 'form[data-scene="team.archive"] button[type="submit"]'
+        internal: true
+    expect:
+      urlIncludes: /app/teams
+      text: Team archived.
+  - id: reopen-archived-lifecycle
+    title: Reopen the archived team and its recovery window
+    action:
+      click:
+        css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href$="/delete"]'
+        internal: true
+    expect:
+      visible:
+        - css: '[data-ts-countdown]'
+          internal: true
+  - id: prove-archived-deletion-available
+    title: Prove deletion remains a distinct immediate operation while archived
+    action:
+      keyboard: Tab
+    expect:
+      text: Delete team permanently
+  - id: restore-team
+    title: Restore the archived team during its recovery window
+    action:
+      click:
+        css: 'form[data-scene="team.restore"] button[type="submit"]'
+        internal: true
+    expect:
+      urlIncludes: /app/teams/
+      text: Operational overview
+  - id: return-to-collection
+    title: Return to the team collection
+    action:
+      goto: /app/teams
+    expect:
+      visible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: reopen-active-lifecycle
+    title: Reopen lifecycle after restoration and delete without another archive
+    action:
+      clickVisibleSequence:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"] a[href]:has-text("Overview")'
+          internal: true
+        - role: link
+          name: Lifecycle
+    expect:
+      text: Deletion is immediate
+  - id: enter-incorrect-confirmation
+    title: Enter an incorrect deletion confirmation
+    action:
+      fill:
+        role: textbox
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}" exactly
+        value: wrong-team
+    expect:
+      text: Delete team permanently
+  - id: enter-reauthentication
+    title: Reauthenticate for the destructive operation
+    action:
+      fill:
+        role: textbox
+        name: Current password
+        value: TreeSeedGuaranteeReset123!
+    expect:
+      text: Delete team permanently
+  - id: reject-incorrect-confirmation
+    title: Reject an incorrect exact-name confirmation
+    action:
+      click:
+        css: 'form[data-scene="team.delete"] button[type="submit"]'
+        internal: true
+    expect:
+      urlIncludes: /delete
+      text: Type
+      clientErrorSourceIncludes: /delete
+  - id: enter-exact-confirmation
+    title: Enter the exact deletion confirmation
+    action:
+      fill:
+        role: textbox
+        name: Type "DELETE gt-{{runShort}}-{{deviceId}}" exactly
+        value: DELETE gt-{{runShort}}-{{deviceId}}
+    expect:
+      text: Delete team permanently
+  - id: delete-team
+    title: Permanently delete the run-owned team
+    action:
+      click:
+        css: 'form[data-scene="team.delete"] button[type="submit"]'
+        internal: true
+    expect:
+      urlIncludes: /app/teams
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+  - id: verify-team-lookup-cleared
+    title: Verify the deleted team no longer resolves
+    action:
+      apiRequest:
+        base: web
+        method: GET
+        path: /t/gt-{{runShort}}-{{deviceId}}
+        expectedStatus: 404
+    expect:
+      urlIncludes: /app/teams
+      notVisible:
+        - css: '[data-team-name="gt-{{runShort}}-{{deviceId}}"]'
+          internal: true
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output:
+      format: mp4
+      fps: 30
+      resolution:
+        width: 1920
+        height: 1080
+    capture:
+      viewport:
+        width: 1600
+        height: 900
+      video:
+        width: 1600
+        height: 900
+      evidenceFit: fixed-browser
+runtime:
+  mode: training
+  timeouts:
+    sceneSeconds: 300
+    chapterSeconds: 120
+    stepSeconds: 60
+  checkpoints:
+    enabled: true
+    defaultResumable: true
+    everyStep: true
+  progress:
+    heartbeatSeconds: 15
+  failure:
+    continueOnFailure: false
+training: {}
+visualAudit:
+  enabled: true

@@ -1,0 +1,26 @@
+---
+import AgentLabHomeSurface from '@treeseed/ui/components/astro/agent-lab/AgentLabHomeSurface.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken } from '../../../lib/auth/support/csrf.ts';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
+import { agentLabMetricDestinations, loadAgentLabFrame } from '../../../view-models/agent-lab/agent-lab-frame.ts';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const app = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const }));
+const selection = { date: Astro.url.searchParams.get('date'), workday: Astro.url.searchParams.get('workday') };
+const [frame, access] = await Promise.all([
+	app.activeTeam ? loadAgentLabFrame(api, app.activeTeam, preferences, selection) : null,
+	app.activeTeam ? api.getTeamAccessSummary(app.activeTeam.id).catch(() => null) : null,
+]);
+const canManage = Boolean((access?.roles ?? access?.access?.roles ?? []).some((role: string) => ['team_owner', 'project_lead'].includes(role)));
+const canDiagnose = Boolean((access?.permissions ?? access?.access?.permissions ?? []).includes('workday:diagnose'));
+const csrfToken = ensureCsrfToken(Astro);
+---
+
+<TreeseedAppLayout title="Agent Lab" description="See the operating field, understand its signals, and direct agent work." currentPath="/app/work" teams={app.teams} activeTeam={app.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<AgentLabHomeSurface {frame} {canManage} {canDiagnose} {csrfToken} metricDestinations={agentLabMetricDestinations}
+		initialSurfaceMode={Astro.url.searchParams.get('focus') === 'atlas' || Astro.url.searchParams.get('research') === '1' ? 'focused' : 'inline'} />
+</TreeseedAppLayout>

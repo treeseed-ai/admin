@@ -1,0 +1,32 @@
+id: treeseed-admin
+siteConfigPath: ./src/config.yaml
+content:
+  docs: ./src/content/knowledge
+  pages: ./src/content/pages
+  notes: ./src/content/notes
+  questions: ./src/content/questions
+  objectives: ./src/content/objectives
+  proposals: ./src/content/proposals
+  decisions: ./src/content/decisions
+  people: ./src/content/people
+  agents: ./src/content/agents
+  discussions: ./src/content/discussions
+  discussion_messages: ./src/content/discussion-messages
+  discussion_events: ./src/content/discussion-events
+  groups: ./src/content/groups
+  group_edges: ./src/content/group-edges
+  books: ./src/content/books
+features:
+  docs: true
+  books: true
+  notes: true
+  questions: true
+  objectives: true
+  proposals: true
+  decisions: true
+  agents: true
+  forms: false
+site:
+  models:
+    workdays:
+      rendered: false

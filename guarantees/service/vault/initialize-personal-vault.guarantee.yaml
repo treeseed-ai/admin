@@ -1,0 +1,51 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.service.vault.initialize-personal-vault.021
+journeyIndex: 21
+type: service
+subtype: vault
+journey: Create Passphrase
+ownerPackage: "@treeseed/admin"
+summary: Initialize personal client-side vault access and the active team's encrypted credential vault.
+status: active
+dependencies:
+  journeys: [4, 13]
+  guarantees: [guarantee.user.auth.user-login.004, guarantee.team.team.switch-active-team.013]
+actors:
+  allowed: [team_owner]
+  forbidden: [anonymous_user, non_member, contributor, viewer]
+devices:
+  required: [desktop_chromium, tablet_chromium, mobile_chromium]
+gates: [security, release]
+preconditions:
+  fixtures: [integrated_treeseed_project]
+  notes: [An authenticated owner has selected an active team.]
+uiFeature:
+  contract: ../service-management.ui-feature.yaml
+  capabilities: [service.vault, service.contextual-help]
+scene:
+  required: true
+  manifest: ./scenes/vault-lifecycle.scene.yaml
+  executionKey: admin.services.vault-lifecycle
+  entryRoute: /app/services/vault
+  componentContract: client-encrypted vault service journey
+  expectedEvidence: [playwright_trace, scene_video, screenshot_on_failure, console_log, network_log]
+api:
+  required: true
+  verifierRefs: [api.service.management.contracts, sdk.service.vault.crypto]
+content:
+  required: false
+  verifierRefs: []
+audit:
+  required: true
+  verifierRefs: [api.service.management.contracts]
+negativeCases:
+  - { id: anonymous-denied, actor: anonymous_user, sceneManifest: ../scenes/negative/anonymous-services.scene.yaml, executionKey: admin.services.negative.anonymous, verifierRefs: [api.service.management.contracts] }
+  - { id: nonmember-denied, actor: non_member, sceneManifest: ../scenes/negative/nonmember-services.scene.yaml, executionKey: admin.services.negative.nonmember, verifierRefs: [api.service.management.contracts] }
+  - { id: contributor-denied, actor: contributor, sceneManifest: ../scenes/negative/readonly-services.scene.yaml, executionKey: admin.services.negative.contributor, verifierRefs: [api.service.management.contracts] }
+  - { id: viewer-denied, actor: viewer, sceneManifest: ../scenes/negative/viewer-services.scene.yaml, executionKey: admin.services.negative.viewer, verifierRefs: [api.service.management.contracts] }
+evidence:
+  required: [playwright_trace, scene_video, api_verification_log]
+surface: admin-ui
+run:
+  timeoutSeconds: 300
+  requiredForRelease: true

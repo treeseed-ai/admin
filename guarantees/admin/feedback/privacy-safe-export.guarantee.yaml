@@ -1,0 +1,22 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.admin.feedback.privacy-safe-export.031
+type: admin
+subtype: feedback
+journey: Privacy-safe Feedback Export
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: A platform administrator can generate and download a bounded expiring AI-safe bundle without direct personal identifiers.
+status: active
+dependencies: { journeys: [], guarantees: [guarantee.admin.feedback.manage-feedback.030] }
+actors: { allowed: [platform_admin], forbidden: [market_admin, team_owner, anonymous_user] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, security, release]
+preconditions: { fixtures: [platform_admin], notes: [Run-correlated feedback is available for export.] }
+scene: { required: true, manifest: ./scenes/manage-feedback.scene.yaml, executionKey: admin.feedback.manage, mode: { acceptance: true, demo: true, training: true }, entryRoute: /app/feedback, componentContract: admin.feedback-management, expectedEvidence: [playwright_trace, network_log] }
+api: { required: true, verifierRefs: [api.feedback.management] }
+content: { required: false, verifierRefs: [] }
+audit: { required: true, verifierRefs: [api.feedback.management] }
+negativeCases: [{ id: export-forbidden, actor: team_owner, verifierRefs: [api.feedback.management] }]
+evidence: { required: [execution_graph, playwright_trace, api_verification_log] }
+notes: [This guarantee shares the administrator lifecycle execution and does not duplicate triage mutations.]
+run: { timeoutSeconds: 900, requiredForRelease: true }

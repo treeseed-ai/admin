@@ -1,0 +1,5 @@
+---
+const encoded = Buffer.from(String(Astro.params.proposalId ?? '')).toString('base64url');
+const query = new URLSearchParams(Astro.url.searchParams); query.append('inspect', `proposal~${encoded}`);
+return Astro.redirect(`/app/work/inbox?${query}`, 308);
+---

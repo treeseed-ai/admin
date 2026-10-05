@@ -11,11 +11,14 @@ journey:
     - Manage Sessions opens the canonical @treeseed/admin dashboard read model workflow.
     - Manage Sessions exercises a service journey instead of only loading /app/account.
     - Manage Sessions records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 5
   requiresInteractiveAction: true
   consumesState:
-    - key: auth.owner
-      kind: user
+    - key: auth.primary-session
+      kind: browser-storage
+  producesState:
+    - key: account.sessions-reviewed
+      kind: marker
 mode:
   test: true
   demo: true
@@ -80,15 +83,70 @@ workflow:
   - id: open-entry-route
     title: Open Manage Sessions
     action:
-      goto: /app/account
+      goto: /app/account/sessions
     expect:
-      urlIncludes: /app/account
-  - id: inspect-service-surface
-    title: Inspect Manage Sessions service surface
+      urlIncludes: /app/account/sessions
+      visible:
+        - scene: account-sessions
+      text: Current session
+  - id: create-revocable-session
+    title: Create an additional session owned by this run
     action:
-      keyboard: Tab
+      createBrowserSession:
+        identifier: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+        password: TreeSeedGuaranteeReset123!
+        userAgent: Treeseed Guarantee Revocable Session
+        clientIp: 198.51.100.27
     expect:
-      urlIncludes: /app/account
+      urlIncludes: /app/account/sessions
+      text: Current session
+  - id: reload-session-list
+    title: Load the run-owned revocable session
+    action:
+      goto: /app/account/sessions
+    expect:
+      visible:
+        - scene: account-sessions
+      text: Revoke session
+  - id: verify-session-metadata-and-pretty-time
+    title: Verify the additional session and formatted time without trusting a spoofed edge address
+    action:
+      goto: /app/account/sessions
+    expect:
+      notText: T00:00:00.000Z
+      visible:
+        - css: '[data-session-entry]:has(button:has-text("Revoke session")) [data-session-ip]'
+          internal: true
+        - css: '[data-session-entry]:has(button:has-text("Revoke session")) .account-session-signed-in'
+          internal: true
+  - id: reject-current-session-revocation
+    title: Prove no current-session revoke control is exposed
+    action:
+      goto: /app/account/sessions
+    expect:
+      urlIncludes: /app/account/sessions
+      text: Current session
+      notText: Revoke current session
+  - id: revoke-extra-session
+    title: Revoke the additional non-current session
+    action:
+      click:
+        css: '[data-session-entry]:has(button:has-text("Revoke session")) button:has-text("Revoke session")'
+        internal: true
+    expect:
+      urlIncludes: /app/account/sessions
+      text: Session revoked.
+      visible:
+        - css: '[data-ts-toast-id][data-tone="success"]'
+          internal: true
+  - id: verify-revoked-session
+    title: Verify the revoked session remains observable
+    action:
+      goto: /app/account/sessions
+    expect:
+      visible:
+        - scene: account-sessions
+      text: Revoked
 chapters: []
 overlays: []
 diagrams: []

@@ -13,12 +13,20 @@ journey:
     - The session-ending route produces screenshot evidence before and after logout.
   minimumSteps: 2
   requiresInteractiveAction: true
+  consumesState:
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: team.deleted
+      kind: marker
+  producesState:
+    - key: auth.logged-out
+      kind: marker
 mode:
   test: true
   demo: true
   training: true
 target:
-  app: market
+  app: admin
   environment: local
   baseUrl: auto
   browser: chromium
@@ -90,21 +98,23 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-account-sessions
-    title: Open logout confirmation
+    title: Open the authenticated application shell
     action:
-      goto: /auth/logout
+      goto: /app/
     expect:
-      urlIncludes: /auth/logout
-      text: Sign out
+      urlIncludes: /app
+      visible:
+        - scene: start.orientation
   - id: submit-user-logout
     title: End the current session
     action:
       click:
         role: button
         name: Sign out
+        revealWith: { role: button, name: Open team operations }
     expect:
-      urlIncludes: /auth/sign-in
-      text: Sign in
+      urlIncludes: /
+      text: TreeSeed
 chapters: []
 overlays: []
 diagrams: []

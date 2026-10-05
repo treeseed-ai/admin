@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.work.command.monitor-team-operations.033
+journeyIndex: 738
+type: work
+subtype: command
+journey: "Monitor team operations in Command"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "A team member can interpret situations and UI-owned live agent intervals while retaining the server snapshot and interaction state during refresh failure."
+status: planned
+dependencies: { journeys: [], guarantees: [] }
+actors: { allowed: [authenticated_user, team_owner, project_lead], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: ["An active team is selected."] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: ["Hidden or offline documents stop polling.", "Refresh failure does not erase the server snapshot.", "Live updates never reload the page, move focus, or reset scroll and disclosure state."]
+evidence: { required: [guarantee_report] }
+notes: ["The Command activity field consumes the reusable UI Agent Activity Gantt and shared polling coordinator.", "Planned until active, idle, dense, failed, and appearance visual scenes are repeatable."]

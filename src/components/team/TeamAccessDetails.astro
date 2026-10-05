@@ -1,0 +1,22 @@
+---
+import DisclosureList from '@treeseed/ui/components/astro/data/DisclosureList.astro';
+import { capabilityDisplay, roleDisplay } from '../../lib/teams/access-display';
+
+interface Props {
+	role: string;
+	capabilities?: string[];
+	open?: boolean;
+}
+
+const { role, capabilities = [], open = false } = Astro.props as Props;
+const display = roleDisplay(role);
+const items = capabilities.map((capability) => capabilityDisplay(capability));
+---
+
+<DisclosureList
+	title={display.label}
+	description={display.description}
+	items={items}
+	{open}
+	emptyLabel="This role has no team management responsibilities."
+/>

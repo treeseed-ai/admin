@@ -1,0 +1,81 @@
+schemaVersion: treeseed.ui-feature/v1
+id: admin.knowledge-authoring
+ownerPackage: "@treeseed/admin"
+routes:
+  - /books
+  - "/t/[teamSlug]/books/[bookSlug]"
+  - "/t/[teamSlug]/books/[bookSlug]/[...pageSlug]"
+  - /app/knowledge
+  - "/app/projects/[projectId]/books"
+devices: [desktop_chromium, tablet_chromium, mobile_chromium]
+states: [loading, empty, unavailable, forbidden, validation, conflict, success, archived, review, published]
+capabilities:
+  - id: knowledge.library
+    routes: [/books, /app/knowledge, "/app/projects/[projectId]/books"]
+    actions: [search, filter, inspect-book, inspect-outline, open-reader]
+    states: [loading, empty, unavailable, forbidden, success]
+    actors: { allowed: [anonymous_user, authenticated_user, team_member], forbidden: [unauthorized_private_viewer] }
+    guaranteeIds: [guarantee.project.book.search-books.068]
+  - id: knowledge.book-authoring
+    routes: [/app/knowledge, "/app/projects/[projectId]/books"]
+    actions: [create-workspace, edit-metadata, validate, checkpoint, submit-review, abandon-workspace]
+    states: [validation, conflict, success, review, unavailable, forbidden]
+    actors: { allowed: [knowledge_author, project_contributor, project_manager], forbidden: [anonymous_user, non_member, project_viewer] }
+    guaranteeIds: [guarantee.project.book.create-book.065, guarantee.project.book.edit-book.066]
+  - id: knowledge.book-lifecycle
+    routes: [/app/knowledge]
+    actions: [inspect-dependencies, archive, restore]
+    states: [validation, conflict, archived, success, forbidden]
+    actors: { allowed: [project_manager], forbidden: [project_contributor, project_viewer, non_member, anonymous_user] }
+    guaranteeIds: [guarantee.project.book.delete-book.067]
+  - id: knowledge.page-authoring
+    routes: [/app/knowledge]
+    actions: [edit-markdown, edit-metadata, preview, inspect-diff, checkpoint, submit-review]
+    states: [validation, conflict, success, review, unavailable, forbidden]
+    actors: { allowed: [knowledge_author, project_contributor, project_manager], forbidden: [anonymous_user, non_member, project_viewer] }
+    guaranteeIds: [guarantee.project.knowledge.create-book-page.069, guarantee.project.knowledge.edit-book-page.071]
+  - id: knowledge.relationships
+    routes: [/app/knowledge]
+    actions: [search-related-content, link-content, unlink-content, inspect-backlinks]
+    states: [empty, validation, success, unavailable, forbidden]
+    actors: { allowed: [knowledge_author, project_contributor, project_manager], forbidden: [anonymous_user, non_member, project_viewer] }
+    guaranteeIds: [guarantee.project.knowledge.create-book-page.069, guarantee.project.knowledge.review-backlinks.091]
+  - id: knowledge.page-lifecycle
+    routes: [/app/knowledge]
+    actions: [inspect-backlinks, inspect-pack-dependencies, archive, restore]
+    states: [validation, conflict, archived, success, forbidden]
+    actors: { allowed: [project_manager], forbidden: [project_contributor, project_viewer, non_member, anonymous_user] }
+    guaranteeIds: [guarantee.project.knowledge.delete-book-page.072]
+  - id: knowledge.review-publication
+    routes: [/app/knowledge]
+    actions: [inspect-diff, review-rendering, approve, reject, publish, observe-operation]
+    states: [review, validation, conflict, published, unavailable, forbidden]
+    actors: { allowed: [knowledge_reviewer, project_manager], forbidden: [author_without_review_permission, non_member, anonymous_user] }
+    guaranteeIds: [guarantee.project.book.create-book.065, guarantee.project.knowledge.create-book-page.069, guarantee.project.library.rebuild-library-index.090]
+  - id: knowledge.packs
+    routes: [/app/knowledge]
+    actions: [save-collection, select-books, preview-closure, build-pack, observe-operation, download-pack]
+    states: [empty, validation, success, unavailable, forbidden]
+    actors: { allowed: [knowledge_pack_builder, project_contributor, project_manager], forbidden: [anonymous_user, non_member, unauthorized_private_viewer] }
+    guaranteeIds: [guarantee.project.book.download-book.070, guarantee.project.library.download-library.073]
+  - id: knowledge.reader
+    routes: ["/t/[teamSlug]/books/[bookSlug]", "/t/[teamSlug]/books/[bookSlug]/[...pageSlug]"]
+    actions: [browse-outline, follow-heading, navigate-previous-next, inspect-related-pages, inspect-backlinks, open-authoring]
+    states: [loading, empty, unavailable, forbidden, success]
+    actors: { allowed: [anonymous_user, authenticated_user, authorized_private_viewer], forbidden: [unauthorized_private_viewer] }
+    guaranteeIds: [guarantee.project.book.search-books.068, guarantee.project.knowledge.review-backlinks.091]
+requiredGuarantees:
+  - guarantee.project.book.create-book.065
+  - guarantee.project.book.edit-book.066
+  - guarantee.project.book.delete-book.067
+  - guarantee.project.book.search-books.068
+  - guarantee.project.knowledge.create-book-page.069
+  - guarantee.project.book.download-book.070
+  - guarantee.project.knowledge.edit-book-page.071
+  - guarantee.project.knowledge.delete-book-page.072
+  - guarantee.project.library.download-library.073
+  - guarantee.project.library.rebuild-library-index.090
+  - guarantee.project.knowledge.review-backlinks.091
+  - guarantee.admin.knowledge.knowledge-authoring.565
+  - guarantee.admin.knowledge.contextual-knowledge.566
+requirements: { accessibility: true, console: true, network: true, visual: true, durableState: true, cleanup: true }

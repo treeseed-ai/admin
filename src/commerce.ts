@@ -1,4 +1,4 @@
-import type { CatalogItemOfferMode } from '@treeseed/sdk/types';
+import type { CatalogItemOfferMode } from '@treeseed/sdk/site-contracts/catalog';
 
 export interface AdminOffer {
   id: string;

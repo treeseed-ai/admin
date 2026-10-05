@@ -1,0 +1,23 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.admin.feedback.production-readiness.032
+type: admin
+subtype: feedback
+journey: Feedback Production Readiness
+ownerPackage: "@treeseed/admin"
+surface: scene
+summary: Require complete responsive UI, durable persistence, private attachments, authorization, status history, privacy-safe export, audit, and cleanup coverage.
+status: active
+dependencies:
+  journeys: []
+  guarantees: [guarantee.admin.feedback.authenticated-submission.028, guarantee.admin.feedback.screenshot-privacy.029, guarantee.admin.feedback.manage-feedback.030, guarantee.admin.feedback.privacy-safe-export.031]
+actors: { allowed: [release_operator], forbidden: [] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, security, release]
+preconditions: { fixtures: [integrated_treeseed_project], notes: [The feedback feature contract and current source closure are available.] }
+api: { required: true, verifierRefs: [sdk.feedback.contracts, api.feedback.management, api.feedback.run-correlated, api.feedback.run-cleanup, ui.feedback.system, admin.feedback.ui-contracts] }
+content: { required: true, verifierRefs: [admin.feedback.ui-contracts] }
+audit: { required: true, verifierRefs: [api.feedback.management] }
+negativeCases: [{ id: privacy-and-authorization-fail-closed, actor: anonymous_user, verifierRefs: [api.feedback.management] }]
+evidence: { required: [execution_graph, api_verification_log] }
+notes: [This aggregate intentionally has no scene or CSV journey index and depends on the exact product scenes.]
+run: { timeoutSeconds: 900, requiredForRelease: true }

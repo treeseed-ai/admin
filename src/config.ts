@@ -1,1 +1,1 @@
-export { createTreeseedTenantSite as createTreeseedAdminSite } from '@treeseed/core/config';
+export { createTenantSite as createAdminSite } from '@treeseed/core/config';

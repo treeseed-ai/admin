@@ -1,0 +1,26 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.admin.knowledge.contextual-knowledge.566
+type: admin
+subtype: knowledge
+journey: Contextual Knowledge Production Readiness
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: Require contextual help to resolve authorized published book pages and TreeDX graph relationships without metadata leakage.
+status: active
+dependencies:
+  journeys: [68, 69, 91]
+  guarantees: []
+actors: { allowed: [authenticated_user, team_member, platform_admin], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, security, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.library, knowledge.relationships, knowledge.reader] }
+scene: { required: true, manifest: ../../project/book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: contextual knowledge dialog and canonical reader }
+api: { required: true, verifierRefs: [api.knowledge.contextual-policy] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content, core.knowledge.starlight-reader, admin.knowledge.ui-contracts] }
+audit: { required: false, verifierRefs: [] }
+negativeCases:
+  - { id: unauthorized-context-is-hidden, actor: unauthorized_user, sceneManifest: ../../project/book/scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.contextual-policy] }
+evidence: { required: [execution_graph, playwright_trace, api_verification_log, treedx_content_ref] }
+notes: [No-index release aggregate; the exact published page is resolved in the shared dialog while policy tests prove inaccessible knowledge and edges remain hidden.]
+run: { requiredForRelease: true }

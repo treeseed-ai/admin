@@ -1,0 +1,193 @@
+---
+import '@treeseed/ui/styles/tokens.css';
+import '@treeseed/ui/styles/theme.css';
+import '@treeseed/ui/styles/ui.css';
+import '@treeseed/ui/styles/forms.css';
+import '@treeseed/ui/styles/app-shell.css';
+import '@treeseed/ui/styles/app-controls.css';
+import '@treeseed/ui/styles/charts.css';
+import '@treeseed/ui/styles/account/forms.css';
+import '@treeseed/ui/styles/auth.css';
+import ProductShell from '@treeseed/ui/components/astro/shell/ProductShell.astro';
+import ShellIcon from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro';
+import LiveDevelopmentIndicator from '../components/LiveDevelopmentIndicator.astro';
+import { AppearancePersistenceIsland } from '@treeseed/ui/components/react/progressive';
+import { resolveAuthenticatedThemePreference } from '../lib/auth/accounts/appearance';
+import { compileGuidedThemePalette } from '@treeseed/ui/theme';
+import { SITE_SLOGAN } from '@treeseed/ui/site-brand';
+import { resolveDevelopmentScene } from '@treeseed/ui/foundation';
+import { principalHasPlatformPermission } from '../lib/auth/support/rbac';
+import { createApiFacade, envValue } from '../lib/market/api-client';
+import { ensureCsrfToken } from '../lib/auth/support/csrf';
+import { loadRouteHelpContext } from '../lib/help/context';
+
+interface TeamEntry {
+	id: string;
+	name: string;
+	slug?: string;
+	displayName?: string | null;
+	allowedActions?: {
+		edit?: boolean;
+		viewOverview?: boolean;
+	};
+}
+
+interface Props {
+	title: string;
+	description?: string;
+	currentPath: string;
+	teams: TeamEntry[];
+	activeTeam?: TeamEntry | null;
+	contentOwnsPageHeader?: boolean;
+	timeZone?: string;
+}
+
+const {
+	title,
+	description = 'Manage your account, teams, and active team.',
+	currentPath,
+	teams,
+	activeTeam = null,
+	contentOwnsPageHeader = false,
+	timeZone: suppliedTimeZone,
+} = Astro.props as Props;
+
+const appearance = await resolveAuthenticatedThemePreference(Astro);
+const api = createApiFacade(Astro);
+const [personalThemes, loadedPreferences] = await Promise.all([
+	api.personalThemes().catch(() => []),
+	api.accountPreferences().catch(() => ({ timeZone: suppliedTimeZone ?? 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 as const, updatedAt: '' })),
+]);
+const preferences = { ...loadedPreferences, ...(suppliedTimeZone ? { timeZone: suppliedTimeZone } : {}) };
+const customSchemes = Object.fromEntries(personalThemes.flatMap((theme) => {
+	try { return [[theme.schemeId, compileGuidedThemePalette(theme.palette, theme.baseScheme)]]; } catch { return []; }
+}));
+const themeConfig = {
+	schemes: customSchemes,
+	schemeNames: Object.fromEntries(personalThemes.map((theme) => [theme.schemeId, theme.name])),
+};
+const csrfToken = ensureCsrfToken(Astro);
+const teamOptions = teams.filter((team: TeamEntry & { status?: string }) => (team.status ?? 'active') === 'active').map((team) => ({
+	id: team.id,
+	label: team.displayName ?? team.name ?? team.slug ?? team.id,
+}));
+const helpContext = await loadRouteHelpContext(Astro, Astro.url.pathname, activeTeam?.id);
+const principal = api.currentPrincipal;
+const canReadFeedback = principalHasPlatformPermission(principal, 'feedback:read:global');
+const feedbackContext = principal ? {
+	canonicalPath: `${Astro.url.pathname}${Astro.url.search}`,
+	title,
+	capabilityId: 'admin.feedback.submit',
+	shell: 'product' as const,
+	context: activeTeam ? 'team' as const : 'personal' as const,
+	teamId: activeTeam?.id,
+	identityLabel: principal.displayName ?? 'Current account',
+	teamLabel: activeTeam ? (activeTeam.displayName ?? activeTeam.name ?? activeTeam.slug ?? activeTeam.id) : undefined,
+	environment: (import.meta.env.MODE === 'production' ? 'production' : 'local') as 'local' | 'production',
+	submissionEndpoint: '/v1/feedback',
+	screenshotPolicy: 'optional' as const,
+	buildId: import.meta.env.PUBLIC_TREESEED_BUILD_ID,
+	revision: import.meta.env.PUBLIC_TREESEED_REVISION,
+	routePattern: Astro.url.pathname,
+	policy: 'authenticated' as const,
+	source: 'page' as const,
+} : undefined;
+const discussionContext = principal && activeTeam ? {
+	teamId: activeTeam.id,
+	identityLabel: principal.displayName ?? 'Current account',
+	endpoint: '/v1/discussions',
+	realtime: { endpoint: '/v1/session/events', enabled: false },
+} : undefined;
+const reviewerCandidate = envValue(Astro.locals, 'TREESEED_REVIEWER_URL');
+const developmentScene = import.meta.env.DEV ? resolveDevelopmentScene(Astro.url.searchParams.get('devScene') ?? '') : undefined;
+let reviewerUrl = '';
+try {
+	const parsed = new URL(reviewerCandidate);
+	if (parsed.protocol === 'http:' && ['127.0.0.1', 'localhost', '::1'].includes(parsed.hostname)) reviewerUrl = parsed.toString();
+} catch { reviewerUrl = ''; }
+---
+
+<ProductShell
+	title={title}
+	description={description}
+	currentPath={currentPath}
+	appearance={appearance}
+	contentOwnsPageHeader={contentOwnsPageHeader}
+	themeConfig={themeConfig}
+	timeZone={preferences.timeZone}
+	helpContext={helpContext}
+	feedbackContext={feedbackContext}
+	discussionContext={discussionContext}
+	developmentScene={developmentScene}
+	brand={{
+		name: 'TreeSeed',
+		tag: SITE_SLOGAN,
+		href: '/app/',
+		logoSrc: '/logo.svg',
+		logoAlt: '',
+	}}
+	navItems={[
+		{ label: 'Follow', href: '/app/work', icon: 'capacity' },
+		{ label: 'Chat / Discuss', href: '/app/chat', icon: 'discussion' },
+		{ label: 'Inbox', href: '/app/work/inbox', icon: 'inbox' },
+		{ label: 'Explore', href: '/app/work/find', icon: 'search' },
+		{ label: 'Books', href: '/app/knowledge', icon: 'knowledge' },
+	]}
+	siteItems={[{ label: 'Home', href: '/' }, { label: 'Guide', href: '/knowledge/market/' }, { label: 'Status', href: '/status/' }]}
+	quickActions={[
+		activeTeam
+			? { label: 'Manage teams', href: '/app/teams', variant: 'secondary' as const, icon: 'teams' as const }
+			: { label: 'Manage teams', href: '/app/teams', variant: 'primary' as const, icon: 'teams' as const },
+		...(canReadFeedback ? [{ label: 'Feedback', href: '/app/feedback', icon: 'feedback' as const, variant: 'secondary' as const }] : []),
+		...(reviewerUrl ? [{ label: 'Open local Reviewer', href: reviewerUrl, variant: 'secondary' as const }] : []),
+	]}
+	accountActions={[
+		{ label: 'Account', href: '/app/account', variant: 'secondary' as const, icon: 'account' as const },
+		{ label: 'Sign out', action: '/auth/logout', method: 'post' as const, hiddenFields: { csrfToken }, variant: 'secondary' as const, icon: 'sign-out' as const, iconOnly: true },
+	]}
+>
+	<div slot="railContext" class="ts-team-switcher" data-active-team-label={activeTeam ? (activeTeam.displayName ?? activeTeam.name ?? activeTeam.slug ?? activeTeam.id) : ''}>
+		<div class="ts-section__eyebrow">Active team</div>
+		{teams.length > 0 ? (
+			<form class="ts-team-selector" aria-label="Active team" method="post" action="/app/teams/active" data-team-switcher data-ts-submit="enhanced" data-ts-form-adapter="json" data-ts-success-message="Active team updated.">
+				<input type="hidden" name="csrfToken" value={csrfToken} />
+				<label class="ts-field ts-team-selector__label">
+					<select class="ts-control" name="teamId" aria-label="Active team">
+						{!activeTeam ? <option value="" selected disabled>Choose a team</option> : null}
+						{teamOptions.map((team) => (
+							<option value={team.id} selected={team.id === activeTeam?.id}>{team.label}</option>
+						))}
+					</select>
+				</label>
+				<a class="ts-icon-button ts-team-manage-button" href={activeTeam ? `/app/teams/${encodeURIComponent(activeTeam.id)}` : '/app/teams'} title="Current team" aria-label="View current team">
+					<ShellIcon name="teams" />
+				</a>
+			</form>
+		) : (
+			<a class="ts-create-team-button" href="/app/teams/new" title="Create team" aria-label="Create team">
+				<ShellIcon name="create" />
+				<span class="ts-team-operations__label">Create team</span>
+			</a>
+		)}
+	</div>
+	<LiveDevelopmentIndicator timeZone={preferences.timeZone} />
+	<slot />
+</ProductShell>
+
+<AppearancePersistenceIsland endpoint="/v1/auth/web/preferences" expectedUpdatedAt={preferences.updatedAt} reloadOnSuccessPath="/app/account/appearance" client:load />
+
+<script>
+	import { startClientActionExecutor } from '../lib/agents/client-action-executor';
+	startClientActionExecutor();
+	document.querySelectorAll('[data-team-switcher]').forEach((form) => {
+		const select = (form as HTMLFormElement).elements.namedItem('teamId') as HTMLSelectElement | null;
+		select?.addEventListener('change', () => {
+			const url = new URL(window.location.href);
+			url.searchParams.delete('teamId');
+			form.addEventListener('treeseed:form-success', () => {
+				window.location.href = url.toString();
+			}, { once: true });
+			(form as HTMLFormElement).requestSubmit();
+		});
+	});
+</script>

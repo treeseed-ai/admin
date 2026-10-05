@@ -1,0 +1,6 @@
+---
+const encoded = Buffer.from(String(Astro.params.assignmentId ?? '')).toString('base64url');
+const query = new URLSearchParams(Astro.url.searchParams);
+query.append('inspect', `assignment~${encoded}`);
+return Astro.redirect(`/app/work/direction?${query}`, 308);
+---

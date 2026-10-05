@@ -1,0 +1,55 @@
+schemaVersion: treeseed.scene/v1
+id: team.negative.edit-contributor
+title: Contributor Team Settings Denial
+description: A contributor can view team context but cannot render or submit identity controls.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [team.identity-settings]
+  minimumSteps: 2
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, orientation: landscape, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, orientation: portrait, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, orientation: portrait, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: member, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: deny-settings-form
+    title: Omit identity mutation controls for contributors
+    action:
+      goto:
+        path: /app/teams/visual-audit-team/edit
+        expectedStatus: 403
+    expect:
+      text: Team controls unavailable
+      notVisible: [{ role: button, name: Save team }]
+  - id: return-to-overview
+    title: Return to the safe team collection
+    action:
+      click: { role: link, name: Back to teams }
+    expect:
+      urlIncludes: /app/teams
+      visible: [{ scene: team.collection }]
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+    capture: { viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, evidenceFit: fixed-browser }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 300, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }

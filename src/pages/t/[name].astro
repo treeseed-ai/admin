@@ -1,78 +1,54 @@
 ---
-import TreeseedPublicLayout from '../../layouts/TreeseedPublicLayout.astro';
-import PublicProfileHeader from '@treeseed/ui/components/astro/public/PublicProfileHeader.astro';
-import PublicSection from '@treeseed/ui/components/astro/public/PublicSection.astro';
-import PublicStack from '@treeseed/ui/components/astro/public/PublicStack.astro';
-import { resolveMarketplaceTeamProfile } from '../../lib/market/public-access.js';
+import TreeseedPublicLayout from '../../layouts/PublicLayout.astro';
+import TeamViewer from '@treeseed/ui/components/astro/team/TeamViewer.astro';
+import TeamNavigation from '../../components/team/TeamNavigation.astro';
+import PublicNotFound from '../../components/runtime/PublicNotFound.astro';
+import { createApiFacade } from '../../lib/market/api-client';
+import { resolvePublicTeamProfile } from '../../lib/market/public-access.js';
 
 export const prerender = false;
 
 const requestedName = String(Astro.params.name ?? '');
 const normalizedName = requestedName.trim().toLowerCase().replace(/[^a-z0-9-]+/gu, '-').replace(/^-+|-+$/gu, '').slice(0, 63);
-if (requestedName !== normalizedName && normalizedName) {
-	return Astro.redirect(`/t/${normalizedName}`, 301);
-}
+if (requestedName !== normalizedName && normalizedName) return Astro.redirect(`/t/${normalizedName}`, 301);
 
-const profile = await resolveMarketplaceTeamProfile(Astro, normalizedName);
-if (!profile) {
-	return new Response('Not found', { status: 404 });
-}
+const profile: any = await resolvePublicTeamProfile(Astro, normalizedName);
+if (!profile?.team) Astro.response.status = 404;
 
-const team = profile.team;
-const displayName = team.displayName ?? team.name;
-const joinedDate = new Date(team.createdAt).toLocaleDateString('en', { month: 'long', year: 'numeric' });
-const visibleCount = profile.activity.projects.length + profile.activity.catalogItems.length + profile.activity.knowledgePacks.length;
+const team = profile?.team ?? null;
+const knowledge = profile?.knowledge ?? { stats: {}, catalog: [], knowledgePacks: [], projects: [], trail: [] };
+const displayName = team?.displayName ?? team?.name ?? 'Team';
+const principal = Astro.locals.auth?.principal;
+const api = createApiFacade(Astro);
+const accessibleTeams = principal ? await api.listTeamsForPrincipal().catch(() => []) : [];
+const memberTeam = team ? accessibleTeams.find((entry: any) => entry.name === team.name) ?? null : null;
+const memberRoles = memberTeam?.roles ?? [];
+const canManageTeam = Boolean(memberTeam?.allowedActions?.edit);
+const isOwner = memberRoles.includes('team_owner');
+const publishedBySlug = new Map<string, any>();
+for (const item of [...(Array.isArray(knowledge.catalog) ? knowledge.catalog : []), ...(Array.isArray(knowledge.knowledgePacks) ? knowledge.knowledgePacks : [])]) {
+	const key = `${item.kind ?? 'knowledge_pack'}:${item.slug}`;
+	if (!publishedBySlug.has(key)) publishedBySlug.set(key, item);
+}
+const published = [...publishedBySlug.values()];
+const projects = (Array.isArray(knowledge.projects) ? knowledge.projects : []).map((project: any) => ({ id: project.id, title: project.name, description: project.description ?? project.coreObjective ?? 'Public project', status: project.status ?? 'public', href: project.href }));
+const resources = published.map((item: any) => ({ id: item.id ?? item.slug, title: item.title ?? item.name ?? item.slug, description: item.description ?? item.summary ?? 'Published team resource', status: item.status ?? item.kind ?? 'published', href: item.href }));
+const metrics = [
+	{ label: 'Templates', value: knowledge.stats.templates ?? 0, description: 'Published templates' },
+	{ label: 'Knowledge packs', value: knowledge.stats.knowledgePacks ?? 0, description: 'Published knowledge' },
+	{ label: 'Public projects', value: knowledge.stats.projects ?? projects.length, description: 'Visible projects' },
+	{ label: 'Publications', value: knowledge.stats.publications ?? published.length, description: 'Released outcomes' },
+];
+const activity = (Array.isArray(knowledge.trail) ? knowledge.trail : []).map((item: any) => ({ ...item, title: item.title ?? item.label ?? 'Team activity', description: item.description ?? item.summary, timestamp: item.timestamp ?? item.occurredAt ?? item.createdAt }));
+const actions = memberTeam ? [{ label: 'Open team operations', href: `/app/teams/${encodeURIComponent(String(memberTeam.id))}`, variant: 'primary' as const }] : [];
 ---
 
-<TreeseedPublicLayout
+{!team ? <PublicNotFound currentPath={Astro.url.pathname} description="This team does not exist or has not published a public profile." /> : <TreeseedPublicLayout
 	title={`${displayName} (@${team.name}) | TreeSeed`}
-	description={team.profileSummary ?? `Public TreeSeed profile for @${team.name}.`}
+	description={team.profileSummary ?? `Public knowledge profile for @${team.name}.`}
 	currentPath={`/t/${team.name}`}
+	profilePage
 >
-	<PublicStack>
-		<PublicProfileHeader
-			eyebrow="Team profile"
-			name={displayName}
-			handle={`@${team.name}`}
-			imageSrc={team.logoUrl}
-			meta={`Created ${joinedDate}`}
-			description={team.profileSummary}
-		/>
-
-		<section class="ts-grid-2 ts-profile-activity" aria-label="Team activity">
-			<PublicSection title="Projects" eyebrow={`${profile.activity.projects.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.projects.length > 0 ? profile.activity.projects.map((project: any) => (
-						<a class="ts-list-item" href={`/p/${project.slug}`}>
-							<strong>{project.name}</strong><br />
-							<span>{project.description || project.slug}</span>
-						</a>
-					)) : <p>No visible projects.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Catalog listings" eyebrow={`${profile.activity.catalogItems.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.catalogItems.length > 0 ? profile.activity.catalogItems.map((item: any) => (
-						<a class="ts-list-item" href={`/market/${item.kind === 'knowledge_pack' ? 'knowledge-packs' : 'templates'}/${item.slug}`}>
-							<strong>{item.title}</strong><br />
-							<span>{item.summary || item.kind}</span>
-						</a>
-					)) : <p>No visible listings.</p>}
-				</div>
-			</PublicSection>
-
-			<PublicSection title="Knowledge packs" eyebrow={`${profile.activity.knowledgePacks.length} visible`}>
-				<div class="ts-list">
-					{profile.activity.knowledgePacks.length > 0 ? profile.activity.knowledgePacks.map((pack: any) => (
-						<a class="ts-list-item" href={`/market/knowledge-packs/${pack.slug}`}>
-							<strong>{pack.name}</strong><br />
-							<span>{pack.summary || pack.visibility}</span>
-						</a>
-					)) : <p>No visible knowledge packs.</p>}
-				</div>
-			</PublicSection>
-		</section>
-		{visibleCount === 0 ? <p class="ts-muted">No team activity is visible to you yet.</p> : null}
-	</PublicStack>
-</TreeseedPublicLayout>
+	{memberTeam ? <TeamNavigation team={memberTeam} currentPath={Astro.url.pathname} canManage={canManageTeam} isOwner={isOwner} /> : null}
+	<TeamViewer name={displayName} handle={team.name} description={team.profileSummary} logoUrl={team.logoUrl} status={team.status} projectLabel="Public projects" metrics={metrics} projects={projects} resources={resources} activity={activity} actions={actions} publicView />
+</TreeseedPublicLayout>}

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { build } from 'esbuild';
+import { parse } from 'yaml';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const requireFromPackage = createRequire(resolve(packageRoot, 'package.json'));
 const srcRoot = resolve(packageRoot, 'src');
-const distRoot = resolve(packageRoot, 'dist');
+const liveDistRoot = resolve(packageRoot, 'dist');
+const buildRoot = resolve(packageRoot, '.local', 'build-dist', String(process.pid));
+const distRoot = resolve(buildRoot, 'dist');
 const buildLockRoot = resolve(packageRoot, '.treeseed-build-dist.lock');
-const workspaceCoreDistRoot = resolve(packageRoot, '..', 'core', 'dist');
-const workspaceSdkDistRoot = resolve(packageRoot, '..', 'sdk', 'dist');
-const workspaceUiDistRoot = resolve(packageRoot, '..', 'ui', 'dist');
 
 const COMPILE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const COPY_EXTENSIONS = new Set(['.astro', '.css', '.d.ts', '.js', '.json', '.yaml', '.yml']);
@@ -66,29 +66,6 @@ async function acquireBuildLock() {
 			}
 			await sleep(250);
 		}
-	}
-}
-
-function runtimeDependencyNames() {
-	const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8')) as {
-		dependencies?: Record<string, string>;
-	};
-	return Object.keys(packageJson.dependencies ?? {});
-}
-
-function ensureWorkspaceRuntimePackageLinks() {
-	for (const packageName of runtimeDependencyNames()) {
-		if (!packageName.startsWith('@treeseed/')) {
-			continue;
-		}
-		const runtimePackageRoot = resolve(packageRoot, '..', packageName.slice('@treeseed/'.length));
-		if (!existsSync(resolve(runtimePackageRoot, 'package.json'))) {
-			continue;
-		}
-		const linkPath = resolve(packageRoot, 'node_modules', ...packageName.split('/'));
-		rmSync(linkPath, { recursive: true, force: true });
-		mkdirSync(dirname(linkPath), { recursive: true });
-		symlinkSync(runtimePackageRoot, linkPath, 'dir');
 	}
 }
 
@@ -150,40 +127,42 @@ function writeDeclaration(relativePath, source) {
   writeFileSync(filePath, source, 'utf8');
 }
 
-function relativePathForTsconfig(targetPath) {
-	return relative(packageRoot, targetPath).replaceAll('\\', '/');
+function canonicalize(value) {
+	if (Array.isArray(value)) return value.map(canonicalize);
+	if (!value || typeof value !== 'object') return value;
+	return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
 }
 
-function existingWorkspaceDeclarationPaths() {
-	const paths = {};
-	if (existsSync(resolve(workspaceCoreDistRoot, 'index.d.ts'))) {
-		Object.assign(paths, {
-			'@treeseed/core': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, 'index.d.ts'))],
-			'@treeseed/core/middleware/editorial-preview': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, 'middleware', 'editorial-preview.d.ts'))],
-			'@treeseed/core/*/index': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, '*', 'index.d.ts'))],
-			'@treeseed/core/*': [relativePathForTsconfig(resolve(workspaceCoreDistRoot, '*.d.ts'))],
-		});
-	}
-	if (existsSync(resolve(workspaceSdkDistRoot, 'index.d.ts'))) {
-		Object.assign(paths, {
-			'@treeseed/sdk': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'index.d.ts'))],
-			'@treeseed/sdk/platform/plugin': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'platform', 'plugin.d.ts'))],
-			'@treeseed/sdk/types': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'sdk-types.d.ts'))],
-			'@treeseed/sdk/types/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, 'types', '*.d.ts'))],
-			'@treeseed/sdk/*/index': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*', 'index.d.ts'))],
-			'@treeseed/sdk/*': [relativePathForTsconfig(resolve(workspaceSdkDistRoot, '*.d.ts'))],
-		});
-	}
-	if (existsSync(resolve(workspaceUiDistRoot, 'index.d.ts'))) {
-		Object.assign(paths, {
-			'@treeseed/ui': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'index.d.ts'))],
-			'@treeseed/ui/react': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'react.d.ts'))],
-			'@treeseed/ui/theme': [relativePathForTsconfig(resolve(workspaceUiDistRoot, 'theme', 'index.d.ts'))],
-			'@treeseed/ui/*/index': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*', 'index.d.ts'))],
-			'@treeseed/ui/*': [relativePathForTsconfig(resolve(workspaceUiDistRoot, '*.d.ts'))],
-		});
-	}
-	return paths;
+function writeGuaranteeCatalog() {
+	const guaranteesRoot = resolve(packageRoot, 'guarantees');
+	const guarantees = walkFiles(guaranteesRoot)
+		.filter((path) => /\.guarantee\.ya?ml$/u.test(path))
+		.map((path) => ({ sourcePath: relative(packageRoot, path).replaceAll('\\', '/'), manifest: parse(readFileSync(path, 'utf8')) }))
+		.sort((a, b) => String(a.manifest?.id ?? '').localeCompare(String(b.manifest?.id ?? '')));
+	const verifierRegistries = walkFiles(resolve(guaranteesRoot, 'verifiers'))
+		.filter((path) => /\.ya?ml$/u.test(path))
+		.map((path) => ({ sourcePath: relative(packageRoot, path).replaceAll('\\', '/'), document: parse(readFileSync(path, 'utf8')) }))
+		.sort((a, b) => a.sourcePath.localeCompare(b.sourcePath));
+	const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8'));
+	writeDeclaration('standards/guarantee-catalog.json', `${JSON.stringify(canonicalize({
+		schemaVersion: 'treeseed.guarantee-catalog/v1',
+		package: { name: packageJson.name, version: packageJson.version },
+		guarantees,
+		verifierRegistries,
+	}), null, 2)}\n`);
+}
+
+function writeGuaranteeVerifierContract() {
+	writeDeclaration('standards/verifiers/team-ui-contract.json', `${JSON.stringify(canonicalize({
+		schemaVersion: 'treeseed.guarantee-verifier-artifact/v1',
+		artifactId: '@treeseed/admin/team-ui-contracts',
+		entrypoint: 'dist/standards/verifiers/team-ui-contracts.js',
+		cases: ['admin.team.ui-contracts', 'admin.identity-account.ui-contracts'],
+	}), null, 2)}\n`);
+}
+
+function relativePathForTsconfig(targetPath) {
+	return relative(packageRoot, targetPath).replaceAll('\\', '/');
 }
 
 function ignoreDeprecationsForInstalledTypescript() {
@@ -209,18 +188,36 @@ function writeDeclarationTsconfig() {
 	const mergedPaths = {
 		...(inheritedCompilerOptions.paths ?? {}),
 		...(baseCompilerOptions.paths ?? {}),
-		...existingWorkspaceDeclarationPaths(),
 	};
 	writeFileSync(tsconfigPath, `${JSON.stringify({
 		extends: './tsconfig.build.json',
 		compilerOptions: {
 			...baseCompilerOptions,
 			ignoreDeprecations: baseCompilerOptions.ignoreDeprecations ?? ignoreDeprecationsForInstalledTypescript(),
+			outDir: relativePathForTsconfig(distRoot),
 			paths: mergedPaths,
 		},
 		include: baseConfig.include ?? ['src/**/*'],
 	}, null, 2)}\n`, 'utf8');
 	return tsconfigPath;
+}
+
+function publishCompletedBuild() {
+	const stagedFiles = walkFiles(distRoot);
+	const expected = new Set(stagedFiles.map((filePath) => relative(distRoot, filePath)));
+	mkdirSync(liveDistRoot, { recursive: true });
+	for (const stagedFile of stagedFiles) {
+		const outputFile = resolve(liveDistRoot, relative(distRoot, stagedFile));
+		ensureDir(outputFile);
+		try {
+			renameSync(stagedFile, outputFile);
+		} catch {
+			cpSync(stagedFile, outputFile);
+		}
+	}
+	for (const liveFile of walkFiles(liveDistRoot)) {
+		if (!expected.has(relative(liveDistRoot, liveFile))) rmSync(liveFile, { force: true });
+	}
 }
 
 function emitDeclarations() {
@@ -251,7 +248,7 @@ function emitDeclarations() {
 async function main() {
   const releaseBuildLock = await acquireBuildLock();
   try {
-  ensureWorkspaceRuntimePackageLinks();
+  rmSync(buildRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
 
   for (const filePath of walkFiles(srcRoot)) {
@@ -265,22 +262,27 @@ async function main() {
 
   emitDeclarations();
 
-  writeDeclaration('index.d.ts', "export * from './routes.js';\nexport * from './commerce.js';\nexport * from './secret-managers.js';\n");
-  writeDeclaration('config.d.ts', "export { createTreeseedTenantSite as createTreeseedAdminSite } from '@treeseed/core/config';\n");
-  writeDeclaration('content-config.d.ts', "export { createTreeseedTenantCollections as createTreeseedAdminCollections } from '@treeseed/core/content-config';\n");
-  writeDeclaration('plugin.d.ts', "declare const plugin: import('@treeseed/sdk/platform/plugin').TreeseedPlugin;\nexport default plugin;\nexport declare const ADMIN_ENV_SCHEMA: Record<string, unknown>;\nexport declare const ADMIN_CAPABILITIES: Record<string, unknown>;\n");
-  writeDeclaration('routes.d.ts', "import type { TreeseedSiteRouteContribution } from '@treeseed/sdk/platform/plugin';\nexport declare const ADMIN_ROUTES: TreeseedSiteRouteContribution[];\n");
+  writeDeclaration('index.d.ts', "export * from './routes.js';\nexport * from './commerce.js';\n");
+  writeDeclaration('config.d.ts', "export { createTenantSite as createAdminSite } from '@treeseed/core/config';\n");
+  writeDeclaration('content-config.d.ts', "export { createTenantCollections as createAdminCollections } from '@treeseed/core/content-config';\n");
+  writeDeclaration('plugin.d.ts', "declare const plugin: import('@treeseed/sdk/site-contracts/plugin').TreeseedPlugin;\nexport default plugin;\nexport declare const ADMIN_ENV_SCHEMA: Record<string, unknown>;\nexport declare const ADMIN_CAPABILITIES: Record<string, unknown>;\n");
+  writeDeclaration('routes.d.ts', "import type { TreeseedSiteRouteContribution } from '@treeseed/sdk/site-contracts/plugin';\nexport declare const ADMIN_ROUTES: TreeseedSiteRouteContribution[];\n");
   writeDeclaration('commerce.d.ts', readFileSync(resolve(srcRoot, 'commerce.ts'), 'utf8').replace(/export const DEFAULT_ADMIN_COMMERCE_PROVIDER[\s\S]*$/u, 'export declare const DEFAULT_ADMIN_COMMERCE_PROVIDER: AdminCommerceProvider;\n'));
-  writeDeclaration('secret-managers.d.ts', readFileSync(resolve(srcRoot, 'secret-managers.ts'), 'utf8').replace(/function unsupportedWrite[\s\S]*$/u, 'export declare const DEFAULT_SECRET_MANAGER_PROVIDERS: TreeseedSecretManagerProvider[];\n'));
   writeDeclaration('middleware.d.ts', "export declare const onRequest: any;\n");
   writeDeclaration('lib/market/catalog.d.ts', "export declare function createMarketTemplateCatalogProvider(...args: any[]): any;\n");
   writeDeclaration('lib/market/store.d.ts', "export declare function resolveApiStore(...args: any[]): any;\n");
+  writeGuaranteeCatalog();
+  writeGuaranteeVerifierContract();
+  publishCompletedBuild();
   } finally {
+	rmSync(buildRoot, { recursive: true, force: true });
     releaseBuildLock();
   }
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
-});
+}

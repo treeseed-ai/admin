@@ -1,59 +1,23 @@
 ---
-import Button from '@treeseed/ui/components/astro/forms/Button.astro';
-import EmptyState from '@treeseed/ui/components/astro/surface/EmptyState.astro';
-import Panel from '@treeseed/ui/components/astro/surface/Panel.astro';
-import PlainTable from '@treeseed/ui/components/astro/app/controls/PlainTable.astro';
-import TreeseedAppLayout from '../../../layouts/TreeseedAppLayout.astro';
-import { escapeHtml as esc } from '../../../lib/market/control-ui.js';
-import { loadAppContext } from '../../../view-models/app-access.js';
+import ProjectPortfolioSurface from '@treeseed/ui/components/astro/project/ProjectPortfolioSurface.astro';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ApiClientFacade } from '../../../lib/market/api-client.ts';
+import { items, statusTone, text } from '../../../lib/operations/records.ts';
+import { loadAppContext } from '../../../view-models/app-access.ts';
 
-if (!Astro.locals.auth?.principal) {
-	return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/projects')}`);
-}
-const context = await loadAppContext(Astro);
-const latestDeploymentByProject = new Map<string, any>();
-if (context.activeTeam && context.store?.listProjectDeployments) {
-	await Promise.all(context.projects.map(async (project: any) => {
-		const deployments = await context.store.listProjectDeployments(project.id, { limit: 10 }).catch(() => []);
-		const latestLaunch = deployments.find((deployment: any) => deployment.action === 'launch_project') ?? deployments[0] ?? null;
-		if (latestLaunch) latestDeploymentByProject.set(project.id, latestLaunch);
-	}));
-}
-const rows = context.projects.map((project: any) => {
-	const latestDeployment = latestDeploymentByProject.get(project.id) ?? null;
-	const actions = [
-		`<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.id)}/settings">Settings</a>`,
-		`<a class="ts-link-button ts-link-button--primary" href="/app/projects/${encodeURIComponent(project.id)}/deploy">Deploy</a>`,
-		`<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.id)}/guidance">Guide</a>`,
-		`<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.id)}/decisions">Decisions</a>`,
-		`<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.id)}/workdays">Workdays</a>`,
-		`<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.id)}/agents">Agents</a>`,
-		`<a class="ts-link-button" href="/app/projects/${encodeURIComponent(project.id)}/artifacts">Artifacts</a>`,
-	];
-	return {
-		id: `project-${esc(project.id)}`,
-		name: `<strong>${esc(project.name ?? project.slug ?? project.id)}</strong><span>${esc(project.description ?? project.summary ?? 'Hosted project')}</span>`,
-		handle: esc(project.slug ?? project.handle ?? project.id),
-		deployment: latestDeployment ? `${esc(latestDeployment.environment ?? 'staging')} ${esc(latestDeployment.status ?? 'recorded')}` : 'Not started',
-		actions: actions.join(' '),
-	};
-});
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+const context = await loadAppContext(Astro); const api = new ApiClientFacade(Astro); const projects = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])) : [];
+const summaries = await Promise.all(projects.slice(0, 50).map(async (project) => ({ project, summary: await api.getProjectSummary(String(project.id)).catch(() => ({})) })));
+const projectItems = summaries.map(({ project, summary }) => ({
+	id: String(project.id),
+	title: text(project.displayName, project.name, project.slug, 'Project'),
+	description: text(summary.operatingState?.summary, summary.description, project.description, 'Open the project command overview.'),
+	status: String(summary.status ?? project.status ?? 'active'),
+	tone: statusTone(summary.status ?? project.status),
+	meta: `${Number(summary.pendingApprovals ?? 0)} approvals · ${Number(summary.activeAgents ?? 0)} active agents`,
+	href: `/app/projects/${encodeURIComponent(String(project.id))}`,
+}));
 ---
-
-<TreeseedAppLayout title="Projects" description="List hosted projects for the active team." currentPath={Astro.url.pathname} teams={context.teams} activeTeam={context.activeTeam}>
-	<section class="ts-control-page" aria-label="Projects">
-		<Panel eyebrow="Projects" title="Projects" description={context.activeTeam ? 'Open one project control page.' : 'Create a team before adding projects.'}>
-			<Button slot="actions" href="/app/projects/new" size="sm">New project</Button>
-			{context.activeTeam ? (
-				<PlainTable columns={[
-					{ key: 'name', label: 'Project' },
-					{ key: 'handle', label: 'Handle' },
-					{ key: 'deployment', label: 'Latest deployment' },
-					{ key: 'actions', label: 'Actions' },
-				]} rows={rows} emptyTitle="No projects yet" emptyDescription="Create the first hosted project for this team." />
-			) : (
-				<EmptyState title="No team selected" description="Create or switch to a team first." actions={[{ label: 'Open Team', href: '/app/teams' }]} />
-			)}
-		</Panel>
-	</section>
+<TreeseedAppLayout title="Command projects" description="The active-team portfolio and each project’s operating state." currentPath="/app/projects" teams={context.teams} activeTeam={context.activeTeam} contentOwnsPageHeader>
+	<ProjectPortfolioSurface activeTeam={Boolean(context.activeTeam)} items={projectItems} />
 </TreeseedAppLayout>

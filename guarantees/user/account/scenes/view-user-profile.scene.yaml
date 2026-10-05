@@ -8,11 +8,16 @@ audience:
 journey:
   kind: service
   proves:
-    - View User Profile opens the canonical @treeseed/admin dashboard read model workflow.
-    - View User Profile exercises a service journey instead of only loading /app/account.
+    - View User Profile opens the public @treeseed/admin knowledge profile.
+    - View User Profile separates explicitly attributed public work from private membership context.
     - View User Profile records reviewable evidence for the visible result before activation.
-  minimumSteps: 2
+  minimumSteps: 3
   requiresInteractiveAction: true
+  consumesState:
+    - key: auth.primary-session
+      kind: browser-storage
+    - key: account.profile-updated
+      kind: marker
 mode:
   test: true
   demo: true
@@ -62,6 +67,9 @@ setup:
   dev:
     required: true
     reuseExisting: true
+  auth:
+    role: owner
+    required: true
 artifacts:
   trace: true
   video: true
@@ -72,17 +80,44 @@ artifacts:
   appLogs: true
 workflow:
   - id: open-entry-route
-    title: Open View User Profile
+    title: Open the anonymous public profile
     action:
-      goto: /app/account
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      urlIncludes: /u/g-
+      text: Public contributions
+      visible:
+        - scene: knowledge.profile
+        - scene: knowledge.identity
+        - scene: knowledge.activity
+        - scene: account.navigation
+  - id: verify-private-data-redacted
+    title: Verify private identity data is redacted
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: guarantee-{{runId}}-{{deviceId}}@treeseed.local
+  - id: verify-memberships-redacted
+    title: Verify memberships are not published
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: Memberships
+  - id: verify-roles-redacted
+    title: Verify roles are not published
+    action:
+      goto: /u/g-{{runShort}}-{{deviceId}}
+    expect:
+      notText: Roles
+  - id: open-account-management
+    title: Open account management through the canonical profile tabs
+    action:
+      click:
+        role: link
+        name: Identity
     expect:
       urlIncludes: /app/account
-  - id: inspect-service-surface
-    title: Inspect View User Profile service surface
-    action:
-      keyboard: Tab
-    expect:
-      urlIncludes: /app/account
+      text: Account identity
 chapters: []
 overlays: []
 diagrams: []

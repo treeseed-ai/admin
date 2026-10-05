@@ -5,79 +5,21 @@ type: project
 subtype: knowledge
 journey: Review Backlinks
 ownerPackage: "@treeseed/admin"
-summary: Inspect relationships among questions objectives proposals decisions notes books and pages before delete/archive operations.
+surface: admin-ui
+summary: Inspect authorized TreeDX relationships and backlinks across knowledge and functional content before lifecycle changes.
 status: active
-dependencies:
-  journeys:
-    - 38
-    - 43
-    - 48
-    - 50
-    - 65
-    - 69
-  guarantees:
-    - guarantee.project.question.ask-question.038
-    - guarantee.project.objective.create-objective.043
-    - guarantee.project.proposal.create-proposal.048
-    - guarantee.project.proposal.vote-on-proposal.050
-    - guarantee.project.book.create-book.065
-    - guarantee.project.knowledge.create-book-page.069
-actors:
-  allowed:
-    - project_manager
-    - project_contributor
-  forbidden:
-    - anonymous_user
-    - unauthorized_user
-devices:
-  required:
-    - desktop_chromium
-    - mobile_chromium
-gates:
-  - core
-  - release
-preconditions:
-  fixtures:
-    - integrated_treeseed_project
-  notes:
-    - "Journey dependencies must be satisfied: 38, 43, 48, 50, 65, 69"
-scene:
-  required: true
-  manifest: ./scenes/review-backlinks.scene.yaml
-  mode:
-    acceptance: true
-    demo: true
-    training: true
-  entryRoute: /app/projects/project-visual-audit-project/knowledge/seed-page
-  componentContract: dashboard/read-model service journey
-  expectedEvidence:
-    - playwright_trace
-    - scene_video
-    - screenshot_on_failure
-    - console_log
-    - network_log
-api:
-  required: true
-  verifierRefs:
-    - admin.project.knowledge.review-backlinks.api
-content:
-  required: true
-  verifierRefs:
-    - admin.project.knowledge.review-backlinks.content
-audit:
-  required: true
-  verifierRefs:
-    - admin.project.knowledge.review-backlinks.audit
+dependencies: { journeys: [65, 69], guarantees: [guarantee.project.book.create-book.065, guarantee.project.knowledge.create-book-page.069] }
+actors: { allowed: [project_contributor, project_manager], forbidden: [unauthorized_project_viewer] }
+devices: { required: [desktop_chromium, tablet_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.relationships, knowledge.reader] }
+scene: { required: true, manifest: ../book/scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /app/knowledge, componentContract: knowledge relationship inspector }
+api: { required: true, verifierRefs: [api.knowledge.contextual-policy, api.knowledge.run-correlated] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content, core.knowledge.starlight-reader] }
+audit: { required: false, verifierRefs: [] }
 negativeCases:
-  - id: unauthorized-actor-denied
-    actor: anonymous_user
-    verifierRefs:
-      - admin.project.knowledge.review-backlinks.negative
-evidence:
-  required:
-    - playwright_trace
-    - scene_video
-    - api_verification_log
-    - audit_event_id
-notes:
-  - Inspect relationships among questions objectives proposals decisions notes books and pages before delete/archive operations.
+  - { id: private-backlink-isolation, actor: unauthorized_project_viewer, sceneManifest: ../book/scenes/negative/readonly-knowledge-controls.scene.yaml, executionKey: admin.knowledge.negative.readonly, verifierRefs: [api.knowledge.contextual-policy] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref] }
+notes: [The shared execution proves real TreeDX note and question lookup, persisted relationships, lifecycle dependency inspection, and authorized contextual resolution.]
+run: { requiredForRelease: true }

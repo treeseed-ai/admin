@@ -5,69 +5,21 @@ type: project
 subtype: book
 journey: Search Books
 ownerPackage: "@treeseed/admin"
-summary: Search project books and metadata through content indexes; should not scan local fixture files in production workflows.
+surface: admin-ui
+summary: Search the authorized federated book library through TreeDX without filesystem scanning or metadata leakage.
 status: active
-dependencies:
-  journeys:
-    - 65
-  guarantees:
-    - guarantee.project.book.create-book.065
-actors:
-  allowed:
-    - project_manager
-    - project_contributor
-  forbidden:
-    - anonymous_user
-    - unauthorized_user
-devices:
-  required:
-    - desktop_chromium
-    - mobile_chromium
-gates:
-  - core
-  - release
-preconditions:
-  fixtures:
-    - integrated_treeseed_project
-  notes:
-    - "Journey dependencies must be satisfied: 65"
-scene:
-  required: true
-  manifest: ./scenes/search-books.scene.yaml
-  mode:
-    acceptance: true
-    demo: true
-    training: true
-  entryRoute: /app/knowledge/books
-  componentContract: inline-form/search-panel service journey
-  expectedEvidence:
-    - playwright_trace
-    - scene_video
-    - screenshot_on_failure
-    - console_log
-    - network_log
-api:
-  required: true
-  verifierRefs:
-    - admin.project.book.search-books.api
-content:
-  required: true
-  verifierRefs:
-    - admin.project.book.search-books.content
-audit:
-  required: true
-  verifierRefs:
-    - admin.project.book.search-books.audit
+dependencies: { journeys: [65], guarantees: [guarantee.project.book.create-book.065] }
+actors: { allowed: [anonymous_user, authenticated_user, authorized_private_viewer], forbidden: [unauthorized_private_viewer] }
+devices: { required: [desktop_chromium, mobile_chromium] }
+gates: [core, release]
+preconditions: { fixtures: [integrated_treeseed_project] }
+uiFeature: { contract: ../../admin/knowledge-authoring.ui-feature.yaml, capabilities: [knowledge.library, knowledge.reader] }
+scene: { required: true, manifest: scenes/author-publish-book.scene.yaml, executionKey: admin.knowledge.author-publish, entryRoute: /books, componentContract: federated knowledge search }
+api: { required: true, verifierRefs: [api.knowledge.contextual-policy] }
+content: { required: true, verifierRefs: [sdk.knowledge.safe-content, core.knowledge.starlight-reader] }
+audit: { required: false, verifierRefs: [] }
 negativeCases:
-  - id: unauthorized-actor-denied
-    actor: anonymous_user
-    verifierRefs:
-      - admin.project.book.search-books.negative
-evidence:
-  required:
-    - playwright_trace
-    - scene_video
-    - api_verification_log
-    - audit_event_id
-notes:
-  - Search project books and metadata through content indexes; should not scan local fixture files in production workflows.
+  - { id: private-library-isolation, actor: unauthorized_private_viewer, sceneManifest: scenes/negative/nonmember-knowledge-access.scene.yaml, executionKey: admin.knowledge.negative.nonmember, verifierRefs: [api.knowledge.contextual-policy] }
+evidence: { required: [playwright_trace, api_verification_log, treedx_content_ref] }
+notes: [The shared execution searches the authorized federated runtime and opens the exact atomic Starlight revision.]
+run: { requiredForRelease: true }

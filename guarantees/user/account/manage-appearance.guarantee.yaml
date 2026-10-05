@@ -5,7 +5,7 @@ type: user
 subtype: account
 journey: Manage Appearance
 ownerPackage: "@treeseed/admin"
-summary: Set theme and interface preferences for the admin shell; should use reusable UI/theme tokens and persist per user where available.
+summary: Set persistent application and independently scoped content-workspace appearance preferences with reusable accessible UI theme tokens.
 status: active
 dependencies:
   journeys:
@@ -29,16 +29,17 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
+    - The authenticated account has access to personal theme creation and shell selection.
     - "Journey dependencies must be satisfied: 4"
 scene:
   required: true
   manifest: ./scenes/manage-appearance.scene.yaml
+  executionKey: admin.account.appearance
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account
+  entryRoute: /app/account/appearance
   componentContract: record-modal-form service journey
   expectedEvidence:
     - playwright_trace
@@ -69,7 +70,8 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Set theme and interface preferences for the admin shell; should use reusable UI/theme tokens and persist per user where available.
+  - Application appearance and the optional content workspace scheme and mode persist per user.
+  - The content workspace palette applies to ControlSurface and content overlays without changing persistent shell utilities or fading readable tokens.
 surface: admin-ui
 run:
   timeoutSeconds: 300

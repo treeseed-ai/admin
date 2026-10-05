@@ -1,0 +1,21 @@
+schemaVersion: treeseed.guarantee/v1
+id: guarantee.work.command.inspect-assignment.034
+journeyIndex: 739
+type: work
+subtype: command
+journey: "Inspect an agent assignment"
+ownerPackage: "@treeseed/admin"
+surface: admin-ui
+summary: "A team member can inspect matching, mode runs, artifacts, usage, errors, and eligible recovery controls for an assignment."
+status: planned
+dependencies: { journeys: [738], guarantees: [guarantee.work.command.monitor-team-operations.033] }
+actors: { allowed: [authenticated_user, team_owner, project_lead], forbidden: [unauthorized_user] }
+devices: { required: [desktop_chromium] }
+gates: [future]
+preconditions: { fixtures: [integrated_treeseed_project], notes: ["A durable assignment exists."] }
+api: { required: false, verifierRefs: [] }
+content: { required: false, verifierRefs: [] }
+audit: { required: false, verifierRefs: [] }
+negativeCases: ["Ineligible cancel and requeue controls are hidden.", "Direct unauthorized mutations remain rejected."]
+evidence: { required: [guarantee_report] }
+notes: ["Planned until assignment inspection and failed-assignment visual scenes are repeatable."]

@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.58",
+  "version": "0.12.59-rc.38",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "Apache-2.0",
   "repository": {
@@ -20,19 +20,31 @@
   "files": [
     "README.md",
     "dist",
+    "guarantees",
+    "treeseed.package.yaml",
     "scripts/verify-driver.ts"
   ],
   "publishConfig": {
     "access": "public"
   },
+  "bin": {
+    "treeseed-admin-verify-team-ui": "./dist/standards/verifiers/team-ui-contracts.js"
+  },
   "scripts": {
+    "check:file-lengths": "node --import tsx ./scripts/check-file-lengths.ts && npm run check:file-architecture",
+    "check:file-architecture": "node --import tsx ./scripts/check-file-architecture.ts",
     "setup": "npm install",
     "setup:ci": "npm ci --workspaces=false",
-    "build": "npm run build:dist",
+    "brand:sync": "node --import tsx ./scripts/brand/sync-assets.ts",
+    "build": "npm run build:dist && npm run build:app",
     "build:dist": "node --import tsx ./scripts/build-dist.ts",
+    "build:app": "npm run brand:sync && TREESEED_WEB_RUNTIME_TARGET=managed-node astro build --config astro.config.ts",
+    "build:pages": "npm run brand:sync && TREESEED_WEB_RUNTIME_TARGET=cloudflare astro build --config astro.config.ts",
+    "dev": "npm run brand:sync && TREESEED_WEB_RUNTIME_TARGET=managed-node node ./node_modules/astro/astro.js dev --config astro.config.ts --port 4322",
+    "preview": "TREESEED_WEB_RUNTIME_TARGET=managed-node node ./node_modules/astro/astro.js preview --config astro.config.ts --port 4322",
     "prepare": "node --import tsx ./scripts/prepare.ts",
     "prepack": "npm run build:dist",
-    "check": "npm run build:dist && tsc --noEmit",
+    "check": "npm run check:file-lengths && npm run build:dist && tsc --noEmit && node ./node_modules/astro/astro.js check --root .",
     "test": "npm run test:unit",
     "test:unit": "vitest run --config ./vitest.config.ts",
     "lint": "npm run check",
@@ -42,31 +54,34 @@
     "verify": "TMPDIR=/tmp node --import tsx ./scripts/verify-driver.ts",
     "release:setup": "npm run setup:ci",
     "release:check-tag": "node --import tsx ./scripts/assert-release-tag-version.ts",
-    "release:verify": "npm run build:dist && npm run test:unit",
+    "release:verify": "npm run check:file-lengths && npm run build && npm run test:unit",
+    "release:custody": "node --import tsx ./scripts/release-custody.ts",
     "release:publish": "node --import tsx ./scripts/publish-package.ts"
   },
   "dependencies": {
-    "@mdxeditor/editor": "^4.0.2",
-    "@react-email/render": "^2.0.8",
-    "@treeseed/core": "0.12.59",
-    "@treeseed/sdk": "0.12.62",
-    "@treeseed/ui": "0.12.17",
-    "libsodium-wrappers-sumo": "^0.7.16",
+    "@astrojs/starlight": "0.37.6",
+    "@treeseed/core": ">=0.12.60-rc.1 <0.14.0",
+    "@treeseed/sdk": "0.13.0-rc.107",
+    "@treeseed/identity": "0.1.0-rc.13",
+    "jose": "6.2.12",
+    "@treeseed/ui": "0.12.18-rc.20",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },
   "peerDependencies": {
-    "astro": "^5.0.0 || ^6.0.0"
+    "astro": "^5.0.0"
   },
   "devDependencies": {
+    "@astrojs/cloudflare": "12.6.13",
     "@types/node": "^24.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "astro": "^6.4.5",
+    "astro": "^5.6.1",
     "esbuild": "^0.28.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "yaml": "^2.9.0"
   },
   "exports": {
     ".": {
@@ -97,10 +112,6 @@
       "types": "./dist/commerce.d.ts",
       "default": "./dist/commerce.js"
     },
-    "./secret-managers": {
-      "types": "./dist/secret-managers.d.ts",
-      "default": "./dist/secret-managers.js"
-    },
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",
       "default": "./dist/lib/*.js"
@@ -109,8 +120,7 @@
       "types": "./dist/view-models/*.d.ts",
       "default": "./dist/view-models/*.js"
     },
-    "./layouts/TreeseedAppLayout.astro": "./dist/layouts/TreeseedAppLayout.astro",
-    "./layouts/TreeseedOperationalMarketLayout.astro": "./dist/layouts/TreeseedOperationalMarketLayout.astro",
-    "./layouts/TreeseedPublicLayout.astro": "./dist/layouts/TreeseedPublicLayout.astro"
+    "./layouts/AppLayout.astro": "./dist/layouts/AppLayout.astro",
+    "./layouts/PublicLayout.astro": "./dist/layouts/PublicLayout.astro"
   }
 }

@@ -29,6 +29,7 @@ npm-debug.log*
 public/books/*.md
 public/books/*.json
 public/__treeseed/*.json
+public/favicon.svg
 .codex
 **/.ts-run-*.mjs
 .tmp-*/

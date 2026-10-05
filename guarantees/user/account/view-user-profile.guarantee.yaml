@@ -5,18 +5,18 @@ type: user
 subtype: account
 journey: View User Profile
 ownerPackage: "@treeseed/admin"
-summary: Show identity and account metadata plus team/project memberships; current architecture should read through public admin/API facades.
+summary: Show public user identity, expertise, and explicitly attributed reusable knowledge, with canonical account tabs only for the owning signed-in user.
 status: active
 dependencies:
   journeys:
-    - 1
+    - 6
   guarantees:
-    - guarantee.user.auth.register-user.001
+    - guarantee.user.account.edit-account-settings.006
 actors:
   allowed:
     - verified_user
-  forbidden:
     - anonymous_user
+  forbidden:
     - unauthorized_user
 devices:
   required:
@@ -29,17 +29,19 @@ preconditions:
   fixtures:
     - integrated_treeseed_project
   notes:
-    - Planned by guarantee journey audit: the referenced UI route/behavior is not implemented as an executable service journey yet.
+    - The authenticated owning user sees canonical account-management tabs above the profile.
+    - Anonymous redaction remains covered by the public API verifier.
     - "Journey dependencies must be satisfied: 1"
 scene:
   required: true
   manifest: ./scenes/view-user-profile.scene.yaml
+  executionKey: admin.account.public-profile
   mode:
     acceptance: true
     demo: true
     training: true
-  entryRoute: /app/account
-  componentContract: dashboard/read-model service journey
+  entryRoute: /u/[username]
+  componentContract: public knowledge profile
   expectedEvidence:
     - playwright_trace
     - scene_video
@@ -49,7 +51,7 @@ scene:
 api:
   required: true
   verifierRefs:
-    - api.auth.me.site-admin
+    - api.auth.public-knowledge-profile
 content:
   required: false
   verifierRefs: []
@@ -57,10 +59,10 @@ audit:
   required: false
   verifierRefs: []
 negativeCases:
-  - id: anonymous-denied
+  - id: private-context-redacted
     actor: anonymous_user
     verifierRefs:
-      - api.auth.me.requires-user
+      - api.auth.public-knowledge-profile
 evidence:
   required:
     - playwright_trace
@@ -69,7 +71,7 @@ evidence:
   optional:
     - mailpit_message
 notes:
-  - Show identity and account metadata plus team/project memberships; current architecture should read through public admin/API facades.
+  - Public activity is based only on explicit public attribution; team membership never implies authorship.
 surface: admin-ui
 run:
   timeoutSeconds: 300

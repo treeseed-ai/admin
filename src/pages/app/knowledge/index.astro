@@ -1,0 +1,247 @@
+---
+import KnowledgeWorkbenchSurface from '@treeseed/ui/components/astro/knowledge/KnowledgeWorkbenchSurface.astro';
+import { formSubmissionResponse } from '@treeseed/ui/forms';
+import TreeseedAppLayout from '../../../layouts/AppLayout.astro';
+import { ensureCsrfToken, requireCsrf } from '../../../lib/auth/support/csrf';
+import { ApiClientFacade } from '../../../lib/market/api-client';
+import { items } from '../../../lib/operations/records';
+import { loadAppContext } from '../../../view-models/app-access.js';
+
+if (!Astro.locals.auth?.principal) return Astro.redirect(`/auth/sign-in?returnTo=${encodeURIComponent('/app/knowledge')}`);
+const context = await loadAppContext(Astro);
+const api = new ApiClientFacade(Astro);
+const csrfToken = ensureCsrfToken(Astro);
+const preferences = await api.accountPreferences().catch(() => ({ timeZone: 'UTC' }));
+let access: any = null;
+let accessUnavailable = false;
+if (context.activeTeam) {
+	try { access = await api.getTeamAccessSummary(context.activeTeam.id); }
+	catch { accessUnavailable = true; Astro.response.status = 503; }
+}
+const permissions = new Set<string>(access?.permissions ?? []);
+const canRead = permissions.has('knowledge:read');
+const canAuthor = permissions.has('knowledge:author');
+const canReview = permissions.has('knowledge:review');
+const canPublish = permissions.has('knowledge:publish');
+const canManageBooks = permissions.has('knowledge:manage-books');
+const canBuildPacks = permissions.has('knowledge:build-packs');
+const projects = context.activeTeam ? items(await api.listTeamProjects(context.activeTeam.id).catch(() => [])) : [];
+let selectedProjectId = Astro.url.searchParams.get('project') ?? '';
+let workspaceId = Astro.url.searchParams.get('workspace') ?? '';
+let sourcePath = Astro.url.searchParams.get('sourcePath') ?? '';
+let workspace: any = null;
+let sourceSha = '';
+let formValues: Record<string, any> = {};
+let reviews: any[] = [];
+let reviewsUnavailable = false;
+let books: any[] = [];
+let collections: any[] = [];
+let builds: any[] = [];
+let packsUnavailable = false;
+let libraryCatalog: any = null;
+let libraryUnavailable = false;
+let lifecycle: any = null;
+let lifecycleUnavailable = false;
+
+const commaList = (value: FormDataEntryValue | null) => String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean);
+const valuesFromForm = (data: FormData) => ({
+	kind: String(data.get('kind') ?? 'page'), id: String(data.get('id') ?? '').trim(),
+	bookId: String(data.get('bookId') ?? '').trim(), slug: String(data.get('slug') ?? '').trim(),
+	title: String(data.get('title') ?? '').trim(), summary: String(data.get('summary') ?? '').trim(),
+	visibility: String(data.get('visibility') ?? 'team'),
+	order: Number(data.get('order') ?? 0), description: String(data.get('description') ?? '').trim(),
+	groupIds: commaList(data.get('groupIds')), audience: commaList(data.get('audience')),
+	editorialCoreNoteId: String(data.get('editorialCoreNoteId') ?? '').trim(),
+	packPolicy: String(data.get('packPolicy') ?? 'allowed'), cover: { image: String(data.get('coverImage') ?? '').trim(), alt: String(data.get('coverAlt') ?? '').trim() },
+	parentId: String(data.get('parentId') ?? '').trim(), contributors: commaList(data.get('contributors')),
+	relatedBookIds: commaList(data.get('relatedBookIds')), relatedKnowledgeIds: commaList(data.get('relatedKnowledgeIds')),
+	relatedNoteIds: commaList(data.get('relatedNoteIds')), relatedQuestionIds: commaList(data.get('relatedQuestionIds')),
+	relatedObjectiveIds: commaList(data.get('relatedObjectiveIds')), relatedProposalIds: commaList(data.get('relatedProposalIds')),
+	relatedDecisionIds: commaList(data.get('relatedDecisionIds')), guaranteeIds: commaList(data.get('guaranteeIds')),
+	audiences: { primary: commaList(data.get('audiencesPrimary')), secondary: commaList(data.get('audiencesSecondary')),
+		excluded: commaList(data.get('audiencesExcluded')) },
+	capabilityIds: commaList(data.get('capabilityIds')),
+	routePatterns: commaList(data.get('routePatterns')), resourceTypes: commaList(data.get('resourceTypes')),
+	actionIds: commaList(data.get('actionIds')), keywords: commaList(data.get('keywords')),
+	documentationUrls: commaList(data.get('documentationUrls')), bodyMarkdown: String(data.get('bodyMarkdown') ?? ''),
+	contextDigest: String(data.get('contextDigest') ?? '').trim(),
+	sourcePath: String(data.get('sourcePath') ?? ''), expectedSha: String(data.get('expectedSha') ?? ''),
+});
+
+if (Astro.request.method === 'POST') {
+	const data = await Astro.request.formData();
+	try { requireCsrf(Astro, data.get('csrfToken')); }
+	catch { return formSubmissionResponse(Astro.request, { ok: false, code: 'csrf_invalid', message: 'Your form session expired. Refresh and try again.' }, { fallbackRedirect: '/app/knowledge' }); }
+	const action = String(data.get('action') ?? 'start');
+	try {
+		if (action === 'create-collection' && context.activeTeam) {
+			await api.request('POST', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/collections`, {
+				body: { name: String(data.get('name') ?? ''), summary: String(data.get('summary') ?? ''), bookIds: data.getAll('bookIds').map(String) },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_collection_created', message: 'Book collection saved.', refreshTargets: ['[data-knowledge-pack-panel]'] }, { fallbackRedirect: '/app/knowledge?view=packs' });
+		}
+		if (action === 'delete-collection') {
+			await api.request('DELETE', `/v1/knowledge/collections/${encodeURIComponent(String(data.get('collectionId') ?? ''))}`, { body: { version: Number(data.get('version') ?? 0) } });
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_collection_deleted', message: 'Book collection deleted.', refreshTargets: ['[data-knowledge-pack-panel]'] }, { fallbackRedirect: '/app/knowledge?view=packs' });
+		}
+		if (action === 'build-pack' && context.activeTeam) {
+			const queued = await api.request<any>('POST', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/packs`, { body: {
+				collectionId: String(data.get('collectionId') ?? '') || undefined, bookIds: data.getAll('bookIds').map(String),
+			} });
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_pack_queued', message: 'Knowledge-pack build queued.',
+				payload: queued, refreshTargets: ['[data-knowledge-pack-panel]'] }, { fallbackRedirect: '/app/knowledge?view=packs' });
+		}
+		if (action === 'publish-review') {
+			const queued = await api.request<any>('POST', `/v1/knowledge/reviews/${encodeURIComponent(String(data.get('reviewId') ?? ''))}/publish`, { body: {} });
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_publication_queued',
+				message: 'Approved knowledge publication queued.', payload: queued }, { fallbackRedirect: '/app/knowledge?view=reviews' });
+		}
+		if (action === 'review-decision') {
+			await api.request('POST', `/v1/knowledge/reviews/${encodeURIComponent(String(data.get('reviewId') ?? ''))}/decision`, {
+				body: { decision: String(data.get('decision') ?? ''), notes: String(data.get('notes') ?? ''), version: Number(data.get('version') ?? 0) },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_review_decided', message: 'Review decision recorded.', refreshTargets: ['[data-knowledge-review-list]'] }, { fallbackRedirect: '/app/knowledge?view=reviews' });
+		}
+		if (action === 'editorial-review') {
+			const kind = String(data.get('reviewKind') ?? '');
+			const criteriaByKind: Record<string, string[]> = {
+				technical: ['truth-provenance', 'guarantee-status', 'command-configuration', 'safety-recovery'],
+				audience: ['community', 'developer', 'operator', 'ai-agent'],
+				graph: ['parent-child', 'related-ids', 'navigation', 'retrieval'],
+			};
+			const criteria = (criteriaByKind[kind] ?? []).map((id) => ({ id,
+				status: String(data.get(`criterion-${id}`) ?? ''), notes: String(data.get(`criterion-${id}-notes`) ?? '') || undefined }));
+			await api.request('POST', `/v1/knowledge/reviews/${encodeURIComponent(String(data.get('reviewId') ?? ''))}/editorial-results`, {
+				body: { result: { kind, disposition: String(data.get('disposition') ?? ''), criteria,
+					notes: String(data.get('notes') ?? '') || undefined } },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_editorial_review_recorded',
+				message: 'Editorial review recorded.', refreshTargets: ['[data-knowledge-review-list]'] },
+				{ fallbackRedirect: '/app/knowledge?view=reviews' });
+		}
+		if (action === 'review-comment') {
+			await api.request('POST', `/v1/knowledge/reviews/${encodeURIComponent(String(data.get('reviewId') ?? ''))}/comments`, {
+				body: { path: String(data.get('path') ?? ''), lineStart: Number(data.get('lineStart') ?? 0) || undefined,
+					body: String(data.get('body') ?? '') },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_review_comment_added',
+				message: 'Review comment added.', refreshTargets: ['[data-knowledge-review-list]'] }, { fallbackRedirect: '/app/knowledge?view=reviews' });
+		}
+		if (action === 'resolve-review-comment') {
+			await api.request('POST', `/v1/knowledge/review-comments/${encodeURIComponent(String(data.get('commentId') ?? ''))}/resolve`, {
+				body: { version: Number(data.get('version') ?? 0) },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_review_comment_resolved',
+				message: 'Review comment resolved.', refreshTargets: ['[data-knowledge-review-list]'] }, { fallbackRedirect: '/app/knowledge?view=reviews' });
+		}
+		if (action === 'start') {
+			selectedProjectId = String(data.get('projectId') ?? '');
+			sourcePath = String(data.get('sourcePath') ?? '');
+			const created = await api.request<any>('POST', `/v1/projects/${encodeURIComponent(selectedProjectId)}/knowledge/workspaces`,
+				{ body: { requestId: String(data.get('requestId') ?? '') } });
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_workspace_created', message: 'Draft workspace ready.',
+				redirect: `/app/knowledge?project=${encodeURIComponent(selectedProjectId)}&workspace=${encodeURIComponent(created.id)}${sourcePath ? `&sourcePath=${encodeURIComponent(sourcePath)}` : ''}` }, { fallbackRedirect: '/app/knowledge' });
+		}
+		if (action === 'lifecycle') {
+			selectedProjectId = String(data.get('projectId') ?? '');
+			sourcePath = String(data.get('sourcePath') ?? '');
+			const created = await api.request<any>('POST', `/v1/projects/${encodeURIComponent(selectedProjectId)}/knowledge/lifecycle?path=${encodeURIComponent(sourcePath)}`, {
+				body: { action: String(data.get('lifecycleAction') ?? ''), expectedSha: String(data.get('expectedSha') ?? ''),
+					requestId: String(data.get('requestId') ?? '') },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_lifecycle_draft_created',
+				message: created.message ?? 'Lifecycle draft created.', redirect: `/app/knowledge?project=${encodeURIComponent(selectedProjectId)}&workspace=${encodeURIComponent(created.workspace.id)}&sourcePath=${encodeURIComponent(sourcePath)}` },
+				{ fallbackRedirect: '/app/knowledge' });
+		}
+		workspaceId = String(data.get('workspaceId') ?? '');
+		if (action === 'abandon') {
+			await api.request('POST', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}/abandon`, { body: { version: Number(data.get('version') ?? 0) } });
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_workspace_abandoned', message: 'Draft abandoned.', redirect: '/app/knowledge' }, { fallbackRedirect: '/app/knowledge' });
+		}
+		formValues = valuesFromForm(data);
+		const saved = await api.request<any>('PUT', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}/content`, {
+			body: { ...formValues, version: Number(data.get('version') ?? 0) },
+		});
+		if (action === 'submit') {
+			await api.request('POST', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}/submit`, {
+				body: { version: saved.workspace.version, message: `Update ${formValues.title}`,
+					contextDigest: formValues.contextDigest || undefined },
+			});
+			return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_review_submitted', message: 'Knowledge submitted for review.', redirect: '/app/knowledge?view=reviews' }, { fallbackRedirect: '/app/knowledge' });
+		}
+		return formSubmissionResponse(Astro.request, { ok: true, code: 'knowledge_draft_saved', message: 'Draft saved.',
+			payload: { workspace: saved.workspace } }, { fallbackRedirect: `/app/knowledge?project=${encodeURIComponent(selectedProjectId)}&workspace=${encodeURIComponent(workspaceId)}` });
+	} catch (error) {
+		const details = (error as any)?.details ?? {};
+		return formSubmissionResponse(Astro.request, { ok: false, code: details.code ?? 'knowledge_action_failed',
+			message: details.message ?? (error instanceof Error ? error.message : 'Knowledge could not be saved.'), fieldErrors: details.fieldErrors }, { fallbackRedirect: '/app/knowledge' });
+	}
+}
+
+if (workspaceId) {
+	try {
+		workspace = await api.request<any>('GET', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}`);
+		selectedProjectId = workspace.projectId;
+		await api.request('POST', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}/presence`, { body: {} });
+	}
+	catch { workspace = null; Astro.response.status = 404; }
+	if (workspace && sourcePath) {
+		try {
+			const source = await api.request<any>('GET', `/v1/knowledge/workspaces/${encodeURIComponent(workspaceId)}/content?path=${encodeURIComponent(sourcePath)}`);
+			const definition = source.definition ?? {};
+			formValues = { ...definition, kind: source.kind, bodyMarkdown: definition.bodyMarkdown ?? '', backlinks: source.backlinks ?? [],
+				groupIds: definition.groupIds?.join?.(', ') ?? '',
+				audience: definition.audience?.join?.(', ') ?? '', relatedKnowledgeIds: definition.relatedKnowledgeIds?.join?.(', ') ?? '',
+				guaranteeIds: definition.guaranteeIds?.join?.(', ') ?? '',
+				audiencesPrimary: definition.audiences?.primary?.join?.(', ') ?? '',
+				audiencesSecondary: definition.audiences?.secondary?.join?.(', ') ?? '',
+				audiencesExcluded: definition.audiences?.excluded?.join?.(', ') ?? '' };
+			sourceSha = source.expectedSha ?? '';
+		} catch { workspace = null; Astro.response.status = 404; }
+	}
+}
+if (canManageBooks && !workspaceId && selectedProjectId && sourcePath) {
+	try { lifecycle = await api.request<any>('GET', `/v1/projects/${encodeURIComponent(selectedProjectId)}/knowledge/lifecycle?path=${encodeURIComponent(sourcePath)}`); }
+	catch { lifecycleUnavailable = true; Astro.response.status = 503; }
+}
+if (context.activeTeam && (canReview || canPublish) && Astro.url.searchParams.get('view') === 'reviews') {
+	try { reviews = items(await api.request('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/reviews`)); }
+	catch { reviewsUnavailable = true; Astro.response.status = 503; }
+}
+if (context.activeTeam && canBuildPacks && Astro.url.searchParams.get('view') === 'packs') {
+	try {
+		const [catalog, savedCollections, packBuilds] = await Promise.all([
+			api.request<any>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/catalog`),
+			api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/collections`),
+			api.request<any[]>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/packs`),
+		]);
+		books = Array.isArray(catalog.books) ? catalog.books : []; collections = items(savedCollections); builds = items(packBuilds);
+	} catch { packsUnavailable = true; Astro.response.status = 503; }
+}
+if (context.activeTeam && canRead && !workspaceId && !selectedProjectId && !Astro.url.searchParams.get('view')) {
+	try { libraryCatalog = await api.request<any>('GET', `/v1/teams/${encodeURIComponent(context.activeTeam.id)}/knowledge/catalog`); }
+	catch { libraryUnavailable = true; Astro.response.status = 503; }
+}
+const projectItems = projects.map((project: any) => ({
+	...project,
+	repositoryReady: Boolean(project.architecture?.contentPath ?? project.metadata?.architecture?.contentPath),
+	bookCount: libraryCatalog?.books?.filter((book: any) => book.source.projectId === project.id).length ?? 0,
+	draftCount: libraryCatalog?.pages?.filter((page: any) => page.source.projectId === project.id && page.status !== 'published').length ?? 0,
+}));
+const sections = [
+	canRead ? { id: 'library', label: 'Library', href: '/app/knowledge', active: !workspaceId && !['author', 'reviews', 'packs'].includes(Astro.url.searchParams.get('view') ?? '') } : null,
+	canAuthor ? { id: 'author', label: 'Author', href: selectedProjectId ? `/app/knowledge?project=${encodeURIComponent(selectedProjectId)}` : '/app/knowledge?view=author', active: Boolean(workspaceId) || Astro.url.searchParams.get('view') === 'author' } : null,
+	(canReview || canPublish) ? { id: 'reviews', label: 'Reviews', href: '/app/knowledge?view=reviews', active: Astro.url.searchParams.get('view') === 'reviews' } : null,
+	canBuildPacks ? { id: 'packs', label: 'Packs', href: '/app/knowledge?view=packs', active: Astro.url.searchParams.get('view') === 'packs' } : null,
+].filter((section): section is NonNullable<typeof section> => Boolean(section));
+const requestedView = Astro.url.searchParams.get('view');
+const requestedUnauthorizedControl = Boolean(
+	(requestedView === 'author' || workspaceId || selectedProjectId) && !canAuthor
+	|| requestedView === 'reviews' && !canReview && !canPublish
+	|| requestedView === 'packs' && !canBuildPacks,
+);
+---
+
+<TreeseedAppLayout title="Knowledge" description="Author, review, link, and package repository-native team knowledge." currentPath="/app/knowledge" teams={context.teams} activeTeam={context.activeTeam} timeZone={preferences.timeZone} contentOwnsPageHeader>
+	<KnowledgeWorkbenchSurface team={context.activeTeam} {sections} view={requestedView} retryHref={Astro.url.pathname + Astro.url.search} {accessUnavailable} {canRead} {requestedUnauthorizedControl} {reviewsUnavailable} {reviews} {packsUnavailable} {books} {collections} {builds} {workspace} {selectedProjectId} {sourcePath} {sourceSha} {formValues} {canManageBooks} {lifecycleUnavailable} {lifecycle} {projects} {projectItems} {libraryCatalog} {libraryUnavailable} {csrfToken} timeZone={preferences.timeZone} />
+</TreeseedAppLayout>

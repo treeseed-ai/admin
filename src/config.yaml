@@ -1,0 +1,56 @@
+site:
+  logo:
+    src: /logo.svg
+    alt: TreeSeed Admin logo
+  name: TreeSeed Admin
+  statement: Grow what you know
+  siteUrl: https://admin.treeseed.dev
+  githubRepository: https://github.com/treeseed-ai/admin
+  discordLink: https://discord.gg/example
+  headerMenu: []
+  footerMenu:
+    - label: Project
+      items:
+        - label: Repository
+          href: https://github.com/treeseed-ai/admin
+  summary: Private and real-time administration for TreeSeed teams, projects, capacity, and knowledge.
+  projectStage: Standalone management portal
+  projectStageDetail: Connects to the open TreeSeed API and TreeDX-backed R2 content runtime without Market composition.
+  forms: {}
+  emailNotifications:
+    contactRouting: {}
+    subscribeRecipients: []
+  theme:
+    defaultScheme: fern
+    defaultMode: system
+    schemes:
+      fern:
+        light:
+          accent: "#4f7d4e"
+          accentStrong: "#2f5a35"
+          accentSoft: "#dcebd6"
+        dark:
+          accent: "#8bbb75"
+          accentStrong: "#b9e69e"
+          accentSoft: "#20351f"
+models:
+  pages:
+    defaults: { pageLayout: article, stage: admin, audience: [] }
+  notes:
+    defaults: { author: TreeSeed Admin Team, draft: false, groupIds: [] }
+  questions:
+    defaults: { draft: false, groupIds: [] }
+  objectives:
+    defaults: { draft: false, groupIds: [] }
+  proposals:
+    defaults: { draft: false, groupIds: [] }
+  decisions:
+    defaults: { draft: false, groupIds: [] }
+  people:
+    defaults: { status: live, groupIds: [] }
+  agents:
+    defaults: { groupIds: [] }
+  books:
+    defaults: { groupIds: [] }
+  docs:
+    defaults: { groupIds: [] }

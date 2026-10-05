@@ -1,0 +1,418 @@
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { extname, join, relative, resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import adminPlugin, { ADMIN_CAPABILITIES, ADMIN_ENV_SCHEMA } from '../../../src/plugin';
+import type { PluginSiteContext, SiteExtensionContribution } from '@treeseed/sdk/site-contracts/plugin';
+import { ADMIN_ROUTES, ADMIN_SUPPORT_ROUTES } from '../../../src/routes';
+import { DEFAULT_ADMIN_COMMERCE_PROVIDER } from '../../../src/commerce';
+import { authenticatedAuthRedirect, isAnonymousAuthRoute } from '../../../src/lib/auth/support/access-policy';
+
+const require = createRequire(import.meta.url);
+
+const EXPECTED_ROUTES = [
+	'/404',
+	'/500',
+	'/app',
+	'/app/account',
+	'/app/account/sessions',
+	'/app/account/notifications',
+	'/app/account/appearance',
+	'/app/account/delete',
+	'/app/capacity',
+	'/app/capacity/registration',
+	'/app/capacity/install',
+	'/app/capacity/install-download',
+	'/app/ai',
+	'/app/ai/new',
+	'/app/chat',
+	'/app/command',
+	'/app/command/agents',
+	'/app/command/assignments/[assignmentId]',
+	'/app/feedback',
+	'/app/feedback/[feedbackId]',
+	'/app/services',
+	'/app/services/new',
+	'/app/services/vaults',
+	'/app/services/[connectionId]',
+	'/app/knowledge',
+	'/app/knowledge/packs/[buildId]/download',
+	'/app/market',
+	'/app/focus',
+	'/app/focus/questions',
+	'/app/focus/proposals',
+	'/app/focus/proposals/[proposalId]',
+	'/app/focus/decisions',
+	'/app/projects',
+	'/app/projects/[projectId]',
+	'/app/projects/[projectId]/agents',
+	'/app/projects/[projectId]/agents/[agentId]',
+	'/app/projects/[projectId]/books',
+	'/app/projects/[projectId]/workflows',
+	'/app/work',
+	'/app/work/inbox',
+	'/app/work/decisions',
+	'/app/work/build',
+	'/app/work/direction',
+	'/app/work/results',
+	'/app/work/find',
+	'/app/work/agents',
+	'/app/work/workdays',
+	'/app/work/events',
+	'/app/work/assignments',
+	'/app/work/executions',
+	'/app/work/artifacts',
+	'/app/work/[runId]',
+	'/app/teams',
+	'/app/teams/active',
+	'/app/teams/new',
+	'/app/teams/[teamId]',
+	'/app/teams/[teamId]/edit',
+	'/app/teams/[teamId]/delete',
+	'/app/teams/[teamId]/members',
+	'/auth/confirm-email',
+	'/auth/sign-in',
+	'/auth/logout',
+	'/auth/username',
+	'/auth/callback',
+	'/u/[username]',
+	'/t/[name]',
+	'/team-invites/[token]/accept',
+	'/healthz',
+].sort();
+const EXPECTED_SUPPORT_ROUTES = ['/v1/[...all]'];
+function filesUnder(root: string): string[] {
+	if (!existsSync(root)) return [];
+	return readdirSync(root).flatMap((name) => {
+		const path = join(root, name);
+		return statSync(path).isDirectory()
+			? filesUnder(path)
+			: [relative(process.cwd(), path).replace(/\\/gu, '/')];
+	});
+}
+
+function routePatternFromPage(path: string) {
+	const normalized = path.replace(/^src\/pages/u, '').replace(/\.(astro|ts)$/u, '');
+	return normalized.replace(/\/index$/u, '') || '/';
+}
+
+function exportTargets(value: unknown): string[] {
+	if (typeof value === 'string') return [value];
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+	return Object.values(value as Record<string, unknown>).flatMap(exportTargets);
+}
+
+function resolveSiteHooks(): SiteExtensionContribution {
+	const hooks = adminPlugin.siteHooks;
+	if (!hooks) return {};
+	if (typeof hooks !== 'function') return hooks;
+	return hooks({
+		projectRoot: process.cwd(),
+		tenantConfig: {} as PluginSiteContext['tenantConfig'],
+		pluginConfig: {},
+	} satisfies PluginSiteContext);
+}
+
+describe('@treeseed/admin identity and team surface', () => {
+	it('serves the canonical UI-owned TreeSeed logo', () => {
+		const canonicalLogo = readFileSync(require.resolve('@treeseed/ui/assets/treeseed-logo.svg'));
+		const publicLogo = readFileSync('public/logo.svg');
+		expect(publicLogo).toEqual(canonicalLogo);
+		expect(readFileSync('scripts/brand/sync-assets.ts', 'utf8')).toContain("import.meta.resolve('@treeseed/ui/assets/treeseed-logo.svg')");
+	});
+
+	it('registers exactly the retained routes and resources', () => {
+		const pageFiles = filesUnder('src/pages').filter((path) => /\.(astro|ts)$/u.test(path));
+		const expectedPageRoutes = [
+			...EXPECTED_ROUTES,
+			...EXPECTED_SUPPORT_ROUTES,
+		].sort();
+		expect(ADMIN_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_ROUTES);
+		expect(ADMIN_SUPPORT_ROUTES.map((route) => route.pattern).sort()).toEqual(EXPECTED_SUPPORT_ROUTES);
+		expect(pageFiles.map(routePatternFromPage).sort()).toEqual(expectedPageRoutes);
+		expect([...new Set([...ADMIN_ROUTES, ...ADMIN_SUPPORT_ROUTES].map((route) => route.resourcePath))].sort()).toEqual(
+			pageFiles.map((path) => path.replace(/^src\//u, '')).sort(),
+		);
+	});
+
+	it('keeps anonymous authentication routes inaccessible to active sessions', () => {
+		const anonymousRoutes = [
+			'/auth/sign-in',
+		];
+		for (const route of anonymousRoutes) {
+			expect(isAnonymousAuthRoute(route), route).toBe(true);
+			expect(authenticatedAuthRedirect(route, true), route).toBe('/app/');
+			expect(authenticatedAuthRedirect(route, false), route).toBe('/auth/username');
+		}
+		for (const route of ['/auth/confirm-email', '/auth/logout', '/auth/username', '/auth/callback', '/team-invites/token/accept']) {
+			expect(isAnonymousAuthRoute(route), route).toBe(false);
+			expect(authenticatedAuthRedirect(route, true), route).toBeNull();
+		}
+		const routes = new Map(ADMIN_ROUTES.map((route) => [route.pattern, route.capability?.accessPolicy ?? []]));
+		for (const route of [
+			'/auth/sign-in',
+			'/auth/callback',
+		]) {
+			expect(routes.get(route), route).toContain('anonymous principal only');
+		}
+		expect(routes.get('/auth/confirm-email')).toEqual(expect.arrayContaining([
+			'valid one-time confirmation token',
+			'anonymous or signed-in principal',
+			'safe return URL',
+		]));
+	});
+
+	it('keeps navigation focused on active-team work and identity management', () => {
+		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+		const publicLayout = readFileSync('src/layouts/PublicLayout.astro', 'utf8');
+		for (const target of ['/app/', '/app/account', '/app/teams', '/app/teams/new', '/app/work', '/app/chat', '/app/work/inbox', '/app/work/find', '/app/knowledge', '/knowledge/market/', '/status/']) {
+			expect(appLayout).toContain(target);
+		}
+		for (const target of ['/market', '/cart', '/seller']) {
+			const escaped = target.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+			expect(appLayout).not.toMatch(new RegExp(`(?:href|action)\\s*[:=]\\s*['"\\x60]${escaped}`, 'u'));
+		}
+		expect(appLayout).not.toContain('accountNotifications');
+		expect(appLayout).not.toMatch(/\bnotifications=/u);
+		expect(appLayout).toContain('SITE_SLOGAN');
+		expect(appLayout).toContain("from '@treeseed/ui/site-brand'");
+		expect(appLayout).toContain("from '@treeseed/ui/components/astro/shell/navigation/ShellIcon.astro'");
+		for (const icon of ['capacity', 'discussion', 'inbox', 'search', 'knowledge', 'teams', 'account', 'sign-out']) {
+			expect(appLayout).toContain(`icon: '${icon}'`);
+		}
+		expect(appLayout).not.toContain("{ label: 'Capacity'");
+		expect(appLayout).not.toContain("{ label: 'Work'");
+		expect(appLayout).not.toContain("{ label: 'Command'");
+		expect(appLayout).not.toContain("{ label: 'Focus'");
+		expect(appLayout).toContain("{ label: 'Follow'");
+		expect(appLayout).toContain("{ label: 'Chat / Discuss'");
+		expect(appLayout).toContain("{ label: 'Inbox'");
+		expect(appLayout).toContain("{ label: 'Explore'");
+		expect(appLayout).toContain("{ label: 'Books'");
+		expect(appLayout).not.toContain("{ label: 'Teams'");
+		expect(appLayout).toContain('<ShellIcon name="teams"');
+		expect(appLayout).toContain('iconOnly: true');
+		expect(appLayout).toContain('title="Current team"');
+		expect(appLayout).not.toContain("from '@treeseed/ui'");
+		expect(appLayout).not.toContain('Identity and teams');
+		expect(publicLayout).toContain('SITE_SLOGAN');
+		expect(publicLayout).toContain("from '@treeseed/ui/site-brand'");
+		expect(publicLayout).not.toContain("from '@treeseed/ui'");
+		expect(publicLayout).not.toContain('ShellIconLink');
+	});
+
+	it('assigns every app page to exactly one visible page-header owner', () => {
+		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+		const appPages = filesUnder('src/pages/app').filter((path) => path.endsWith('.astro'));
+
+		expect(appLayout).toContain('contentOwnsPageHeader={contentOwnsPageHeader}');
+		for (const path of appPages) {
+			const source = readFileSync(path, 'utf8');
+			const contentTemplateOwnsHeader = /<(?:AiDeploymentWorkspace|VaultSetupPreview|AgentLabHomeSurface|AgentLabCommandSurface|AgentLabEntitySurface|WorkdayCollectionSurface|WorkdayDetailSurface|AgentStudioSurface|ProjectAgentsSurface|ProjectCommandSurface|KnowledgeWorkbenchSurface|ServiceConnectionCreateSurface|CapacityWorkspace|DashboardTemplate|DiscussionWorkspace|ProjectPortfolioSurface|TeamChatWorkspace|PageHeader|ServiceConnectionWorkspace|SettingsTemplate|TeamViewer)\b/u.test(source);
+			expect(source.includes('contentOwnsPageHeader'), path).toBe(contentTemplateOwnsHeader);
+		}
+	});
+
+	it('uses public package boundaries and retained UI styles', () => {
+		const sources = filesUnder('src')
+			.filter((path) => /\.(astro|tsx?|jsx?|mjs|cjs)$/u.test(path))
+			.map((path) => [path, readFileSync(path, 'utf8')] as const);
+		expect(sources.some(([, source]) => source.includes('@treeseed/ui/'))).toBe(true);
+		for (const [path, source] of sources) {
+			expect(source, path).not.toMatch(/packages\/(?:ui|core|sdk|api)\/src/u);
+			expect(source, path).not.toMatch(/(?:from|import)\s*['"](?:\.\.\/){3,}src\//u);
+		}
+		const css = resolveSiteHooks().customCss ?? [];
+		expect(css).toContain('@treeseed/ui/styles/app-shell.css');
+		expect(css).not.toContain('@treeseed/ui/styles/operations.css');
+		expect(css).not.toContain('@treeseed/ui/styles/market.css');
+		expect(ADMIN_CAPABILITIES.ecommerce.bundled).toBe(false);
+		expect(Object.keys(ADMIN_ENV_SCHEMA)).toContain('TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY');
+	});
+
+	it('delegates password and sign-in security without retaining password routes', () => {
+		const signIn = readFileSync('src/pages/auth/sign-in.ts', 'utf8');
+		const account = readFileSync('src/pages/app/account/index.astro', 'utf8');
+		expect(signIn).toContain('applicationSession');
+		expect(account).toContain('identityManagementUrl');
+		expect(readFileSync('src/view-models/account-settings.ts', 'utf8')).not.toContain("intent === 'password'");
+		for (const name of ['register','reset-password','forgot-password','authorize']) expect(existsSync(`src/pages/auth/${name}.astro`)).toBe(false);
+		expect(Object.keys(ADMIN_ENV_SCHEMA)).not.toContain('TREESEED_BETTER_AUTH_SECRET');
+	});
+
+	it('uses one account timezone and timestamp presentation contract', () => {
+		const accountPage = readFileSync('src/pages/app/account/index.astro', 'utf8');
+		const sessionsPage = readFileSync('src/pages/app/account/sessions.astro', 'utf8');
+		const notificationsPage = readFileSync('src/pages/app/account/notifications.astro', 'utf8');
+		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
+		const appLayout = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+
+		expect(accountPage).toContain('AccountTimeZoneSettings');
+		expect(accountHandler).toContain("intent === 'time-zone'");
+		expect(accountHandler).toContain('updateAccountPreferences');
+		expect(appLayout).toContain('timeZone={preferences.timeZone}');
+		expect(sessionsPage).toContain(
+			"SessionManager from '@treeseed/ui/components/astro/account/SessionManager.astro'",
+		);
+		expect(sessionsPage).toContain('timeZone={frame.preferences.timeZone}');
+		expect(notificationsPage).toContain(
+			"NotificationPreferencePanel from '@treeseed/ui/components/astro/account/NotificationPreferencePanel.astro'",
+		);
+		expect(accountHandler).toContain("form.get('expectedUpdatedAt')");
+		expect(accountHandler).toContain('expectedRevision(form)');
+	});
+
+	it('routes network forms through the UI-owned enhanced submission contract', () => {
+		const navigationForms = new Set([
+			'src/pages/auth/confirm-email.astro',
+			'src/pages/app/capacity/install.astro', // Browser-owned file download, not a JSON mutation response.
+		]);
+		const astroSources = filesUnder('src')
+			.filter((path) => path.endsWith('.astro'))
+			.map((path) => [path, readFileSync(path, 'utf8')] as const);
+		const postFormConsumers = astroSources.filter(([, source]) => (
+			/<form\b[^>]*\bmethod=(?:["']POST["']|["']post["']|\{[^}]*post[^}]*\})/u.test(source)
+		));
+		for (const [path, source] of postFormConsumers) {
+			if (navigationForms.has(path)) {
+				expect(source, `${path} should preserve browser redirect navigation`).not.toContain('data-ts-submit="enhanced"');
+				continue;
+			}
+			expect(source, `${path} should use delegated enhancement`).toContain('data-ts-submit="enhanced"');
+		}
+		expect(readFileSync('src/pages/auth/sign-in.ts', 'utf8')).toContain('applicationSession');
+
+		const accountHandler = readFileSync('src/view-models/account-settings.ts', 'utf8');
+		const pageHelper = readFileSync('src/lib/forms/page-submission.ts', 'utf8');
+		const memberPage = readFileSync('src/pages/app/teams/[teamId]/members.astro', 'utf8');
+		const authPages = [
+			'src/pages/auth/username.astro',
+		].map((path) => readFileSync(path, 'utf8')).join('\n');
+
+		expect(accountHandler).toContain("from '@treeseed/ui/forms'");
+		expect(accountHandler).not.toContain('Astro.redirect');
+		expect(pageHelper).toContain('formSubmissionResponse');
+		expect(authPages).toContain('pageFormResponse');
+		expect(authPages).toContain('pageFormFailure');
+		expect(memberPage).toContain('data-ts-form-adapter="json"');
+		expect(memberPage).toContain('catalogOperationPath(CONTROL_PLANE_OPERATIONS.teams.invite');
+		expect(memberPage).toContain('CONTROL_PLANE_OPERATIONS.teams.memberRemovalBlockers');
+		expect(memberPage).not.toContain('location.reload');
+		expect(memberPage).not.toMatch(/\bfetch\s*\(/u);
+	});
+
+	it('keeps inline guarantee mutations on their route and proves success toasts', () => {
+		const scenePaths = [
+			'guarantees/user/account/scenes/edit-account-settings.scene.yaml',
+			'guarantees/user/account/scenes/manage-appearance.scene.yaml',
+			'guarantees/user/account/scenes/manage-notifications.scene.yaml',
+			'guarantees/user/account/scenes/manage-sessions.scene.yaml',
+			'guarantees/team/scenes/edit-team-settings.scene.yaml',
+			'guarantees/team/membership/scenes/change-member-role.scene.yaml',
+			'guarantees/team/membership/scenes/remove-team-member.scene.yaml',
+		];
+		for (const path of scenePaths) {
+			const scene = readFileSync(path, 'utf8');
+			expect(scene, path).toContain('[data-ts-toast-id][data-tone="success"]');
+			expect(scene, path).not.toMatch(/urlIncludes:\s*(?:saved|updated|removed)=/u);
+		}
+		const appearanceScene = readFileSync('guarantees/user/account/scenes/manage-appearance.scene.yaml', 'utf8');
+		expect(appearanceScene).toContain('value: Guarantee {{runShort}} {{deviceId}}');
+		expect(appearanceScene).not.toContain('Guarantee {{runId}} {{deviceId}}');
+	});
+
+	it('retains domain facades without route-specific UI dependencies', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as { dependencies?: Record<string, string> };
+		expect(packageJson.dependencies).not.toHaveProperty('@mdxeditor/editor');
+		expect(packageJson.dependencies).not.toHaveProperty('libsodium-wrappers-sumo');
+		expect(packageJson.dependencies).not.toHaveProperty('@treeseed/api');
+		expect(DEFAULT_ADMIN_COMMERCE_PROVIDER.id).toBe('none');
+		expect(readFileSync('src/lib/market/api-client/commerce/vendors/queries/get-commerce-vendor-sales-summary.ts', 'utf8')).toContain('getCommerceVendorSalesSummaryMethod');
+	});
+
+	it('builds declarations and valid package exports', () => {
+		const distFiles = filesUnder('dist');
+		const declarations = new Set(distFiles.filter((path) => path.endsWith('.d.ts')).map((path) => path.slice(5, -5)));
+		const missing = distFiles.filter((path) => extname(path) === '.js').map((path) => path.slice(5, -3)).filter((path) => !declarations.has(path));
+		expect(missing).toEqual([]);
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as { exports?: Record<string, unknown> };
+		const missingTargets = Object.values(packageJson.exports ?? {}).flatMap(exportTargets)
+			.filter((target) => !target.includes('*'))
+			.filter((target) => !existsSync(resolve(target)));
+		expect(missingTargets).toEqual([]);
+	});
+
+	it('seals a server-rendered Cloudflare Pages application for hosted deployment', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+			devDependencies?: Record<string, string>;
+			scripts?: Record<string, string>;
+		};
+		const publish = readFileSync('.github/workflows/publish.yml', 'utf8');
+		const custody = readFileSync('scripts/release-custody.ts', 'utf8');
+
+		expect(packageJson.devDependencies?.['@astrojs/cloudflare']).toBe('12.6.13');
+		expect(packageJson.scripts?.['build:pages']).toContain('TREESEED_WEB_RUNTIME_TARGET=cloudflare');
+		expect(publish).toContain('npm run build:pages');
+		expect(publish).toContain('source-assets/admin-pages.tar.gz');
+		expect(publish).toContain("test -f .treeseed/app-dist/_worker.js/index.js");
+		expect(publish).toContain("test -f .treeseed/app-dist/_routes.json");
+		expect(publish).toContain("environment: ${{ contains(github.ref_name, '-') && 'staging' || 'production' }}");
+		expect(publish).toContain('candidate_branch=staging; else candidate_branch=main');
+		expect(publish).toContain("paths-ignore: ['.github/workflows/publish.yml', '.github/workflows/component-revision.yml', 'scripts/release/reissue-component.ts', 'tests/contract/package/component-revision.test.ts', 'tests/contract/package/admin-package.test.ts']");
+		expect(custody).toContain("name === 'admin-pages.tar.gz' ? 'admin-pages'");
+	});
+
+	it('keeps hosted deployment suspended', () => {
+		expect(existsSync('.github/workflows/deploy.yml')).toBe(false);
+		expect(readFileSync('.github/workflows/release-gate.yml', 'utf8')).not.toContain('trsd hosting apply');
+	});
+
+	it('owns a standalone site with one source-first plugin composition', () => {
+		const site = readFileSync('treeseed.site.yaml', 'utf8');
+		const manifest = readFileSync('treeseed.package.yaml', 'utf8');
+		const packageJson = readFileSync('package.json', 'utf8');
+		expect(site).toContain('siteUrl: https://admin.treeseed.dev');
+		expect(site).toContain('localBaseUrl: https://admin.treeseed.localhost');
+		expect(site).toContain('bucketName: treeseed-admin-content');
+		expect(site).toContain('buildOutputDir: .treeseed/app-dist');
+		expect(site).toContain('package: "@treeseed/core/plugin-default"');
+		expect(site).toContain('package: "file:./dist/plugin.js"');
+		expect(manifest).toContain('type: web-application');
+		expect(manifest).toContain('topology: split_site_content');
+		expect(manifest).toContain('sitePath: docs');
+		expect(manifest).toContain('contentPath: src/content');
+		expect(manifest).toContain('contentRuntimeSource: r2_preview_overlay');
+		expect(packageJson).toContain('"build:app"');
+		expect(existsSync('astro.config.ts')).toBe(true);
+		const astroConfig = readFileSync('astro.config.ts', 'utf8');
+		expect(astroConfig).toContain('TREESEED_DEVELOPMENT_WORKSPACE_ROOT');
+		expect(astroConfig).toContain('vite:');
+		expect(astroConfig).toContain('fs:');
+		expect(astroConfig).toContain('allow:');
+		expect(astroConfig).toContain("allowedHosts: ['admin.treeseed.localhost']");
+		expect(manifest).toContain('start: { command: node, args: [--import, tsx, scripts/development/live-web.ts]');
+		expect(manifest).not.toContain('command: docker');
+		const developmentCompose = readFileSync('compose.development.yml', 'utf8');
+		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKSPACE_ROOT:');
+		expect(developmentCompose).toContain('TREESEED_DEVELOPMENT_WORKTREE:');
+		expect(existsSync('src/content.config.ts')).toBe(true);
+		expect(existsSync('src/manifest.yaml')).toBe(true);
+		expect(existsSync('src/config.yaml')).toBe(true);
+	});
+
+	it('publishes its package-owned guarantee catalog and verifier declarations', () => {
+		const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as { files?: string[] };
+		const manifest = readFileSync('treeseed.package.yaml', 'utf8');
+		expect(packageJson.files).toEqual(expect.arrayContaining(['guarantees', 'treeseed.package.yaml']));
+		expect(manifest).toContain('id: "@treeseed/admin/guarantee-catalog"');
+		expect(manifest).toContain('source: guarantees');
+		expect(manifest).toContain('artifact: dist/standards/guarantee-catalog.json');
+		expect(existsSync('guarantees/verifiers/ui.verifiers.yaml')).toBe(true);
+		expect(existsSync('dist/standards/guarantee-catalog.json')).toBe(true);
+		const catalog = JSON.parse(readFileSync('dist/standards/guarantee-catalog.json', 'utf8')) as { schemaVersion: string; guarantees: unknown[]; verifierRegistries: unknown[] };
+		expect(catalog.schemaVersion).toBe('treeseed.guarantee-catalog/v1');
+		expect(catalog.guarantees).toHaveLength(90);
+		expect(catalog.verifierRegistries).toHaveLength(2);
+		expect(existsSync('dist/standards/verifiers/team-ui-contract.json')).toBe(true);
+	});
+});

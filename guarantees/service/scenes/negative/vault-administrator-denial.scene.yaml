@@ -1,0 +1,62 @@
+schemaVersion: treeseed.scene/v1
+id: service.negative.vault-administrator-denial
+title: Ungranted Administrator Vault Denial
+description: Non-owner service administrators and project leads cannot manage team vault grants or lifecycle without explicit ownership and cryptographic access.
+audience: [operator, evaluator]
+journey:
+  kind: service
+  proves: [service.credentials, service.vault, service.vault-recovery]
+  minimumSteps: 2
+  requiresInteractiveAction: true
+mode: { test: true, demo: true, training: true }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium }
+devices:
+  defaultProfile: desktop_chromium
+  profiles:
+    - { id: desktop_chromium, title: Desktop Chromium, viewport: { width: 1600, height: 900 }, video: { width: 1600, height: 900 }, output: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false }
+    - { id: tablet_chromium, title: Tablet Chromium, viewport: { width: 820, height: 1180 }, video: { width: 820, height: 1180 }, output: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+    - { id: mobile_chromium, title: Mobile Chromium, viewport: { width: 390, height: 844 }, video: { width: 390, height: 844 }, output: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: service_admin, required: true }
+artifacts: { trace: true, video: true, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+workflow:
+  - id: open-team-collection
+    title: Open the administrator team collection
+    action: { goto: /app/teams }
+    expect: { visible: [{ css: ':nth-match([data-scene="team.active.set"], 1)', internal: true }] }
+  - id: select-team-context
+    title: Select the team through the visible active-team control
+    action: { click: { css: ':nth-match([data-scene="team.active.set"] button, 1)', internal: true } }
+    expect: { visible: [{ css: '[data-active="true"]', internal: true }] }
+  - id: open-service-collection
+    title: Open the service collection through the administrator navigation
+    action: { goto: /app/services }
+    expect: { visible: [{ role: link, name: Add connection }] }
+  - id: open-service-wizard
+    title: Exercise the permitted non-secret service administration control
+    action: { click: { role: link, name: Add connection } }
+    expect:
+      urlIncludes: /app/services/new
+      visible: [{ scene: service.create }]
+  - id: explain-owner-boundary
+    title: Explain the separate team-owner and cryptographic grant boundary
+    action: { goto: /app/services/vault }
+    expect:
+      text: Only a team owner can initialize or change vault grants.
+      notVisible: [{ role: button, name: Initialize team vault }]
+chapters: []
+overlays: []
+diagrams: []
+render:
+  remotion:
+    composition: treeseed-training-default
+    output: { format: mp4, fps: 30, resolution: { width: 1920, height: 1080 } }
+runtime:
+  mode: training
+  timeouts: { sceneSeconds: 180, chapterSeconds: 120, stepSeconds: 60 }
+  checkpoints: { enabled: true, defaultResumable: true, everyStep: true }
+  progress: { heartbeatSeconds: 15 }
+  failure: { continueOnFailure: false }
+training: {}
+visualAudit: { enabled: true }
