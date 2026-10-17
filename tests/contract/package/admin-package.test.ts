@@ -404,7 +404,7 @@ describe('@treeseed/admin identity and team surface', () => {
 	it('restores the required browser workload credential through declared development custody', () => {
 		const manifest = parse(readFileSync('treeseed.package.yaml', 'utf8'));
 		const web = manifest.development.targets.find((target: { id: string }) => target.id === 'web');
-		expect(web.secretRefs).toEqual({ TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY: 'identity-admin-browser' });
+		expect(web.secretRefs).toEqual({ TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY: 'identity-admin-workload' });
 		expect(web.operations.start.environment).not.toHaveProperty('TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY');
 	});
 

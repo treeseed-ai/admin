@@ -50,7 +50,7 @@ development:
         - { id: api, target: service, capability: control-plane-api, locality: either, reaction: none }
       statePolicy: stateless
       migrationPolicy: none
-      secretRefs: { TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY: identity-admin-browser }
+      secretRefs: { TREESEED_IDENTITY_WORKLOAD_PRIVATE_KEY: identity-admin-workload }
       shutdown: { graceSeconds: 15, activeWorkPolicy: block }
       resources: {}
       logs: [.treeseed/development/web.log]
