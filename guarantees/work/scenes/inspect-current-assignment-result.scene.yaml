@@ -1,0 +1,40 @@
+schemaVersion: treeseed.scene/v1
+id: inspect-current-assignment-result
+title: Inspect an actual assignment and its committed result
+description: Follow a current-scope completed assignment through canonical reads to its exact TreeDX product without substituting fixture data.
+audience: [operator, qa]
+mode: { test: true, demo: false, training: false }
+target: { app: market, environment: local, baseUrl: auto, browser: chromium, viewport: { width: 1600, height: 900 } }
+setup:
+  dev: { required: true, reuseExisting: true }
+  auth: { role: admin, required: true, seedOnly: false }
+artifacts: { trace: true, video: false, screenshots: true, console: true, network: true, timeline: true, appLogs: true }
+runtime:
+  mode: acceptance
+  failure: { continueOnFailure: false }
+  checkpoints: { enabled: false }
+chapters:
+  - { id: inspect, title: Inspect current assignment evidence, startsAt: open-atlas }
+workflow:
+  - id: open-atlas
+    title: Open the authenticated current team Atlas
+    action: { goto: /app/work }
+    expect:
+      visible: [{ css: '[data-scene="agent-lab.atlas"]', internal: true }]
+  - id: open-assignments
+    title: Open observed assignments
+    action: { click: { css: '.ts-atlas-docks > nav > button:last-child', internal: true } }
+    expect:
+      visible: [{ css: '.ts-atlas-assignment-list button:has([data-status="completed"])', internal: true }]
+  - id: inspect-completed
+    title: Inspect the first actual completed assignment
+    action: { click: { css: '.ts-atlas-assignment-list li:has([data-status="completed"]):not(li:has([data-status="completed"]) ~ li) button', internal: true } }
+    expect:
+      text: Relationships
+      visible: [{ css: '.ts-atlas-record-detail[data-resource="allocation"]', internal: true }]
+  - id: follow-result
+    title: Resolve its first committed TreeDX result
+    action: { click: { css: '.ts-atlas-record-detail section[aria-labelledby="atlas-detail-related"] li:first-child button', internal: true } }
+    expect:
+      text: committed
+      visible: [{ css: '.ts-atlas-record-detail[data-resource="content"]', internal: true }]

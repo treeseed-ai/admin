@@ -7,6 +7,8 @@ export function listProviderAssignmentsMethod(this: ApiClientFacade, teamId: str
     projectId?: string | null;
     providerId?: string | null;
     status?: string | null;
+    limit?: number;
+    cursor?: string;
 } = {}) {
     const query = new URLSearchParams();
     if (filters.projectId)
@@ -15,5 +17,7 @@ export function listProviderAssignmentsMethod(this: ApiClientFacade, teamId: str
         query.set('providerId', filters.providerId);
     if (filters.status)
         query.set('status', filters.status);
-    return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments${query.toString() ? `?${query}` : ''}`);
+    if (filters.limit !== undefined) query.set('limit', String(filters.limit));
+    if (filters.cursor) query.set('cursor', filters.cursor);
+    return this.request<unknown>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/assignments${query.toString() ? `?${query}` : ''}`);
 }

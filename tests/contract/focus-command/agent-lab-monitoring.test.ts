@@ -11,7 +11,7 @@ describe('Agent Lab command header and navigator', () => {
 		const api = {
 			listProviderAvailabilitySessions: async () => ({ items: [{ status: 'active' }] }),
 			listWorkdayRuns: async () => ({ items: [{ id: 'workday-1', status: 'running' }] }),
-			listProviderAssignments: async () => ({ items: [{ id: 'assignment-1', status: 'completed' }] }),
+				listProviderAssignments: async () => ({ items: [{ id: 'assignment-1', teamId:'team-1',projectId:'project-1',status: 'completed',assignedAt:'2026-10-18T01:20:00.000Z' }],page:{hasMore:false,nextCursor:null} }),
 			listProjectsForPrincipal: async () => ({ items: [{ id: 'project-1', teamId: 'team-1' }] }),
 		};
 		const frame = await loadAgentLabFrame(api as any, { id: 'team-1', name: 'TreeSeed' }, {

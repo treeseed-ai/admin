@@ -3,6 +3,7 @@ import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import type { ApiClientFacade } from '../../lib/market/api-client.ts';
 import type { AllocationSnapshot } from '@treeseed/ui/components/react/OperationsMonitor';
 import { items } from '../../lib/operations/records.ts';
+import {atlasDate,readAtlasAssignments,projectAtlasAssignments} from './atlas-snapshot.ts';
 
 export const agentLabMetricDestinations = {
 	agents: '/app/work/agents', workdays: '/app/work/workdays', systemEvents: '/app/work/events',
@@ -21,11 +22,11 @@ function fallbackOverview(team: { id: string; name?: string; slug?: string }, ti
 function fallbackAtlas(teamId:string,overview:AgentLabOverview):AgentAtlasProjection{return{revision:'server-snapshot-unavailable',generatedAt:overview.generatedAt,timeZone:overview.timeZone,scope:{teamId,selectedDate:overview.workdayContext.selectedDate,workdayIds:[],projectIds:[],groupIds:[],agentIds:[],activityProfiles:[],sizingMetric:'activity'},topologies:[],nodeStates:[],assignments:[],activity:[],workdaySummary:null,activityWindow:{total:0,loaded:0,truncated:false},playback:{mode:'live',startedAt:overview.operatingDay.start,endedAt:overview.operatingDay.end,liveEdgeAt:overview.generatedAt,cursor:{cursor:null,observedAt:overview.generatedAt,positions:{}}},alerts:[{id:'atlas-unavailable',severity:'warning',message:'The Agent Atlas projection is temporarily unavailable.'}]}}
 
 export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string; name?: string; slug?: string }, preferences: AccountPreferences, selection: { date?: string | null; workday?: string | null } = {}) {
-	void selection;
+	const selectedDate=atlasDate(selection.date,preferences.timeZone);
 	const [providerResult, workdayResult, assignmentResult, projectResult] = await Promise.all([
 		api.listProviderAvailabilitySessions(team.id).catch(() => null),
 		api.listWorkdayRuns(team.id).catch(() => null),
-		api.listProviderAssignments(team.id).catch(() => null),
+		readAtlasAssignments(api,team.id).catch(() => null),
 		api.listProjectsForPrincipal().catch(() => null),
 	]);
 	const providers = providerResult === null ? null : items(providerResult);
@@ -33,8 +34,9 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 	const assignments = assignmentResult === null ? null : items(assignmentResult);
 	const projects = projectResult === null ? null : items(projectResult).filter((item) => item.teamId === team.id);
 	const overview = fallbackOverview(team, preferences.timeZone);
+	overview.workdayContext.selectedDate=selectedDate;
 	overview.connectivity = [providers, workdays, assignments, projects].every((value) => value !== null) ? 'live' : 'degraded';
-	if (providers) overview.activeProviders = providers.filter((item: any) => ['active', 'available', 'connected'].includes(String(item.status))).length;
+	if (providers) overview.activeProviders = providers.filter((item: any) => ['open', 'active', 'available', 'connected'].includes(String(item.status))).length;
 	if (workdays) {
 		overview.activeWorkdays = workdays.filter((item: any) => ['running', 'active'].includes(String(item.status))).length;
 		overview.workdayContext.workdays = workdays as any;
@@ -49,7 +51,10 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 	const series = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
 	const allocation = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(),
 		time: { availableSeconds: null, requestedSeconds: 0, reservedSeconds: 0, activeSeconds: 0, elapsedSeconds: 0, releasedSeconds: 0, remainingSeconds: null, overrunSeconds: 0 }, projects: [], agentClasses: [], workdayTime: [] };
-	const atlas = fallbackAtlas(team.id, overview);
+	let atlas = fallbackAtlas(team.id, overview);
+	if(assignments&&projects)try{atlas=await projectAtlasAssignments(assignments,projects,team.id,preferences.timeZone,selectedDate,selection.workday);}catch{/* Incomplete scope remains visibly unavailable. */}
+	const scopeQuery=new URLSearchParams({date:selectedDate});if(selection.workday)scopeQuery.set('workday',selection.workday);
+	const atlasBase='/app/work/atlas';
 	return {
 		overview,
 		atlas:atlas as AgentAtlasProjection,
@@ -57,7 +62,7 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 		series: series as AgentLabDelta<AgentLabMetricPoint>,
 		allocation: allocation as AllocationSnapshot,
 		endpoints: { overview: '', activity: '', metricSeries: '', viewState: '' },
-		atlasEndpoints:{projection:'',delta:'',stream:'',detail:'',assignmentGraphs:'',viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
+		atlasEndpoints:{projection:`${atlasBase}/projection?${scopeQuery}`,delta:'',stream:`${atlasBase}/stream?${scopeQuery}`,detail:`${atlasBase}/details`,assignmentGraphs:`${atlasBase}/graphs?${scopeQuery}`,viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
 		targetEndpoint: '',
 		preference: { enabled: preferences.realTimeUpdates, intervalSeconds: preferences.realTimePollingIntervalSeconds },
 	};

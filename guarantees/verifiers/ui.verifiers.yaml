@@ -1,6 +1,11 @@
 schemaVersion: treeseed.guarantee-verifiers/v1
 ownerPackage: "@treeseed/admin"
 verifiers:
+  admin.atlas.public-read-transport:
+    kind: vitestCase
+    ownerPackage: "@treeseed/admin"
+    testFile: tests/integration/atlas-public-read.test.ts
+    description: Native verified TLS exercises the actual Admin facade, scoped assignment projection, immutable TreeDX content reader and authentication denial; owning-service persistence and browser evidence remain separate obligations.
   admin.knowledge.ui-contracts:
     kind: vitestCase
     ownerPackage: "@treeseed/admin"
