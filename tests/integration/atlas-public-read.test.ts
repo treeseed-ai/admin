@@ -11,6 +11,8 @@ import {ApiClientFacade,type AstroLike} from '../../src/lib/market/api-client.ts
 import {setRequestCredential} from '../../src/lib/auth/application-session.ts';
 import {loadAgentLabFrame} from '../../src/view-models/agent-lab/agent-lab-frame.ts';
 import {atlasDetail} from '../../src/view-models/agent-lab/atlas-detail.ts';
+import {GET as readDetail} from '../../src/pages/app/work/atlas/details/[kind]/[id].ts';
+import type {APIContext} from 'astro';
 
 // Native TLS/HTTP consumer integration. The separate live-service read-back proves
 // the actual PostgreSQL-backed assignment and TreeDX product; this server is a fixture.
@@ -31,7 +33,7 @@ beforeAll(async()=>{
   requests.push({method:req.method!,path:url.pathname+url.search,body});
   res.setHeader('content-type','application/json');
   if(req.headers.authorization!=='Bearer synthetic-test-token'){res.statusCode=401;res.end(JSON.stringify({ok:false,message:'Not authenticated.'}));return;}
-  const data=url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'}]}:
+  const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'}]}:
    url.pathname==='/v1/teams/team/capacity/assignments'?{items:[assignment],page:{hasMore:false,nextCursor:null}}:
    url.pathname==='/v1/teams/team/capacity/assignments/assignment'?assignment:
    url.pathname==='/v1/projects/project/treedx-library'?{repositoryId:'library'}:
@@ -42,7 +44,7 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{server?.closeAllConnections();if(server)await new Promise<void>(resolve=>server.close(()=>resolve()));setDefaultCACertificates(authorities);if(directory)rmSync(directory,{recursive:true});});
 function client(authenticated=true){
- const context={locals:{runtime:{env:{TREESEED_API_BASE_URL:origin}}},request:new Request('https://admin.test/app/work'),url:new URL('https://admin.test/app/work'),cookies:{}} as AstroLike;
+ const context={locals:{auth:{principal:{id:'operator'}},runtime:{env:{TREESEED_API_BASE_URL:origin}}},request:new Request('https://admin.test/app/work'),url:new URL('https://admin.test/app/work'),cookies:{get:()=>({value:'team'})}} as unknown as AstroLike;
  if(authenticated)setRequestCredential(context,{resource:origin,accessToken:'synthetic-test-token'});
  return new ApiClientFacade(context);
 }
@@ -60,5 +62,14 @@ describe('Admin native public assignment-to-artifact transport',()=>{
  });
  it('propagates authentication denial instead of presenting an empty successful detail',async()=>{
   await expect(atlasDetail(client(false),'team','assignment','assignment')).rejects.toMatchObject({status:401});
+ });
+ it('follows the encoded browser result locator through the actual application route and native public reads',async()=>{
+  const api=client();
+  const response=await readDetail({...api.context,params:{kind:'artifact',id:'assignment%3A0'}} as APIContext);
+  expect(response!.status).toBe(200);expect(await response!.json()).toMatchObject({payload:{status:'committed',summary:{commit,path}}});
+ });
+ it.each(['assignment%253A0','assignment%E0%A4%A'])('rejects malformed or double-encoded result locator %s',async id=>{
+  const response=await readDetail({...client().context,params:{kind:'artifact',id}} as APIContext);
+  expect(response!.status).toBe(400);
  });
 });
