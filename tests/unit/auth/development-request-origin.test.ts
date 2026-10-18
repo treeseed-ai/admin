@@ -15,6 +15,12 @@ describe('configured Admin public origin on the development HTTP transport',()=>
  it('preserves an already canonical request without cloning',()=>{
   const value=context('https://admin.test/app/work');expect(applicationRequest(value)).toBe(value.request);
  });
+ it('preserves the original method, body, signal and Origin header',async()=>{
+  const value=context();const abort=new AbortController();
+  value.request=new Request(value.request.url,{method:'POST',body:new URLSearchParams({csrfToken:'synthetic-csrf'}),headers:{origin:'https://admin.test'},signal:abort.signal});
+  const request=applicationRequest(value);expect(request.method).toBe('POST');expect(request.headers.get('origin')).toBe('https://admin.test');
+  expect(await request.text()).toBe('csrfToken=synthetic-csrf');abort.abort();expect(request.signal.aborted).toBe(true);
+ });
  it.each(['http://foreign.test/app','http://admin.test:1234/app','https://foreign.test/app'])('denies unrelated origin %s',url=>{
   expect(()=>applicationRequest(context(url))).toThrow();
  });
