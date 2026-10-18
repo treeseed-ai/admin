@@ -21,6 +21,19 @@ export function apiResource(context: Context) {
   return identityEndpointSchema.parse(setting(context, 'TREESEED_API_BASE_URL')).replace(/\/$/u, '');
 }
 
+/** Adapt the development transport at the application boundary; Identity keeps
+ * validating the configured public HTTPS origin. Never trust forwarded headers. */
+export function applicationRequest(context: Context): Request {
+  const authority = new URL(identityEndpointSchema.parse(setting(context, 'TREESEED_SITE_URL')));
+  const incoming = new URL(context.request.url);
+  if (incoming.origin === authority.origin) return context.request;
+  if (incoming.protocol !== 'http:' || incoming.host !== authority.host
+    || setting(context, 'TREESEED_DEVELOPMENT_MODE') !== 'live'
+    || !/^dev-[a-z0-9-]{1,64}$/u.test(setting(context, 'TREESEED_DEVELOPMENT_SESSION_ID')))
+    throw new Error('Application request origin does not match its public authority.');
+  return new Request(new URL(incoming.pathname + incoming.search, authority.origin), context.request);
+}
+
 export function identityAccountUrl(context: Context) {
   const issuer = new URL(identityEndpointSchema.parse(setting(context, 'TREESEED_IDENTITY_ISSUER')));
   const account = new URL(identityEndpointSchema.parse(setting(context, 'TREESEED_IDENTITY_ACCOUNT_URL')));
