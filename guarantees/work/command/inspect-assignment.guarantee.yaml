@@ -13,9 +13,10 @@ actors: { allowed: [authenticated_user, team_owner, project_lead], forbidden: [u
 devices: { required: [desktop_chromium] }
 gates: [future]
 preconditions: { fixtures: [integrated_treeseed_project], notes: ["A durable assignment exists."] }
-api: { required: false, verifierRefs: [] }
+scene: { required: true, manifest: ../scenes/inspect-current-assignment-result.scene.yaml, mode: { acceptance: true, demo: false, training: false }, expectedEvidence: [playwright_trace, screenshot_on_failure, console_log, network_log] }
+api: { required: true, verifierRefs: [admin.atlas.public-read-transport] }
 content: { required: false, verifierRefs: [] }
 audit: { required: false, verifierRefs: [] }
 negativeCases: ["Ineligible cancel and requeue controls are hidden.", "Direct unauthorized mutations remain rejected."]
 evidence: { required: [guarantee_report] }
-notes: ["Planned until assignment inspection and failed-assignment visual scenes are repeatable."]
+notes: ["Planned until assignment inspection and failed-assignment visual scenes are repeatable.", "The current-snapshot slice reads canonical assignments and exact TreeDX products; complete histories, recovery controls and broader graph inspection remain unproven. The scene requires an actual current-scope completed assignment with a TreeDX result; it must fail rather than create a synthetic product. Fresh complete participating-owner suites are required before formal execution."]
