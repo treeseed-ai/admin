@@ -20,6 +20,9 @@ export async function atlasProjection(context:APIContext){
 }
 export async function atlasDetailResponse(context:APIContext){
  const {api,team}=await atlasContext(context);
- return atlasJson(await atlasDetail(api,team.id,string(context.params.kind),string(context.params.id),context.url.searchParams.get('at')));
+ let kind:string,id:string;
+ try{kind=decodeURIComponent(string(context.params.kind));id=decodeURIComponent(string(context.params.id));}
+ catch{throw Object.assign(new Error('Choose a valid Atlas record locator.'),{status:400});}
+ return atlasJson(await atlasDetail(api,team.id,kind,id,context.url.searchParams.get('at')));
 }
 export const atlasError=(error:unknown)=>atlasJson({message:error instanceof Error?error.message:'Agent observations are unavailable.'},[400,401,403,404,409].includes(Number(row(error).status))?Number(row(error).status):503);
