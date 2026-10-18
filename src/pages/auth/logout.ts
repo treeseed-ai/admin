@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { applicationSession } from '../../lib/auth/application-session';
+import { applicationSession, applicationRequest } from '../../lib/auth/application-session';
 import { requireCsrf } from '../../lib/auth/support/csrf';
 import { pageFormFailure, pageFormResponse } from '../../lib/forms/page-submission';
 
@@ -12,7 +12,7 @@ export const POST: APIRoute = async context => {
     const destination = new URL(requestedReturnTo || '/', context.url.origin);
     if (destination.origin !== context.url.origin) throw new Error('Invalid return destination.');
     const target = requestedReturnTo ? `/auth/sign-in?${new URLSearchParams({ returnTo: destination.pathname + destination.search, switchAccount: '1' })}` : '/';
-    const logout = await (await applicationSession(context)).logout(context.request);
+    const logout = await (await applicationSession(context)).logout(applicationRequest(context));
     const response = pageFormResponse(context, { ok: true, code: 'signed_out', message: 'You have been signed out of this application.', redirect: target }, target);
     for (const cookie of logout.headers.getSetCookie()) response.headers.append('set-cookie', cookie);
     return response;

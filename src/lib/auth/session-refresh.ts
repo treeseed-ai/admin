@@ -1,9 +1,9 @@
 import type { APIContext } from 'astro';
-import { applicationSession, apiResource, setRequestCredential } from './application-session';
+import { applicationSession, applicationRequest, apiResource, setRequestCredential } from './application-session';
 
 export async function loadApiBackedWebSession(context: APIContext) {
   if (!(context.request.headers.get('cookie') ?? '').split(';').some(value => value.trim().startsWith('__Host-treeseed-admin='))) return null;
-  const credential = await (await applicationSession(context)).session(context.request);
+  const credential = await (await applicationSession(context)).session(applicationRequest(context));
   if (!credential) return null;
   const response = await fetch(`${apiResource(context)}/v1/me`, {
     headers: { accept: 'application/json', authorization: `Bearer ${credential.accessToken}` },

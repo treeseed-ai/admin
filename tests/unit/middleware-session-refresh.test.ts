@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const bridge = vi.hoisted(() => ({ session: vi.fn(), set: vi.fn() }));
 vi.mock('../../src/lib/auth/application-session', () => ({
+  applicationRequest: (context: { request: Request }) => context.request,
   applicationSession: async () => ({ session: bridge.session }), apiResource: () => 'https://api.test', setRequestCredential: bridge.set,
 }));
 import { loadApiBackedWebSession } from '../../src/lib/auth/session-refresh';
