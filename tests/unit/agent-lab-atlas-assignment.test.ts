@@ -1,6 +1,7 @@
 import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import { describe, expect, it } from 'vitest';
 import type { ApiClientFacade } from '../../src/lib/market/api-client.ts';
+import type {CapacityWorkdayEventRecord} from '@treeseed/sdk/agent-capacity';
 import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import { loadAgentLabFrame } from '../../src/view-models/agent-lab/agent-lab-frame.ts';
 import { atlasDate, localDate, readAtlasAssignments } from '../../src/view-models/agent-lab/atlas-snapshot.ts';
@@ -17,26 +18,26 @@ function client(rows: unknown[], page = { hasMore: false, nextCursor: null as st
   return {
     listProviderAvailabilitySessions: async () => ({ items: [] }), listWorkdayRuns: async () => ({ items: [] }),
     listProviderAssignments: async () => ({ items: rows, page }), listProjectsForPrincipal: async () => ({ items: [{ id: 'admin', teamId: 'team', name: 'Admin' }] }),
-    invoke: async (binding: { operationId?: string }, input: { path?: Record<string, string>; query?: Record<string, unknown> }) => {
-      if (binding.operationId === 'agents.list') return { projectId: input.path?.projectId, agents: [] };
+    invoke: async (binding: { descriptor: {operationId: string} }, input: { path?: Record<string, string>; query?: Record<string, unknown> }) => {
+      if (binding.descriptor.operationId === 'agents.list') return { projectId: input.path?.projectId, agents: [] };
       return { items: [], page: { hasMore: false, nextCursor: null } };
     },
   } as unknown as ApiClientFacade;
 }
-const event = (id: string, index: number, overrides: Record<string, unknown> = {}) => ({
-  id, teamId: 'team', runId: 'conversation-real', workdayId: null, index, eventType: `event-${index}`,
-  title: `Title ${index}`, occurredAt: `2026-10-17T12:00:0${index}.000Z`, ...overrides,
+const event = (id: string, index: number, overrides: Partial<CapacityWorkdayEventRecord> = {}):CapacityWorkdayEventRecord => ({
+  id, teamId: 'team', runId: 'conversation-real', workdayId: null, projectId:'admin', assignmentId:null, eventIndex:index, status:'recorded', message:null, parameters:{}, context:{}, refs:{}, metadata:{}, eventType: `event-${index}`,
+  title: `Title ${index}`, createdAt: `2026-10-17T12:00:0${index}.000Z`, ...overrides,
 });
 function historyClient(events: unknown[][]) {
   const calls: Array<{ path: unknown; query: unknown }> = [];
   const api = client([assignment]);
-  (api as any).invoke = async (binding: { operationId?: string }, input: { path?: unknown; query?: unknown }) => {
-    if (binding.operationId === 'agents.list') return { projectId: 'admin', agents: [] };
-    expect(binding.operationId).toBe('workdays.events.list');
+  Object.assign(api, {invoke: async (binding: { descriptor: {operationId: string} }, input: { path?: unknown; query?: unknown }) => {
+    if (binding.descriptor.operationId === 'agents.list') return { projectId: 'admin', agents: [] };
+    expect(binding.descriptor.operationId).toBe('workdays.events.list');
     calls.push({ path: input.path, query: input.query });
     const page = events[calls.length - 1] ?? [];
     return { items: page, page: calls.length === 1 ? { hasMore: true, nextCursor: 'next' } : { hasMore: false, nextCursor: null } };
-  };
+  }});
   return { api, calls };
 }
 async function frameWithEvents(events: unknown[][]) {
@@ -84,8 +85,8 @@ describe('Atlas reads the actual scoped assignment', () => {
     expect(calls[1].query).toMatchObject({ cursor: 'next' });
     expect(frame.atlas.scope).toMatchObject({ selectedDate: '2026-10-17', workdayIds: ['conversation-real'] });
     expect(frame.atlas.activity).toEqual([
-      expect.objectContaining({ id: 'event-zero', startedAt: '2026-10-17T12:00:00.000Z' }),
-      expect.objectContaining({ id: 'event-one', name: 'event-1', startedAt: '2026-10-17T12:00:01.000Z' }),
+      expect.objectContaining({ id: 'event-zero', timestamp: '2026-10-17T12:00:00.000Z', sequence:0 }),
+      expect.objectContaining({ id: 'event-one', summary: 'event-1', timestamp: '2026-10-17T12:00:01.000Z',sequence:1 }),
     ]);
     expect(JSON.stringify(frame)).not.toContain(assignment.leaseToken);
   });
@@ -99,4 +100,25 @@ describe('Atlas reads the actual scoped assignment', () => {
     expect(frame.atlas.activity).toEqual([]);
     expect(frame.atlas.alerts.some(a => a.id.includes('history-unavailable'))).toBe(true);
   });
+});
+
+describe('selected history denies incomplete or foreign public observations',()=>{
+ it.each([
+  ['foreign team',{teamId:'foreign'}],['foreign run',{runId:'foreign'}],['foreign workday',{workdayId:'foreign'}],
+  ['negative index',{eventIndex:-1}],['fractional index',{eventIndex:0.5}],['invalid clock',{createdAt:'not-a-clock'}],
+  ['rolled-over clock',{createdAt:'2026-02-30T12:00:00.000Z'}],['empty event identity',{id:''}],['empty event type',{eventType:''}],
+ ] as const)('retains assignment data while %s is visibly unavailable',async(_label,overrides)=>{
+  const frame=await frameWithEvents([[event('event-zero',0,overrides)]]);
+  expect(frame.atlas.assignments).toHaveLength(1);expect(frame.atlas.activity).toEqual([]);
+  expect(frame.atlas.activityWindow.truncated).toBe(true);expect(frame.atlas.alerts.some(a=>a.id==='history-unavailable')).toBe(true);
+ });
+ it('denies duplicate source identities even across different contiguous indices',async()=>{
+  const frame=await frameWithEvents([[event('duplicate',0)],[event('duplicate',1)]]);
+  expect(frame.atlas.activity).toEqual([]);expect(frame.atlas.activityWindow.truncated).toBe(true);
+ });
+ it('retains complete empty selected history without claiming portfolio history',async()=>{
+  const scoped=await frameWithEvents([[]]);expect(scoped.atlas.activityWindow).toEqual({total:0,loaded:0,truncated:false});
+  const portfolio=await loadAgentLabFrame(client([assignment]),{id:'team'},preferences,{date:'2026-10-17'});
+  expect(portfolio.atlas.activityWindow.truncated).toBe(true);
+ });
 });
