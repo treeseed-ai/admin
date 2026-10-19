@@ -5,7 +5,7 @@ verifiers:
     kind: vitestCase
     ownerPackage: "@treeseed/admin"
     testFile: tests/integration/atlas-public-read.test.ts
-    description: Native verified TLS exercises the actual Admin facade, scoped assignment projection, immutable TreeDX content reader, denied later stream snapshots and fresh authorized reconnect; owning-service persistence and browser evidence remain separate obligations.
+    description: Native verified TLS exercises the actual Admin facade, canonical provider status pages with requested team and auth scope, upstream denial, scoped assignment projection, immutable TreeDX content reader, denied later stream snapshots and fresh authorized reconnect; owning-service persistence and browser evidence remain separate obligations.
   admin.knowledge.ui-contracts:
     kind: vitestCase
     ownerPackage: "@treeseed/admin"
