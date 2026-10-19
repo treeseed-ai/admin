@@ -44,7 +44,7 @@ beforeAll(async()=>{
   if(url.pathname.endsWith('/capacity/availability-sessions')&&url.pathname!==catalogOperationPath(capacityStatus,{teamId:'team'},{})){
    res.statusCode=403;res.end(JSON.stringify({ok:false,message:'Team scope denied.'}));return;
   }
-  if(url.pathname==='/v1/teams/team/capacity/provider-sessions'){res.statusCode=404;res.end(JSON.stringify({ok:false,message:'Retired provider route.'}));return;}
+  if(url.pathname.endsWith('/capacity/provider-sessions')){res.statusCode=404;res.end(JSON.stringify({ok:false,message:'Retired provider route.'}));return;}
   if(url.pathname===catalogOperationPath(capacityStatus,{teamId:'team'},{})){
    if(providerUnavailable){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Provider observations unavailable.'}));return;}
    const items=[{id:'open-session',capacityProviderId:'provider',status:'open'},{id:'closed-session',capacityProviderId:'provider',status:'closed'}]

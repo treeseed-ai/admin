@@ -2,8 +2,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import { catalogOperationPath, invokeMethod, requestMethod } from '../../../src/lib/market/api-client/support/contracts/request.ts';
 import { unwrapEnvelope } from '../../../src/lib/market/api-client.ts';
+import type {ApiClientFacade} from '../../../src/lib/market/api-client.ts';
+import {listProviderAvailabilitySessionsMethod} from '../../../src/lib/market/api-client/capacity/providers/queries/list-provider-availability-sessions.ts';
 
 describe('Admin catalog invocation boundary', () => {
+	it('preserves canonical provider pages and encoded team/filter scope without projecting another inventory',async()=>{
+		const page={items:[{id:'session',status:'open'}],page:{hasMore:false,nextCursor:null}};
+		const request=vi.fn().mockResolvedValue(page),api={request,invoke:invokeMethod} as unknown as ApiClientFacade;
+		expect(await listProviderAvailabilitySessionsMethod.call(api,'team/one',{providerId:'provider one',status:'open'})).toBe(page);
+		expect(request).toHaveBeenLastCalledWith('GET','/v1/teams/team%2Fone/capacity/availability-sessions?providerId=provider+one&status=open',{body:undefined});
+		await listProviderAvailabilitySessionsMethod.call(api,'team/one',{providerId:null,status:null});
+		expect(request).toHaveBeenLastCalledWith('GET','/v1/teams/team%2Fone/capacity/availability-sessions',{body:undefined});
+	});
+	it('rejects missing provider team authority before a request and retains the original upstream error',async()=>{
+		const request=vi.fn().mockResolvedValue({}),api={request,invoke:invokeMethod} as unknown as ApiClientFacade;
+		await expect(listProviderAvailabilitySessionsMethod.call(api,'')).rejects.toThrow();
+		expect(request).not.toHaveBeenCalled();
+		const denied=Object.assign(new Error('Provider observations unavailable.'),{status:503});
+		request.mockRejectedValueOnce(denied);
+		await expect(listProviderAvailabilitySessionsMethod.call(api,'team')).rejects.toBe(denied);
+	});
 	it('resolves authoritative path/query descriptors and preserves concurrency headers', async () => {
 		const request = vi.fn().mockResolvedValue({ ok: true });
 		const result = await invokeMethod.call({ request } as any, CONTROL_PLANE_OPERATIONS.teams.update, {
