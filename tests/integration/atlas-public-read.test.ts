@@ -14,20 +14,23 @@ import {atlasDetail} from '../../src/view-models/agent-lab/atlas-detail.ts';
 import {GET as readDetail} from '../../src/pages/app/work/atlas/details/[kind]/[id].ts';
 import type {APIContext} from 'astro';
 import {GET as readStream} from '../../src/pages/app/work/atlas/stream.ts';
-import {CONTROL_PLANE_OPERATIONS} from '@treeseed/sdk/operator-contracts';
+import {CONTROL_PLANE_OPERATIONS,controlPlaneOperation} from '@treeseed/sdk/operator-contracts';
 import {catalogOperationPath} from '../../src/lib/market/api-client.ts';
 
 // Native TLS/HTTP consumer integration. The separate live-service read-back proves
 // the actual PostgreSQL-backed assignment and TreeDX product; this server is a fixture.
 const commit='b'.repeat(40),path='discussion-messages/topic/result.mdx';
 const reference={kind:'treedx',projectId:'project',repository:'library',commit,path};
+const capacityStatus=controlPlaneOperation('capacity.status');
+if(!capacityStatus)throw new Error('Existing canonical capacity status operation required');
 const assignment={id:'assignment',teamId:'team',projectId:'project',agentId:'project/researcher',workDayId:'workday',status:'completed',
  assignedAt:'2026-10-17T20:00:00.000Z',updatedAt:'2026-10-17T20:01:00.000Z',leaseToken:'private-lease',
  workspaceContext:{assignmentAttempt:{sourceRef:reference,effectiveProfile:{activity:'chat',profileRef:{commit,path:'agents/researcher.mdx'}}}},
  assignmentResult:{summary:'Source-backed finding.',references:[reference],usage:{elapsedSeconds:25}}};
 let server:Server,origin:string,directory:string;
 let activeToken='synthetic-test-token';
-afterEach(()=>{activeToken='synthetic-test-token';});
+let providerUnavailable=false;
+afterEach(()=>{activeToken='synthetic-test-token';providerUnavailable=false;});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -38,6 +41,13 @@ beforeAll(async()=>{
   requests.push({method:req.method!,path:url.pathname+url.search,body});
   res.setHeader('content-type','application/json');
   if(req.headers.authorization!==`Bearer ${activeToken}`){res.statusCode=401;res.end(JSON.stringify({ok:false,message:'Not authenticated.'}));return;}
+  if(url.pathname==='/v1/teams/team/capacity/provider-sessions'){res.statusCode=404;res.end(JSON.stringify({ok:false,message:'Retired provider route.'}));return;}
+  if(url.pathname===catalogOperationPath(capacityStatus,{teamId:'team'},{})){
+   if(providerUnavailable){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Provider observations unavailable.'}));return;}
+   const items=[{id:'open-session',capacityProviderId:'provider',status:'open'},{id:'closed-session',capacityProviderId:'provider',status:'closed'}]
+    .filter(value=>!url.searchParams.get('status')||value.status===url.searchParams.get('status'));
+   res.end(JSON.stringify({ok:true,data:{items,page:{hasMore:false,nextCursor:null}}}));return;
+  }
   const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'}]}:
    url.pathname==='/v1/teams/team/capacity/assignments'?{items:[assignment],page:{hasMore:false,nextCursor:null}}:
    url.pathname==='/v1/teams/team/capacity/assignments/assignment'?assignment:
@@ -55,6 +65,21 @@ function client(authenticated=true,token='synthetic-test-token'){
  return new ApiClientFacade(context);
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
+ it('counts the real scoped provider inventory through the existing SDK capacity status operation instead of a retired route',async()=>{
+  const api=client(),preferences={timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences;
+  const frame=await loadAgentLabFrame(api,{id:'team'},preferences,{date:'2026-10-17',workday:'workday'});
+  expect(frame.overview.activeProviders).toBe(1);expect(frame.overview.connectivity).toBe('live');
+  await api.listProviderAvailabilitySessions('team',{providerId:'provider',status:'open'});
+  const canonical=catalogOperationPath(capacityStatus,{teamId:'team'},{});
+  expect(requests.some(request=>request.path.startsWith(canonical))).toBe(true);
+  const filtered=requests.filter(request=>request.path.startsWith(canonical)).at(-1)!;
+  const query=new URL(filtered.path,origin).searchParams;
+  expect(query.get('providerId')).toBe('provider');expect(query.get('status')).toBe('open');
+ });
+ it('retains native canonical provider unavailability instead of a misleading successful empty inventory',async()=>{
+  providerUnavailable=true;
+  await expect(client().listProviderAvailabilitySessions('team')).rejects.toMatchObject({status:503});
+ });
  it('closes a denied live TLS snapshot explicitly and reconnects only through a freshly authorized scoped request',async()=>{
   const scoped=(api:ApiClientFacade,abort:AbortController)=>({...api.context,url:new URL('https://admin.test/app/work/atlas/stream?date=2026-10-17&workday=workday'),
    request:new Request('https://admin.test/app/work/atlas/stream?date=2026-10-17&workday=workday',{signal:abort.signal})}) as APIContext;
