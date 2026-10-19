@@ -51,6 +51,7 @@ const EXPECTED_ROUTES = [
 	'/app/projects/[projectId]/books',
 	'/app/projects/[projectId]/workflows',
 	'/app/work',
+	'/app/work/overview',
 	'/app/work/atlas/projection',
 	'/app/work/atlas/stream',
 	'/app/work/atlas/graphs',

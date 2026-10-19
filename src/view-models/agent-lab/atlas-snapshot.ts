@@ -1,4 +1,5 @@
-import type {AgentAtlasProjection,AgentAtlasTopologySnapshot,AgentAtlasNodeState} from '@treeseed/sdk/agent-capacity';
+import {CONTROL_PLANE_OPERATIONS} from '@treeseed/sdk/operator-contracts';
+import type {AgentAtlasProjection,AgentAtlasTopologySnapshot,AgentAtlasNodeState,AgentAtlasActivityItem} from '@treeseed/sdk/agent-capacity';
 import type {ApiClientFacade} from '../../lib/market/api-client.ts';
 
 export type AtlasRow=Record<string,unknown>;
@@ -30,6 +31,39 @@ export async function readAtlasAssignments(api:ApiClientFacade,teamId:string):Pr
  }
  throw new Error('Assignment inventory exceeded its bounded page limit.');
 }
+/** Complete public run observations, not a claim that every producer emitted every transition. */
+export async function readAtlasHistory(api:ApiClientFacade,teamId:string,runId:string):Promise<AgentAtlasActivityItem[]>{
+ const observations:AgentAtlasActivityItem[]=[],ids=new Set<string>(),cursors=new Set<string>();let cursor:string|undefined;
+ for(let page=0;page<100;page++){
+  const result=row(await api.invoke(CONTROL_PLANE_OPERATIONS.workdays.events,{path:{teamId,runId},query:{limit:100,...(cursor?{cursor}:{})},body:undefined}));
+  const pagination=row(result.page);
+  if(!Array.isArray(result.items)||typeof pagination.hasMore!=='boolean')throw new Error('Workday event inventory is incomplete.');
+  for(const value of result.items){
+   const item=row(value),id=string(item.id),timestamp=string(item.createdAt),eventType=string(item.eventType),sequence=item.eventIndex;
+   if(!id.trim()||ids.has(id)||item.teamId!==teamId||item.runId!==runId||(item.workdayId!==null&&item.workdayId!==runId)
+    ||typeof sequence!=='number'||!Number.isSafeInteger(sequence)||sequence<0||!eventType.trim()
+    ||!/^\d{4}-\d{2}-\d{2}T/.test(timestamp)||!timestamp.endsWith('Z')||!Number.isFinite(Date.parse(timestamp))
+    ||new Date(timestamp).toISOString().slice(0,10)!==timestamp.slice(0,10)
+    ||(item.title!==null&&typeof item.title!=='string')
+    ||(item.projectId!==null&&typeof item.projectId!=='string')||(item.assignmentId!==null&&typeof item.assignmentId!=='string'))
+    throw new Error('Workday event inventory has invalid scope, identity or observations.');
+   ids.add(id);
+   // Forward only the public display fields. Context/parameters/refs/metadata can contain protected payloads.
+   observations.push({id,workdayId:runId,sequence,timestamp,category:'signal',direction:'internal',severity:'info',summary:string(item.title)||eventType,
+    projectId:typeof item.projectId==='string'?item.projectId:null,agentId:null,activityProfile:null,signalContractId:null,
+    assignmentId:typeof item.assignmentId==='string'?item.assignmentId:null,artifactRefs:[],metadata:{eventType}});
+  }
+  if(!pagination.hasMore){
+   if(pagination.nextCursor!==null)throw new Error('Terminal workday event cursor is inconsistent.');
+   observations.sort((a,b)=>a.sequence-b.sequence);
+   if(observations.some((item,index)=>item.sequence!==index))throw new Error('Workday event history has missing or repeated indices.');
+   return observations;
+  }
+  const next=string(pagination.nextCursor);if(!next||cursors.has(next))throw new Error('Workday event inventory cursor is incomplete.');
+  cursors.add(next);cursor=next;
+ }
+ throw new Error('Workday event inventory exceeded its bounded page limit.');
+}
 const attempt=(assignment:AtlasRow)=>row(row(assignment.workspaceContext).assignmentAttempt);
 const profile=(assignment:AtlasRow)=>row(row(attempt(assignment).effectiveProfile).profileRef);
 const activity=(assignment:AtlasRow)=>string(row(attempt(assignment).effectiveProfile).activity);
@@ -37,7 +71,7 @@ export function scopedAtlasAssignments(assignments:AtlasRow[],timeZone:string,da
  return assignments.filter(a=>(!workday||a.workDayId===workday)&&localDate(string(a.assignedAt),timeZone)===date);
 }
 async function digest(value:unknown){return 'sha256:'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value))))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
-export async function projectAtlasAssignments(assignments:AtlasRow[],projects:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null):Promise<AgentAtlasProjection>{
+export async function projectAtlasAssignments(assignments:AtlasRow[],projects:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null,history:AgentAtlasActivityItem[]|null=null):Promise<AgentAtlasProjection>{
  const selected=scopedAtlasAssignments(assignments,timeZone,date,workday);
  const projectById=new Map(projects.filter(p=>p.teamId===teamId).map(p=>[string(p.id),p]));
  const topologies=new Map<string,AgentAtlasTopologySnapshot>(),states=new Map<string,AgentAtlasNodeState>();
@@ -58,8 +92,8 @@ export async function projectAtlasAssignments(assignments:AtlasRow[],projects:At
   states.set(agentNode,{nodeId:agentNode,workdayIds:[...new Set(related.map(a=>string(a.workDayId)))],status:active.length?(executionStarted?'running':latest.status==='pending'?'queued':'waiting'):latest.status==='completed'?'completed':'degraded',progressPercent:null,elapsedSeconds:typeof elapsed==='number'?elapsed:null,timeboxSeconds:null,metrics:[],activeAssignmentIds:active.map(a=>string(a.id)),lastEventSequence:null,observedAt:string(latest.updatedAt)||null});
  }
  const summaries=selected.map(a=>({id:string(a.id),projectId:string(a.projectId),workdayId:string(a.workDayId),agentId:string(a.agentId)||null,name:`${string(a.agentId)} · ${activity(a)||string(a.mode)}`,status:string(a.status),progressPercent:null,startedAt:string(a.claimedAt)||null,finishedAt:string(a.completedAt)||string(a.returnedAt)||string(a.failedAt)||null,decisionId:string(a.decisionId)||null,proposalId:string(a.proposalId)||null,graphId:null,graphNodeId:string(a.executionNodeId)||null}));
- const revision=await digest({summaries,states:[...states.values()],definitions:[...topologies.keys()]});
- return {revision,generatedAt,timeZone,scope:{teamId,selectedDate:date,workdayIds:[...new Set(summaries.map(a=>a.workdayId))],projectIds:[...new Set(summaries.map(a=>a.projectId))],groupIds:[],agentIds:[...new Set(summaries.flatMap(a=>a.agentId?[a.agentId]:[]))],activityProfiles:[...new Set(selected.map(activity).filter(Boolean))],sizingMetric:'activity'},topologies:[...topologies.values()],nodeStates:[...states.values()],assignments:summaries,activity:[],workdaySummary:null,
-  activityWindow:{total:0,loaded:0,truncated:true},playback:{mode:'live',startedAt:selected.map(a=>string(a.assignedAt)).sort()[0]??generatedAt,endedAt:null,liveEdgeAt:generatedAt,cursor:{cursor:null,observedAt:generatedAt,positions:{}}},
-  alerts:[{id:'history-unavailable',severity:'warning',message:'Showing current assignment observations and their exact agent definitions. Complete event history and inactive configured topology are unavailable.'}]};
+ const revision=await digest({summaries,states:[...states.values()],definitions:[...topologies.keys()],history});
+ return {revision,generatedAt,timeZone,scope:{teamId,selectedDate:date,workdayIds:workday&&history!==null?[workday]:[...new Set(summaries.map(a=>a.workdayId))],projectIds:[...new Set(summaries.map(a=>a.projectId))],groupIds:[],agentIds:[...new Set(summaries.flatMap(a=>a.agentId?[a.agentId]:[]))],activityProfiles:[...new Set(selected.map(activity).filter(Boolean))],sizingMetric:'activity'},topologies:[...topologies.values()],nodeStates:[...states.values()],assignments:summaries,activity:history??[],workdaySummary:null,
+  activityWindow:{total:history?.length??0,loaded:history?.length??0,truncated:history===null},playback:{mode:'live',startedAt:[...selected.map(a=>string(a.assignedAt)),...(history??[]).map(e=>e.timestamp)].sort()[0]??generatedAt,endedAt:null,liveEdgeAt:generatedAt,cursor:{cursor:null,observedAt:generatedAt,positions:{}}},
+  alerts:[...(history===null?[{id:'history-unavailable',severity:'warning' as const,message:'Complete scoped workday event history is unavailable; current assignment observations are retained.'}]:[]),{id:'inactive-topology-unavailable',severity:'warning',message:'Only observed assignment definitions are shown; inactive configured topology is unavailable.'}]};
 }
