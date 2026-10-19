@@ -1,16 +1,22 @@
-import type { APIContext } from 'astro';
-import { REMOTE_CONTRACT_HEADER, REMOTE_CONTRACT_VERSION } from '@treeseed/sdk/site-contracts/catalog';
-import type { AccountDeletionBlocker, AccountEmailAddress, AccountEmailMutationResult, AccountIdentity, AccountMutationResult, AccountNotification, AccountWebSession, AuthProviderCapability, NotificationPreferences, NotificationProject, PersonalTheme, PersonalThemeDraft, UsernameClaimResult, WebAuthenticationResult } from '@treeseed/sdk/account-contracts';
-import type { AstroLike, ApiClientFacade } from '../../../../api-client.ts';
-import { getNodeCrypto, randomId, runtimeEnv, envValue, resolveApiBaseUrl, isObject, unwrapEnvelope, createApiFacade, safeTokenEquals } from '../../../../api-client.ts';
-export function listProviderAvailabilitySessionsMethod(this: ApiClientFacade, teamId: string, filters: {
-    providerId?: string | null;
-    status?: string | null;
-} = {}) {
-    const query = new URLSearchParams();
-    if (filters.providerId)
-        query.set('providerId', filters.providerId);
-    if (filters.status)
-        query.set('status', filters.status);
-    return this.request<any[]>('GET', `/v1/teams/${encodeURIComponent(teamId)}/capacity/provider-sessions${query.toString() ? `?${query}` : ''}`);
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
+import type { ApiClientFacade } from '../../../../api-client.ts';
+
+export function listProviderAvailabilitySessionsMethod(
+    this: ApiClientFacade,
+    teamId: string,
+    filters: {
+        providerId?: string | null;
+        status?: string | null;
+    } = {},
+) {
+    const query = {
+        ...(filters.providerId ? { providerId: filters.providerId } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    return this.invoke(CONTROL_PLANE_OPERATIONS.capacity.availability, {
+        path: { teamId },
+        query,
+        body: undefined,
+    });
 }
