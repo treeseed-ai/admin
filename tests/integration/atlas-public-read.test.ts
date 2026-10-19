@@ -1,4 +1,4 @@
-import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import {afterAll,afterEach,beforeAll,describe,expect,it} from 'vitest';
 import {createServer,type Server} from 'node:https';
 import {getCACertificates,setDefaultCACertificates} from 'node:tls';
 import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
@@ -13,6 +13,9 @@ import {loadAgentLabFrame} from '../../src/view-models/agent-lab/agent-lab-frame
 import {atlasDetail} from '../../src/view-models/agent-lab/atlas-detail.ts';
 import {GET as readDetail} from '../../src/pages/app/work/atlas/details/[kind]/[id].ts';
 import type {APIContext} from 'astro';
+import {GET as readStream} from '../../src/pages/app/work/atlas/stream.ts';
+import {CONTROL_PLANE_OPERATIONS} from '@treeseed/sdk/operator-contracts';
+import {catalogOperationPath} from '../../src/lib/market/api-client.ts';
 
 // Native TLS/HTTP consumer integration. The separate live-service read-back proves
 // the actual PostgreSQL-backed assignment and TreeDX product; this server is a fixture.
@@ -23,6 +26,8 @@ const assignment={id:'assignment',teamId:'team',projectId:'project',agentId:'pro
  workspaceContext:{assignmentAttempt:{sourceRef:reference,effectiveProfile:{activity:'chat',profileRef:{commit,path:'agents/researcher.mdx'}}}},
  assignmentResult:{summary:'Source-backed finding.',references:[reference],usage:{elapsedSeconds:25}}};
 let server:Server,origin:string,directory:string;
+let activeToken='synthetic-test-token';
+afterEach(()=>{activeToken='synthetic-test-token';});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -32,23 +37,40 @@ beforeAll(async()=>{
   const url=new URL(req.url!,origin);let body='';for await(const chunk of req)body+=chunk;
   requests.push({method:req.method!,path:url.pathname+url.search,body});
   res.setHeader('content-type','application/json');
-  if(req.headers.authorization!=='Bearer synthetic-test-token'){res.statusCode=401;res.end(JSON.stringify({ok:false,message:'Not authenticated.'}));return;}
+  if(req.headers.authorization!==`Bearer ${activeToken}`){res.statusCode=401;res.end(JSON.stringify({ok:false,message:'Not authenticated.'}));return;}
   const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'}]}:
    url.pathname==='/v1/teams/team/capacity/assignments'?{items:[assignment],page:{hasMore:false,nextCursor:null}}:
    url.pathname==='/v1/teams/team/capacity/assignments/assignment'?assignment:
    url.pathname==='/v1/projects/project/treedx-library'?{repositoryId:'library'}:
-   url.pathname==='/v1/dx/projects/project/repos/library/files/read'?{result:{ok:true,ref:commit,files:[{path,content:'Exact native transport finding.',body:'Exact native transport finding.'}]}}:{items:[]};
+   url.pathname==='/v1/dx/projects/project/repos/library/files/read'?{result:{ok:true,ref:commit,files:[{path,content:'Exact native transport finding.',body:'Exact native transport finding.'}]}}:
+   url.pathname===catalogOperationPath(CONTROL_PLANE_OPERATIONS.accounts.preferences,{},{} )?{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5}:{items:[]};
   res.end(JSON.stringify({ok:true,data}));
  });
  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));origin=`https://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
 afterAll(async()=>{server?.closeAllConnections();if(server)await new Promise<void>(resolve=>server.close(()=>resolve()));setDefaultCACertificates(authorities);if(directory)rmSync(directory,{recursive:true});});
-function client(authenticated=true){
+function client(authenticated=true,token='synthetic-test-token'){
  const context={locals:{auth:{principal:{id:'operator'}},runtime:{env:{TREESEED_API_BASE_URL:origin}}},request:new Request('https://admin.test/app/work'),url:new URL('https://admin.test/app/work'),cookies:{get:()=>({value:'team'})}} as unknown as AstroLike;
- if(authenticated)setRequestCredential(context,{resource:origin,accessToken:'synthetic-test-token'});
+ if(authenticated)setRequestCredential(context,{resource:origin,accessToken:token});
  return new ApiClientFacade(context);
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
+ it('closes a denied live TLS snapshot explicitly and reconnects only through a freshly authorized scoped request',async()=>{
+  const scoped=(api:ApiClientFacade,abort:AbortController)=>({...api.context,url:new URL('https://admin.test/app/work/atlas/stream?date=2026-10-17&workday=workday'),
+   request:new Request('https://admin.test/app/work/atlas/stream?date=2026-10-17&workday=workday',{signal:abort.signal})}) as APIContext;
+  const firstAbort=new AbortController(),secondAbort=new AbortController();
+  try{
+   const first=await readStream(scoped(client(),firstAbort));expect(first!.status).toBe(200);
+   const reader=first!.body!.getReader(),decode=new TextDecoder();expect(decode.decode((await reader.read()).value)).toContain('event: atlas.delta');
+   activeToken='synthetic-refreshed-token';
+   const unavailable=decode.decode((await reader.read()).value);expect(unavailable).toContain('event: atlas.unavailable');
+   expect(unavailable).not.toContain('synthetic-');expect((await reader.read()).done).toBe(true);
+   const denied=await readStream(scoped(client(),firstAbort));expect([401,403]).toContain(denied!.status);
+   const second=await readStream(scoped(client(true,activeToken),secondAbort));expect(second!.status).toBe(200);
+   const freshReader=second!.body!.getReader();expect(decode.decode((await freshReader.read()).value)).toContain('event: atlas.delta');
+   secondAbort.abort();expect((await freshReader.read()).done).toBe(true);
+  }finally{firstAbort.abort();secondAbort.abort();}
+ });
  it('uses the real facade, scoped projection and immutable content readers over verified TLS',async()=>{
   const api=client(),preferences={timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences;
   const frame=await loadAgentLabFrame(api,{id:'team'},preferences,{date:'2026-10-17',workday:'workday'});
