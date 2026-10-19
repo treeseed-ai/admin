@@ -24,7 +24,9 @@ function client(rows: unknown[], page = { hasMore: false, nextCursor: null as st
     },
   } as unknown as ApiClientFacade;
 }
-const event = (id: string, index: number, overrides: Partial<CapacityWorkdayEventRecord> = {}):CapacityWorkdayEventRecord => ({
+// The installed SDK also declares a retired alias; fixture only the observed canonical public fields.
+type HistoryEvent=Pick<CapacityWorkdayEventRecord,'id'|'teamId'|'runId'|'workdayId'|'projectId'|'assignmentId'|'eventIndex'|'eventType'|'status'|'title'|'message'|'parameters'|'context'|'refs'|'metadata'|'createdAt'>;
+const event = (id: string, index: number, overrides: Partial<HistoryEvent> = {}):HistoryEvent => ({
   id, teamId: 'team', runId: 'conversation-real', workdayId: null, projectId:'admin', assignmentId:null, eventIndex:index, status:'recorded', message:null, parameters:{}, context:{}, refs:{}, metadata:{}, eventType: `event-${index}`,
   title: `Title ${index}`, createdAt: `2026-10-17T12:00:0${index}.000Z`, ...overrides,
 });
