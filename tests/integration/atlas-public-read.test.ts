@@ -87,11 +87,11 @@ describe('Admin native public assignment-to-artifact transport',()=>{
  });
  it('follows the encoded browser result locator through the actual application route and native public reads',async()=>{
   const api=client();
-  const response=await readDetail({...api.context,params:{kind:'artifact',id:'assignment%3A0'}} as APIContext);
+  const response=await readDetail({...api.context,params:{kind:'artifact',id:'assignment%3A0'}} as unknown as APIContext);
   expect(response!.status).toBe(200);expect(await response!.json()).toMatchObject({payload:{status:'committed',summary:{commit,path}}});
  });
  it.each(['assignment%253A0','assignment%E0%A4%A'])('rejects malformed or double-encoded result locator %s',async id=>{
-  const response=await readDetail({...client().context,params:{kind:'artifact',id}} as APIContext);
+  const response=await readDetail({...client().context,params:{kind:'artifact',id}} as unknown as APIContext);
   expect(response!.status).toBe(400);
  });
 });
