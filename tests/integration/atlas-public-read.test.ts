@@ -31,16 +31,19 @@ let server:Server,origin:string,directory:string;
 let activeToken='synthetic-test-token';
 let providerUnavailable=false;
 afterEach(()=>{activeToken='synthetic-test-token';providerUnavailable=false;});
-const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string}>=[];
+const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string;authorization:string|undefined}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=127.0.0.1','-addext','subjectAltName=IP:127.0.0.1','-keyout',join(directory,'key.pem'),'-out',join(directory,'cert.pem')],{stdio:'ignore'});
  setDefaultCACertificates([...authorities,readFileSync(join(directory,'cert.pem'),'utf8')]);
  server=createServer({key:readFileSync(join(directory,'key.pem')),cert:readFileSync(join(directory,'cert.pem'))},async(req,res)=>{
   const url=new URL(req.url!,origin);let body='';for await(const chunk of req)body+=chunk;
-  requests.push({method:req.method!,path:url.pathname+url.search,body});
+  requests.push({method:req.method!,path:url.pathname+url.search,body,authorization:req.headers.authorization});
   res.setHeader('content-type','application/json');
   if(req.headers.authorization!==`Bearer ${activeToken}`){res.statusCode=401;res.end(JSON.stringify({ok:false,message:'Not authenticated.'}));return;}
+  if(url.pathname.endsWith('/capacity/availability-sessions')&&url.pathname!==catalogOperationPath(capacityStatus,{teamId:'team'},{})){
+   res.statusCode=403;res.end(JSON.stringify({ok:false,message:'Team scope denied.'}));return;
+  }
   if(url.pathname==='/v1/teams/team/capacity/provider-sessions'){res.statusCode=404;res.end(JSON.stringify({ok:false,message:'Retired provider route.'}));return;}
   if(url.pathname===catalogOperationPath(capacityStatus,{teamId:'team'},{})){
    if(providerUnavailable){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Provider observations unavailable.'}));return;}
@@ -75,6 +78,13 @@ describe('Admin native public assignment-to-artifact transport',()=>{
   const filtered=requests.filter(request=>request.path.startsWith(canonical)).at(-1)!;
   const query=new URL(filtered.path,origin).searchParams;
   expect(query.get('providerId')).toBe('provider');expect(query.get('status')).toBe('open');
+  expect(filtered.authorization).toBe('Bearer synthetic-test-token');
+ });
+ it('preserves the provider read authorization context and denies a foreign team through native TLS',async()=>{
+  await expect(client(false).listProviderAvailabilitySessions('team')).rejects.toMatchObject({status:401});
+  await expect(client().listProviderAvailabilitySessions('foreign')).rejects.toMatchObject({status:403});
+  const foreign=catalogOperationPath(capacityStatus,{teamId:'foreign'},{});
+  expect(requests.some(request=>request.path===foreign&&request.authorization==='Bearer synthetic-test-token')).toBe(true);
  });
  it('retains native canonical provider unavailability instead of a misleading successful empty inventory',async()=>{
   providerUnavailable=true;
