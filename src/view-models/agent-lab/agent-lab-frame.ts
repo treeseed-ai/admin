@@ -1,3 +1,4 @@
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import { agentLabMetricKeys, type AgentAtlasProjection, type AgentLabActivityInterval, type AgentLabDelta, type AgentLabMetricPoint, type AgentLabOverview } from '@treeseed/sdk/agent-capacity';
 import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import type { ApiClientFacade } from '../../lib/market/api-client.ts';
@@ -32,21 +33,59 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 	const providers = providerResult === null ? null : items(providerResult);
 	const workdays = workdayResult === null ? null : items(workdayResult);
 	const assignments = assignmentResult === null ? null : items(assignmentResult);
-	const projects = projectResult === null ? null : items(projectResult).filter((item) => item.teamId === team.id);
-	const overview = fallbackOverview(team, preferences.timeZone);
-	overview.workdayContext.selectedDate=selectedDate;
-	overview.connectivity = [providers, workdays, assignments, projects].every((value) => value !== null) ? 'live' : 'degraded';
-	if (providers) overview.activeProviders = providers.filter((item: any) => ['open', 'active', 'available', 'connected'].includes(String(item.status))).length;
+const projects = projectResult === null
+  ? null
+  : items(projectResult).filter((item) => item.teamId === team.id);
+
+const agentCatalogs = projects === null ? null : await Promise.all(
+  projects.map(async (project) => {
+    try {
+      return await api.invoke(CONTROL_PLANE_OPERATIONS.agents.list, {
+        path: { projectId: project.id }, query: {}, body: undefined,
+      });
+    } catch {
+      return null;
+    }
+  }),
+);
+
+const agentCount = agentCatalogs === null ? null : (() => {
+  let count = 0;
+  for (let i = 0; i < agentCatalogs.length; i++) {
+    const catalog = agentCatalogs[i];
+    const project = projects![i];
+    if (!catalog || catalog.projectId !== project.id || !Array.isArray(catalog.agents)) return null;
+
+    const slugs = new Set<string>();
+    for (const agent of catalog.agents) {
+      if (!agent || typeof agent.agentSlug !== 'string' || !agent.agentSlug.trim() ||
+          slugs.has(agent.agentSlug)) return null;
+      slugs.add(agent.agentSlug);
+    }
+    count += catalog.agents.length;
+  }
+  return count;
+})();
+
+const overview = fallbackOverview(team, preferences.timeZone);
+overview.workdayContext.selectedDate = selectedDate;
+overview.workdayContext.selectedWorkdayId = selection.workday ?? null;
+overview.connectivity =
+  [providers, workdays, assignments, projects, agentCount].every((value) => value !== null)
+    ? 'live' : 'degraded';
+if (providers) overview.activeProviders = providers.filter((item: any) => ['open', 'active', 'available', 'connected'].includes(String(item.status))).length;
 	if (workdays) {
 		overview.activeWorkdays = workdays.filter((item: any) => ['running', 'active'].includes(String(item.status))).length;
 		overview.workdayContext.workdays = workdays as any;
 	}
-	overview.metrics = overview.metrics.map((metric) => {
-		const value = metric.key === 'workdays' && workdays ? workdays.length
-			: metric.key === 'assignments' && assignments ? assignments.length
-				: metric.key === 'agents' && projects ? projects.length : null;
-		return value === null ? { ...metric, value: null as any, secondary: 'Unavailable' } : { ...metric, value, secondary: 'Catalog read' };
-	});
+overview.metrics = overview.metrics.map((metric) => {
+  const value = metric.key === 'workdays' && workdays ? workdays.length
+    : metric.key === 'assignments' && assignments ? assignments.length
+    : metric.key === 'agents' ? agentCount : null;
+  return value === null
+    ? { ...metric, value: null as any, secondary: 'Unavailable' }
+    : { ...metric, value, secondary: 'Catalog read' };
+});
 	const activity = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
 	const series = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
 	const allocation = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(),
@@ -61,7 +100,10 @@ export async function loadAgentLabFrame(api: ApiClientFacade, team: { id: string
 		activity: activity as AgentLabDelta<AgentLabActivityInterval>,
 		series: series as AgentLabDelta<AgentLabMetricPoint>,
 		allocation: allocation as AllocationSnapshot,
-		endpoints: { overview: '', activity: '', metricSeries: '', viewState: '' },
+		endpoints: {
+  overview: `/app/work/overview?${scopeQuery}`,
+  activity: '', metricSeries: '', viewState: '',
+},
 		atlasEndpoints:{projection:`${atlasBase}/projection?${scopeQuery}`,delta:'',stream:`${atlasBase}/stream?${scopeQuery}`,detail:`${atlasBase}/details`,assignmentGraphs:`${atlasBase}/graphs?${scopeQuery}`,viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
 		targetEndpoint: '',
 		preference: { enabled: preferences.realTimeUpdates, intervalSeconds: preferences.realTimePollingIntervalSeconds },

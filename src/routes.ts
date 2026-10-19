@@ -74,6 +74,12 @@ export const ADMIN_ROUTES: readonly SiteRouteContribution[] = validateRouteCapab
 	adminRoute('/app/ai/new', 'pages/app/ai/new.astro', { id: 'admin.ai.setup', description: 'Connection-backed AI instance setup.' }),
 	adminRoute('/app/chat', 'pages/app/chat/index.astro', { id: 'admin.workspace.chat', description: 'Persistent team and agent correspondence workspace.' }),
 	adminRoute('/app/work', 'pages/app/work/index.astro', { id: 'admin.agent-lab.monitor', description: 'Team Agent Lab monitoring foundation and workday control.', guarantees: ['guarantee.work.command.monitor-team-operations.033', 'guarantee.work.agent-lab.monitor-agent-lab.035'] }),
+adminRoute('/app/work/overview', 'pages/app/work/overview.ts', {
+  id: 'admin.agent-lab.overview',
+  description: 'Current active-team Agent Lab overview snapshot.',
+  responseKind: 'data',
+  navigation: 'hidden',
+}),
 	adminRoute('/app/work/atlas/projection','pages/app/work/atlas/projection.ts',{id:'admin.agent-lab.atlas-projection',description:'Active-team Atlas view of complete canonical assignment reads.',responseKind:'data',navigation:'hidden'}),
 	adminRoute('/app/work/atlas/stream','pages/app/work/atlas/stream.ts',{id:'admin.agent-lab.atlas-stream',description:'Scope-preserving refresh signals for current canonical assignment snapshots.',responseKind:'feed',navigation:'hidden'}),
 	adminRoute('/app/work/atlas/details/[kind]/[id]','pages/app/work/atlas/details/[kind]/[id].ts',{id:'admin.agent-lab.atlas-detail',description:'Allowlisted assignment evidence and exact committed TreeDX result read-back.',responseKind:'data',navigation:'hidden'}),
