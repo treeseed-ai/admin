@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { CONTROL_PLANE_OPERATIONS } from '@treeseed/sdk/operator-contracts';
 import { loadAgentLabFrame } from '../../../src/view-models/agent-lab/agent-lab-frame';
 
 const source = (path: string) => readFileSync(path, 'utf8');
@@ -13,6 +14,11 @@ describe('Agent Lab command header and navigator', () => {
 			listWorkdayRuns: async () => ({ items: [{ id: 'workday-1', status: 'running' }] }),
 				listProviderAssignments: async () => ({ items: [{ id: 'assignment-1', teamId:'team-1',projectId:'project-1',status: 'completed',assignedAt:'2026-10-18T01:20:00.000Z' }],page:{hasMore:false,nextCursor:null} }),
 			listProjectsForPrincipal: async () => ({ items: [{ id: 'project-1', teamId: 'team-1' }] }),
+				invoke: async (operation: unknown, input: {path: {projectId: string}}) => {
+					expect(operation).toBe(CONTROL_PLANE_OPERATIONS.agents.list);
+					expect(input.path).toEqual({projectId:'project-1'});
+					return {projectId:'project-1',agents:[{agentSlug:'agent-alpha'},{agentSlug:'agent-beta'}]};
+				},
 		};
 		const frame = await loadAgentLabFrame(api as any, { id: 'team-1', name: 'TreeSeed' }, {
 			timeZone: 'UTC', realTimeUpdates: true, realTimePollingIntervalSeconds: 5,
@@ -21,7 +27,19 @@ describe('Agent Lab command header and navigator', () => {
 		expect(frame.overview.activeProviders).toBe(1);
 		expect(frame.overview.activeWorkdays).toBe(1);
 		expect(frame.overview.workdayContext.workdays).toHaveLength(1);
-		expect(Object.fromEntries(frame.overview.metrics.map((metric) => [metric.key, metric.value]))).toMatchObject({ workdays: 1, assignments: 1, agents: 1 });
+		expect(Object.fromEntries(frame.overview.metrics.map((metric) => [metric.key, metric.value]))).toMatchObject({ workdays: 1, assignments: 1, agents: 2 });
+	});
+	it('provides a scoped overview endpoint for realtime header reads', async () => {
+		const api = {
+			listProviderAvailabilitySessions: async () => ({items:[]}),
+			listWorkdayRuns: async () => ({items:[]}),
+			listProviderAssignments: async () => ({items:[],page:{hasMore:false,nextCursor:null}}),
+			listProjectsForPrincipal: async () => ({items:[]}),
+		};
+		const frame=await loadAgentLabFrame(api as any,{id:'team-1'}, {
+			timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5,
+		} as any,{date:'2026-10-18',workday:'workday-7'});
+		expect(frame.endpoints.overview).toBe('/app/work/overview?date=2026-10-18&workday=workday-7');
 	});
 	it('uses one shared chrome without conventional page or Command navigation', () => {
 		for (const removed of ['AgentLabChrome.astro', 'AgentLabMonitor.astro', 'AgentLabEntityPage.astro', 'AgentLabCommandPage.astro']) expect(() => source(`src/components/agent-lab/${removed}`)).toThrow();
