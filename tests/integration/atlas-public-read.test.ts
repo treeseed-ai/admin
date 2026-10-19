@@ -32,7 +32,10 @@ let activeToken='synthetic-test-token';
 let providerUnavailable=false;
 let agentCatalog:unknown={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};
 let agentsUnavailable=false;
-afterEach(()=>{activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};});
+const historyEvent=(eventIndex:number)=>({id:`event-${eventIndex}`,teamId:'team',runId:'workday',workdayId:null,projectId:'project',assignmentId:null,eventIndex,eventType:'assignment.observed',status:'recorded',title:null,message:null,createdAt:`2026-10-17T20:00:0${eventIndex}.000Z`,parameters:{},context:{},refs:{},metadata:{privateDiagnostic:'NEVER-FOR-BROWSER'}});
+let historyRows:Record<string,unknown>[]=[];
+let historyFailure:string|null=null;
+afterEach(()=>{historyRows=[];historyFailure=null;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string;authorization:string|undefined}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -52,6 +55,14 @@ beforeAll(async()=>{
    const items=[{id:'open-session',capacityProviderId:'provider',status:'open'},{id:'closed-session',capacityProviderId:'provider',status:'closed'}]
     .filter(value=>!url.searchParams.get('status')||value.status===url.searchParams.get('status'));
    res.end(JSON.stringify({ok:true,data:{items,page:{hasMore:false,nextCursor:null}}}));return;
+  }
+  if(url.pathname==='/v1/teams/team/workday-runs/workday/events'){
+   if(historyFailure==='denied'){res.statusCode=403;res.end(JSON.stringify({ok:false,message:'History scope denied.'}));return;}
+   const cursor=url.searchParams.get('cursor'),items=cursor?historyRows.slice(1):historyRows.slice(0,1);
+   const page=cursor?{hasMore:false,nextCursor:null}:{hasMore:historyRows.length>1,nextCursor:historyRows.length>1?'next':null};
+   if(historyFailure==='truncated'){page.hasMore=true;page.nextCursor=null;}
+   if(historyFailure==='repeat'){page.hasMore=true;page.nextCursor='next';}
+   res.end(JSON.stringify({ok:true,data:{items,page}}));return;
   }
   if(url.pathname==='/v1/projects/project/agents'){
    if(agentsUnavailable){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Agent catalog unavailable.'}));return;}
@@ -74,6 +85,42 @@ function client(authenticated=true,token='synthetic-test-token'){
  return new ApiClientFacade(context);
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
+ it('reads complete selected history over authenticated native TLS with canonical scope and no private event payload',async()=>{
+  historyRows=[historyEvent(1),historyEvent(0)];const start=requests.length;
+  const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences,{date:'2026-10-17',workday:'workday'});
+  expect(frame.atlas.activity.map(({id,sequence,timestamp,summary})=>({id,sequence,timestamp,summary}))).toEqual([
+   {id:'event-0',sequence:0,timestamp:'2026-10-17T20:00:00.000Z',summary:'assignment.observed'},
+   {id:'event-1',sequence:1,timestamp:'2026-10-17T20:00:01.000Z',summary:'assignment.observed'},
+  ]);
+  expect(frame.atlas.activityWindow).toEqual({total:2,loaded:2,truncated:false});
+  const reads=requests.slice(start).filter(r=>r.path.includes('/workday-runs/workday/events'));
+  expect(reads).toHaveLength(2);expect(reads.every(r=>r.authorization==='Bearer synthetic-test-token')).toBe(true);
+  expect(new URL(reads[1]!.path,origin).searchParams.get('cursor')).toBe('next');
+  expect(JSON.stringify(frame)).not.toMatch(/NEVER-FOR-BROWSER|private-lease|synthetic-test-token/);
+ });
+ it.each(['gap','duplicate','foreign','truncated','repeat','denied'])('keeps native %s event observations unavailable without discarding healthy assignments',async mode=>{
+  historyRows=[historyEvent(0),historyEvent(1)];
+  if(mode==='gap')historyRows[1]!.eventIndex=2;
+  if(mode==='duplicate')historyRows[1]!.id='event-0';
+  if(mode==='foreign')historyRows[1]!.teamId='foreign';
+  if(['truncated','repeat','denied'].includes(mode))historyFailure=mode;
+  const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences,{date:'2026-10-17',workday:'workday'});
+  expect(frame.atlas.assignments).toHaveLength(1);expect(frame.atlas.activity).toEqual([]);
+  expect(frame.atlas.activityWindow.truncated).toBe(true);expect(frame.atlas.alerts.some(a=>a.id==='history-unavailable')).toBe(true);
+ });
+ it('emits a live delta when only public event history changes and closes its scoped observer on abort',async()=>{
+  historyRows=[historyEvent(0)];const api=client(),abort=new AbortController();
+  const url=new URL('https://admin.test/app/work/atlas/stream?date=2026-10-17&workday=workday');
+  try{
+   const response=await readStream({...api.context,url,request:new Request(url,{signal:abort.signal})} as APIContext);
+   expect(response!.status).toBe(200);const reader=response!.body!.getReader(),decode=new TextDecoder();
+   const initial=decode.decode((await reader.read()).value);expect(initial).toContain('event: atlas.delta');
+   historyRows=[historyEvent(0),historyEvent(1)];
+   const update=decode.decode((await reader.read()).value);expect(update).toContain('event: atlas.delta');expect(update).not.toBe(initial);
+   abort.abort();expect((await reader.read()).done).toBe(true);
+  }finally{abort.abort();}
+ });
+
  it('serves fresh scoped overview snapshots through the actual authenticated route without caching',async()=>{
   const modulePath='../../src/pages/app/work/overview.ts';const {GET}=await import(modulePath);
   const api=client(),context={...api.context,url:new URL('https://admin.test/app/work/overview?date=2026-10-17&workday=workday')} as APIContext;
