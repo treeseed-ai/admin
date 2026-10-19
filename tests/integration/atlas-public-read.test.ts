@@ -30,7 +30,9 @@ const assignment={id:'assignment',teamId:'team',projectId:'project',agentId:'pro
 let server:Server,origin:string,directory:string;
 let activeToken='synthetic-test-token';
 let providerUnavailable=false;
-afterEach(()=>{activeToken='synthetic-test-token';providerUnavailable=false;});
+let agentCatalog:unknown={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};
+let agentsUnavailable=false;
+afterEach(()=>{activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string;authorization:string|undefined}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -51,7 +53,11 @@ beforeAll(async()=>{
     .filter(value=>!url.searchParams.get('status')||value.status===url.searchParams.get('status'));
    res.end(JSON.stringify({ok:true,data:{items,page:{hasMore:false,nextCursor:null}}}));return;
   }
-  const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'}]}:
+  if(url.pathname==='/v1/projects/project/agents'){
+   if(agentsUnavailable){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Agent catalog unavailable.'}));return;}
+   res.end(JSON.stringify({ok:true,data:agentCatalog}));return;
+  }
+  const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'},{id:'foreign-project',teamId:'foreign'}]}:
    url.pathname==='/v1/teams/team/capacity/assignments'?{items:[assignment],page:{hasMore:false,nextCursor:null}}:
    url.pathname==='/v1/teams/team/capacity/assignments/assignment'?assignment:
    url.pathname==='/v1/projects/project/treedx-library'?{repositoryId:'library'}:
@@ -68,6 +74,30 @@ function client(authenticated=true,token='synthetic-test-token'){
  return new ApiClientFacade(context);
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
+ it('counts actual configured agents in the owning team catalog without reading foreign projects',async()=>{
+  const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences,{date:'2026-10-17',workday:'workday'});
+  expect(frame.overview.metrics.find(metric=>metric.key==='agents')?.value).toBe(2);
+  expect(requests.some(request=>request.path==='/v1/projects/project/agents'&&request.authorization==='Bearer synthetic-test-token')).toBe(true);
+  expect(requests.some(request=>request.path.includes('/foreign-project/agents'))).toBe(false);
+ });
+ it.each([
+  {projectId:'foreign-project',agents:[{agentSlug:'a'}]},
+  {projectId:'project',agents:[{agentSlug:'a'},{agentSlug:'a'}]},
+  {projectId:'project',agents:[{slug:'a'}]},
+  {projectId:'project',agents:null},
+ ])('keeps malformed configured-agent catalog %j unavailable instead of counting projects',async catalog=>{
+  agentCatalog=catalog;
+  const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences);
+  expect(frame.overview.metrics.find(metric=>metric.key==='agents')?.value).toBeNull();
+  expect(frame.overview.connectivity).toBe('degraded');
+ });
+ it('retains failed agent catalog reads as unavailable while preserving observed provider inventory',async()=>{
+  agentsUnavailable=true;
+  const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences);
+  expect(frame.overview.metrics.find(metric=>metric.key==='agents')?.value).toBeNull();
+  expect(frame.overview.activeProviders).toBe(1);expect(frame.overview.connectivity).toBe('degraded');
+ });
+
  it('counts the real scoped provider inventory through the existing SDK capacity status operation instead of a retired route',async()=>{
   const api=client(),preferences={timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences;
   const frame=await loadAgentLabFrame(api,{id:'team'},preferences,{date:'2026-10-17',workday:'workday'});
