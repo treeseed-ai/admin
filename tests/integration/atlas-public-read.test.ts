@@ -74,6 +74,33 @@ function client(authenticated=true,token='synthetic-test-token'){
  return new ApiClientFacade(context);
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
+ it('serves fresh scoped overview snapshots through the actual authenticated route without caching',async()=>{
+  const modulePath='../../src/pages/app/work/overview.ts';const {GET}=await import(modulePath);
+  const api=client(),context={...api.context,url:new URL('https://admin.test/app/work/overview?date=2026-10-17&workday=workday')} as APIContext;
+  const first=await GET(context);expect(first.status).toBe(200);expect(first.headers.get('cache-control')).toBe('private, no-store');
+  const one=await first.json();expect(one.payload.workdayContext.selectedDate).toBe('2026-10-17');expect(one.payload.workdayContext.selectedWorkdayId).toBe('workday');
+  expect(one.payload.metrics.find((metric:{key:string})=>metric.key==='agents').value).toBe(2);
+  agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'},{agentSlug:'arbitrary-c'}]};
+  const second=await GET(context);expect(second.status).toBe(200);const two=await second.json();
+  expect(two.payload.metrics.find((metric:{key:string})=>metric.key==='agents').value).toBe(3);
+  expect(JSON.stringify(two)).not.toMatch(/private-lease|synthetic-test-token/);
+ });
+ it('denies anonymous and cross-team overview requests through native owning authorization',async()=>{
+  const modulePath='../../src/pages/app/work/overview.ts';const {GET}=await import(modulePath);
+  const api=client(),base={...api.context,url:new URL('https://admin.test/app/work/overview?date=2026-10-17')};
+  const anonymous={...base,locals:{...api.context.locals,auth:null}} as unknown as APIContext;
+  expect((await GET(anonymous)).status).toBe(401);
+  const foreign={...base,cookies:{get:()=>({value:'foreign'})}} as unknown as APIContext;
+  expect((await GET(foreign)).status).toBe(403);
+ });
+ it('rejects incomplete, malformed-date and unsupported historical overview reads instead of reporting success',async()=>{
+  const modulePath='../../src/pages/app/work/overview.ts';const {GET}=await import(modulePath);
+  const api=client(),context=(query:string)=>({...api.context,url:new URL('https://admin.test/app/work/overview?'+query)}) as APIContext;
+  agentsUnavailable=true;expect((await GET(context('date=2026-10-17'))).status).toBe(503);agentsUnavailable=false;
+  expect((await GET(context('date=2026-02-30'))).status).toBe(400);
+  expect((await GET(context('date=2026-10-17&at=2026-10-17T20:00:00Z'))).status).toBe(503);
+ });
+
  it('counts actual configured agents in the owning team catalog without reading foreign projects',async()=>{
   const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences,{date:'2026-10-17',workday:'workday'});
   expect(frame.overview.metrics.find(metric=>metric.key==='agents')?.value).toBe(2);
