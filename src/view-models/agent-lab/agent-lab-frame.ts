@@ -4,7 +4,7 @@ import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import type { ApiClientFacade } from '../../lib/market/api-client.ts';
 import type { AllocationSnapshot } from '@treeseed/ui/components/react/OperationsMonitor';
 import { items } from '../../lib/operations/records.ts';
-import {atlasDate,readAtlasAssignments,projectAtlasAssignments} from './atlas-snapshot.ts';
+import {atlasDate,localDate,readAtlasAssignments,readAtlasHistory,projectAtlasAssignments} from './atlas-snapshot.ts';
 
 export const agentLabMetricDestinations = {
 	agents: '/app/work/agents', workdays: '/app/work/workdays', systemEvents: '/app/work/events',
@@ -91,7 +91,10 @@ overview.metrics = overview.metrics.map((metric) => {
 	const allocation = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(),
 		time: { availableSeconds: null, requestedSeconds: 0, reservedSeconds: 0, activeSeconds: 0, elapsedSeconds: 0, releasedSeconds: 0, remainingSeconds: null, overrunSeconds: 0 }, projects: [], agentClasses: [], workdayTime: [] };
 	let atlas = fallbackAtlas(team.id, overview);
-	if(assignments&&projects)try{atlas=await projectAtlasAssignments(assignments,projects,team.id,preferences.timeZone,selectedDate,selection.workday);}catch{/* Incomplete scope remains visibly unavailable. */}
+	if(assignments&&projects)try{
+  const history=selection.workday?await readAtlasHistory(api,team.id,selection.workday).then(events=>events.filter(event=>localDate(event.timestamp,preferences.timeZone)===selectedDate)).catch(()=>null):null;
+  atlas=await projectAtlasAssignments(assignments,projects,team.id,preferences.timeZone,selectedDate,selection.workday,history);
+ }catch{/* Incomplete scope remains visibly unavailable. */}
 	const scopeQuery=new URLSearchParams({date:selectedDate});if(selection.workday)scopeQuery.set('workday',selection.workday);
 	const atlasBase='/app/work/atlas';
 	return {
