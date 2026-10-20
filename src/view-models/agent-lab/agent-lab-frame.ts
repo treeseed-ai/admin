@@ -107,7 +107,7 @@ overview.metrics = overview.metrics.map((metric) => {
   overview: `/app/work/overview?${scopeQuery}`,
   activity: '', metricSeries: '', viewState: '',
 },
-		atlasEndpoints:{projection:`${atlasBase}/projection?${scopeQuery}`,delta:'',stream:`${atlasBase}/stream?${scopeQuery}`,detail:`${atlasBase}/details`,assignmentGraphs:`${atlasBase}/graphs?${scopeQuery}`,viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
+		atlasEndpoints:{projection:`${atlasBase}/projection?${scopeQuery}`,activity:`${atlasBase}/activity?${scopeQuery}`,delta:'',stream:`${atlasBase}/stream?${scopeQuery}`,detail:`${atlasBase}/details`,assignmentGraphs:`${atlasBase}/graphs?${scopeQuery}`,viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
 		targetEndpoint: '',
 		preference: { enabled: preferences.realTimeUpdates, intervalSeconds: preferences.realTimePollingIntervalSeconds },
 	};

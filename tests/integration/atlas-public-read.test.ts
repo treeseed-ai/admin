@@ -14,6 +14,7 @@ import {atlasDetail} from '../../src/view-models/agent-lab/atlas-detail.ts';
 import {GET as readDetail} from '../../src/pages/app/work/atlas/details/[kind]/[id].ts';
 import type {APIContext} from 'astro';
 import {GET as readStream} from '../../src/pages/app/work/atlas/stream.ts';
+import {GET as readActivity} from '../../src/pages/app/work/atlas/activity.ts';
 import {CONTROL_PLANE_OPERATIONS,controlPlaneOperation} from '@treeseed/sdk/operator-contracts';
 import {catalogOperationPath} from '../../src/lib/market/api-client.ts';
 
@@ -23,8 +24,8 @@ const commit='b'.repeat(40),path='discussion-messages/topic/result.mdx';
 const reference={kind:'treedx',projectId:'project',repository:'library',commit,path};
 const capacityStatus=controlPlaneOperation('capacity.status');
 if(!capacityStatus)throw new Error('Existing canonical capacity status operation required');
-const assignment={id:'assignment',teamId:'team',projectId:'project',agentId:'project/researcher',workDayId:'workday',status:'completed',
- assignedAt:'2026-10-17T20:00:00.000Z',updatedAt:'2026-10-17T20:01:00.000Z',leaseToken:'private-lease',
+const assignment={id:'assignment',stateVersion:4,teamId:'team',projectId:'project',agentId:'project/researcher',workDayId:'workday',status:'completed',
+ assignedAt:'2026-10-17T20:00:00.000Z',claimedAt:'2026-10-17T20:00:02.000Z',completedAt:'2026-10-17T20:01:00.000Z',updatedAt:'2026-10-17T20:01:00.000Z',leaseToken:'private-lease',
  workspaceContext:{assignmentAttempt:{sourceRef:reference,effectiveProfile:{activity:'chat',profileRef:{commit,path:'agents/researcher.mdx'}}}},
  assignmentResult:{summary:'Source-backed finding.',references:[reference],usage:{elapsedSeconds:25}}};
 let server:Server,origin:string,directory:string;
@@ -35,7 +36,8 @@ let agentsUnavailable=false;
 const historyEvent=(eventIndex:number)=>({id:`event-${eventIndex}`,teamId:'team',runId:'workday',workdayId:null,projectId:'project',assignmentId:null,eventIndex,eventType:'assignment.observed',status:'recorded',title:null,message:null,createdAt:`2026-10-17T20:00:0${eventIndex}.000Z`,parameters:{},context:{},refs:{},metadata:{privateDiagnostic:'NEVER-FOR-BROWSER'}});
 let historyRows:Record<string,unknown>[]=[];
 let historyFailure:string|null=null;
-afterEach(()=>{historyRows=[];historyFailure=null;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};});
+let assignmentFailure:string|null=null,emptyAssignmentInventory=false;
+afterEach(()=>{historyRows=[];historyFailure=null;assignmentFailure=null;emptyAssignmentInventory=false;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string;authorization:string|undefined}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -68,6 +70,10 @@ beforeAll(async()=>{
    if(agentsUnavailable){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Agent catalog unavailable.'}));return;}
    res.end(JSON.stringify({ok:true,data:agentCatalog}));return;
   }
+  if(url.pathname==='/v1/teams/team/capacity/assignments'){
+   if(assignmentFailure==='error'){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Assignment inventory unavailable.'}));return;}
+   res.end(JSON.stringify({ok:true,data:{items:emptyAssignmentInventory?[]:[assignment],page:assignmentFailure==='truncated'?{hasMore:true,nextCursor:null}:{hasMore:false,nextCursor:null}}}));return;
+  }
   const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'},{id:'foreign-project',teamId:'foreign'}]}:
    url.pathname==='/v1/teams/team/capacity/assignments'?{items:[assignment],page:{hasMore:false,nextCursor:null}}:
    url.pathname==='/v1/teams/team/capacity/assignments/assignment'?assignment:
@@ -85,6 +91,19 @@ function client(authenticated=true,token='synthetic-test-token'){
  return new ApiClientFacade(context);
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
+ it('serves genuine assignment activity as stable complete upserts, including complete-empty and unavailable inventory',async()=>{
+  const api=client(),context=(date:string)=>({...api.context,url:new URL(`https://admin.test/app/work/atlas/activity?date=${date}&workday=workday`)}) as APIContext;
+  const first=await readActivity(context('2026-10-17'));expect(first!.status).toBe(200);expect(first!.headers.get('cache-control')).toBe('private, no-store');
+  const body=await first!.json();expect(body.payload).toMatchObject({complete:true,teamId:'team',date:'2026-10-17',workDayId:'workday',upserts:[{id:'assignment',stateVersion:4,
+   projectId:'project',agentId:'project/researcher',activity:'chat',status:'completed',assignedAt:assignment.assignedAt,finishedAt:assignment.completedAt}],removedIds:[]});
+  const repeated=await readActivity(context('2026-10-17'));expect((await repeated!.json()).payload.upserts.map((item:{id:string})=>item.id)).toEqual(['assignment']);
+  emptyAssignmentInventory=true;const emptyResponse=await readActivity(context('2026-10-17'));expect(emptyResponse!.status).toBe(200);
+  expect((await emptyResponse!.json()).payload).toMatchObject({complete:true,upserts:[],removedIds:[]});
+  emptyAssignmentInventory=false;assignmentFailure='truncated';const unavailable=await readActivity(context('2026-10-17'));
+  expect(unavailable!.status).toBe(503);expect((await unavailable!.json()).payload.message).toMatch(/incomplete/i);
+  const anonymous={...context('2026-10-17'),locals:{...api.context.locals,auth:null}} as unknown as APIContext;
+  expect((await readActivity(anonymous))!.status).toBe(401);
+ });
  it('reads complete selected history over authenticated native TLS with canonical scope and no private event payload',async()=>{
   historyRows=[historyEvent(1),historyEvent(0)];const start=requests.length;
   const frame=await loadAgentLabFrame(client(),{id:'team'},{timeZone:'UTC',realTimeUpdates:true,realTimePollingIntervalSeconds:5} as AccountPreferences,{date:'2026-10-17',workday:'workday'});
