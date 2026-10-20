@@ -81,6 +81,7 @@ adminRoute('/app/work/overview', 'pages/app/work/overview.ts', {
   navigation: 'hidden',
 }),
 	adminRoute('/app/work/atlas/projection','pages/app/work/atlas/projection.ts',{id:'admin.agent-lab.atlas-projection',description:'Active-team Atlas view of complete canonical assignment reads.',responseKind:'data',navigation:'hidden'}),
+	adminRoute('/app/work/atlas/activity','pages/app/work/atlas/activity.ts',{id:'admin.agent-lab.atlas-activity',description:'Active-team assignment activity for a selected operating day.',responseKind:'data',navigation:'hidden'}),
 	adminRoute('/app/work/atlas/stream','pages/app/work/atlas/stream.ts',{id:'admin.agent-lab.atlas-stream',description:'Scope-preserving refresh signals for current canonical assignment snapshots.',responseKind:'feed',navigation:'hidden'}),
 	adminRoute('/app/work/atlas/details/[kind]/[id]','pages/app/work/atlas/details/[kind]/[id].ts',{id:'admin.agent-lab.atlas-detail',description:'Allowlisted assignment evidence and exact committed TreeDX result read-back.',responseKind:'data',navigation:'hidden'}),
 	adminRoute('/app/work/atlas/graphs','pages/app/work/atlas/graphs.ts',{id:'admin.agent-lab.atlas-graphs',description:'Assignment-scoped view of the canonical team execution graph.',responseKind:'data',navigation:'hidden'}),

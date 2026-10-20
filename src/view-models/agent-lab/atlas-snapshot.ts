@@ -15,6 +15,23 @@ export function atlasDate(date:string|null|undefined,timeZone:string):string{
  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value))||new Date(value).toISOString().slice(0,10)!==value)throw Object.assign(new Error('Choose a valid calendar date.'),{status:400});
  return value;
 }
+/** Convert a local calendar boundary to UTC without assuming a fixed offset (DST days vary). */
+export function localDayBounds(date:string,timeZone:string):{start:string;end:string}{
+ const boundary=(day:string)=>{
+  const [year,month,dayOfMonth]=day.split('-').map(Number);
+  const target=Date.UTC(year!,month!-1,dayOfMonth!);
+  let guess=target;
+  for(let i=0;i<4;i++){
+   const parts=new Intl.DateTimeFormat('en-US',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(guess));
+   const get=(name:string)=>Number(parts.find(p=>p.type===name)?.value);
+   const represented=Date.UTC(get('year'),get('month')-1,get('day'),get('hour'),get('minute'),get('second'));
+   const delta=target-represented;if(delta===0)break;guess+=delta;
+  }
+  return new Date(guess).toISOString();
+ };
+ const [year,month,dayOfMonth]=date.split('-').map(Number),next=new Date(Date.UTC(year!,month!-1,dayOfMonth!+1)).toISOString().slice(0,10);
+ return {start:boundary(date),end:boundary(next)};
+}
 export async function readAtlasAssignments(api:ApiClientFacade,teamId:string):Promise<AtlasRow[]>{
  const rows:AtlasRow[]=[],ids=new Set<string>(),cursors=new Set<string>();let cursor:string|undefined;
  for(let page=0;page<100;page++){
@@ -69,6 +86,32 @@ const profile=(assignment:AtlasRow)=>row(row(attempt(assignment).effectiveProfil
 const activity=(assignment:AtlasRow)=>string(row(attempt(assignment).effectiveProfile).activity);
 export function scopedAtlasAssignments(assignments:AtlasRow[],timeZone:string,date:string,workday?:string|null):AtlasRow[]{
  return assignments.filter(a=>(!workday||a.workDayId===workday)&&localDate(string(a.assignedAt),timeZone)===date);
+}
+const validTimestamp=(value:unknown):value is string=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)&&
+ Number.isFinite(Date.parse(value))&&new Date(`${value.slice(0,10)}T00:00:00.000Z`).toISOString().slice(0,10)===value.slice(0,10);
+const terminalTimestamp=(assignment:AtlasRow)=>{
+ const field=assignment.status==='completed'?'completedAt':assignment.status==='failed'?'failedAt':assignment.status==='returned'?'returnedAt':null;
+ return field&&validTimestamp(assignment[field])?assignment[field] as string:null;
+};
+/** Source-backed assignment intervals for a selected operating day. */
+export function projectAtlasActivity(assignments:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null){
+ const {start,end}=localDayBounds(date,timeZone),dayStart=Date.parse(start),dayEnd=Date.parse(end);
+ const upserts=assignments.filter(a=>!workday||a.workDayId===workday).flatMap(a=>{
+  const assignedAt=string(a.assignedAt),startAt=Date.parse(assignedAt),finishAt=terminalTimestamp(a);
+  if(a.teamId!==teamId||!string(a.id)||(!Number.isSafeInteger(a.stateVersion)&&!(typeof a.stateVersion==='string'&&a.stateVersion.length>0))||!validTimestamp(assignedAt))throw new Error('Assignment activity inventory has invalid identity, version, ownership or start time.');
+  if([a.completedAt,a.failedAt,a.returnedAt].some(value=>value!==null&&value!==undefined&&value!==''&&!validTimestamp(value))||
+   (['completed','failed','returned'].includes(string(a.status))&&finishAt===null)||
+   (a.claimedAt!==null&&a.claimedAt!==undefined&&!validTimestamp(a.claimedAt)))throw new Error('Assignment activity inventory has invalid timestamps.');
+  if(finishAt&&Date.parse(finishAt)<=startAt)throw new Error('Assignment activity inventory has an empty or inverted interval.');
+  if(startAt>=dayEnd||(finishAt!==null&&Date.parse(finishAt)<=dayStart))return [];
+  const attempt=row(row(a.workspaceContext).assignmentAttempt),effective=row(attempt.effectiveProfile),profileRef=row(effective.profileRef);
+  const executionStartedAt=string(row(row(row(a.capacityEnvelope).budget).time).executionStartedAt);
+  return [{id:string(a.id),stateVersion:a.stateVersion,teamId,workDayId:string(a.workDayId)||null,projectId:string(a.projectId),agentId:string(a.agentId)||null,
+   agentClass:string(attempt.agentClass)||null,activity:string(effective.activity)||null,profileId:string(profileRef.id)||null,status:string(a.status),
+   assignedAt,claimedAt:validTimestamp(a.claimedAt)?a.claimedAt:null,executionStartedAt:validTimestamp(executionStartedAt)?executionStartedAt:null,finishedAt:finishAt}];
+ });
+ upserts.sort((a,b)=>a.id.localeCompare(b.id));
+ return {complete:true as const,teamId,date,workDayId:workday??null,timeZone,dayBounds:{start,end},upserts,removedIds:[] as string[]};
 }
 async function digest(value:unknown){return 'sha256:'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value))))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 export async function projectAtlasAssignments(assignments:AtlasRow[],projects:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null,history:AgentAtlasActivityItem[]|null=null):Promise<AgentAtlasProjection>{

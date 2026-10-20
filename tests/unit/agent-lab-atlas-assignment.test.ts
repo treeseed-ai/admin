@@ -4,14 +4,15 @@ import type { ApiClientFacade } from '../../src/lib/market/api-client.ts';
 import type {CapacityWorkdayEventRecord} from '@treeseed/sdk/agent-capacity';
 import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import { loadAgentLabFrame } from '../../src/view-models/agent-lab/agent-lab-frame.ts';
-import { atlasDate, localDate, readAtlasAssignments } from '../../src/view-models/agent-lab/atlas-snapshot.ts';
+import { atlasDate, localDate, localDayBounds, projectAtlasActivity, readAtlasAssignments } from '../../src/view-models/agent-lab/atlas-snapshot.ts';
 
 const preferences = { timeZone: 'America/New_York', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 } as AccountPreferences;
 const assignment = {
-  id: 'assignment-real', teamId: 'team', projectId: 'admin', agentId: 'admin/researcher', workDayId: 'conversation-real', status: 'completed',
+  id: 'assignment-real', stateVersion: 7, teamId: 'team', projectId: 'admin', agentId: 'admin/researcher', workDayId: 'conversation-real', status: 'completed',
   assignedAt: '2026-10-18T01:19:45.000Z', claimedAt: '2026-10-18T01:19:49.000Z', completedAt: '2026-10-18T01:20:29.000Z', updatedAt: '2026-10-18T01:20:29.000Z',
   graphRevision: 3, executionNodeId: 'communication-real', leaseToken: 'PRIVATE-LEASE-NOT-FOR-THE-BROWSER',
-  workspaceContext: { assignmentAttempt: { effectiveProfile: { activity: 'chat', profileRef: { id: 'admin/researcher', commit: 'a'.repeat(40), path: 'agents/researcher.mdx' } } } },
+  workspaceContext: { assignmentAttempt: { agentClass: 'researcher-class', effectiveProfile: { activity: 'chat', profileRef: { id: 'admin/researcher', commit: 'a'.repeat(40), path: 'agents/researcher.mdx' } } } },
+  capacityEnvelope: { budget: { time: { executionStartedAt: '2026-10-18T01:19:55.000Z' } } },
   assignmentResult: { id: 'result-real', summary: 'Exact source-backed research.', references: [{ kind: 'treedx', projectId: 'admin', repository: 'library', commit: 'b'.repeat(40), path: 'discussion-messages/topic/response.mdx' }] },
 };
 function client(rows: unknown[], page = { hasMore: false, nextCursor: null as string | null }) {
@@ -50,6 +51,7 @@ describe('Atlas reads the actual scoped assignment', () => {
   it('shows a real conversation assignment on the selected local day and workday without exposing lease authority', async () => {
     const frame = await loadAgentLabFrame(client([assignment]), { id: 'team' }, preferences, { date: '2026-10-17', workday: 'conversation-real' });
     expect(frame.atlas.scope).toMatchObject({ selectedDate: '2026-10-17', workdayIds: ['conversation-real'] });
+    expect(frame.atlasEndpoints.activity).toBe('/app/work/atlas/activity?date=2026-10-17&workday=conversation-real');
     expect(frame.atlas.assignments).toEqual([expect.objectContaining({ id: assignment.id, agentId: assignment.agentId, status: 'completed', progressPercent: null })]);
     expect(frame.atlas.topologies[0]).toMatchObject({ immutableRef: 'a'.repeat(40), projectId: 'admin' });
     expect(JSON.stringify(frame)).not.toContain(assignment.leaseToken);
@@ -76,6 +78,26 @@ describe('Atlas reads the actual scoped assignment', () => {
     expect(localDate('2026-03-08T04:30:00.000Z', 'America/New_York')).toBe('2026-03-07');
     expect(localDate('2026-11-01T05:30:00.000Z', 'America/New_York')).toBe('2026-11-01');
     expect(() => atlasDate('2026-02-31', 'America/New_York')).toThrow();
+  });
+  it('projects complete stable assignment upserts for overlapping local operating days',()=>{
+    const dayBounds=localDayBounds('2026-11-01','America/New_York');
+    expect(dayBounds).toEqual({start:'2026-11-01T04:00:00.000Z',end:'2026-11-02T05:00:00.000Z'});
+    const spanning={...assignment,assignedAt:'2026-11-01T03:59:00.000Z',claimedAt:'2026-11-01T04:10:00.000Z',completedAt:'2026-11-01T05:00:00.000Z',status:'failed',failedAt:'2026-11-01T05:00:00.000Z'};
+    const first=projectAtlasActivity([spanning], 'team','America/New_York','2026-11-01','conversation-real');
+    const repeated=projectAtlasActivity([spanning], 'team','America/New_York','2026-11-01','conversation-real');
+    expect(first).toMatchObject({complete:true,dayBounds,upserts:[{id:assignment.id,stateVersion:7,status:'failed',activity:'chat',profileId:'admin/researcher',
+      agentId:assignment.agentId,agentClass:'researcher-class',assignedAt:spanning.assignedAt,claimedAt:spanning.claimedAt,
+      executionStartedAt:'2026-10-18T01:19:55.000Z',finishedAt:spanning.failedAt}],removedIds:[]});
+    expect(repeated.upserts.map(item=>item.id)).toEqual(first.upserts.map(item=>item.id));
+    expect(projectAtlasActivity([], 'team','America/New_York','2026-11-01').upserts).toEqual([]);
+    expect(projectAtlasActivity([{...spanning,assignedAt:dayBounds.end,status:'running',completedAt:undefined,failedAt:undefined}], 'team','America/New_York','2026-11-01').upserts).toEqual([]);
+    expect(projectAtlasActivity([{...spanning,assignedAt:'2026-11-01T03:00:00.000Z',status:'completed',completedAt:dayBounds.start,failedAt:undefined}], 'team','America/New_York','2026-11-01').upserts).toEqual([]);
+  });
+  it('retains an open cross-midnight assignment with a null finish and exact workday selection',()=>{
+    const open={...assignment,assignedAt:'2026-10-17T23:30:00.000Z',claimedAt:undefined,completedAt:undefined,failedAt:undefined,returnedAt:undefined,status:'running'};
+    const result=projectAtlasActivity([open], 'team','UTC','2026-10-18','conversation-real');
+    expect(result.upserts).toEqual([expect.objectContaining({id:assignment.id,finishedAt:null,status:'running',executionStartedAt:'2026-10-18T01:19:55.000Z'})]);
+    expect(projectAtlasActivity([open], 'team','UTC','2026-10-18','other').upserts).toEqual([]);
   });
   it('loads complete selected-run history, orders by index, and uses eventType when title is null', async () => {
     const first = event('event-one', 1, { title: null });
