@@ -1,6 +1,6 @@
 {
   "name": "@treeseed/admin",
-  "version": "0.12.59-rc.38",
+  "version": "0.12.59-rc.39",
   "description": "Treeseed administration portal framework built on @treeseed/core and @treeseed/ui.",
   "license": "Apache-2.0",
   "repository": {
@@ -61,10 +61,10 @@
   "dependencies": {
     "@astrojs/starlight": "0.37.6",
     "@treeseed/core": ">=0.12.60-rc.1 <0.14.0",
-    "@treeseed/sdk": "0.13.0-rc.107",
     "@treeseed/identity": "0.1.0-rc.13",
+    "@treeseed/sdk": "0.13.0-rc.107",
+    "@treeseed/ui": "0.12.18-rc.21",
     "jose": "6.2.12",
-    "@treeseed/ui": "0.12.18-rc.20",
     "react": "^19.2.5",
     "react-dom": "^19.2.6"
   },

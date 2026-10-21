@@ -12,12 +12,12 @@ describe('Agent Lab command header and navigator', () => {
 		const api = {
 			listProviderAvailabilitySessions: async () => ({ items: [{ status: 'active' }] }),
 			listWorkdayRuns: async () => ({ items: [{ id: 'workday-1', status: 'running' }] }),
-				listProviderAssignments: async () => ({ items: [{ id: 'assignment-1', teamId:'team-1',projectId:'project-1',status: 'completed',assignedAt:'2026-10-18T01:20:00.000Z' }],page:{hasMore:false,nextCursor:null} }),
-			listProjectsForPrincipal: async () => ({ items: [{ id: 'project-1', teamId: 'team-1' }] }),
+				listProviderAssignments: async () => ({ items: [{ id: 'assignment-1',stateVersion:1,teamId:'team-1',projectId:'project-1',agentId:'project-1/engineer',status:'completed',assignedAt:'2026-10-18T01:20:00.000Z',completedAt:'2026-10-18T01:21:00.000Z' }],page:{hasMore:false,nextCursor:null} }),
+			listProjectsForPrincipal: async () => ({ items: [{ id: 'project-1', teamId: 'team-1', name:'Project One' }] }),
 				invoke: async (operation: unknown, input: {path: {projectId: string}}) => {
 					expect(operation).toBe(CONTROL_PLANE_OPERATIONS.agents.list);
 					expect(input.path).toEqual({projectId:'project-1'});
-					return {projectId:'project-1',agents:[{agentSlug:'agent-alpha'},{agentSlug:'agent-beta'}]};
+					return {projectId:'project-1',agents:[{agentSlug:'engineer',definition:{id:'project-1/engineer',name:'Engineer'}},{agentSlug:'reviewer',definition:{id:'project-1/reviewer',name:'Reviewer'}}]};
 				},
 		};
 		const frame = await loadAgentLabFrame(api as any, { id: 'team-1', name: 'TreeSeed' }, {

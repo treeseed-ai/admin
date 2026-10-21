@@ -99,8 +99,7 @@ export function projectAtlasActivity(assignments:AtlasRow[],teamId:string,timeZo
  const upserts=assignments.filter(a=>!workday||a.workDayId===workday).flatMap(a=>{
   const assignedAt=string(a.assignedAt),startAt=Date.parse(assignedAt),finishAt=terminalTimestamp(a);
   if(a.teamId!==teamId||!string(a.id)||(!Number.isSafeInteger(a.stateVersion)&&!(typeof a.stateVersion==='string'&&a.stateVersion.length>0))||!validTimestamp(assignedAt))throw new Error('Assignment activity inventory has invalid identity, version, ownership or start time.');
-  if([a.completedAt,a.failedAt,a.returnedAt].some(value=>value!==null&&value!==undefined&&value!==''&&!validTimestamp(value))||
-   (['completed','failed','returned'].includes(string(a.status))&&finishAt===null)||
+  if([a.completedAt,a.failedAt,a.returnedAt].some(value=>value!==null&&value!==undefined&&!validTimestamp(value))||
    (a.claimedAt!==null&&a.claimedAt!==undefined&&!validTimestamp(a.claimedAt)))throw new Error('Assignment activity inventory has invalid timestamps.');
   if(finishAt&&Date.parse(finishAt)<=startAt)throw new Error('Assignment activity inventory has an empty or inverted interval.');
   if(startAt>=dayEnd||(finishAt!==null&&Date.parse(finishAt)<=dayStart))return [];
@@ -112,6 +111,36 @@ export function projectAtlasActivity(assignments:AtlasRow[],teamId:string,timeZo
  });
  upserts.sort((a,b)=>a.id.localeCompare(b.id));
  return {complete:true as const,teamId,date,workDayId:workday??null,timeZone,dayBounds:{start,end},upserts,removedIds:[] as string[]};
+}
+/** Adapt the complete scoped assignment inventory to the monitor's interval contract. */
+export function projectAtlasMonitorActivity(assignments:AtlasRow[],projects:AtlasRow[],agents:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null){
+ const complete=projectAtlasActivity(assignments,teamId,timeZone,date,workday);
+ const projectById=new Map(projects.filter(p=>p.teamId===teamId).map(p=>[string(p.id),p]));
+ // Assignment identities are project qualified. Catalog role slugs can repeat
+ // between projects, so resolve the canonical definition identity in its owner.
+ const agentById=new Map<string,AtlasRow>();
+ for(const agent of agents){
+  const projectId=string(agent.projectId),identity=string(row(agent.definition).id);
+  if(!projectId||!identity)continue;
+  const key=`${projectId}:${identity}`;
+  if(agentById.has(key))throw new Error('Assignment activity display catalog is unavailable.');
+  agentById.set(key,agent);
+ }
+ const upserts=complete.upserts.flatMap(item=>{
+  const project=projectById.get(item.projectId),agent=agentById.get(`${item.projectId}:${item.agentId??''}`);
+  if(!project||!agent)throw new Error('Assignment activity display catalog is unavailable.');
+  const projectName=string(project.name),agentName=string(agent.displayName)||string(agent.name)||string(agent.title);
+  if(!projectName||!agentName)throw new Error('Assignment activity display name is unavailable.');
+  const stateVersion=Number(item.stateVersion);
+  if(!Number.isSafeInteger(stateVersion)||stateVersion<0)throw new Error('Assignment activity version is unavailable.');
+  const assignment=assignments.find(a=>string(a.id)===item.id)!;
+  return [{id:item.id,stateVersion,projectId:item.projectId,projectName,
+   agentId:item.agentId??'',agentName,agentClassId:item.agentClass??'',activityProfile:item.activity??'',assignmentId:item.id,
+   executionId:string(assignment.executionId),status:item.status,startedAt:item.assignedAt,finishedAt:item.finishedAt}];
+ });
+ const liveIds=new Set(upserts.map(item=>item.id));
+ const removedIds=assignments.filter(a=>a.teamId===teamId&&string(a.id)&&!liveIds.has(string(a.id))).map(a=>string(a.id));
+ return {revision:complete.upserts.map(item=>`${item.id}:${item.stateVersion}`).join(',')||`${teamId}:${date}:${workday??''}:empty`,generatedAt:new Date().toISOString(),cursor:null,complete:true,upserts,removedIds};
 }
 async function digest(value:unknown){return 'sha256:'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value))))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 export async function projectAtlasAssignments(assignments:AtlasRow[],projects:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null,history:AgentAtlasActivityItem[]|null=null):Promise<AgentAtlasProjection>{
