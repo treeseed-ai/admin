@@ -116,9 +116,18 @@ export function projectAtlasActivity(assignments:AtlasRow[],teamId:string,timeZo
 export function projectAtlasMonitorActivity(assignments:AtlasRow[],projects:AtlasRow[],agents:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null){
  const complete=projectAtlasActivity(assignments,teamId,timeZone,date,workday);
  const projectById=new Map(projects.filter(p=>p.teamId===teamId).map(p=>[string(p.id),p]));
- const agentById=new Map(agents.map(a=>[string(a.agentSlug??a.id),a]));
+ // Assignment identities are project qualified. Catalog role slugs can repeat
+ // between projects, so resolve the canonical definition identity in its owner.
+ const agentById=new Map<string,AtlasRow>();
+ for(const agent of agents){
+  const projectId=string(agent.projectId),identity=string(row(agent.definition).id);
+  if(!projectId||!identity)continue;
+  const key=`${projectId}:${identity}`;
+  if(agentById.has(key))throw new Error('Assignment activity display catalog is unavailable.');
+  agentById.set(key,agent);
+ }
  const upserts=complete.upserts.flatMap(item=>{
-  const project=projectById.get(item.projectId),agent=agentById.get(item.agentId??'');
+  const project=projectById.get(item.projectId),agent=agentById.get(`${item.projectId}:${item.agentId??''}`);
   if(!project||!agent)throw new Error('Assignment activity display catalog is unavailable.');
   const projectName=string(project.name),agentName=string(agent.displayName)||string(agent.name)||string(agent.title);
   if(!projectName||!agentName)throw new Error('Assignment activity display name is unavailable.');

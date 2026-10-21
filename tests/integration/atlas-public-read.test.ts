@@ -32,13 +32,13 @@ let activityAssignment:Record<string,unknown>=assignment;
 let server:Server,origin:string,directory:string;
 let activeToken='synthetic-test-token';
 let providerUnavailable=false;
-let agentCatalog:unknown={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'},{agentSlug:'arbitrary-b',displayName:'Other'}]};
+let agentCatalog:unknown={projectId:'project',agents:[{agentSlug:'researcher',definition:{id:'project/researcher'},displayName:'Researcher'},{agentSlug:'arbitrary-b',definition:{id:'project/other'},displayName:'Other'}]};
 let agentsUnavailable=false;
 const historyEvent=(eventIndex:number)=>({id:`event-${eventIndex}`,teamId:'team',runId:'workday',workdayId:null,projectId:'project',assignmentId:null,eventIndex,eventType:'assignment.observed',status:'recorded',title:null,message:null,createdAt:`2026-10-17T20:00:0${eventIndex}.000Z`,parameters:{},context:{},refs:{},metadata:{privateDiagnostic:'NEVER-FOR-BROWSER'}});
 let historyRows:Record<string,unknown>[]=[];
 let historyFailure:string|null=null;
 let assignmentFailure:string|null=null,emptyAssignmentInventory=false;
-afterEach(()=>{historyRows=[];historyFailure=null;assignmentFailure=null;emptyAssignmentInventory=false;activityAssignment=assignment;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'},{agentSlug:'arbitrary-b',displayName:'Other'}]};});
+afterEach(()=>{historyRows=[];historyFailure=null;assignmentFailure=null;emptyAssignmentInventory=false;activityAssignment=assignment;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'researcher',definition:{id:'project/researcher'},displayName:'Researcher'},{agentSlug:'arbitrary-b',definition:{id:'project/other'},displayName:'Other'}]};});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string;authorization:string|undefined}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -93,7 +93,7 @@ function client(authenticated=true,token='synthetic-test-token'){
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
  it('serves genuine assignment activity as stable complete upserts, including complete-empty and unavailable inventory',async()=>{
-  agentCatalog={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'}]};
+  agentCatalog={projectId:'project',agents:[{agentSlug:'researcher',definition:{id:'project/researcher'},displayName:'Researcher'}]};
   const api=client(),context=(date:string)=>({...api.context,url:new URL(`https://admin.test/app/work/atlas/activity?date=${date}&workday=workday`)}) as APIContext;
   const first=await readActivity(context('2026-10-17'));expect(first!.status).toBe(200);expect(first!.headers.get('cache-control')).toBe('private, no-store');
   const body=await first!.json();expect(body.payload).toMatchObject({complete:true,upserts:[{id:'assignment',stateVersion:4,
@@ -160,7 +160,7 @@ describe('Admin native public assignment-to-artifact transport',()=>{
   const first=await GET(context);expect(first.status).toBe(200);expect(first.headers.get('cache-control')).toBe('private, no-store');
   const one=await first.json();expect(one.payload.workdayContext.selectedDate).toBe('2026-10-17');expect(one.payload.workdayContext.selectedWorkdayId).toBe('workday');
   expect(one.payload.metrics.find((metric:{key:string})=>metric.key==='agents').value).toBe(2);
-  agentCatalog={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'},{agentSlug:'arbitrary-b',displayName:'Other'},{agentSlug:'arbitrary-c',displayName:'Third'}]};
+  agentCatalog={projectId:'project',agents:[{agentSlug:'researcher',definition:{id:'project/researcher'},displayName:'Researcher'},{agentSlug:'arbitrary-b',definition:{id:'project/other'},displayName:'Other'},{agentSlug:'arbitrary-c',definition:{id:'project/third'},displayName:'Third'}]};
   const second=await GET(context);expect(second.status).toBe(200);const two=await second.json();
   expect(two.payload.metrics.find((metric:{key:string})=>metric.key==='agents').value).toBe(3);
   expect(JSON.stringify(two)).not.toMatch(/private-lease|synthetic-test-token/);

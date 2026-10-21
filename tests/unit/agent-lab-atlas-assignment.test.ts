@@ -4,7 +4,7 @@ import type { ApiClientFacade } from '../../src/lib/market/api-client.ts';
 import type {CapacityWorkdayEventRecord} from '@treeseed/sdk/agent-capacity';
 import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import { loadAgentLabFrame } from '../../src/view-models/agent-lab/agent-lab-frame.ts';
-import { atlasDate, localDate, localDayBounds, projectAtlasActivity, readAtlasAssignments } from '../../src/view-models/agent-lab/atlas-snapshot.ts';
+import { atlasDate, localDate, localDayBounds, projectAtlasActivity, projectAtlasMonitorActivity, readAtlasAssignments } from '../../src/view-models/agent-lab/atlas-snapshot.ts';
 
 const preferences = { timeZone: 'America/New_York', realTimeUpdates: true, realTimePollingIntervalSeconds: 5 } as AccountPreferences;
 const assignment = {
@@ -20,7 +20,7 @@ function client(rows: unknown[], page = { hasMore: false, nextCursor: null as st
     listProviderAvailabilitySessions: async () => ({ items: [] }), listWorkdayRuns: async () => ({ items: [] }),
     listProviderAssignments: async () => ({ items: rows, page }), listProjectsForPrincipal: async () => ({ items: [{ id: 'admin', teamId: 'team', name: 'Admin' }] }),
     invoke: async (binding: { descriptor: {operationId: string} }, input: { path?: Record<string, string>; query?: Record<string, unknown> }) => {
-      if (binding.descriptor.operationId === 'agents.list') return { projectId: input.path?.projectId, agents: [{ agentSlug: 'admin/researcher', displayName: 'Researcher' }] };
+      if (binding.descriptor.operationId === 'agents.list') return { projectId: input.path?.projectId, agents: [{ agentSlug: 'researcher', definition:{id:'admin/researcher'}, displayName: 'Researcher' }] };
       return { items: [], page: { hasMore: false, nextCursor: null } };
     },
   } as unknown as ApiClientFacade;
@@ -35,7 +35,7 @@ function historyClient(events: unknown[][]) {
   const calls: Array<{ path: unknown; query: unknown }> = [];
   const api = client([assignment]);
   Object.assign(api, {invoke: async (binding: { descriptor: {operationId: string} }, input: { path?: unknown; query?: unknown }) => {
-    if (binding.descriptor.operationId === 'agents.list') return { projectId: 'admin', agents: [{ agentSlug: 'admin/researcher', displayName: 'Researcher' }] };
+    if (binding.descriptor.operationId === 'agents.list') return { projectId: 'admin', agents: [{ agentSlug: 'researcher', definition:{id:'admin/researcher'}, displayName: 'Researcher' }] };
     expect(binding.descriptor.operationId).toBe('workdays.events.list');
     calls.push({ path: input.path, query: input.query });
     const page = events[calls.length - 1] ?? [];
@@ -48,6 +48,19 @@ async function frameWithEvents(events: unknown[][]) {
   return loadAgentLabFrame(api, { id: 'team' }, preferences, { date: '2026-10-17', workday: 'conversation-real' });
 }
 describe('Atlas reads the actual scoped assignment', () => {
+  it('resolves qualified assignment identity only in its owning project catalog',()=>{
+    const actual={...assignment,agentId:'admin/engineer',assignedAt:'2026-10-18T01:20:00.000Z',completedAt:'2026-10-18T01:21:00.000Z'};
+    const projects=[{id:'admin',teamId:'team',name:'TreeSeed Admin'},{id:'ui',teamId:'team',name:'TreeSeed UI'},{id:'deployment',teamId:'team',name:'TreeSeed Deployment'}];
+    const agents=[
+      {projectId:'admin',agentSlug:'engineer',definition:{id:'admin/engineer'},name:'Admin Engineer'},
+      {projectId:'ui',agentSlug:'engineer',definition:{id:'ui/engineer'},name:'UI Engineer'},
+      {projectId:'deployment',agentSlug:'engineer',definition:{id:'deployment/engineer'},name:'Deployment Engineer'},
+    ];
+    expect(projectAtlasMonitorActivity([actual],projects,agents,'team','UTC','2026-10-18').upserts)
+      .toMatchObject([{projectId:'admin',projectName:'TreeSeed Admin',agentId:'admin/engineer',agentName:'Admin Engineer',finishedAt:actual.completedAt}]);
+    expect(()=>projectAtlasMonitorActivity([actual],projects,agents.filter(agent=>agent.projectId!=='admin'),'team','UTC','2026-10-18'))
+      .toThrow(/catalog is unavailable/i);
+  });
   it('shows a real conversation assignment on the selected local day and workday without exposing lease authority', async () => {
     const frame = await loadAgentLabFrame(client([assignment]), { id: 'team' }, preferences, { date: '2026-10-17', workday: 'conversation-real' });
     expect(frame.atlas.scope).toMatchObject({ selectedDate: '2026-10-17', workdayIds: ['conversation-real'] });
