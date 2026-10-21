@@ -28,16 +28,17 @@ const assignment={id:'assignment',stateVersion:4,teamId:'team',projectId:'projec
  assignedAt:'2026-10-17T20:00:00.000Z',claimedAt:'2026-10-17T20:00:02.000Z',completedAt:'2026-10-17T20:01:00.000Z',updatedAt:'2026-10-17T20:01:00.000Z',leaseToken:'private-lease',
  workspaceContext:{assignmentAttempt:{sourceRef:reference,effectiveProfile:{activity:'chat',profileRef:{commit,path:'agents/researcher.mdx'}}}},
  assignmentResult:{summary:'Source-backed finding.',references:[reference],usage:{elapsedSeconds:25}}};
+let activityAssignment:Record<string,unknown>=assignment;
 let server:Server,origin:string,directory:string;
 let activeToken='synthetic-test-token';
 let providerUnavailable=false;
-let agentCatalog:unknown={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};
+let agentCatalog:unknown={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'},{agentSlug:'arbitrary-b',displayName:'Other'}]};
 let agentsUnavailable=false;
 const historyEvent=(eventIndex:number)=>({id:`event-${eventIndex}`,teamId:'team',runId:'workday',workdayId:null,projectId:'project',assignmentId:null,eventIndex,eventType:'assignment.observed',status:'recorded',title:null,message:null,createdAt:`2026-10-17T20:00:0${eventIndex}.000Z`,parameters:{},context:{},refs:{},metadata:{privateDiagnostic:'NEVER-FOR-BROWSER'}});
 let historyRows:Record<string,unknown>[]=[];
 let historyFailure:string|null=null;
 let assignmentFailure:string|null=null,emptyAssignmentInventory=false;
-afterEach(()=>{historyRows=[];historyFailure=null;assignmentFailure=null;emptyAssignmentInventory=false;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'}]};});
+afterEach(()=>{historyRows=[];historyFailure=null;assignmentFailure=null;emptyAssignmentInventory=false;activityAssignment=assignment;activeToken='synthetic-test-token';providerUnavailable=false;agentsUnavailable=false;agentCatalog={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'},{agentSlug:'arbitrary-b',displayName:'Other'}]};});
 const authorities=getCACertificates('default'),requests:Array<{method:string;path:string;body:string;authorization:string|undefined}>=[];
 beforeAll(async()=>{
  directory=mkdtempSync(join(tmpdir(),'admin-atlas-tls-'));
@@ -72,7 +73,7 @@ beforeAll(async()=>{
   }
   if(url.pathname==='/v1/teams/team/capacity/assignments'){
    if(assignmentFailure==='error'){res.statusCode=503;res.end(JSON.stringify({ok:false,message:'Assignment inventory unavailable.'}));return;}
-   res.end(JSON.stringify({ok:true,data:{items:emptyAssignmentInventory?[]:[assignment],page:assignmentFailure==='truncated'?{hasMore:true,nextCursor:null}:{hasMore:false,nextCursor:null}}}));return;
+   res.end(JSON.stringify({ok:true,data:{items:emptyAssignmentInventory?[]:[activityAssignment],page:assignmentFailure==='truncated'?{hasMore:true,nextCursor:null}:{hasMore:false,nextCursor:null}}}));return;
   }
   const data=url.pathname==='/v1/teams'?[{id:'team',status:'active'}]:url.pathname==='/v1/projects'?{items:[{id:'project',teamId:'team',name:'Project'},{id:'foreign-project',teamId:'foreign'}]}:
    url.pathname==='/v1/teams/team/capacity/assignments'?{items:[assignment],page:{hasMore:false,nextCursor:null}}:
@@ -92,15 +93,28 @@ function client(authenticated=true,token='synthetic-test-token'){
 }
 describe('Admin native public assignment-to-artifact transport',()=>{
  it('serves genuine assignment activity as stable complete upserts, including complete-empty and unavailable inventory',async()=>{
+  agentCatalog={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'}]};
   const api=client(),context=(date:string)=>({...api.context,url:new URL(`https://admin.test/app/work/atlas/activity?date=${date}&workday=workday`)}) as APIContext;
   const first=await readActivity(context('2026-10-17'));expect(first!.status).toBe(200);expect(first!.headers.get('cache-control')).toBe('private, no-store');
-  const body=await first!.json();expect(body.payload).toMatchObject({complete:true,teamId:'team',date:'2026-10-17',workDayId:'workday',upserts:[{id:'assignment',stateVersion:4,
-   projectId:'project',agentId:'project/researcher',activity:'chat',status:'completed',assignedAt:assignment.assignedAt,finishedAt:assignment.completedAt}],removedIds:[]});
+  const body=await first!.json();expect(body.payload).toMatchObject({complete:true,upserts:[{id:'assignment',stateVersion:4,
+   projectId:'project',projectName:'Project',agentId:'project/researcher',agentName:'Researcher',activityProfile:'chat',assignmentId:'assignment',
+   status:'completed',startedAt:assignment.assignedAt,finishedAt:assignment.completedAt}],removedIds:[]});
   const repeated=await readActivity(context('2026-10-17'));expect((await repeated!.json()).payload.upserts.map((item:{id:string})=>item.id)).toEqual(['assignment']);
   emptyAssignmentInventory=true;const emptyResponse=await readActivity(context('2026-10-17'));expect(emptyResponse!.status).toBe(200);
   expect((await emptyResponse!.json()).payload).toMatchObject({complete:true,upserts:[],removedIds:[]});
-  emptyAssignmentInventory=false;assignmentFailure='truncated';const unavailable=await readActivity(context('2026-10-17'));
-  expect(unavailable!.status).toBe(503);expect((await unavailable!.json()).payload.message).toMatch(/incomplete/i);
+  emptyAssignmentInventory=false;
+  for(const [status,finishField] of [['completed','completedAt'],['failed','failedAt'],['returned','returnedAt']] as const){
+   activityAssignment={...assignment,status,completedAt:undefined,failedAt:undefined,returnedAt:undefined};
+   const unknown=await readActivity(context('2026-10-17'));
+   expect(unknown!.status).toBe(200);expect((await unknown!.json()).payload.upserts).toMatchObject([{id:'assignment',status,startedAt:assignment.assignedAt,activityProfile:'chat',finishedAt:null}]);
+   activityAssignment={...activityAssignment,[finishField]:'2026-10-17T20:01:00.000Z'};
+   const known=await readActivity(context('2026-10-17'));
+   expect((await known!.json()).payload.upserts).toMatchObject([{status,finishedAt:'2026-10-17T20:01:00.000Z'}]);
+   activityAssignment={...activityAssignment,[finishField]:'malformed'};
+   expect((await readActivity(context('2026-10-17'))).status).toBe(503);
+  }
+  assignmentFailure='truncated';const unavailable=await readActivity(context('2026-10-17'));
+  expect(unavailable!.status).toBe(503);expect((await unavailable!.json()).payload.message).toMatch(/unavailable|incomplete/i);
   const anonymous={...context('2026-10-17'),locals:{...api.context.locals,auth:null}} as unknown as APIContext;
   expect((await readActivity(anonymous))!.status).toBe(401);
  });
@@ -146,7 +160,7 @@ describe('Admin native public assignment-to-artifact transport',()=>{
   const first=await GET(context);expect(first.status).toBe(200);expect(first.headers.get('cache-control')).toBe('private, no-store');
   const one=await first.json();expect(one.payload.workdayContext.selectedDate).toBe('2026-10-17');expect(one.payload.workdayContext.selectedWorkdayId).toBe('workday');
   expect(one.payload.metrics.find((metric:{key:string})=>metric.key==='agents').value).toBe(2);
-  agentCatalog={projectId:'project',agents:[{agentSlug:'arbitrary-a'},{agentSlug:'arbitrary-b'},{agentSlug:'arbitrary-c'}]};
+  agentCatalog={projectId:'project',agents:[{agentSlug:'project/researcher',displayName:'Researcher'},{agentSlug:'arbitrary-b',displayName:'Other'},{agentSlug:'arbitrary-c',displayName:'Third'}]};
   const second=await GET(context);expect(second.status).toBe(200);const two=await second.json();
   expect(two.payload.metrics.find((metric:{key:string})=>metric.key==='agents').value).toBe(3);
   expect(JSON.stringify(two)).not.toMatch(/private-lease|synthetic-test-token/);

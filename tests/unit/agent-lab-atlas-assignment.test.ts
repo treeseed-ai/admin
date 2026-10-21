@@ -103,6 +103,17 @@ describe('Atlas reads the actual scoped assignment', () => {
     expect(result.upserts).toEqual([expect.objectContaining({id:assignment.id,finishedAt:null,status:'running',executionStartedAt:'2026-10-18T01:19:55.000Z'})]);
     expect(projectAtlasActivity([open], 'team','UTC','2026-10-18','other').upserts).toEqual([]);
   });
+  it.each([
+    ['completed','completedAt'],['failed','failedAt'],['returned','returnedAt'],
+  ] as const)('retains %s assignment with an unknown terminal finish', (status,finishField)=>{
+    const unknown={...assignment,status,completedAt:undefined,failedAt:undefined,returnedAt:undefined};
+    expect(projectAtlasActivity([unknown], 'team','UTC','2026-10-18','conversation-real').upserts)
+      .toEqual([expect.objectContaining({id:assignment.id,status,finishedAt:null})]);
+    expect(projectAtlasActivity([{...unknown,[finishField]:'2026-10-18T01:20:29.000Z'}], 'team','UTC','2026-10-18','conversation-real').upserts[0]?.finishedAt)
+      .toBe('2026-10-18T01:20:29.000Z');
+    expect(()=>projectAtlasActivity([{...unknown,[finishField]:'malformed'}], 'team','UTC','2026-10-18','conversation-real'))
+      .toThrow(/invalid timestamps/i);
+  });
   it('loads complete selected-run history, orders by index, and uses eventType when title is null', async () => {
     const first = event('event-one', 1, { title: null });
     const second = event('event-zero', 0);

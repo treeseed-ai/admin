@@ -99,8 +99,7 @@ export function projectAtlasActivity(assignments:AtlasRow[],teamId:string,timeZo
  const upserts=assignments.filter(a=>!workday||a.workDayId===workday).flatMap(a=>{
   const assignedAt=string(a.assignedAt),startAt=Date.parse(assignedAt),finishAt=terminalTimestamp(a);
   if(a.teamId!==teamId||!string(a.id)||(!Number.isSafeInteger(a.stateVersion)&&!(typeof a.stateVersion==='string'&&a.stateVersion.length>0))||!validTimestamp(assignedAt))throw new Error('Assignment activity inventory has invalid identity, version, ownership or start time.');
-  if([a.completedAt,a.failedAt,a.returnedAt].some(value=>value!==null&&value!==undefined&&value!==''&&!validTimestamp(value))||
-   (['completed','failed','returned'].includes(string(a.status))&&finishAt===null)||
+  if([a.completedAt,a.failedAt,a.returnedAt].some(value=>value!==null&&value!==undefined&&!validTimestamp(value))||
    (a.claimedAt!==null&&a.claimedAt!==undefined&&!validTimestamp(a.claimedAt)))throw new Error('Assignment activity inventory has invalid timestamps.');
   if(finishAt&&Date.parse(finishAt)<=startAt)throw new Error('Assignment activity inventory has an empty or inverted interval.');
   if(startAt>=dayEnd||(finishAt!==null&&Date.parse(finishAt)<=dayStart))return [];
