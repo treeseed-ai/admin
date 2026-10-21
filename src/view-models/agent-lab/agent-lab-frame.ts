@@ -4,7 +4,7 @@ import type { AccountPreferences } from '@treeseed/sdk/account-contracts';
 import type { ApiClientFacade } from '../../lib/market/api-client.ts';
 import type { AllocationSnapshot } from '@treeseed/ui/components/react/OperationsMonitor';
 import { items } from '../../lib/operations/records.ts';
-import {atlasDate,localDate,readAtlasAssignments,readAtlasHistory,projectAtlasAssignments} from './atlas-snapshot.ts';
+import {atlasDate,localDate,readAtlasAssignments,readAtlasHistory,projectAtlasAssignments,projectAtlasMonitorActivity,row} from './atlas-snapshot.ts';
 
 export const agentLabMetricDestinations = {
 	agents: '/app/work/agents', workdays: '/app/work/workdays', systemEvents: '/app/work/events',
@@ -86,7 +86,16 @@ overview.metrics = overview.metrics.map((metric) => {
     ? { ...metric, value: null as any, secondary: 'Unavailable' }
     : { ...metric, value, secondary: 'Catalog read' };
 });
-	const activity = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
+	let activity = { revision: 'activity-unavailable', generatedAt: new Date().toISOString(), cursor: null as string | null, upserts: [] as any[], removedIds: [] as string[] };
+	if(assignments&&projects&&agentCatalogs){
+	  const agents=agentCatalogs.flatMap((catalog,index)=>{
+	    if(!catalog||catalog.projectId!==projects[index]?.id||!Array.isArray(catalog.agents))return [];
+	    return catalog.agents.map((agent:unknown)=>({...row(agent),projectId:catalog.projectId}));
+	  });
+	  try{activity=projectAtlasMonitorActivity(assignments,projects,agents,team.id,preferences.timeZone,selectedDate,selection.workday) as typeof activity;}
+	  catch{activity={...activity,revision:'activity-unavailable'};}
+	}
+	if(activity.revision==='activity-unavailable')overview.connectivity='degraded';
 	const series = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(), cursor: null, upserts: [], removedIds: [] };
 	const allocation = { revision: 'catalog-foundation', generatedAt: new Date().toISOString(),
 		time: { availableSeconds: null, requestedSeconds: 0, reservedSeconds: 0, activeSeconds: 0, elapsedSeconds: 0, releasedSeconds: 0, remainingSeconds: null, overrunSeconds: 0 }, projects: [], agentClasses: [], workdayTime: [] };
@@ -105,7 +114,7 @@ overview.metrics = overview.metrics.map((metric) => {
 		allocation: allocation as AllocationSnapshot,
 		endpoints: {
   overview: `/app/work/overview?${scopeQuery}`,
-  activity: '', metricSeries: '', viewState: '',
+			activity: `${atlasBase}/activity?${scopeQuery}`, metricSeries: '', viewState: '',
 },
 		atlasEndpoints:{projection:`${atlasBase}/projection?${scopeQuery}`,activity:`${atlasBase}/activity?${scopeQuery}`,delta:'',stream:`${atlasBase}/stream?${scopeQuery}`,detail:`${atlasBase}/details`,assignmentGraphs:`${atlasBase}/graphs?${scopeQuery}`,viewState:'',createAgent:`/app/work/build?create=agent`,createGroup:`/app/work/build?create=group`,createProject:'/app/projects',connectService:'/app/services/new',configureCapacity:'/app/capacity'},
 		targetEndpoint: '',

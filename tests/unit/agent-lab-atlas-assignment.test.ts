@@ -20,7 +20,7 @@ function client(rows: unknown[], page = { hasMore: false, nextCursor: null as st
     listProviderAvailabilitySessions: async () => ({ items: [] }), listWorkdayRuns: async () => ({ items: [] }),
     listProviderAssignments: async () => ({ items: rows, page }), listProjectsForPrincipal: async () => ({ items: [{ id: 'admin', teamId: 'team', name: 'Admin' }] }),
     invoke: async (binding: { descriptor: {operationId: string} }, input: { path?: Record<string, string>; query?: Record<string, unknown> }) => {
-      if (binding.descriptor.operationId === 'agents.list') return { projectId: input.path?.projectId, agents: [] };
+      if (binding.descriptor.operationId === 'agents.list') return { projectId: input.path?.projectId, agents: [{ agentSlug: 'admin/researcher', displayName: 'Researcher' }] };
       return { items: [], page: { hasMore: false, nextCursor: null } };
     },
   } as unknown as ApiClientFacade;
@@ -35,7 +35,7 @@ function historyClient(events: unknown[][]) {
   const calls: Array<{ path: unknown; query: unknown }> = [];
   const api = client([assignment]);
   Object.assign(api, {invoke: async (binding: { descriptor: {operationId: string} }, input: { path?: unknown; query?: unknown }) => {
-    if (binding.descriptor.operationId === 'agents.list') return { projectId: 'admin', agents: [] };
+    if (binding.descriptor.operationId === 'agents.list') return { projectId: 'admin', agents: [{ agentSlug: 'admin/researcher', displayName: 'Researcher' }] };
     expect(binding.descriptor.operationId).toBe('workdays.events.list');
     calls.push({ path: input.path, query: input.query });
     const page = events[calls.length - 1] ?? [];
@@ -52,6 +52,8 @@ describe('Atlas reads the actual scoped assignment', () => {
     const frame = await loadAgentLabFrame(client([assignment]), { id: 'team' }, preferences, { date: '2026-10-17', workday: 'conversation-real' });
     expect(frame.atlas.scope).toMatchObject({ selectedDate: '2026-10-17', workdayIds: ['conversation-real'] });
     expect(frame.atlasEndpoints.activity).toBe('/app/work/atlas/activity?date=2026-10-17&workday=conversation-real');
+    expect(frame.endpoints.activity).toBe('/app/work/atlas/activity?date=2026-10-17&workday=conversation-real');
+    expect(frame.activity).toMatchObject({complete:true,cursor:null,upserts:[expect.objectContaining({id:assignment.id,projectName:'Admin',agentName:'Researcher',assignmentId:assignment.id,startedAt:assignment.assignedAt,finishedAt:assignment.completedAt})]});
     expect(frame.atlas.assignments).toEqual([expect.objectContaining({ id: assignment.id, agentId: assignment.agentId, status: 'completed', progressPercent: null })]);
     expect(frame.atlas.topologies[0]).toMatchObject({ immutableRef: 'a'.repeat(40), projectId: 'admin' });
     expect(JSON.stringify(frame)).not.toContain(assignment.leaseToken);
@@ -59,10 +61,12 @@ describe('Atlas reads the actual scoped assignment', () => {
   it('keeps a different local day empty rather than leaking the current assignment into it', async () => {
     const frame = await loadAgentLabFrame(client([assignment]), { id: 'team' }, preferences, { date: '2026-10-16' });
     expect(frame.atlas.scope.selectedDate).toBe('2026-10-16'); expect(frame.atlas.assignments).toEqual([]);
+    expect(frame.activity.upserts).toEqual([]); expect(frame.activity.removedIds).toContain(assignment.id);
   });
   it('denies a foreign-team row even when the upstream response otherwise appears complete', async () => {
     const frame = await loadAgentLabFrame(client([{ ...assignment, teamId: 'foreign' }]), { id: 'team' }, preferences, { date: '2026-10-17' });
     expect(frame.atlas.assignments).toEqual([]); expect(frame.atlas.alerts.some(a => a.id.includes('unavailable'))).toBe(true);
+    expect(frame.activity.revision).toBe('activity-unavailable');
   });
   it('keeps an incomplete assignment inventory unavailable', async () => {
     const frame = await loadAgentLabFrame(client([assignment], { hasMore: true, nextCursor: null }), { id: 'team' }, preferences, { date: '2026-10-17' });

@@ -113,6 +113,27 @@ export function projectAtlasActivity(assignments:AtlasRow[],teamId:string,timeZo
  upserts.sort((a,b)=>a.id.localeCompare(b.id));
  return {complete:true as const,teamId,date,workDayId:workday??null,timeZone,dayBounds:{start,end},upserts,removedIds:[] as string[]};
 }
+/** Adapt the complete scoped assignment inventory to the monitor's interval contract. */
+export function projectAtlasMonitorActivity(assignments:AtlasRow[],projects:AtlasRow[],agents:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null){
+ const complete=projectAtlasActivity(assignments,teamId,timeZone,date,workday);
+ const projectById=new Map(projects.filter(p=>p.teamId===teamId).map(p=>[string(p.id),p]));
+ const agentById=new Map(agents.map(a=>[string(a.agentSlug??a.id),a]));
+ const upserts=complete.upserts.flatMap(item=>{
+  const project=projectById.get(item.projectId),agent=agentById.get(item.agentId??'');
+  if(!project||!agent)throw new Error('Assignment activity display catalog is unavailable.');
+  const projectName=string(project.name),agentName=string(agent.displayName)||string(agent.name)||string(agent.title);
+  if(!projectName||!agentName)throw new Error('Assignment activity display name is unavailable.');
+  const stateVersion=Number(item.stateVersion);
+  if(!Number.isSafeInteger(stateVersion)||stateVersion<0)throw new Error('Assignment activity version is unavailable.');
+  const assignment=assignments.find(a=>string(a.id)===item.id)!;
+  return [{id:item.id,stateVersion,projectId:item.projectId,projectName,
+   agentId:item.agentId??'',agentName,agentClassId:item.agentClass??'',activityProfile:item.activity??'',assignmentId:item.id,
+   executionId:string(assignment.executionId),status:item.status,startedAt:item.assignedAt,finishedAt:item.finishedAt}];
+ });
+ const liveIds=new Set(upserts.map(item=>item.id));
+ const removedIds=assignments.filter(a=>a.teamId===teamId&&string(a.id)&&!liveIds.has(string(a.id))).map(a=>string(a.id));
+ return {revision:complete.upserts.map(item=>`${item.id}:${item.stateVersion}`).join(',')||`${teamId}:${date}:${workday??''}:empty`,generatedAt:new Date().toISOString(),cursor:null,complete:true,upserts,removedIds};
+}
 async function digest(value:unknown){return 'sha256:'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value))))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 export async function projectAtlasAssignments(assignments:AtlasRow[],projects:AtlasRow[],teamId:string,timeZone:string,date:string,workday?:string|null,history:AgentAtlasActivityItem[]|null=null):Promise<AgentAtlasProjection>{
  const selected=scopedAtlasAssignments(assignments,timeZone,date,workday);
