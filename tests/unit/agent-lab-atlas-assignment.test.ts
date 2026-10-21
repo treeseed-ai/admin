@@ -48,6 +48,28 @@ async function frameWithEvents(events: unknown[][]) {
   return loadAgentLabFrame(api, { id: 'team' }, preferences, { date: '2026-10-17', workday: 'conversation-real' });
 }
 describe('Atlas reads the actual scoped assignment', () => {
+  it('maps public workday records into shared selector labels and leaves an unknown URL selection unresolved', async () => {
+    const api = client([assignment]);
+    Object.assign(api, { listWorkdayRuns: async () => ({ items: [
+      { id: 'workday-named', title: 'Release review', scenarioId: 'release-review', status: 'completed', startedAt: '2026-10-17T12:00:00.000Z', finishedAt: '2026-10-17T12:30:00.000Z' },
+      { id: 'workday-scenario', scenarioId: 'agent-lab-frame', status: 'running', startedAt: '2026-10-17T13:00:00.000Z' },
+      { id: 'workday-date', date: '2026-10-16', status: 'completed' },
+      { id: 'workday-id', status: 'unknown' },
+      { title: 'Missing public identity', status: 'completed' },
+    ] }) });
+    const frame = await loadAgentLabFrame(api, { id: 'team' }, preferences, { date: '2026-10-17', workday: 'missing-workday' });
+    expect(frame.overview.workdayContext).toMatchObject({ selectedDate: '2026-10-17', selectedWorkdayId: 'missing-workday', workdays: [
+      { id: 'workday-named', title: 'Release review', status: 'completed', startedAt: '2026-10-17T12:00:00.000Z', finishedAt: '2026-10-17T12:30:00.000Z' },
+      { id: 'workday-scenario', title: 'agent-lab-frame', status: 'running', startedAt: '2026-10-17T13:00:00.000Z', finishedAt: null },
+      { id: 'workday-date', title: '2026-10-16', status: 'completed', startedAt: null, finishedAt: null },
+      { id: 'workday-id', title: 'workday-id', status: 'unknown', startedAt: null, finishedAt: null },
+    ] });
+    expect(frame.overview.workdayContext.workdays.some((workday) => workday.id === frame.overview.workdayContext.selectedWorkdayId)).toBe(false);
+    expect(frame.atlas.scope).toMatchObject({ selectedDate: '2026-10-17', workdayIds: ['missing-workday'] });
+    const selected = await loadAgentLabFrame(api, { id: 'team' }, preferences, { date: '2026-10-17', workday: 'workday-named' });
+    const selectedRecord = selected.overview.workdayContext.workdays.find((workday) => workday.id === selected.overview.workdayContext.selectedWorkdayId);
+    expect(selectedRecord).toMatchObject({ id: 'workday-named', title: 'Release review' });
+  });
   it('resolves qualified assignment identity only in its owning project catalog',()=>{
     const actual={...assignment,agentId:'admin/engineer',assignedAt:'2026-10-18T01:20:00.000Z',completedAt:'2026-10-18T01:21:00.000Z'};
     const projects=[{id:'admin',teamId:'team',name:'TreeSeed Admin'},{id:'ui',teamId:'team',name:'TreeSeed UI'},{id:'deployment',teamId:'team',name:'TreeSeed Deployment'}];

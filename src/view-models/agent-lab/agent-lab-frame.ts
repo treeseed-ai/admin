@@ -12,6 +12,26 @@ export const agentLabMetricDestinations = {
 	passed: '/app/work/executions?status=succeeded', failed: '/app/work/executions?status=failed', running: '/app/work/executions?status=running',
 };
 
+function workdaySummaries(workdays: any[]) {
+	return workdays.flatMap((workday) => {
+		if (typeof workday?.id !== 'string' || !workday.id.trim()) return [];
+		const date = typeof workday.date === 'string' && workday.date.trim()
+			? workday.date.trim().slice(0, 10)
+			: typeof workday.startedAt === 'string' && workday.startedAt.trim()
+				? workday.startedAt.trim().slice(0, 10)
+				: '';
+		const title = [workday.title, workday.scenarioId, date, workday.id]
+			.find((value) => typeof value === 'string' && value.trim())?.trim() ?? workday.id;
+		return [{
+			id: workday.id,
+			title,
+			status: typeof workday.status === 'string' && workday.status.trim() ? workday.status : 'Unknown',
+			startedAt: typeof workday.startedAt === 'string' ? workday.startedAt : null,
+			finishedAt: typeof workday.finishedAt === 'string' ? workday.finishedAt : null,
+		}];
+	});
+}
+
 function fallbackOverview(team: { id: string; name?: string; slug?: string }, timeZone: string): AgentLabOverview {
 	const now = new Date(); const start = new Date(now); start.setUTCHours(0, 0, 0, 0); const end = new Date(start); end.setUTCDate(end.getUTCDate() + 1);
 	return { revision: 'server-snapshot-unavailable', generatedAt: now.toISOString(), timeZone, operatingDay: { start: start.toISOString(), end: end.toISOString() },
@@ -76,7 +96,7 @@ overview.connectivity =
 if (providers) overview.activeProviders = providers.filter((item: any) => ['open', 'active', 'available', 'connected'].includes(String(item.status))).length;
 	if (workdays) {
 		overview.activeWorkdays = workdays.filter((item: any) => ['running', 'active'].includes(String(item.status))).length;
-		overview.workdayContext.workdays = workdays as any;
+		overview.workdayContext.workdays = workdaySummaries(workdays) as any;
 	}
 overview.metrics = overview.metrics.map((metric) => {
   const value = metric.key === 'workdays' && workdays ? workdays.length
