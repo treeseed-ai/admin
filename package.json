@@ -1,0 +1,78 @@
+{
+  "name": "@treeseed-cordis/admin",
+  "version": "0.0.0-cordis.1",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "node": ">=24.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/admin.d.ts",
+      "default": "./dist/src/admin.js"
+    },
+    "./browser": {
+      "types": "./dist/src/browser.d.ts",
+      "default": "./dist/src/browser.js"
+    }
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "bun node_modules/@treeseed-cordis/sdk/dist/src/source-policy.js check",
+    "build": "bun node_modules/@treeseed-cordis/sdk/dist/src/source-policy.js build && bun dist/src/admin.js --build-assets",
+    "test:unit": "bun test ./tests --test-name-pattern '^unit:'",
+    "test:integration": "bun test ./tests --test-name-pattern '^integration:'",
+    "test:smoke": "bun test ./tests --test-name-pattern '^smoke:'",
+    "verify": "bun run check && bun run build && bun run test:unit && bun run test:integration && bun run test:smoke"
+  },
+  "peerDependencies": {
+    "@treeseed-cordis/sdk": "0.0.0-cordis.4",
+    "@treeseed-cordis/identity": "0.0.0-cordis.1"
+  },
+  "devDependencies": {
+    "@treeseed-cordis/sdk": "file:vendor/sdk.tgz",
+    "typescript": "5.9.3",
+    "@types/bun": "1.4.4",
+    "@types/node": "24.10.1",
+    "@treeseed-cordis/identity": "file:vendor/identity.tgz"
+  },
+  "dependencies": {
+    "cordis": "4.0.0-rc.12"
+  },
+  "cordisCandidate": {
+    "sdk": {
+      "repository": "https://github.com/treeseed-ai/sdk.git",
+      "commit": "c03a2b0eab89786439eddea3cff8161e85676b3e",
+      "sha256": "d6d0f2f4379d2d95403a226d20899ad22a78a11ccdbb4106116ef0a925295d1b"
+    },
+    "identity": {
+      "repository": "https://github.com/treeseed-ai/identity.git",
+      "commit": "5f0dbaf8f003ed7c34cd1341b6eb1f78e9134e33",
+      "sha256": "8ffcb2ccd2192790ed44ffd59dfed2e8a61d7fc5da8979a46f4b937c6096f775"
+    }
+  },
+  "cordis": {
+    "id": "installed-admin",
+    "pluginId": "admin",
+    "capability": "admin.routes",
+    "contractVersion": "0.3.0-cordis.1",
+    "target": "api",
+    "provide": [
+      "admin.routes"
+    ],
+    "inject": [
+      "identity.sessions",
+      "platform.invoker"
+    ]
+  },
+  "cordisAsset": {
+    "path": "dist/src/browser.bundle.js",
+    "sha256": "bf4157e44f5289fb0137e7b3234d41a11582852b8292d916ccf54cd45737dbef"
+  }
+}
