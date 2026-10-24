@@ -23,7 +23,7 @@
   "packages": {
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@treeseed-cordis/identity": ["@treeseed-cordis/identity@vendor/identity.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "openid-client": "6.8.8", "postgres": "3.4.9" }, "peerDependencies": { "@treeseed-cordis/sdk": "0.0.0-cordis.4" } }, "sha512-MGswz8/R84+ld/epM/Nc3ipULgMMcijQYocN3ZRhZu8j4ESZLr1ZsZ4/pzFZoTmiUhUGO5h7BA/WcW6f05Occg=="],
+    "@treeseed-cordis/identity": ["@treeseed-cordis/identity@vendor/identity.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "openid-client": "6.8.8", "postgres": "3.4.9" }, "peerDependencies": { "@treeseed-cordis/sdk": "0.0.0-cordis.4" } }, "sha512-0z61TpPeoqgYyS/fstKixK4hmqnlRzaXjaZZWhmUH7v7fuTNs+nGN8G97TzjrJiJEciPj5Mk0dWDGIzhulWYdA=="],
 
     "@treeseed-cordis/sdk": ["@treeseed-cordis/sdk@vendor/sdk.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "jsonc-parser": "3.3.1", "semver": "7.8.5", "zod": "4.6.7" } }, "sha512-2EoB8+NYfkLyjvEqRW/HhV8xCbokGCUJkqWfBid7kQp5/R2CowBj6EWnVv1wtKFZVoPI3qiLYMWWYAp1qxzPcA=="],
 
