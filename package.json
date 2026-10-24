@@ -53,8 +53,8 @@
     },
     "identity": {
       "repository": "https://github.com/treeseed-ai/identity.git",
-      "commit": "78e5744c510c645465e791930628571b5dd2ce7d",
-      "sha256": "e00ebc09ec033dc3502760fb0a4ac1304a512c83f6012799e953ea2407ba2f18"
+      "commit": "7fcdf481ba0a17bebc2a969efab3e4db5a5b84fa",
+      "sha256": "966a75ef5a4bf8e5fe9d5a90361cc52c8b7aae9c12ccafcfeef4d6f7b91b1781"
     }
   },
   "cordis": {
