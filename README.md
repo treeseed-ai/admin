@@ -33,7 +33,7 @@ Native route/browser adapters remain swappable class providers. UI artifacts and
 peers are selected by exact public package archives; no owner source import is introduced.
 ### Exact owner artifact adoption
 
-The current Task 3C dependency candidate aligns SDK `.12`, Identity `.3` and UI `.14` through exact
+The current Task 3C dependency candidate aligns SDK `.12`, Identity `.4` and UI `.14` through exact
 vendored public archives and peer pins. Admin constructs domain view models and delegates human
 rendering to UI providers. Native session/route and browser-only asset checks remain required;
 dependency qualification alone does not establish the genuine Keycloak installed assembly gate.
