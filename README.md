@@ -34,9 +34,9 @@ peers are selected by exact public package archives; no owner source import is i
 ### Exact owner artifact adoption
 
 The current Task 3C dependency candidate aligns SDK `.12`, Identity `.3` and UI `.14` through exact
-vendored public archives and peer pins. This dependency-only predecessor retains the existing
-Admin rendering until the following presentation slice removes it. All native session/route
-and browser-only asset checks remain required; adoption alone is not UI migration completion.
+vendored public archives and peer pins. Admin constructs domain view models and delegates human
+rendering to UI providers. Native session/route and browser-only asset checks remain required;
+dependency qualification alone does not establish the genuine Keycloak installed assembly gate.
 
 Browser qualification uses exact Playwright 1.64.1 and a fresh Firefox/NSS profile with explicit
 fixture certificate trust. Ubuntu 26.04 CI installs visible prerequisites; no global trust
