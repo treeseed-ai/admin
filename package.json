@@ -1,6 +1,6 @@
 {
   "name": "@treeseed-cordis/admin",
-  "version": "0.0.0-cordis.7",
+  "version": "0.0.0-cordis.8",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
@@ -89,7 +89,7 @@
   },
   "cordisAsset": {
     "path": "dist/src/browser.bundle.js",
-    "sha256": "acef1a77fb22d3d9851d6adffc485325a85ecb6715a8ce0edb5261949c746ebe"
+    "sha256": "dfcd92be460c660fe9ffecb1ca97a09caee80d00767d47a14350e018ec516d9b"
   },
   "cordisPackage": {
     "formatVersion": 4,
@@ -97,7 +97,7 @@
     "pluginId": "admin",
     "package": {
       "name": "@treeseed-cordis/admin",
-      "version": "0.0.0-cordis.7"
+      "version": "0.0.0-cordis.8"
     },
     "providers": [
       {
@@ -390,8 +390,8 @@
     "assets": [
       {
         "path": "dist/src/browser.bundle.js",
-        "sha256": "acef1a77fb22d3d9851d6adffc485325a85ecb6715a8ce0edb5261949c746ebe",
-        "size": 454196
+        "sha256": "dfcd92be460c660fe9ffecb1ca97a09caee80d00767d47a14350e018ec516d9b",
+        "size": 985775
       }
     ],
     "images": []
