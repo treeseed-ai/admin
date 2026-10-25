@@ -16,3 +16,18 @@ All capabilities that can be plugins, including container services, are native C
 Owner issue: https://github.com/treeseed-ai/admin/issues/137. Follow the approved Platform Task 3C service/provider/UI plan through exact public archives. Preserve independent repository ownership, strict TypeScript classes, native Cordis lifecycle, historical formats and all seven SDK operations. Expected-generation/idempotency, resource/credential/TLS retention and explicit unsafe restart/migration gates are mandatory. All issues remain open until release.
 
 Every visual component must be mobile-first from 320 CSS pixels to widescreen monitors; test 320/375/768/1024/1440/1920/2560 widths, long content, keyboard/touch and 200% text resizing. Keep authored controls at least 44×44 CSS pixels, required actions visible, logical/fluid dimensions and no page overflow (labeled local semantic-table overflow is permitted). UI owns components/styles/renderers; consumers retain domain behavior and Identity retains Keycloak authority.
+
+## Reusable UI presentation boundary
+
+Admin maps installed status and sign-out into validated UI stack/status/table/form models.
+UI owns the complete mobile-first document, controls, styles, inert bootstrap and browser
+hydration. Admin owns its routes, same-origin status/logout request adapters, cookie/session
+boundaries and navigation. Keycloak login/callback/PKCE and issuer/session authority remain
+in Identity. No bearer tokens, session cookies or client secrets enter browser/bootstrap data.
+
+The sign-out action carries only its public session-bound anti-CSRF nonce through typed
+`actionData`; the existing server origin/nonce checks remain authoritative. Browser status
+uses the existing authenticated `/admin/status` interface. Immutable browser/style assets
+are served from verified owner bytes under the same-origin CSP, including `style-src 'self'`.
+Native route/browser adapters remain swappable class providers. UI artifacts and all runtime
+peers are selected by exact public package archives; no owner source import is introduced.
