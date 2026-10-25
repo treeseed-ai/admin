@@ -16,3 +16,10 @@ All capabilities that can be plugins, including container services, are native C
 Owner issue: https://github.com/treeseed-ai/admin/issues/137. Follow the approved Platform Task 3C service/provider/UI plan through exact public archives. Preserve independent repository ownership, strict TypeScript classes, native Cordis lifecycle, historical formats and all seven SDK operations. Expected-generation/idempotency, resource/credential/TLS retention and explicit unsafe restart/migration gates are mandatory. All issues remain open until release.
 
 Every visual component must be mobile-first from 320 CSS pixels to widescreen monitors; test 320/375/768/1024/1440/1920/2560 widths, long content, keyboard/touch and 200% text resizing. Keep authored controls at least 44×44 CSS pixels, required actions visible, logical/fluid dimensions and no page overflow (labeled local semantic-table overflow is permitted). UI owns components/styles/renderers; consumers retain domain behavior and Identity retains Keycloak authority.
+
+### Exact owner artifact adoption
+
+The Task 3C dependency candidate aligns SDK `.10`, Identity `.2` and UI `.12` through exact
+vendored public archives and peer pins. This dependency-only predecessor retains the existing
+Admin rendering until the following presentation slice removes it. All native session/route
+and browser-only asset checks remain required; adoption alone is not UI migration completion.
