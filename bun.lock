@@ -21,7 +21,7 @@
         "typescript": "5.9.3",
       },
       "peerDependencies": {
-        "@treeseed-cordis/identity": "0.0.0-cordis.3",
+        "@treeseed-cordis/identity": "0.0.0-cordis.4",
         "@treeseed-cordis/sdk": "0.0.0-cordis.12",
         "@treeseed-cordis/ui": "0.0.0-cordis.14",
         "react": "19.3.1",
