@@ -33,7 +33,7 @@ Native route/browser adapters remain swappable class providers. UI artifacts and
 peers are selected by exact public package archives; no owner source import is introduced.
 ### Exact owner artifact adoption
 
-The Task 3C dependency candidate aligns SDK `.10`, Identity `.2` and UI `.13` through exact
+The current Task 3C dependency candidate aligns SDK `.12`, Identity `.3` and UI `.14` through exact
 vendored public archives and peer pins. This dependency-only predecessor retains the existing
 Admin rendering until the following presentation slice removes it. All native session/route
 and browser-only asset checks remain required; adoption alone is not UI migration completion.
