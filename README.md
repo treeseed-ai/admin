@@ -41,3 +41,11 @@ and browser-only asset checks remain required; adoption alone is not UI migratio
 Browser qualification uses exact Playwright 1.64.1 and a fresh Firefox/NSS profile with explicit
 fixture certificate trust. Ubuntu 26.04 CI installs visible prerequisites; no global trust
 change or ignored TLS failure is part of the acceptance gate.
+
+`GET /admin/presentation` is a session-protected, no-store human-interface bootstrap adapter
+returning only the accepted public asset generation. The browser compares it through UI's
+hydration contract before admitting actions. The server verifies its complete installed public
+asset closure (package identity, path, bytes and digest), serves immutable same-origin assets,
+and refuses a configured asset generation that differs from those actual bytes. Status refresh
+uses the existing protected endpoint; logout drains UI actions before navigating to Keycloak's
+existing login flow. These adapters add no installer or machine-operation endpoint.
