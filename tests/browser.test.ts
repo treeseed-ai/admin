@@ -1,0 +1,41 @@
+import {test,expect} from 'bun:test';
+import {mkdtempSync,mkdirSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {firefox,type BrowserContext} from 'playwright';
+import {Context,CordisComposition,CordisServiceLocator,type ProviderRegistration,type CompositionHandle,type ProviderLease} from '@treeseed-cordis/sdk/composition';
+import {ProviderV4Schemas,ServiceTokens,InstalledSchemas,type ServerConfiguration,type PlatformInvoker,type TrustedPrincipal} from '@treeseed-cordis/sdk';
+import {IdentitySessionsToken,type IdentitySessions} from '@treeseed-cordis/identity';
+import {AdminAssetCatalog,AdminComposition,AdminRoutes,AdminToken,type AdminContribution} from '../src/admin.js';
+class AuthorityFixture implements IdentitySessions,PlatformInvoker {
+ readonly principalValue:TrustedPrincipal={issuer:'https://localhost/identity',subject:'owner',principalId:'owner',scopes:['platform.read','platform.manage']};loggedOut=false;reads=0;
+ async login(){return {location:'/fixture-login',state:'fixture-state'};}
+ async callback(_url:URL,state:string):Promise<string>{if(state!=='fixture-state')throw new Error('refused');return 'fixture-session';}
+ async principal(cookie:string):Promise<TrustedPrincipal|null>{return cookie==='fixture-session'&&!this.loggedOut?this.principalValue:null;}
+ async logout(cookie:string):Promise<void>{if(cookie!=='fixture-session')throw new Error('refused');this.loggedOut=true;}
+ async ready():Promise<boolean>{return true;}
+ async invoke():Promise<unknown>{this.reads++;return {success:true,result:{installationId:'fixture',phase:'idle',desiredRuntimeState:'running',readiness:'ready',activeComposition:'a'.repeat(64),desiredComposition:'a'.repeat(64),lastApplication:null,services:[{serviceId:'private-<script>-instance',state:'ready'}]},problem:null};}
+}
+class BrowserEvents{readonly errors:string[]=[];error(error:Error):void{this.errors.push(error.message);}}
+class AdminBrowserTest {
+ private root='';private handle:CompositionHandle|undefined;private lease:ProviderLease<AdminContribution>|undefined;private browser:BrowserContext|undefined;private server:ReturnType<typeof Bun.serve>|undefined;
+ private readonly authority=new AuthorityFixture();
+ private command(command:string,args:string[]):void{const result=spawnSync(command,args,{encoding:'utf8'});if(result.status!==0)throw new Error(command+': '+result.stderr);}
+ async run():Promise<void>{this.root=mkdtempSync(join(tmpdir(),'cordis-admin-ui-'));try{
+  const key=join(this.root,'key.pem'),cert=join(this.root,'cert.pem');this.command('openssl',['req','-x509','-newkey','rsa:2048','-noenc','-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1','-keyout',key,'-out',cert]);
+  this.server=Bun.serve({hostname:'127.0.0.1',port:0,tls:{key:readFileSync(key),cert:readFileSync(cert)},fetch:this.fetch.bind(this)});const origin='https://localhost:'+this.server.port,catalog=new AdminAssetCatalog(),settings:ServerConfiguration={installationId:'fixture',origin,issuer:origin+'/identity/realms/cordis',identityInternalOrigin:'http://identity:8080',clientId:'cordis-admin',clientSecret:'CANARY_PRIVATE_OIDC',databaseUrl:'postgres://CANARY_PRIVATE_DATABASE',bootstrapSubject:'owner',workerSocket:'/private/host.sock',assetDigest:catalog.digest()};
+  const fixture=this.authority;
+  class SessionFixturePlugin{static readonly provide=[IdentitySessionsToken.id];static readonly inject:string[]=[];static readonly Config=InstalledSchemas.serverConfiguration;constructor(context:Context){context.provide(IdentitySessionsToken.id,fixture);}}
+  class InvokerFixturePlugin{static readonly provide=[ServiceTokens.invoker.id];static readonly inject:string[]=[];static readonly Config=InstalledSchemas.serverConfiguration;constructor(context:Context){context.provide(ServiceTokens.invoker.id,fixture);}}
+  const artifact={kind:'bundled' as const,identity:'explicit-owner-authority-test-fixtures'},registrations:ProviderRegistration[]=[...AdminComposition.registrations(settings,artifact)];for(const [token,plugin] of [[IdentitySessionsToken,SessionFixturePlugin],[ServiceTokens.invoker,InvokerFixturePlugin]] as const)registrations.push({token,plugin,configuration:settings,artifact,declaration:ProviderV4Schemas.declaration.parse({id:'fixture.'+token.id,pluginId:'fixture',capability:token.id,contractVersion:ProviderV4Schemas.version,target:'api',provide:plugin.provide,inject:[]})});
+  const scopeId='admin-browser-fixture',selections=AdminComposition.selections(scopeId);selections.push({scopeId,capability:IdentitySessionsToken.id,providerId:'fixture.'+IdentitySessionsToken.id},{scopeId,capability:ServiceTokens.invoker.id,providerId:'fixture.'+ServiceTokens.invoker.id});this.handle=await CordisComposition.start({registrations,selections},{scopeId,target:'api',principalId:'fixture-owner',resourceScope:'fixture-only'});this.lease=await CordisServiceLocator.from(this.handle.context).acquire(AdminToken);
+  const profile=join(this.root,'firefox');mkdirSync(profile,{mode:0o700});this.command('certutil',['-N','-d','sql:'+profile,'--empty-password']);this.command('certutil',['-A','-n','CordisAdminFixture','-t','C,,','-i',cert,'-d','sql:'+profile]);this.browser=await firefox.launchPersistentContext(profile,{headless:true,ignoreHTTPSErrors:false});
+  const page=await this.browser.newPage(),events=new BrowserEvents();page.on('pageerror',events.error.bind(events));await page.goto(origin+'/admin');expect(new URL(page.url()).pathname).toBe('/admin/login');await this.browser.addCookies([{name:AdminRoutes.sessionCookieName(settings),value:'fixture-session',url:origin,secure:true,httpOnly:true,sameSite:'Lax'}]);
+  await page.goto(origin+'/admin');await page.getByRole('button',{name:'Refresh status'}).waitFor();await page.getByRole('button',{name:'Refresh status'}).click();await page.getByRole('cell',{name:'private-<script>-instance',exact:true}).waitFor();expect(this.authority.reads).toBeGreaterThan(0);expect(await page.locator('script:not([src]):not([type="application/json"])').count()).toBe(0);const html=await page.content();expect(html.includes('CANARY_PRIVATE_OIDC')).toBe(false);expect(html.includes('CANARY_PRIVATE_DATABASE')).toBe(false);expect(html.includes('private-<script>-instance')).toBe(false);
+  for(const width of [320,375,768,1024,1440,1920,2560]){await page.setViewportSize({width,height:900});const bounds=await page.getByRole('button',{name:'Sign out'}).boundingBox();expect(bounds!.width).toBeGreaterThanOrEqual(44);expect(bounds!.height).toBeGreaterThanOrEqual(44);}
+  const denied=await this.browser.request.post(origin+'/admin/logout',{headers:{origin:'https://foreign.invalid'},form:{csrf:'bad'}});expect(denied.status()).toBe(403);expect(this.authority.loggedOut).toBe(false);await page.getByRole('button',{name:'Sign out'}).click();await page.waitForURL(origin+'/admin/login');expect(this.authority.loggedOut).toBe(true);expect(events.errors).toEqual([]);
+ }finally{await this.browser?.close();await this.lease?.release();await this.handle?.dispose();this.server?.stop(true);if(this.root)rmSync(this.root,{recursive:true,force:true});}}
+ private async fetch(request:Request):Promise<Response>{if(!this.lease)return new Response('starting',{status:503});return await this.lease.value.handle(request)??new Response('missing',{status:404});}
+}
+const suite=new AdminBrowserTest();test('smoke: default Admin composition uses reusable UI with authenticated refresh and logout',suite.run.bind(suite),120000);
