@@ -67,8 +67,8 @@
     },
     "ui": {
       "repository": "https://github.com/treeseed-ai/ui.git",
-      "commit": "24aac7b4c20e64a23de1ed29afa3939c5d21d45a",
-      "sha256": "fab964c7cb7b8a01891caccd8897fb149c8e52ca928baa42424d3b62cc6a8133"
+      "commit": "f1de1270bc6ac131a3f259c6d98aea3fa24e7bc9",
+      "sha256": "7077c9a81d32cbc6e158267b57244ca4fe2937bb74d3a7a9c6b4d0f48c012cf7"
     }
   },
   "cordis": {
