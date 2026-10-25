@@ -21,9 +21,9 @@
         "typescript": "5.9.3",
       },
       "peerDependencies": {
-        "@treeseed-cordis/identity": "0.0.0-cordis.4",
-        "@treeseed-cordis/sdk": "0.0.0-cordis.12",
-        "@treeseed-cordis/ui": "0.0.0-cordis.14",
+        "@treeseed-cordis/identity": "0.0.0-cordis.5",
+        "@treeseed-cordis/sdk": "0.0.0-cordis.14",
+        "@treeseed-cordis/ui": "0.0.0-cordis.15",
         "react": "19.3.1",
         "react-dom": "19.3.1",
       },
@@ -32,11 +32,11 @@
   "packages": {
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@treeseed-cordis/identity": ["@treeseed-cordis/identity@vendor/identity.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "openid-client": "6.8.8", "postgres": "3.4.9" }, "peerDependencies": { "@treeseed-cordis/sdk": "0.0.0-cordis.12" } }, "sha512-kLeBXP/9UjQOHJkyLTvZm03Gk8LhPmK3+w4tXjsbh3BlZwcFHNy+txoxGNezR863Tkm+Vpb5UH80QFTMS2qvuQ=="],
+    "@treeseed-cordis/identity": ["@treeseed-cordis/identity@vendor/identity.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "openid-client": "6.8.8", "postgres": "3.4.9" }, "peerDependencies": { "@treeseed-cordis/sdk": "0.0.0-cordis.14" } }, "sha512-WDAB07R81xytUW4ASMkagIQGNeQ43SjVIkObTwRM+5hr4HiToD38llMIUvRkZLGsRGDMIHfVDXYXKQE9Y2PUkQ=="],
 
-    "@treeseed-cordis/sdk": ["@treeseed-cordis/sdk@vendor/sdk.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "jsonc-parser": "3.3.1", "semver": "7.8.5", "zod": "4.6.7" } }, "sha512-J4owiPi1D2hLReae7VW2jwPF4qhPb+ZBnijnGBh+0R/QRrQOLYDWHNzfLGFj/Nkzkz8Epp8U+fKpY0aJu4tRCQ=="],
+    "@treeseed-cordis/sdk": ["@treeseed-cordis/sdk@vendor/sdk.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "jsonc-parser": "3.3.1", "semver": "7.8.5", "zod": "4.6.7" } }, "sha512-hLjwU8aCbovWmQAFKfG0JpuMuPLW/U5n9dqDV0QSTCOtwhsYmzCR3gpK4ysOsmOeU7k041cuHwSm13WSZsSVEA=="],
 
-    "@treeseed-cordis/ui": ["@treeseed-cordis/ui@vendor/ui.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "zod": "4.6.7" }, "peerDependencies": { "@treeseed-cordis/sdk": "0.0.0-cordis.12", "react": "19.3.1", "react-dom": "19.3.1", "typescript": "5.9.3" }, "optionalPeers": ["typescript"] }, "sha512-tCzT0zvtsUthlktBYxoRZu6jktMPRA3KWKn/kg6zpSIFgzzZ3/6R1a26ya/6JHADpgYfNYSMEh+7wTK6x8wqRA=="],
+    "@treeseed-cordis/ui": ["@treeseed-cordis/ui@vendor/ui.tgz", { "dependencies": { "cordis": "4.0.0-rc.12", "zod": "4.6.7" }, "peerDependencies": { "@treeseed-cordis/sdk": "0.0.0-cordis.14", "react": "19.3.1", "react-dom": "19.3.1", "typescript": "5.9.3" }, "optionalPeers": ["typescript"] }, "sha512-2MIawFX7eFKaxJPdgIfCyYlhEHLDHTmWKeTo+0vfR/lFJdEAkQs5T8Zl0Yyav4vL9UEI8NqknONgfX7ZzkEYmg=="],
 
     "@types/bun": ["@types/bun@1.4.4", "", { "dependencies": { "bun-types": "1.4.4" } }, "sha512-9wkRDXUXK124pEnAutE6n/l18j+i9GC5IAHK8TmX/2nlySETmky0OU6yL5U8pW1AoKh++AN9auDCr647BfurjQ=="],
 
