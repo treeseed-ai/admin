@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Fixed
+- Consume the SDK status output directly in reusable Admin view models (#137).
 - Resolve Node asset dependencies across nested module-mode boundaries (#137).
 
 ### Changed

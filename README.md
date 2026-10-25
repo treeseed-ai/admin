@@ -73,3 +73,12 @@ may legitimately resolve a CommonJS export beneath that boundary (including Post
 Keep package names, versions, complete dependency traversal and asset-byte checks authoritative.
 The built Node default-construction smoke runs with genuine installed dependencies, without
 substituting an asset provider or requiring database or identity services.
+
+### Status invocation contract
+
+Admin's domain adapter consumes the SDK `platform.status` operation's parsed output directly.
+The API's authenticated machine endpoint and native invoker return that raw output; CLI command
+envelopes are a separate transport convention. Validate both supported status formats through
+`PlatformOperations.status.parseOutput` before mapping UI models. The browser authority fixture
+must return a genuine SDK-valid status, not an invented envelope or service identifier. Preserve
+escaping coverage through valid installation text and reject malformed status/extra envelopes.
