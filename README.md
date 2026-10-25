@@ -58,3 +58,9 @@ continues to consume Identity's native session contract and UI `.14` public rend
 not take ownership of OIDC or introduce another authority. Rebuild and qualify the browser
 asset/package identity together. Genuine installed Keycloak acceptance remains in the API and
 Platform assembled gates; authority fixtures in this repository are still explicitly fixtures.
+
+The adoption smoke checks installed SDK/UI/Identity versions against exact peer selections and
+vendored archive hashes before accepting the candidate. Changed local tarball specifiers require
+a forced fresh install; changing a cache directory alone can leave previous installed bytes.
+The corrected Admin `.6` candidate is rebuilt and reverified after that read-back. Older private
+candidate receipts remain historical; they do not stand in for this installed dependency check.
