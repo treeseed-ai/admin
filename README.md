@@ -64,3 +64,12 @@ vendored archive hashes before accepting the candidate. Changed local tarball sp
 a forced fresh install; changing a cache directory alone can leave previous installed bytes.
 The corrected Admin `.6` candidate is rebuilt and reverified after that read-back. Older private
 candidate receipts remain historical; they do not stand in for this installed dependency check.
+
+### Node package-boundary asset resolution
+
+The default asset catalog must resolve every dependency to its matching named npm package
+root. A nested `package.json` that only declares module mode is not a package identity; Node
+may legitimately resolve a CommonJS export beneath that boundary (including Postgres).
+Keep package names, versions, complete dependency traversal and asset-byte checks authoritative.
+The built Node default-construction smoke runs with genuine installed dependencies, without
+substituting an asset provider or requiring database or identity services.

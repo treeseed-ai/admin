@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Resolve Node asset dependencies across nested module-mode boundaries (#137).
+
 ### Changed
 - Adopt selected-endpoint Identity contracts while retaining reusable UI and session ownership (#137).
 
