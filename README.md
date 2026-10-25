@@ -49,3 +49,12 @@ asset closure (package identity, path, bytes and digest), serves immutable same-
 and refuses a configured asset generation that differs from those actual bytes. Status refresh
 uses the existing protected endpoint; logout drains UI actions before navigating to Keycloak's
 existing login flow. These adapters add no installer or machine-operation endpoint.
+
+The selected-endpoint continuation adopts Identity `.4` from
+`d837d23d99bc49eb1954bdd865397d34186d41a1`, archive SHA-256
+`0e377e4a0ad79ee649b20e41779c862e431f20979b19cae638b658925686d9f1`.
+This removes the inherited fixed internal identity name/port in the owning adapter. Admin
+continues to consume Identity's native session contract and UI `.14` public renderers; it does
+not take ownership of OIDC or introduce another authority. Rebuild and qualify the browser
+asset/package identity together. Genuine installed Keycloak acceptance remains in the API and
+Platform assembled gates; authority fixtures in this repository are still explicitly fixtures.

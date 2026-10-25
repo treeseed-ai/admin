@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Changed
+- Adopt selected-endpoint Identity contracts while retaining reusable UI and session ownership (#137).
+
+### Changed
 - Qualify Admin presentation with exact SDK .12 UI .14 and Identity .3 archives (#137).
 
 - Render installed Admin through reusable UI providers while retaining Keycloak session boundaries (#137).
