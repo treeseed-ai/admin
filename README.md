@@ -31,3 +31,13 @@ uses the existing authenticated `/admin/status` interface. Immutable browser/sty
 are served from verified owner bytes under the same-origin CSP, including `style-src 'self'`.
 Native route/browser adapters remain swappable class providers. UI artifacts and all runtime
 peers are selected by exact public package archives; no owner source import is introduced.
+### Exact owner artifact adoption
+
+The Task 3C dependency candidate aligns SDK `.10`, Identity `.2` and UI `.13` through exact
+vendored public archives and peer pins. This dependency-only predecessor retains the existing
+Admin rendering until the following presentation slice removes it. All native session/route
+and browser-only asset checks remain required; adoption alone is not UI migration completion.
+
+Browser qualification uses exact Playwright 1.64.1 and a fresh Firefox/NSS profile with explicit
+fixture certificate trust. Ubuntu 26.04 CI installs visible prerequisites; no global trust
+change or ignored TLS failure is part of the acceptance gate.
