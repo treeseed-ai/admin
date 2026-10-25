@@ -1,6 +1,6 @@
 {
   "name": "@treeseed-cordis/admin",
-  "version": "0.0.0-cordis.2",
+  "version": "0.0.0-cordis.3",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
@@ -24,8 +24,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "check": "bun node_modules/@treeseed-cordis/sdk/dist/src/source-policy.js check",
-    "build": "bun node_modules/@treeseed-cordis/sdk/dist/src/source-policy.js build && bun dist/src/admin.js --build-assets",
+    "check": "bun scripts/tooling.ts check",
+    "build": "bun scripts/tooling.ts build && bun dist/src/admin.js --build-assets",
     "test:unit": "bun test ./tests --test-name-pattern '^unit:'",
     "test:integration": "bun test ./tests --test-name-pattern '^integration:'",
     "test:smoke": "bun test ./tests --test-name-pattern '^smoke:'",
@@ -75,18 +75,325 @@
     "id": "installed-admin",
     "pluginId": "admin",
     "capability": "admin.routes",
-    "contractVersion": "0.3.0-cordis.1",
+    "contractVersion": "0.4.0-cordis.1",
     "target": "api",
     "provide": [
       "admin.routes"
     ],
     "inject": [
       "identity.sessions",
-      "platform.invoker"
+      "platform.invoker",
+      "admin.assets",
+      "admin.presentation"
     ]
   },
   "cordisAsset": {
     "path": "dist/src/browser.bundle.js",
-    "sha256": "bf4157e44f5289fb0137e7b3234d41a11582852b8292d916ccf54cd45737dbef"
+    "sha256": "ab62e98cdd459d8023c486923edb3ed4ecda44b70a8c47c5ec72c4c6e7afddfa"
+  },
+  "cordisPackage": {
+    "formatVersion": 4,
+    "contractVersion": "0.4.0-cordis.1",
+    "pluginId": "admin",
+    "package": {
+      "name": "@treeseed-cordis/admin",
+      "version": "0.0.0-cordis.3"
+    },
+    "providers": [
+      {
+        "declaration": {
+          "id": "installed-admin",
+          "pluginId": "admin",
+          "capability": "admin.routes",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "api",
+          "provide": [
+            "admin.routes"
+          ],
+          "inject": [
+            "identity.sessions",
+            "platform.invoker",
+            "admin.assets",
+            "admin.presentation"
+          ]
+        },
+        "entry": "dist/src/admin.js",
+        "classExport": "AdminPlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "installationId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "origin": {
+              "type": "string",
+              "pattern": "^https:\\/\\/(localhost|127\\.0\\.0\\.1|\\[::1\\])(:[0-9]+)?$"
+            },
+            "issuer": {
+              "type": "string",
+              "format": "uri"
+            },
+            "identityInternalOrigin": {
+              "type": "string",
+              "format": "uri"
+            },
+            "clientId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "clientSecret": {
+              "type": "string",
+              "minLength": 1
+            },
+            "databaseUrl": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bootstrapSubject": {
+              "type": "string",
+              "minLength": 1
+            },
+            "workerSocket": {
+              "type": "string",
+              "pattern": "^\\/"
+            },
+            "assetDigest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "installationId",
+            "origin",
+            "issuer",
+            "identityInternalOrigin",
+            "clientId",
+            "clientSecret",
+            "databaseUrl",
+            "bootstrapSubject",
+            "workerSocket",
+            "assetDigest"
+          ],
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.assets.default",
+          "pluginId": "admin",
+          "capability": "admin.assets",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "api",
+          "provide": [
+            "admin.assets"
+          ],
+          "inject": []
+        },
+        "entry": "dist/src/admin.js",
+        "classExport": "AdminAssetsPlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.presentation.default",
+          "pluginId": "admin",
+          "capability": "admin.presentation",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "api",
+          "provide": [
+            "admin.presentation"
+          ],
+          "inject": [
+            "admin.assets"
+          ]
+        },
+        "entry": "dist/src/admin.js",
+        "classExport": "AdminPresentationPlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.browser.presentation.default",
+          "pluginId": "admin",
+          "capability": "admin.browser.presentation",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "browser",
+          "provide": [
+            "admin.browser.presentation"
+          ],
+          "inject": []
+        },
+        "entry": "dist/src/browser.js",
+        "classExport": "AdminBrowserStatePlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.browser.status.default",
+          "pluginId": "admin",
+          "capability": "admin.browser.status",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "browser",
+          "provide": [
+            "admin.browser.status"
+          ],
+          "inject": []
+        },
+        "entry": "dist/src/browser.js",
+        "classExport": "HttpStatusPlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.browser.navigation.default",
+          "pluginId": "admin",
+          "capability": "admin.browser.navigation",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "browser",
+          "provide": [
+            "admin.browser.navigation"
+          ],
+          "inject": [
+            "admin.browser.presentation"
+          ]
+        },
+        "entry": "dist/src/browser.js",
+        "classExport": "AdminNavigationPlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.browser.actions.default",
+          "pluginId": "admin",
+          "capability": "admin.browser.actions",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "browser",
+          "provide": [
+            "admin.browser.actions"
+          ],
+          "inject": [
+            "admin.browser.status",
+            "admin.browser.presentation",
+            "admin.browser.navigation"
+          ]
+        },
+        "entry": "dist/src/browser.js",
+        "classExport": "AdminActionsPlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      },
+      {
+        "declaration": {
+          "id": "admin.browser.page.default",
+          "pluginId": "admin",
+          "capability": "admin.browser.page",
+          "contractVersion": "0.4.0-cordis.1",
+          "target": "browser",
+          "provide": [
+            "admin.browser.page"
+          ],
+          "inject": [
+            "admin.browser.status",
+            "admin.browser.presentation",
+            "admin.browser.actions"
+          ]
+        },
+        "entry": "dist/src/browser.js",
+        "classExport": "StatusPagePlugin",
+        "configurationSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "replacement": {
+          "kind": "restart",
+          "stateVersion": 1,
+          "qualificationDigest": null
+        },
+        "commandIds": []
+      }
+    ],
+    "assets": [
+      {
+        "path": "dist/src/browser.bundle.js",
+        "sha256": "ab62e98cdd459d8023c486923edb3ed4ecda44b70a8c47c5ec72c4c6e7afddfa",
+        "size": 452178
+      }
+    ],
+    "images": []
   }
 }

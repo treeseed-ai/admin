@@ -1,0 +1,19 @@
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {readFileSync,realpathSync,statSync} from 'node:fs';
+import {dirname,join,relative,resolve,extname} from 'node:path';
+import {CanonicalJson,PluginManagementSchemas} from '@treeseed-cordis/sdk';
+export interface AdminPublicAsset {path:string;sha256:string;bytes:Uint8Array;contentType:string;}
+export interface AdminAssets{digest():string;script():{path:string;sha256:string};asset(path:string):AdminPublicAsset|null;}
+export class AdminAssetCatalog implements AdminAssets {
+ private readonly assets=new Map<string,AdminPublicAsset>();private readonly identity:string;private readonly scriptAsset:AdminPublicAsset;
+ constructor(){const resolver=createRequire(import.meta.url),pending=[resolver.resolve('@treeseed-cordis/admin')],seen=new Set<string>(),records:Array<{package:string;version:string;path:string;sha256:string}>=[];let script:AdminPublicAsset|undefined;
+  while(pending.length){let root=dirname(realpathSync(pending.pop()!));while(true){try{if(statSync(join(root,'package.json')).isFile())break;}catch{}const parent=dirname(root);if(parent===root)throw new Error('ASSET_PACKAGE_UNAVAILABLE');root=parent;}if(seen.has(root))continue;if(seen.size>=512)throw new Error('ASSET_CLOSURE_LIMIT');seen.add(root);const metadata=JSON.parse(readFileSync(join(root,'package.json'),'utf8')) as {name:string;version:string;dependencies?:Record<string,string>;peerDependencies?:Record<string,string>;peerDependenciesMeta?:Record<string,{optional?:boolean}>;cordisPackage?:unknown};if(!metadata.name||!metadata.version)throw new Error('ASSET_PACKAGE_UNAVAILABLE');const local=createRequire(join(root,'package.json'));for(const name of Object.keys({...metadata.dependencies,...metadata.peerDependencies})){try{pending.push(local.resolve(name));}catch{if(!metadata.peerDependenciesMeta?.[name]?.optional)throw new Error('ASSET_DEPENDENCY_UNAVAILABLE');}}
+   if(metadata.cordisPackage){const descriptor=PluginManagementSchemas.packageDescriptor.parse(metadata.cordisPackage);if(descriptor.package.name!==metadata.name||descriptor.package.version!==metadata.version)throw new Error('ASSET_PACKAGE_MISMATCH');for(const asset of descriptor.assets){const file=realpathSync(resolve(root,asset.path)),inside=relative(root,file);if(inside.startsWith('..')||inside==='')throw new Error('ASSET_PATH_REFUSED');const bytes=readFileSync(file),sha256=createHash('sha256').update(bytes).digest('hex');if(sha256!==asset.sha256||bytes.length!==asset.size)throw new Error('ASSET_BYTES_MISMATCH');const extension=extname(asset.path);if(!['.js','.css'].includes(extension))throw new Error('ASSET_TYPE_UNSUPPORTED');const path='/assets/'+(extension==='.css'?'ui/':'')+sha256+extension,value={path,sha256,bytes:new Uint8Array(bytes),contentType:extension==='.js'?'text/javascript; charset=utf-8':'text/css; charset=utf-8'};this.assets.set(path,value);records.push({package:metadata.name,version:metadata.version,path:asset.path,sha256});if(metadata.name==='@treeseed-cordis/admin'&&asset.path==='dist/src/browser.bundle.js')script=value;}}
+  }if(!script)throw new Error('ADMIN_SCRIPT_UNAVAILABLE');this.scriptAsset=script;records.sort(AdminAssetCatalog.order);this.identity=CanonicalJson.digest(records);
+ }
+ private static order(a:{package:string;version:string;path:string},b:{package:string;version:string;path:string}):number{const left=a.package+':'+a.path,right=b.package+':'+b.path;return left<right?-1:left>right?1:0;}
+ digest():string{return this.identity;}
+ script():{path:string;sha256:string}{return {path:this.scriptAsset.path,sha256:this.scriptAsset.sha256};}
+ asset(path:string):AdminPublicAsset|null{const found=this.assets.get(path);return found?{...found,bytes:new Uint8Array(found.bytes)}:null;}
+}
