@@ -4,4 +4,4 @@
 
 ### Added
 
-- Installed administration contribution (#135).
+- Add identity-backed installed administration plugins (#135).
