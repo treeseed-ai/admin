@@ -82,3 +82,15 @@ envelopes are a separate transport convention. Validate both supported status fo
 `PlatformOperations.status.parseOutput` before mapping UI models. The browser authority fixture
 must return a genuine SDK-valid status, not an invented envelope or service identifier. Preserve
 escaping coverage through valid installation text and reject malformed status/extra envelopes.
+
+### Shared mobile-first candidate alignment
+
+Admin `.9` selects SDK `.14` (source `597a9abd79b76fb292a80cd86e4ea83042fbec62`),
+UI `.15` (`25856122398e44e2f8fd973a396ce46b3a585400`) and Identity `.5`
+(`65bfe5256e92da15372a8a174e5e47f974a3ef45`). The exact vendor hashes and installed
+versions must match package metadata before browser qualification. These selections retain
+UI-owned pure React class components and mobile-first 320–2560-pixel layouts, and
+Identity-owned Keycloak sessions; Admin owns only its domain models and actions. No identity
+or presentation implementation moves between repositories. The owner adoption smoke must
+explicitly require these versions, so stale coherent selections cannot pass by agreeing
+with their own outdated manifest.

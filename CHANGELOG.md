@@ -7,6 +7,7 @@
 - Resolve Node asset dependencies across nested module-mode boundaries (#137).
 
 ### Changed
+- Align Admin with exact SDK .14 UI .15 and Identity .5 mobile-first providers (#137).
 - Adopt selected-endpoint Identity contracts while retaining reusable UI and session ownership (#137).
 
 ### Changed
