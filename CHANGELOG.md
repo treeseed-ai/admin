@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Changed
-- Rebuild Admin from exact SDK .16, Identity .6 and reusable UI .16 owner archives (#137).
+- Rebuild Admin from exact SDK .16, Identity .7 and reusable UI .16 owner archives (#137).
 
 ### Fixed
 - Consume the SDK status output directly in reusable Admin view models (#137).

@@ -97,11 +97,13 @@ with their own outdated manifest.
 
 ### Coherent Task 3C owner alignment
 
-Admin's next candidate consumes exact SDK `.16`, Identity `.6` and reusable UI `.16` through
+Admin's next candidate consumes exact SDK `.16`, Identity `.7` and reusable UI `.16` through
 public owner archives, with a fresh installation and installed-version/hash read-back. SDK source
 is `4c0ecd2a0fc28545dbf677cc988ce69f0cf2f15d`; Identity source is
-`763347b30bade8b98fda743c1bd92abea6901ca4`; UI source is
+`f29824578d0aa8fc7725a195b72c698b476da429`; UI source is
 `32f16876aa6f0eb1f99a4ab339296609c830df23`. Exact archive digests remain in package metadata.
 Rebuild browser assets from that one peer closure; preserve Identity-owned Keycloak/session
 policy and UI-owned rendering. Owner browser tests retain their explicit fixture identity authority;
 final API/Platform assembly must separately qualify the genuine installed Keycloak flow.
+
+The initially selected Identity .6 archive was rejected by this consumer because its native declaration still reported .5. Use corrected .7 with its new executable packaging guard; the rejected immutable archive is not consumed.
