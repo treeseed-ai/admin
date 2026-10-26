@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Rebuild Admin from exact SDK .16, Identity .6 and reusable UI .16 owner archives (#137).
+
 ### Fixed
 - Consume the SDK status output directly in reusable Admin view models (#137).
 - Resolve Node asset dependencies across nested module-mode boundaries (#137).

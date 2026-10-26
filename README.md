@@ -94,3 +94,14 @@ Identity-owned Keycloak sessions; Admin owns only its domain models and actions.
 or presentation implementation moves between repositories. The owner adoption smoke must
 explicitly require these versions, so stale coherent selections cannot pass by agreeing
 with their own outdated manifest.
+
+### Coherent Task 3C owner alignment
+
+Admin's next candidate consumes exact SDK `.16`, Identity `.6` and reusable UI `.16` through
+public owner archives, with a fresh installation and installed-version/hash read-back. SDK source
+is `4c0ecd2a0fc28545dbf677cc988ce69f0cf2f15d`; Identity source is
+`763347b30bade8b98fda743c1bd92abea6901ca4`; UI source is
+`32f16876aa6f0eb1f99a4ab339296609c830df23`. Exact archive digests remain in package metadata.
+Rebuild browser assets from that one peer closure; preserve Identity-owned Keycloak/session
+policy and UI-owned rendering. Owner browser tests retain their explicit fixture identity authority;
+final API/Platform assembly must separately qualify the genuine installed Keycloak flow.
