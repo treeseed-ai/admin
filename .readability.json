@@ -1,0 +1,297 @@
+{
+  "formatVersion": 1,
+  "baselineCommit": "362ab46a30f32e0157d2bf7a5e5a775d09dfe2cf",
+  "violations": [
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestLayout.inspect",
+      "fingerprint": "bfff01a3fe612610a72c2bcc0f00c92fdb5abbe557d2b876614a24990d557a0c"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestLayout.check",
+      "fingerprint": "aec11cb99ea6438078fa6cbf353bbf8c4b5f5803a1e0102c86b725180f20e669"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestLayout.discovery",
+      "fingerprint": "771becf2a0f493fa9ee054d98379140581968b2134e1ccfd778ac1618eb4074b"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestLayout.partitions",
+      "fingerprint": "95cef1faa4182536c0be52904c7525d3ed245bac04f22d969ea73307ef0fa2bd"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestLayout.directory",
+      "fingerprint": "fb2f15a07b290e17c566adedf0e37dd7b4093a59a6085ebbf4f787474f6adb0a"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestRegistrationVisitor.inspect",
+      "fingerprint": "ccbfb614b5e447bf0eb3230ba9a80b6a369bae7ec130ef5e134c087a2d0c7058"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestRegistrationVisitor.visit",
+      "fingerprint": "8740012694378c96522cedfa0f69377ee1f26c18d316baaee9050fcb4d6e752d"
+    },
+    {
+      "file": ".agents/skills/release-workflow/scripts/test-layout.ts",
+      "symbol": "TestRegistrationVisitor.test",
+      "fingerprint": "facc0ab411b33f7d001b6f8e5852eebf4ff02716394b318b20ec046794e30fe1"
+    },
+    {
+      "file": "scripts/tooling.ts",
+      "symbol": "AdminTooling.static run",
+      "fingerprint": "0ee9fbfaa6d185d0796bf121391ca9d2162b01c061421dcc991a2cf031f6855d"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminAdapter.parse",
+      "fingerprint": "f411b96cc38630047570ea7833f99f95dc5dace75d4abb1a1755f85a67caaa88"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminRoutes.static cookie",
+      "fingerprint": "9ac5edf0c30437418ffa2e73b06d3c3ea81aedc3aa8e36097bae75a7feca9e02"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminRoutes.redirect",
+      "fingerprint": "ac5ad819947c60c4a7b90d00a1bd72e317a77e687b92e4bc7b7eecc83be5aad5"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminRoutes.handle",
+      "fingerprint": "3e966105b8a6374ef2b97d303fc20f263be049beaced18cb6fff38b3deb4d704"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminValidator.parse",
+      "fingerprint": "833a8e1ff3fea6ae670176381865202c7895c9da5eb19c8b661f1ce5533af28b"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminPresentationPlugin.[Service.init]",
+      "fingerprint": "41ff5c6a11d723f74c92b5832cf5590248ae6434dda74506df8a8dfe60f48be3"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminComposition.static registrations",
+      "fingerprint": "21d6113b31a839dea3fc53e284ab6c3884566fb289b8b6b4bcb5c2c44b08cad6"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminBuild.static asset",
+      "fingerprint": "b14385148a58df2d8a3d04dced3cdd9c22fdce9f78cdd2e6ff023f0559ca129a"
+    },
+    {
+      "file": "src/admin.ts",
+      "symbol": "AdminBuild.static run",
+      "fingerprint": "da7a827447eafff8ad627e4bf0b26c8e4a1750cd2277ab8632dfa94be6ef809b"
+    },
+    {
+      "file": "src/assets.ts",
+      "symbol": "AdminAssetCatalog.constructor",
+      "fingerprint": "db70e3bbcfd7a83380b6e0ec91dd0235dc6f1b1ad8e7c9388ba477c6319af748"
+    },
+    {
+      "file": "src/assets.ts",
+      "symbol": "AdminAssetCatalog.static order",
+      "fingerprint": "fc2df4ce3dda52d68c34ed3719bbfc736fcec402a58ff89b8560157cf5947abf"
+    },
+    {
+      "file": "src/assets.ts",
+      "symbol": "AdminAssetCatalog.asset",
+      "fingerprint": "ca888e2edff405ad8501f0cce00227f43caa0e02ccc9356c354b5f8d0640161e"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "BrowserAdapter.parse",
+      "fingerprint": "b293aafa3062ff84b086586bbc7393bb26b520b8681585e013ffae57e89f5447"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "StatusClient.request",
+      "fingerprint": "9cf955429974ab88083395368d25267656393c7c8a9fb37f7c170f250723230f"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "StatusClient.presentation",
+      "fingerprint": "59ccedd7452335ea60ad95274f69ebb395c195b73cd73ac238ef263a661bdd7a"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "StatusClient.logout",
+      "fingerprint": "6980cefe577343f571a1246b6129bf008c023da7e29c238f004152cc878727e5"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "HttpStatusPlugin.constructor",
+      "fingerprint": "fd36e17e652aabf1ddb1e3e8155b92f1387dba8cd148af62003f1a1292b35e2b"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserState.open",
+      "fingerprint": "bbc172073a4defdcef7a7d56f561b8e5cde3c0ce599c703757ba0d1c45c6cade"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserState.refresh",
+      "fingerprint": "68d2aaf698f993e81b72a6db39566f9f2edb353da67e55972d521ed27140439c"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserState.close",
+      "fingerprint": "de792b8e155ada55aef2b3b86ebfe3ccc0b65a206c75d135b4d69e333780d822"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserStatePlugin.constructor",
+      "fingerprint": "9241fbaf3bbe8cc550ec5e0beff536fce6bc3aa145ea83592bee910cb3d4e68b"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminNavigationPlugin.navigate",
+      "fingerprint": "12965ac2a700810253b094606acb510bfd007a975a8ddc21d0a8d26b1f038d7b"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminNavigationPlugin.leave",
+      "fingerprint": "b71b884c8ab7cbd647b97db268a35ed02eb9ebb229cd84cc2f8e2cae3b262217"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminActionsPlugin.invoke",
+      "fingerprint": "c66bc6aa57dd162ac42e68d5bf21be5e554028d4b52f3398886c750e2db920c6"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "StatusPagePlugin.[Service.init]",
+      "fingerprint": "39321c276f65d56fdfda049ae46590b52955f13fd8a14b5969cbf5b3a639cd4e"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserApplication.static start",
+      "fingerprint": "eb79c6a216844d0b77d49e9b2ecadd32cf0e2d910565b94639f3ed23615c8792"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserApplication.dispose",
+      "fingerprint": "e6f13a40f1176dbe11482df5468f63ab0350e24a3b447904a4f6d9f8ab212cfe"
+    },
+    {
+      "file": "src/browser.ts",
+      "symbol": "AdminBrowserApplication.close",
+      "fingerprint": "faeb4e0bb532a7d58d99c11594f290f14f30b10cfecba498f8c50a1443f61af9"
+    },
+    {
+      "file": "src/views.ts",
+      "symbol": "AdminViews.static initial",
+      "fingerprint": "7f11a3bf9b330647fa09e312bde85f10b66f21942ab4651c7952a29dc50971f6"
+    },
+    {
+      "file": "src/views.ts",
+      "symbol": "AdminViews.static refreshed",
+      "fingerprint": "1ce7ce432b5e32ee388d849f79357196191857c2dca6d49730101b3030a93b04"
+    },
+    {
+      "file": "tests/acceptance/admin.test.ts",
+      "symbol": "AdminTestsAcceptance.nodeAssets",
+      "fingerprint": "901b18eca8e3986825c614e5dac2e0b5fd9a53fc84cfdef871e9acee66d2a617"
+    },
+    {
+      "file": "tests/acceptance/admin.test.ts",
+      "symbol": "AdminTestsAcceptance.program",
+      "fingerprint": "ebdd992f3edd199bd45b65eaa7850549e6f10732369108a973063440d09d1555"
+    },
+    {
+      "file": "tests/acceptance/browser.test.ts",
+      "symbol": "AuthorityFixture.callback",
+      "fingerprint": "7424aa400e02e0e55a27900d4f041d27a72159fb67b88f1c9161492d99be3360"
+    },
+    {
+      "file": "tests/acceptance/browser.test.ts",
+      "symbol": "AuthorityFixture.logout",
+      "fingerprint": "b0fa88fa72d4c85ad4786724645638d513240ecdf1bd3c2bdc05085049ea84e3"
+    },
+    {
+      "file": "tests/acceptance/browser.test.ts",
+      "symbol": "AuthorityFixture.invoke",
+      "fingerprint": "6c6afacdca469b58bdbe4d113d41f6d4b8aea7599222f7ff2c28376b65964a55"
+    },
+    {
+      "file": "tests/acceptance/browser.test.ts",
+      "symbol": "AdminBrowserTest.command",
+      "fingerprint": "c069c7f7cc63a329f0bf9d505eb5b8b4aee8a651d0b6364fbe174d06c4bc873a"
+    },
+    {
+      "file": "tests/acceptance/browser.test.ts",
+      "symbol": "AdminBrowserTest.run",
+      "fingerprint": "8a83be28eeb9d9dbadff86585df9f5d9d37ad367b4e46e2a09e88cb15e481d82"
+    },
+    {
+      "file": "tests/acceptance/browser.test.ts",
+      "symbol": "AdminBrowserTest.fetch",
+      "fingerprint": "ea3a6fae74d79aee61f6e9c0889d1244660d8d4e3471a0ab7e0380aa29925ff6"
+    },
+    {
+      "file": "tests/integration/admin.test.ts",
+      "symbol": "AdminTestsIntegration.assets",
+      "fingerprint": "b605420bb58b3ed8cefdba3ffd16e92cc740055ba3cf8dd0ba5929109116c8c5"
+    },
+    {
+      "file": "tests/integration/admin.test.ts",
+      "symbol": "AdminTestsIntegration.browser",
+      "fingerprint": "155acdd8c6f04571ab18b0684ceed009f8cdb14f580fa7e38035300c999e63b8"
+    },
+    {
+      "file": "tests/regression/adoption.test.ts",
+      "symbol": "AdoptionTests.program",
+      "fingerprint": "3185dbd5ff08267740f4994138b6d26c710ffe2da927e55aa20d12ac1746624f"
+    },
+    {
+      "file": "tests/regression/test-layout.test.ts",
+      "symbol": "TestLayoutRegression.check",
+      "fingerprint": "58a1e54d5b4d5e806480547f2c44fc7fd4a30b548e11033ce1aec339518628f4"
+    },
+    {
+      "file": "tests/regression/test-layout.test.ts",
+      "symbol": "TestLayoutRegression.discovery",
+      "fingerprint": "9a2d5796d031c1f6b33cfe9b537b6ebaacb870e3bcdf578110c016bbc44dca2d"
+    },
+    {
+      "file": "tests/regression/test-layout.test.ts",
+      "symbol": "TestLayoutRegression.matrix",
+      "fingerprint": "ec2572e83c489f133b4c787afaaa99cc1106c22b8e76a2cbbc5dae077a23c0c5"
+    },
+    {
+      "file": "tests/regression/test-layout.test.ts",
+      "symbol": "TestLayoutRegression.partitions",
+      "fingerprint": "99923590bc7eb9c1f0b70fd32403786ecdc51b98ed1eec4241ae1a0693c17dcd"
+    },
+    {
+      "file": "tests/regression/test-layout.test.ts",
+      "symbol": "TestLayoutRegression.support",
+      "fingerprint": "e933ea0a60e46f10d31f0368c7d6413a5b60d3e5b392dca3f3c18daa81cb0966"
+    },
+    {
+      "file": "tests/unit/admin.test.ts",
+      "symbol": "AdminTestsUnit.status",
+      "fingerprint": "a6ce491108a8208c9850677cdc99cb77e0c74d8c317e0a24baaee13cac98b060"
+    },
+    {
+      "file": "tests/unit/admin.test.ts",
+      "symbol": "AdminTestsUnit.policy",
+      "fingerprint": "bd45a37f47409d62a46d1050a4514f1907e8d454c1ca60058690c63352124b55"
+    },
+    {
+      "file": "tests/unit/admin.test.ts",
+      "symbol": "AdminTestsUnit.cookies",
+      "fingerprint": "621b353ea960853039adc65cd974575dfe95eb513dc8ca9275c749cd457bf187"
+    }
+  ],
+  "exceptions": []
+}
