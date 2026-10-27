@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Changed
+
+- Organize permanent tests by tier and enforce the shared development/testing strategy (#146).
+
+### Changed
 - Rebuild Admin from exact SDK .16, Identity .7 and reusable UI .16 owner archives (#137).
 
 ### Fixed
