@@ -7,4 +7,4 @@ class AdoptionTests {
     }
 }
 const adoption = new AdoptionTests();
-test('smoke: installed native owner identities match exact peer selections and vendored archive pins', adoption.program.bind(adoption));
+test("regression: installed native owner identities match exact peer selections and vendored archive pins", adoption.program.bind(adoption));

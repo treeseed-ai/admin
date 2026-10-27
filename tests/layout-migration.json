@@ -1,0 +1,21 @@
+{
+  "repository": "admin",
+  "baseline": "f7974ca6e24491edc5aa617f44e20b5282022dc0",
+  "registrationCount": 9,
+  "entries": [
+    {"from":"tests/admin.test.ts","to":"tests/acceptance/admin.test.ts","tier":"acceptance","name":"smoke: built admin contribution declares native route capability","currentName":"acceptance: built admin contribution declares native route capability"},
+    {"from":"tests/admin.test.ts","to":"tests/acceptance/admin.test.ts","tier":"acceptance","name":"smoke: built Node default asset catalog traverses genuine package module boundaries","currentName":"acceptance: built Node default asset catalog traverses genuine package module boundaries"},
+    {"from":"tests/admin.test.ts","to":"tests/unit/admin.test.ts","tier":"unit","name":"unit: cookie ambiguity and installation separation fail safely","currentName":"unit: cookie ambiguity and installation separation fail safely"},
+    {"from":"tests/admin.test.ts","to":"tests/unit/admin.test.ts","tier":"unit","name":"unit: consumer presentation gate rejects copied rendering","currentName":"unit: consumer presentation gate rejects copied rendering"},
+    {"from":"tests/admin.test.ts","to":"tests/unit/admin.test.ts","tier":"unit","name":"unit: Admin maps genuine SDK status outputs and refuses envelopes or malformed status","currentName":"unit: Admin maps genuine SDK status outputs and refuses envelopes or malformed status"},
+    {"from":"tests/admin.test.ts","to":"tests/integration/admin.test.ts","tier":"integration","name":"integration: browser-only asset and native metadata are generated","currentName":"integration: browser-only asset and native metadata are generated"},
+    {"from":"tests/admin.test.ts","to":"tests/integration/admin.test.ts","tier":"integration","name":"integration: installed public assets are verified and immutable","currentName":"integration: installed public assets are verified and immutable"},
+    {"from":"tests/adoption.test.ts","to":"tests/regression/adoption.test.ts","tier":"regression","name":"smoke: installed native owner identities match exact peer selections and vendored archive pins","currentName":"regression: installed native owner identities match exact peer selections and vendored archive pins"},
+    {"from":"tests/browser.test.ts","to":"tests/acceptance/browser.test.ts","tier":"acceptance","name":"smoke: default Admin composition uses reusable UI with authenticated refresh and logout","currentName":"acceptance: default Admin composition uses reusable UI with authenticated refresh and logout"}
+  ],
+  "mapping": {
+    "tests/admin.test.ts": ["tests/acceptance/admin.test.ts", "tests/unit/admin.test.ts", "tests/integration/admin.test.ts"],
+    "tests/adoption.test.ts": ["tests/regression/adoption.test.ts"],
+    "tests/browser.test.ts": ["tests/acceptance/browser.test.ts"]
+  }
+}

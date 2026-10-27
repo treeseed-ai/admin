@@ -7,7 +7,7 @@ import {firefox,type BrowserContext} from 'playwright';
 import {Context,CordisComposition,CordisServiceLocator,type ProviderRegistration,type CompositionHandle,type ProviderLease} from '@treeseed-cordis/sdk/composition';
 import {PlatformOperations,ProviderV4Schemas,ServiceTokens,InstalledSchemas,type ServerConfiguration,type PlatformInvoker,type TrustedPrincipal} from '@treeseed-cordis/sdk';
 import {IdentitySessionsToken,type IdentitySessions} from '@treeseed-cordis/identity';
-import {AdminAssetCatalog,AdminComposition,AdminRoutes,AdminToken,type AdminContribution} from '../src/admin.js';
+import {AdminAssetCatalog,AdminComposition,AdminRoutes,AdminToken,type AdminContribution} from '../../src/admin.js';
 class AuthorityFixture implements IdentitySessions,PlatformInvoker {
  readonly principalValue:TrustedPrincipal={issuer:'https://localhost/identity',subject:'owner',principalId:'owner',scopes:['platform.read','platform.manage']};loggedOut=false;reads=0;
  async login(){return {location:'/fixture-login',state:'fixture-state'};}
@@ -39,4 +39,4 @@ class AdminBrowserTest {
  }finally{await this.browser?.close();await this.lease?.release();await this.handle?.dispose();this.server?.stop(true);if(this.root)rmSync(this.root,{recursive:true,force:true});}}
  private async fetch(request:Request):Promise<Response>{if(!this.lease)return new Response('starting',{status:503});return await this.lease.value.handle(request)??new Response('missing',{status:404});}
 }
-const suite=new AdminBrowserTest();test('smoke: default Admin composition uses reusable UI with authenticated refresh and logout',suite.run.bind(suite),120000);
+const suite=new AdminBrowserTest();test("acceptance: default Admin composition uses reusable UI with authenticated refresh and logout",suite.run.bind(suite),120000);
