@@ -1,6 +1,6 @@
 {
   "name": "@treeseed-cordis/admin",
-  "version": "0.0.0-cordis.10",
+  "version": "0.0.0-cordis.11",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
@@ -36,9 +36,9 @@
     "check:readability": "bun .agents/skills/release-workflow/scripts/source-readability.ts"
   },
   "peerDependencies": {
-    "@treeseed-cordis/sdk": "0.0.0-cordis.16",
-    "@treeseed-cordis/identity": "0.0.0-cordis.7",
-    "@treeseed-cordis/ui": "0.0.0-cordis.16",
+    "@treeseed-cordis/sdk": "0.0.0-cordis.19",
+    "@treeseed-cordis/identity": "0.0.0-cordis.8",
+    "@treeseed-cordis/ui": "0.0.0-cordis.18",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
@@ -62,18 +62,18 @@
   "cordisCandidate": {
     "sdk": {
       "repository": "https://github.com/treeseed-ai/sdk.git",
-      "commit": "4c0ecd2a0fc28545dbf677cc988ce69f0cf2f15d",
-      "sha256": "4084aa8dbe9767984fac9fef7f5cea30a0bec93ed416138d32c804e6389fdba5"
+      "commit": "90cf4f3cc62e166685280450c727499defd2af5b",
+      "sha256": "93dd549c98aba180306e9b19cc1cbc37494544b2764ed341c531c9af618c6f81"
     },
     "identity": {
       "repository": "https://github.com/treeseed-ai/identity.git",
-      "commit": "f29824578d0aa8fc7725a195b72c698b476da429",
-      "sha256": "90ac95f3e1d953f0aeddb5d0da01e9e596b226bbbc806bff3566d274a34f22d6"
+      "commit": "cb86258e93337559aa4a248177a20bd2a07fd467",
+      "sha256": "a308c71b0da1822e7786121092a05f2496d26614942aaeb459a78531e689cb76"
     },
     "ui": {
       "repository": "https://github.com/treeseed-ai/ui.git",
-      "commit": "32f16876aa6f0eb1f99a4ab339296609c830df23",
-      "sha256": "0251c6ff1f5c4b6a628d85113d1e10b9ab019f26d1dda38c7aad3c12f84ef571"
+      "commit": "e2b9c5e10611c196834fd57ba5358a74304e373c",
+      "sha256": "d09e6ed33f7f1bc2f7210208a94f33bbd2a6453d8fe886f75a1f950887223e48"
     }
   },
   "cordis": {
@@ -94,7 +94,7 @@
   },
   "cordisAsset": {
     "path": "dist/src/browser.bundle.js",
-    "sha256": "0ab38675fba96c380d0c590fb353b443c6642e0114b7327ab636cd6591691c78"
+    "sha256": "c7f7e2a214b86a75cb6b8454325bced2530c0518183f34582c72d4ba603e30fe"
   },
   "cordisPackage": {
     "formatVersion": 4,
@@ -102,7 +102,7 @@
     "pluginId": "admin",
     "package": {
       "name": "@treeseed-cordis/admin",
-      "version": "0.0.0-cordis.10"
+      "version": "0.0.0-cordis.11"
     },
     "providers": [
       {
@@ -395,8 +395,8 @@
     "assets": [
       {
         "path": "dist/src/browser.bundle.js",
-        "sha256": "0ab38675fba96c380d0c590fb353b443c6642e0114b7327ab636cd6591691c78",
-        "size": 990317
+        "sha256": "c7f7e2a214b86a75cb6b8454325bced2530c0518183f34582c72d4ba603e30fe",
+        "size": 1007807
       }
     ],
     "images": []
