@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Changed
+- Require readable capability layers and contextual refactoring with a twenty-line method gate (#148).
 
 - Organize permanent tests by tier and enforce the shared development/testing strategy (#146).
 - Rebuild Admin from exact SDK .16, Identity .7 and reusable UI .16 owner archives (#137).
