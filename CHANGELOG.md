@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Align Admin with exact SDK, Identity and UI capacity contract candidates (#150).
+
+### Changed
+
 - Organize permanent tests by tier and enforce the shared development/testing strategy (#146).
 - Rebuild Admin from exact SDK .16, Identity .7 and reusable UI .16 owner archives (#137).
 
