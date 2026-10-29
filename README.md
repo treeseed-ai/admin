@@ -2,17 +2,18 @@
 
 ## Task 3D owner compatibility
 
-Issue #150 aligns existing Admin behavior with the exact public owner candidates below.
+Issue #150 qualifies Admin .12 and aligns existing Admin behavior with the exact public owner candidates below.
 Keycloak identity, session authority and reusable mobile-first UI remain owned by their existing
 packages. This compatibility slice adds no browser application or Agent execution authority.
 
 | Owner | Version | Source | Archive SHA-256 |
 | --- | --- | --- | --- |
-| SDK | `0.0.0-cordis.19` | `90cf4f3cc62e166685280450c727499defd2af5b` | `93dd549c98aba180306e9b19cc1cbc37494544b2764ed341c531c9af618c6f81` |
-| Identity | `0.0.0-cordis.8` | `cb86258e93337559aa4a248177a20bd2a07fd467` | `a308c71b0da1822e7786121092a05f2496d26614942aaeb459a78531e689cb76` |
-| UI | `0.0.0-cordis.18` | `e2b9c5e10611c196834fd57ba5358a74304e373c` | `d09e6ed33f7f1bc2f7210208a94f33bbd2a6453d8fe886f75a1f950887223e48` |
+| SDK | `0.0.0-cordis.42` | `afdfac7bdd3c9c1f783362cd1d50324181e1d725` | `0ecfe599916fe8ef364fc4b73203c810981f163109fbe71a0dd4c01a9dfb7bbc` |
+| Identity | `0.0.0-cordis.9` | `c60dfdbc53ce78ddee3c2f18ec7f91358878d49c` | `2999a78da5c04f6a894c643d49ab3881ff702fb4325d74fec469a4496f034c67` |
+| UI | `0.0.0-cordis.23` | `d5d33c33791fe8b94aada605dba4aa9392559637` | `7291d35fe8758fd27b23f663dcf1f254bd915b5ae3569dde8c9a2f443e45a14f` |
 
-Peer pins, installed packages and accepted archives must agree. Historical artifacts stay
+The built public compatibility program requires manager channel 1.1.0-cordis.1 and preserves
+all seven global operations. Peer pins, installed packages and accepted archives must agree. Historical artifacts stay
 immutable. Full Task 3D runtime acceptance and productive Work/model execution are separate;
 the latter remains Task 10. All issues remain open until authorized release.
 
