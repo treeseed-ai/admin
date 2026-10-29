@@ -7,7 +7,11 @@ import * as sdk from '@treeseed-cordis/sdk';
 import { IdentityBuild } from '@treeseed-cordis/identity';
 import { AdminBuild } from '../../src/admin.js';
 
-interface Selection { version: string; commit: string; sha256: string; }
+interface Selection {
+  version: string;
+  commit: string;
+  sha256: string;
+}
 class OwnerCompatibilityProgram {
   private static readonly entries: Record<string, string> = {
     sdk: createRequire(import.meta.url).resolve('@treeseed-cordis/sdk'),
@@ -15,25 +19,39 @@ class OwnerCompatibilityProgram {
     ui: createRequire(import.meta.url).resolve('@treeseed-cordis/ui'),
   };
   private static readonly selections: Record<string, Selection> = {
-    sdk: { version: '0.0.0-cordis.19', commit: '90cf4f3cc62e166685280450c727499defd2af5b',
-      sha256: '93dd549c98aba180306e9b19cc1cbc37494544b2764ed341c531c9af618c6f81' },
-    identity: { version: '0.0.0-cordis.8', commit: 'cb86258e93337559aa4a248177a20bd2a07fd467',
-      sha256: 'a308c71b0da1822e7786121092a05f2496d26614942aaeb459a78531e689cb76' },
-    ui: { version: '0.0.0-cordis.18', commit: 'e2b9c5e10611c196834fd57ba5358a74304e373c',
-      sha256: 'd09e6ed33f7f1bc2f7210208a94f33bbd2a6453d8fe886f75a1f950887223e48' },
+    sdk: {
+      version: '0.0.0-cordis.42',
+      commit: 'afdfac7bdd3c9c1f783362cd1d50324181e1d725',
+      sha256: '0ecfe599916fe8ef364fc4b73203c810981f163109fbe71a0dd4c01a9dfb7bbc',
+    },
+    identity: {
+      version: '0.0.0-cordis.9',
+      commit: 'c60dfdbc53ce78ddee3c2f18ec7f91358878d49c',
+      sha256: '2999a78da5c04f6a894c643d49ab3881ff702fb4325d74fec469a4496f034c67',
+    },
+    ui: {
+      version: '0.0.0-cordis.23',
+      commit: 'd5d33c33791fe8b94aada605dba4aa9392559637',
+      sha256: '7291d35fe8758fd27b23f663dcf1f254bd915b5ae3569dde8c9a2f443e45a14f',
+    },
   };
   run(): void {
     for (const [owner, selection] of Object.entries(OwnerCompatibilityProgram.selections))
       this.selection(owner, selection);
     assert.equal(typeof Reflect.get(sdk, 'CapacitySchemas'), 'function');
+    const channel = Reflect.get(sdk, 'CapacityChannelSchemas');
+    assert.equal(typeof channel, 'function');
+    assert.equal(Reflect.get(channel, 'version'), '1.1.0-cordis.1');
     assert.equal(sdk.PlatformOperations.all.length, 7);
     assert.equal(AdminBuild.metadata().capability, 'admin.routes');
-    assert.equal(IdentityBuild.package().package.version, '0.0.0-cordis.8');
+    assert.equal(IdentityBuild.package().package.version, '0.0.0-cordis.9');
     process.stdout.write('owner-adoption-ok\n');
   }
   private selection(owner: string, selection: Selection): void {
     const metadata = JSON.parse(readFileSync('package.json', 'utf8'));
-    const digest = createHash('sha256').update(readFileSync('vendor/' + owner + '.tgz')).digest('hex');
+    const digest = createHash('sha256')
+      .update(readFileSync('vendor/' + owner + '.tgz'))
+      .digest('hex');
     assert.equal(metadata.peerDependencies['@treeseed-cordis/' + owner], selection.version);
     assert.equal(metadata.cordisCandidate[owner].commit, selection.commit);
     assert.equal(metadata.cordisCandidate[owner].sha256, selection.sha256);
