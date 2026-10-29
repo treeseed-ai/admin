@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Changed
+- Select the coherent availability-ready owner closure (#153).
+
+### Changed
 - Align Admin with the exact manager-compatible owner archive closure (#150).
 
 ### Changed

@@ -2,21 +2,26 @@
 
 ## Task 3D owner compatibility
 
-Issue #150 qualifies Admin .12 and aligns existing Admin behavior with the exact public owner candidates below.
-Keycloak identity, session authority and reusable mobile-first UI remain owned by their existing
-packages. This compatibility slice adds no browser application or Agent execution authority.
+Under #153, Admin `.13` consumes one coherent SDK44/Identity10/UI24 public archive closure.
+Identity owns Keycloak authority and sessions; UI owns reusable mobile-first React, styles and
+rendering. Admin retains routes, actions and application composition. No new application or
+Agent authority is introduced. This candidate stays held until Identity#61 and UI#108 are accepted.
 
 | Owner | Version | Source | Archive SHA-256 |
 | --- | --- | --- | --- |
-| SDK | `0.0.0-cordis.42` | `afdfac7bdd3c9c1f783362cd1d50324181e1d725` | `0ecfe599916fe8ef364fc4b73203c810981f163109fbe71a0dd4c01a9dfb7bbc` |
-| Identity | `0.0.0-cordis.9` | `c60dfdbc53ce78ddee3c2f18ec7f91358878d49c` | `2999a78da5c04f6a894c643d49ab3881ff702fb4325d74fec469a4496f034c67` |
-| UI | `0.0.0-cordis.23` | `d5d33c33791fe8b94aada605dba4aa9392559637` | `7291d35fe8758fd27b23f663dcf1f254bd915b5ae3569dde8c9a2f443e45a14f` |
+| SDK | `0.0.0-cordis.44` | `00be028b92998f8d7039a3906e784c6b8598e730` | `d95c54cf6081c7634498dfb4f3235d42d65b8664a5d62cc87c4dd4e85381f0f3` |
+| Identity | `0.0.0-cordis.10` | `1ed37c2384ceb23fba8b0a96ca9abe208a2cb2e5` | `3e2e4bd25c21a4be99e927a5431f474be3903fbd509cc617adaf6c4c83183600` |
+| UI | `0.0.0-cordis.24` | `b4a1490c5b06ba49b4f3408391b236be2400553a` | `ad7be6878932ac76a0b8d81622dd826a5152062185852bf40dc0c6c63d41c4e1` |
 
-The built public compatibility program requires manager channel 1.1.0-cordis.1 and preserves
-all seven global operations. Peer pins, installed packages and accepted archives must agree. Historical artifacts stay
-immutable. Full Task 3D runtime acceptance and productive Work/model execution are separate;
-the latter remains Task 10. All issues remain open until authorized release.
-
+Peer, provenance, vendor, lock and installed identities agree. Advance only the immutable Admin
+package/provider identity in runtime source; preserve all routes, public exports, authentication,
+CSRF/session/issuer checks, presentation behavior, historical fixture source and assertions/timeouts.
+Follow documentation, built selection failure, archive adoption, owner checks/build/all complete
+tiers, independent public archive rendering proof, parent acceptance, hosted gates and review.
+The manager channel stays1.1.0-cordis.1 and all seven global operations remain. Admin12/Identity9/UI23
+and older archives stay immutable. Genuine installed Keycloak/API/DB/browser assembly remains an
+API/Platform gate. All issues stay open; productive Work/models remain Task10. No production
+publication, legacy mutation or cutover.
 
 ## Task 3B: Installed administration contribution
 
