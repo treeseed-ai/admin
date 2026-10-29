@@ -1,7 +1,7 @@
 import {PlatformOperations} from '@treeseed-cordis/sdk';
 import {UiSchemas,type UiViewModel} from '@treeseed-cordis/ui/contracts';
 export class AdminPackageIdentity {
- static readonly version = '0.0.0-cordis.11';
+ static readonly version = '0.0.0-cordis.12';
  static readonly artifact = '@treeseed-cordis/admin@' + this.version;
 }
 export class AdminViews {

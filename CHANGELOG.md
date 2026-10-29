@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Changed
+- Align Admin with the exact manager-compatible owner archive closure (#150).
+
+### Changed
 - Require readable capability layers and contextual refactoring with a twenty-line method gate (#148).
 
 - Align Admin with exact SDK, Identity and UI capacity contract candidates (#150).
